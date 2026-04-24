@@ -1,0 +1,4 @@
+﻿                                            </div>
+
+                                            {/* INLINE WELL LIST â€” shown when Excel is loaded */}
+                                            {batchView === 'list' && (
