@@ -4,6 +4,7 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import { LanguageProvider } from './i18n';
 import { ThemeProvider } from './theme';
+import { SecurityLock } from './components/SecurityLock';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -15,7 +16,9 @@ root.render(
   <React.StrictMode>
     <ThemeProvider>
       <LanguageProvider>
-        <App />
+        <SecurityLock>
+          <App />
+        </SecurityLock>
       </LanguageProvider>
     </ThemeProvider>
   </React.StrictMode>
