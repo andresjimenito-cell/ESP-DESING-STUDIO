@@ -34,6 +34,16 @@ function Show-ESPHeader {
     Write-Host "   $CY╚════════════════════════════════════════════════════════════════════════╝$R"
 }
 
+function Write-ProgressBar {
+    param([int]$Percent, [string]$Label)
+    $width = 40
+    $filled = [math]::Floor($Percent / 100 * $width)
+    $empty = $width - $filled
+    $bar = ("█" * $filled) + ("░" * $empty)
+    Write-Host "   $CY║$R  $Label" -NoNewline
+    Write-Host " [$CY$bar$R] $Percent%  "
+}
+
 $null = $RE 
 
 Show-ESPHeader
@@ -44,15 +54,19 @@ Write-Host "   $CY║$R                                                         
 # --- NUEVA LÓGICA DE AUTO-ACTUALIZACIÓN ---
 $gitCheck = Get-Command git -ErrorAction SilentlyContinue
 if ($gitCheck) {
-    Write-Host "   $CY║$R      $GY[$TL SYNC $GY]$WH Checking for updates on GitHub . . .$R               $CY║$R"
+    Write-Host "   $CY║$R  $TL◆ CLOUD SYNC $R                                                            $CY║$R"
+    Write-ProgressBar -Percent 20 -Label "Conectando con GitHub... "
+    
     $updateResult = git pull origin main --quiet 2>&1
+    
     if ($LASTEXITCODE -eq 0) {
-        Write-Host "   $CY║$R      $GY[$GR  OK  $GY]$WH System is up to date$R                               $CY║$R"
+        Write-ProgressBar -Percent 100 -Label "Sincronización Exitosa   "
+        Write-Host "   $CY║$R      $GR[ OK ]$WH Sistema actualizado y listo.$R                                $CY║$R"
     } else {
-        Write-Host "   $CY║$R      $GY[$OR SKIP $GY]$WH Offline or Sync busy - Starting local version$R       $CY║$R"
+        Write-Host "   $CY║$R      $OR[ SKIP ]$WH Sin conexión o repo ocupado. Modo Offline activo.$R         $CY║$R"
     }
 } else {
-    Write-Host "   $CY║$R      $GY[$YE WARN $GY]$WH Git not found - Auto-updates disabled$R               $CY║$R"
+    Write-Host "   $CY║$R      $YE[ WARN ]$WH Git no detectado. Auto-actualización desactivada.$R          $CY║$R"
 }
 Write-Host "   $CY║$R                                                                        $CY║$R"
 
@@ -93,8 +107,11 @@ if ($nodeCheck) {
         npm.cmd install
     }
     
-    Write-Host "   $GY[ INFO ] Generando pre-cálculos JSON para carga instantánea...$R"
+    Write-Host "   $GY[ PROCESO ] Generando pre-cálculos JSON para carga instantánea...$R"
+    Write-ProgressBar -Percent 30 -Label "Analizando Pruebas UPME... "
     node tools/preprocesar_datos.js
+    Write-ProgressBar -Percent 100 -Label "Datos listos para la App! "
+    Write-Host ""
     
     npm.cmd run dev -- --logLevel silent
 }

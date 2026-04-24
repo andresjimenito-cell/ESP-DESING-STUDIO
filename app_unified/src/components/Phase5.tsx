@@ -868,7 +868,7 @@ export const Phase5: React.FC<Phase5Props> = ({ params, setParams, customPump, s
     const [cableSearch, setCableSearch] = useState('');
     const [vsdSearch, setVsdSearch] = useState('');
 
-    const frequency = Math.max(30, params.targets[params.activeScenario].frequency || 60);
+    const frequency = params.targets[params.activeScenario].frequency || 60;
     const reqTdh = calculateTDH(params.pressures.totalRate, params);
     const targetFlow = params.pressures.totalRate;
 
@@ -929,8 +929,15 @@ export const Phase5: React.FC<Phase5Props> = ({ params, setParams, customPump, s
     ];
 
     const updateFrequency = (val: number) => {
-        let safeVal = Math.min(120, Math.max(30, val));
-        setParams((prev: SystemParams) => ({ ...prev, targets: { ...prev.targets, [prev.activeScenario]: { ...prev.targets[prev.activeScenario], frequency: safeVal } } }));
+        // Permitimos un rango más amplio (0-120 Hz) para dar flexibilidad total al ingeniero
+        const safeVal = isNaN(val) ? 60 : Math.min(120, Math.max(0, val));
+        setParams((prev: SystemParams) => ({ 
+            ...prev, 
+            targets: { 
+                ...prev.targets, 
+                [prev.activeScenario]: { ...prev.targets[prev.activeScenario], frequency: safeVal } 
+            } 
+        }));
     };
     const switchScenario = (scen: 'min' | 'target' | 'max') => {
         const data = params.targets[scen];
@@ -1648,7 +1655,7 @@ export const Phase5: React.FC<Phase5Props> = ({ params, setParams, customPump, s
                                         <div className="flex-1 relative z-10">
                                             <label className="text-[9px] font-black text-txt-muted uppercase block mb-2 tracking-[0.2em] opacity-60">{t('p6.operatingFreq')}</label>
                                             <div className="flex items-baseline gap-2">
-                                                <DraftInput type="number" min="30" max="90" step="0.1" value={frequency} onChange={updateFrequency} instant={true} className="w-24 bg-transparent text-3xl font-black text-primary outline-none font-mono tracking-tighter" />
+                                                <DraftInput type="number" min="1" max="90" step="0.1" value={frequency} onChange={updateFrequency} instant={true} className="w-24 bg-transparent text-3xl font-black text-primary outline-none font-mono tracking-tighter" />
                                                 <span className="text-xs font-black text-txt-muted uppercase opacity-40">Hz</span>
                                             </div>
                                         </div>

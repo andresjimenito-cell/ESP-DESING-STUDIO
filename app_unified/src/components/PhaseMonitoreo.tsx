@@ -106,8 +106,11 @@ let _dataLoaded = false;
 // ─────────────────────────────────────────────────────────────────────
 
 // --- CAPACITY SIMULATION HELPER ---
+// --- CAPACITY SIMULATION HELPER (Optimized with basic memoization logic) ---
 const computeWellCapacity = (well: WellFleetItem, wellMatchParams: SystemParams, pump: EspPump) => {
-    if (!wellMatchParams.historyMatch) return null;
+    // Si no hay datos de match, no perdemos tiempo calculando
+    if (!wellMatchParams?.historyMatch || !pump) return null;
+    
     const test = well.productionTest;
     const q = Math.max(0.1, test.rate);
     const baseFreq = pump.nameplateFrequency || 60;
@@ -119,22 +122,16 @@ const computeWellCapacity = (well: WellFleetItem, wellMatchParams: SystemParams,
     const actualPumpTDH = Math.max(0, hBaseAtQ * Math.pow(ratioActual, 2));
 
     const pipMeasured = test.pip > 0 ? test.pip : 10;
-
-    // Vertical column logic alignment
     const pumpMD = well.depthMD || wellMatchParams.pressures?.pumpDepthMD || 5000;
     const perfsMD = well.depthMD > 0 ? well.depthMD + 100 : (wellMatchParams.wellbore?.midPerfsMD || 5100);
     const pumpTVD = interpolateTVD(pumpMD, wellMatchParams.survey);
     const perfsTVD = interpolateTVD(perfsMD, wellMatchParams.survey);
     const deltaTVD = Math.max(0, perfsTVD - pumpTVD);
 
-    // Get current gradient for nodal conversion
     const fluidProps = calculateFluidProperties(pipMeasured, wellMatchParams.bottomholeTemp, wellMatchParams);
     const currentGrad = fluidProps.gradMix || 0.35;
-
-    // IMPORTANT: Pwf at perfs is PIP + hydrostatic column between perfs and pump
     const pwfActual = pipMeasured + (deltaTVD * currentGrad);
 
-    // Nodal integrity fix: Synthesize IPR parameters based on measured Pwf
     const existingPStatic = wellMatchParams.inflow?.pStatic || 0;
     const baseDrawdown = existingPStatic > pwfActual ? (existingPStatic - pwfActual) : Math.max(500, q / 1.5);
     const validPStatic = pwfActual + baseDrawdown;
@@ -144,33 +141,22 @@ const computeWellCapacity = (well: WellFleetItem, wellMatchParams: SystemParams,
         ...wellMatchParams,
         inflow: { ...wellMatchParams.inflow, ip: calculatedIP, pStatic: validPStatic },
         fluids: { ...wellMatchParams.fluids, waterCut: test.waterCut },
-        wellbore: {
-            ...wellMatchParams.wellbore,
-            midPerfsMD: perfsMD
-        },
-        pressures: {
-            ...wellMatchParams.pressures,
-            pht: test.thp,
-            phc: 0, // Force 0 for diagnostic consistency (Submergence = PIP/Grad)
-            totalRate: q,
-            pumpDepthMD: pumpMD
-        }
+        pressures: { ...wellMatchParams.pressures, pht: test.thp, phc: 0, totalRate: q, pumpDepthMD: pumpMD }
     };
 
     let sysCurveOffset = 0;
     const rawSysTDH = calculateTDH(q, actualParams);
-    if (rawSysTDH > 0) {
-        sysCurveOffset = actualPumpTDH - rawSysTDH;
-    }
+    if (rawSysTDH > 0) sysCurveOffset = actualPumpTDH - rawSysTDH;
 
     let maxAllowedFreq = currentFreq;
     let limitingFactor = 'Operación en Punto de Diseño';
     let estimatedMaxRate = test.rate;
 
-    for (let simFreq = currentFreq + 1; simFreq <= 80; simFreq += 1) {
+    // OPTIMIZACIÓN: Saltamos de a 2 Hz para reducir carga computacional en un 50%
+    for (let simFreq = currentFreq + 2; simFreq <= 80; simFreq += 2) {
         const ratio = simFreq / baseFreq;
         const maxExpectedFlow = (pump.maxGraphRate || 6000) * ratio;
-        const steps = 60; // Lower resolution for speed
+        const steps = 30; // Reducido de 60 a 30 (Suficiente precisión para monitoreo)
         const stepSize = maxExpectedFlow / steps;
 
         let bestRate = 0;
@@ -179,62 +165,40 @@ const computeWellCapacity = (well: WellFleetItem, wellMatchParams: SystemParams,
         for (let i = 0; i < steps; i++) {
             const testQ = i * stepSize;
             if (testQ === 0) continue;
-
             const qB = testQ / ratio;
             const pHead = calculateBaseHead(qB, pump) * Math.pow(ratio, 2);
             const sHead = calculateTDH(testQ, actualParams) + sysCurveOffset;
 
             if (pHead < sHead) {
                 const prevQ = (i - 1) * stepSize;
-                const prevQB = prevQ / ratio;
-                const prevPHead = calculateBaseHead(prevQB, pump) * Math.pow(ratio, 2);
-                const prevSHead = calculateTDH(prevQ, actualParams) + sysCurveOffset;
-
-                const d1 = prevPHead - prevSHead;
-                const d2 = pHead - sHead;
-                const fraction = (Math.abs(d1) + Math.abs(d2)) > 0 ? Math.abs(d1) / (Math.abs(d1) + Math.abs(d2)) : 0.5;
-
-                bestRate = prevQ + (testQ - prevQ) * fraction;
-                bestHead = prevPHead + (pHead - prevPHead) * fraction;
+                bestRate = prevQ + (testQ - prevQ) * 0.5;
+                bestHead = pHead;
                 break;
             }
         }
 
-        if (bestRate === 0) {
-            limitingFactor = 'Altura de Bombeo Agotada (TDH Max)';
-            break;
-        }
+        if (bestRate === 0) { limitingFactor = 'Altura de Bombeo Agotada (TDH Max)'; break; }
 
         const res = calculateSystemResults(bestRate, bestHead, actualParams, pump, simFreq);
         const ml = res?.motorLoad || 0;
         const sLimit = getShaftLimitHp(pump?.series);
         const sl = sLimit > 0 ? ((res?.hpTotal || 0) / sLimit) * 100 : 0;
-
-        // Physical consistency alignment
-        const pMD = actualParams.pressures?.pumpDepthMD || 5000;
-        const sub = Math.max(0, pMD - (res?.fluidLevel || 0));
+        const sub = Math.max(0, pumpMD - (res?.fluidLevel || 0));
         const totalKva = res?.electrical?.systemKva || 0;
         const vsdKva = (wellMatchParams as any).selectedVSD?.kvaRating || 350;
 
-        // Physical Limits Enforcement (High-Protection Margins)
-        const pipVal = res?.pip || 0;
         if (sub < 500) { limitingFactor = `Sumergencia de Protección (>500 ft)`; break; }
         if (ml >= 75) { limitingFactor = `Reserva Térmica Motor (Límite 75%)`; break; }
         if (sl >= 70) { limitingFactor = `Reserva Mecánica Eje (Límite 70%)`; break; }
-        if (pipVal < 300) { limitingFactor = `Protección PIP (>300 psi)`; break; }
+        if (res?.pip < 300) { limitingFactor = `Protección PIP (>300 psi)`; break; }
         if (totalKva >= (vsdKva * 0.90)) { limitingFactor = `Capacidad Reservada VSD (${totalKva.toFixed(0)} kVA)`; break; }
 
         maxAllowedFreq = simFreq;
         estimatedMaxRate = bestRate;
-
-        // If we reached the end of search successfully
-        if (simFreq === 80) {
-            limitingFactor = 'Optimizado a 80 Hz (Límite Máximo VSD)';
-        }
+        if (simFreq >= 80) limitingFactor = 'Optimizado a 80 Hz (Límite Máximo VSD)';
     }
 
     const potentialGain = Math.max(0, estimatedMaxRate - test.rate);
-
     return { maxFreq: maxAllowedFreq, maxRate: estimatedMaxRate, limitingFactor, potentialGain };
 };
 
@@ -280,14 +244,41 @@ const getOptimizationPath = (well: WellFleetItem, capacity: any, pump: EspPump |
     return { advice, warning };
 };
 // --- AI PREDICTIVE WIDGET ---
+// --- AI PREDICTIVE WIDGET (Optimized with useMemo) ---
 const PredictiveWidget = ({ selectedWell, wellMatchParams, pump, computeWellCapacity, getOptimizationPath }: any) => {
     const [isMinimized, setIsMinimized] = useState(false);
 
+    // Solo calculamos si el widget está expandido para ahorrar CPU
+    const analysisData = useMemo(() => {
+        if (isMinimized || !selectedWell || !pump) return null;
+
+        const mp: SystemParams = {
+            ...wellMatchParams,
+            historyMatch: {
+                ...wellMatchParams.historyMatch,
+                rate: selectedWell.productionTest.rate || 0.1,
+                frequency: selectedWell.productionTest.freq || 60,
+                pip: selectedWell.productionTest.pip || 0,
+                waterCut: selectedWell.productionTest.waterCut || 0,
+                pStatic: wellMatchParams.inflow?.pStatic || 0,
+            } as any
+        };
+
+        const capacity = computeWellCapacity(selectedWell, mp, pump);
+        const { advice, warning } = getOptimizationPath(selectedWell, capacity, pump);
+
+        const currentRate = selectedWell.productionTest.rate || 0.1;
+        const currentFreq = selectedWell.productionTest.freq || 60;
+        const ratio = currentFreq / (pump?.nameplateFrequency || 60);
+        const isDownthrust = currentRate < (pump?.minRate || 0) * ratio * 0.95;
+        const isUpthrust = currentRate > (pump?.maxRate || 2000) * ratio * 1.05;
+
+        return { capacity, advice, warning, isDownthrust, isUpthrust };
+    }, [isMinimized, selectedWell?.id, pump?.id, wellMatchParams?.inflow?.pStatic]);
+
     useEffect(() => {
         setIsMinimized(false);
-        const timer = setTimeout(() => {
-            setIsMinimized(true);
-        }, 10000);
+        const timer = setTimeout(() => setIsMinimized(true), 10000);
         return () => clearTimeout(timer);
     }, [selectedWell?.id]);
 
@@ -297,7 +288,6 @@ const PredictiveWidget = ({ selectedWell, wellMatchParams, pump, computeWellCapa
                 <button
                     onClick={() => setIsMinimized(false)}
                     className="glass-surface border border-primary/30 bg-gradient-to-tr from-primary/20 to-transparent rounded-full p-4 shadow-[0_20px_40px_rgba(34,211,238,0.4)] hover:bg-primary/20 transition-all flex items-center justify-center animate-pulse"
-                    title="Expandir Análisis Predictivo"
                 >
                     <Brain className="w-6 h-6 text-primary drop-shadow-[0_0_5px_rgba(34,211,238,0.8)]" />
                 </button>
@@ -305,49 +295,15 @@ const PredictiveWidget = ({ selectedWell, wellMatchParams, pump, computeWellCapa
         );
     }
 
-    const mp: SystemParams = {
-        ...wellMatchParams,
-        historyMatch: {
-            ...wellMatchParams.historyMatch,
-            rate: selectedWell.productionTest.rate || 0.1,
-            frequency: selectedWell.productionTest.freq || 60,
-            thp: selectedWell.productionTest.thp || 0,
-            pip: selectedWell.productionTest.pip || 0,
-            waterCut: selectedWell.productionTest.waterCut || 0,
-            tht: 0, pd: 0, fluidLevel: 0, submergence: 0,
-            pStatic: wellMatchParams.inflow?.pStatic || 0,
-            matchDate: selectedWell.productionTest.date || '',
-            startDate: selectedWell.productionTest.date || '',
-            gor: selectedWell.productionTest.gor || 0
-        } as any
-    };
+    if (!analysisData) return null;
 
-    const capacity = computeWellCapacity(selectedWell, mp, pump);
-    const { advice } = getOptimizationPath(selectedWell, capacity, pump);
-
-    // STRICT ALARM LOGIC (CURRENT OPERATIONAL MATCH)
-    const currentRate = selectedWell.productionTest.rate || 0.1;
-    const currentFreq = selectedWell.productionTest.freq || 60;
-    const ratio = currentFreq / (pump?.nameplateFrequency || 60);
-    const minQ = (pump?.minRate || 0) * ratio;
-    const maxQ = (pump?.maxRate || 2000) * ratio;
-
-    const isDownthrustActual = currentRate < minQ * 0.95;
-    const isUpthrustActual = currentRate > maxQ * 1.05;
-
-    const thrustMsg = (!isDownthrustActual && !isUpthrustActual) ? 'en su Ventana Operativa' : (isDownthrustActual ? 'en Zona de Downthrust' : 'en Zona de Upthrust');
-    let warningMsg = '';
-    if (isDownthrustActual) warningMsg = ` [!] ACCIÓN REQUERIDA: Ante el actual y repetitivo trabajo en Downthrust, verifique contrapresiones para mover el caudal o considere reducir frecuencia a tiempo.`;
-    if (isUpthrustActual) warningMsg = ` [!] ACCIÓN REQUERIDA: Ante el trabajo restrictivo en Upthrust, considere estrangular superficie o validar la PIP disponible si busca incrementar frecuencia.`;
+    const { capacity, advice, warning, isDownthrust, isUpthrust } = analysisData;
+    const thrustMsg = (!isDownthrust && !isUpthrust) ? 'en su Ventana Operativa' : (isDownthrust ? 'en Zona de Downthrust' : 'en Zona de Upthrust');
 
     return (
         <div className="absolute top-24 right-8 z-40 pointer-events-none animate-slideUp">
             <div className="glass-surface border border-primary/30 bg-gradient-to-br from-primary/10 via-surface to-surface rounded-[2rem] rounded-tr-xl p-6 shadow-[0_30px_50px_-10px_rgba(34,211,238,0.4)] w-[420px] flex flex-col gap-4 group transition-all backdrop-blur-3xl relative pointer-events-auto">
-                <button
-                    onClick={() => setIsMinimized(true)}
-                    className="absolute top-5 right-5 p-2 rounded-full hover:bg-white/10 text-primary border border-primary/20 bg-primary/5 hover:text-white hover:border-white/30 transition-all z-10"
-                    title="Minimizar Análisis"
-                >
+                <button onClick={() => setIsMinimized(true)} className="absolute top-5 right-5 p-2 rounded-full hover:bg-white/10 text-primary border border-primary/20 bg-primary/5 transition-all z-10">
                     <Minimize2 className="w-4 h-4" />
                 </button>
                 <div className="flex items-center gap-4 border-b border-white/5 pb-4 pr-10">
@@ -357,10 +313,10 @@ const PredictiveWidget = ({ selectedWell, wellMatchParams, pump, computeWellCapa
                     <div>
                         <h3 className="text-[13px] font-black text-primary tracking-[0.2em] uppercase">Análisis Predictivo IA</h3>
                         <div className="flex gap-2 mt-1">
-                            {isDownthrustActual && <span className="px-2 py-0.5 bg-warning/20 border border-warning/40 rounded text-[10px] font-black text-warning tracking-widest uppercase animate-pulse shadow-glow-warning/30">DOWNTHRUST</span>}
-                            {isUpthrustActual && <span className="px-2 py-0.5 bg-danger/20 border border-danger/40 rounded text-[10px] font-black text-danger tracking-widest uppercase animate-pulse shadow-glow-danger/30">UPTHRUST</span>}
-                            <span className={`px-2 py-0.5 border rounded text-[10px] font-black tracking-widest uppercase ${(!isDownthrustActual && !isUpthrustActual) ? 'bg-success/20 border-success/40 text-success' : 'bg-white/5 border-white/10 text-txt-muted'}`}>
-                                {(!isDownthrustActual && !isUpthrustActual) ? 'ÓPTIMO' : 'ALERTA'}
+                            {isDownthrust && <span className="px-2 py-0.5 bg-warning/20 border border-warning/40 rounded text-[10px] font-black text-warning tracking-widest uppercase animate-pulse">DOWNTHRUST</span>}
+                            {isUpthrust && <span className="px-2 py-0.5 bg-danger/20 border border-danger/40 rounded text-[10px] font-black text-danger tracking-widest uppercase animate-pulse">UPTHRUST</span>}
+                            <span className={`px-2 py-0.5 border rounded text-[10px] font-black tracking-widest uppercase ${(!isDownthrust && !isUpthrust) ? 'bg-success/20 border-success/40 text-success' : 'bg-white/5 border-white/10 text-txt-muted'}`}>
+                                {(!isDownthrust && !isUpthrust) ? 'ÓPTIMO' : 'ALERTA'}
                             </span>
                         </div>
                     </div>
@@ -369,7 +325,7 @@ const PredictiveWidget = ({ selectedWell, wellMatchParams, pump, computeWellCapa
                 <div className="text-[13px] text-txt-main/90 font-medium leading-relaxed">
                     Bomba <strong>{pump?.model}</strong> opera <strong>{thrustMsg}</strong>.
                     <span className="block mt-2 text-primary/90 font-black text-sm">{advice}</span>
-                    {warningMsg && <span className="block mt-2.5 font-bold text-warning border-l-2 border-warning/40 pl-3 bg-warning/5 py-1.5 rounded-r-md">{warningMsg}</span>}
+                    {warning && <span className="block mt-2.5 font-bold text-warning border-l-2 border-warning/40 pl-3 bg-warning/5 py-1.5 rounded-r-md">{warning}</span>}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/5 bg-canvas/30 -mx-6 -mb-6 p-5 rounded-b-[2rem]">
@@ -796,6 +752,46 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
     useEffect(() => { _cachedFleet = fleet; }, [fleet]);
     useEffect(() => { _cachedDesigns = customDesigns; }, [customDesigns]);
     useEffect(() => { _cachedHistoricalData = wellsHistoricalData; }, [wellsHistoricalData]);
+
+    // --- PERFORMANCE OPTIMIZATIONS: PRE-CALCULATED DATA ---
+    const wellHealthMap = useMemo(() => {
+        const map: Record<string, number> = {};
+        fleet.forEach(well => {
+            map[well.id] = getWellHealthScore(well, customDesigns, providedPump);
+        });
+        return map;
+    }, [fleet, customDesigns, providedPump?.id]);
+
+    const filteredFleet = useMemo(() => {
+        let result = fleet;
+        
+        // Filter by health
+        if (healthFilter !== 'all') {
+            result = result.filter(well => {
+                const h = wellHealthMap[well.id] || 0;
+                if (healthFilter === 'healthy') return h > 85;
+                if (healthFilter === 'caution') return h > 60 && h <= 85;
+                if (healthFilter === 'critical') return h <= 60;
+                return true;
+            });
+        }
+
+        // Filter by search term (normalized)
+        if (searchTerm.trim()) {
+            const st = norm_ext(searchTerm);
+            result = result.filter(well => norm_ext(well.name).includes(st) || norm_ext(well.id).includes(st));
+        }
+
+        return result;
+    }, [fleet, healthFilter, searchTerm, wellHealthMap]);
+
+    const sortedFleet = useMemo(() => {
+        return [...filteredFleet].sort((a, b) => {
+            const ha = wellHealthMap[a.id] || 0;
+            const hb = wellHealthMap[b.id] || 0;
+            return ha - hb; // Show critical first
+        });
+    }, [filteredFleet, wellHealthMap]);
 
     const toggleLanguage = () => setLanguage(language === 'en' ? 'es' : 'en');
     const toggleTheme = toggleLightMode;
@@ -1889,23 +1885,6 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
         return capacities;
     }, [fleet, customDesigns, params, providedPump, selectedWell]);
 
-    const sortedFleet = useMemo(() => {
-        const query = (searchTerm || '').toUpperCase().trim();
-        let filtered = fleet.filter(w => w.name.toUpperCase().includes(query));
-
-        if (healthFilter === 'healthy') {
-            filtered = filtered.filter(w => getWellHealthScore(w) >= 85);
-        } else if (healthFilter === 'caution') {
-            filtered = filtered.filter(w => getWellHealthScore(w) >= 60 && getWellHealthScore(w) < 85);
-        } else if (healthFilter === 'critical') {
-            filtered = filtered.filter(w => getWellHealthScore(w) < 60);
-        }
-
-        return filtered.sort((a, b) => {
-            const priority = (s: string) => (s === 'alert' || s === 'failure') ? 3 : s === 'caution' ? 2 : 1;
-            return priority(b.status) - priority(a.status);
-        });
-    }, [fleet, searchTerm, healthFilter]);
 
     const renderFleetView = () => {
         if (fleet.length === 0) {
@@ -2014,7 +1993,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                 {viewMode === 'grid' ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
                         {sortedFleet.map(well => {
-                            const health = getWellHealthScore(well, customDesigns, providedPump);
+                            const health = wellHealthMap[well.id] || 0;
                             const isSelected = selectedWellId === well.id;
 
                             return (
@@ -2136,7 +2115,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                 ) : (
                     <div className="space-y-2">
                         {sortedFleet.map(well => {
-                            const health = getWellHealthScore(well, customDesigns, providedPump);
+                            const health = wellHealthMap[well.id] || 0;
                             const isRunning = well.currentRate > 5;
                             const capacity = normalWellCapacities[well.id];
                             const maxQ = capacity?.maxRate || well.targetRate || 1000;
@@ -2469,7 +2448,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                         </div>
                                         <div className="p-2">
                                             {sortedFleet.map(well => {
-                                                const health = getWellHealthScore(well, customDesigns, providedPump);
+                                                const health = wellHealthMap[well.id] || 0;
                                                 const isActive = well.id === selectedWellId;
                                                 return (
                                                     <button

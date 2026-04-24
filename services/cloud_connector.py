@@ -1,6 +1,7 @@
 import os
 import re
 import io
+import json
 import requests
 import pandas as pd
 from typing import List, Optional
@@ -71,19 +72,52 @@ class CloudDataConnector:
             raise
 
     # --- FASE 2: Gestión de Persistencia y Caché ---
+    def _get_metadata_path(self):
+        return os.path.join(self.storage_dir, ".sync_metadata.json")
+
+    def _load_metadata(self):
+        path = self._get_metadata_path()
+        if os.path.exists(path):
+            try:
+                with open(path, 'r') as f:
+                    return json.load(f)
+            except:
+                return {}
+        return {}
+
+    def _save_metadata(self, metadata):
+        with open(self._get_metadata_path(), 'w') as f:
+            json.dump(metadata, f)
+
     def fetch_data(self, url: str, filename: str, force_download: bool = False) -> str:
         """
-        Descarga el archivo y lo guarda localmente. Implementa una lógica de caché básica.
+        Descarga el archivo usando verificación de ETag/Metadata para sincronización perfecta.
         """
         local_path = os.path.join(self.storage_dir, filename)
+        metadata = self._load_metadata()
+        file_meta = metadata.get(filename, {})
         
-        # Simulación de progreso visual
-        print(f" {self.GY}├─{self.R} {self.WH}Sincronizando:{self.R} {self.CY}{filename}{self.R}", end="\r")
-        
-        # Si no está en caché, obtener link directo y descargar
         direct_link = self.get_direct_link(url)
         
         try:
+            # Petición HEAD para obtener ETag y Size
+            head_resp = requests.head(direct_link, timeout=10)
+            remote_etag = head_resp.headers.get('ETag')
+            remote_size = int(head_resp.headers.get('Content-Length', 0))
+            remote_mod  = head_resp.headers.get('Last-Modified')
+
+            # Verificación de identidad
+            if os.path.exists(local_path) and not force_download:
+                # Si tenemos el mismo ETag o (mismo tamaño y misma fecha reportada), no descargamos
+                if remote_etag and file_meta.get('etag') == remote_etag:
+                    print(f" {self.GY}└─{self.R} {self.GR}[AL DÍA]{self.R} {self.WH}{filename}{self.R} (Verificado por ETag)        ")
+                    return local_path
+                
+                if not remote_etag and file_meta.get('size') == remote_size and file_meta.get('last_mod') == remote_mod:
+                    print(f" {self.GY}└─{self.R} {self.GR}[AL DÍA]{self.R} {self.WH}{filename}{self.R} (Verificado por Metadatos)     ")
+                    return local_path
+
+            # Descarga si algo cambió
             resp = requests.get(direct_link, stream=True)
             resp.raise_for_status()
             
@@ -94,16 +128,27 @@ class CloudDataConnector:
                 for chunk in resp.iter_content(chunk_size=8192):
                     downloaded += len(chunk)
                     f.write(chunk)
-                    # Barra de progreso simple
                     if total_size > 0:
                         pct = int((downloaded / total_size) * 100)
                         bar = "█" * (pct // 10) + "░" * (10 - (pct // 10))
-                        print(f" {self.GY}├─{self.R} {self.WH}Descargando:{self.R} {self.CY}{filename}{self.R} {self.GY}[{self.GR}{bar}{self.GY}]{self.R} {pct}%", end="\r")
+                        print(f" {self.GY}├─{self.R} {self.WH}Sincronizando:{self.R} {self.CY}{filename}{self.R} {self.GY}[{self.GR}{bar}{self.GY}]{self.R} {pct}%", end="\r")
             
-            print(f" {self.GY}└─{self.R} {self.GR}[SUCCESS]{self.R} {self.WH}{filename}{self.R} sincronizado.          ")
+            # Guardar nuevos metadatos
+            metadata[filename] = {
+                'etag': remote_etag,
+                'size': remote_size,
+                'last_mod': remote_mod,
+                'sync_date': str(datetime.now())
+            }
+            self._save_metadata(metadata)
+            
+            print(f" {self.GY}└─{self.R} {self.GR}[SINCRONIZADO]{self.R} {self.WH}{filename}{self.R} con éxito.          ")
             return local_path
         except Exception as e:
-            print(f"\n{self.RE}[!] Error en descarga de {filename}: {e}{self.R}")
+            print(f"\n{self.RE}[!] Error en Sync de {filename}: {e}{self.R}")
+            if os.path.exists(local_path):
+                print(f" {self.GY}└─{self.R} {self.AM}[MODO LOCAL]{self.R} Usando versión existente.")
+                return local_path
             raise
 
     # --- FASE 3: El Extractor de Datos "Resiliente" (Dynamic Header Finder) ---
@@ -221,7 +266,7 @@ def sync_project_data():
 
     for item in CLOUD_FILES:
         try:
-            connector.fetch_data(item['url'], item['filename'], force_download=True)
+            connector.fetch_data(item['url'], item['filename'], force_download=False)
         except Exception as e:
             print(f"   {CY}║{R}      {OR}[ERROR]{R} No se pudo sincronizar {item['filename']}                 {CY}║{R}")
 
