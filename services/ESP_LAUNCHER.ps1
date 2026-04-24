@@ -57,7 +57,7 @@ if ($gitCheck) {
     Write-Host "   $CY║$R  $TL◆ CLOUD SYNC $R                                                            $CY║$R"
     Write-ProgressBar -Percent 20 -Label "Conectando con GitHub... "
     
-    $updateResult = git pull origin main --quiet 2>&1
+    git pull origin main --quiet 2>&1 | Out-Null
     
     if ($LASTEXITCODE -eq 0) {
         Write-ProgressBar -Percent 100 -Label "Sincronización Exitosa   "
