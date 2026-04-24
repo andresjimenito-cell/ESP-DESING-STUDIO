@@ -38,8 +38,22 @@ $null = $RE
 
 Show-ESPHeader
 Write-Host "   $CY╔════════════════════════════════════════════════════════════════════════╗$R"
-Write-Host "   $CY║$R                                                                        $CY║$R"
 Write-Host "   $CY║$R      $GY[$AM BOOT $GY]$WH Initializing Cloud Data Sync Engine . . . $R         $CY║$R"
+Write-Host "   $CY║$R                                                                        $CY║$R"
+
+# --- NUEVA LÓGICA DE AUTO-ACTUALIZACIÓN ---
+$gitCheck = Get-Command git -ErrorAction SilentlyContinue
+if ($gitCheck) {
+    Write-Host "   $CY║$R      $GY[$TL SYNC $GY]$WH Checking for updates on GitHub . . .$R               $CY║$R"
+    $updateResult = git pull origin main --quiet 2>&1
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "   $CY║$R      $GY[$GR  OK  $GY]$WH System is up to date$R                               $CY║$R"
+    } else {
+        Write-Host "   $CY║$R      $GY[$OR SKIP $GY]$WH Offline or Sync busy - Starting local version$R       $CY║$R"
+    }
+} else {
+    Write-Host "   $CY║$R      $GY[$YE WARN $GY]$WH Git not found - Auto-updates disabled$R               $CY║$R"
+}
 Write-Host "   $CY║$R                                                                        $CY║$R"
 
 # Sincronización automática desde OneDrive (Python maneja su propio dibujo de 'cuerpo' de la caja)
