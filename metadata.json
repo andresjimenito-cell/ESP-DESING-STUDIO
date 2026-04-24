@@ -1,0 +1,5 @@
+{
+  "name": "ESP AJM",
+  "description": "Electrical Submersible Pump performance analyzer with variable frequency drive (VFD) simulation using affinity laws.",
+  "requestFramePermissions": []
+}
