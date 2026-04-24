@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ESP System Diagram - Dark Future</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+      body { background-color: #020617; font-family: 'Inter', sans-serif; margin: 0; padding: 0; display: flex; justify-content: center; min-height: 100vh; color: #e2e8f0; }
+    </style>
+</head>
+<body>
+    <div id="root" style="width: 100%; display: flex; justify-content: center;"></div>
+    <script type="text/babel" data-presets="react,typescript">
+        const MotorType = { AMM: "AMM", PMM: "PMM" };
+
+        const seededRandom = (seed) => {
+            let state = seed;
+            return () => { state = (1103515245 * state + 12345) % 0x80000000; return state / 0x7FFFFFFF; };
+        };
+
+        const DiagramCanvas = ({ config }) => {
+          const BASE_WIDTH = 950; const WELL_X = 400; const CASING_WIDTH = 220; const TUBING_WIDTH = 26; const ESP_WIDTH = 52;
+          const HP_FACTOR = config.motorType === MotorType.PMM ? 0.35 : 0.55;
+          const MOTOR_H = Math.max(90, config.motorHp * HP_FACTOR);
+          const PUMP_UPPER_H = config.stagesUpper > 0 ? Math.max(60, config.stagesUpper * 1.3) : 0;
+          const PUMP_LOWER_H = config.stagesLower > 0 ? Math.max(60, config.stagesLower * 1.3) : 0;
+          const PUMP_GAP = (config.stagesUpper > 0 && config.stagesLower > 0) ? 10 : 0;
+          const TOTAL_PUMP_H = PUMP_UPPER_H + PUMP_LOWER_H + PUMP_GAP;
+          const INTAKE_H = 55; const SEAL_H = 160; const SEAL_SECTION_H = SEAL_H / 2; const SENSOR_H = 80;
+          const SURFACE_H = 380; const TUBING_LEN = 500; const YTOOL_HEIGHT = config.yTool ? 90 : 0;
+          const TUBING_END_Y = SURFACE_H + TUBING_LEN;
+          const ESP_START_Y = TUBING_END_Y + YTOOL_HEIGHT;
+          const PUMP_Y = ESP_START_Y; const INTAKE_Y = PUMP_Y + TOTAL_PUMP_H; const SEAL_Y = INTAKE_Y + INTAKE_H; const MOTOR_Y = SEAL_Y + SEAL_H; const SENSOR_Y = MOTOR_Y + MOTOR_H;
+          const ESP_BOTTOM = config.sensor ? SENSOR_Y + SENSOR_H : MOTOR_Y + MOTOR_H;
+          const RAT_HOLE = 150; const TOTAL_HEIGHT = ESP_BOTTOM + RAT_HOLE + 100;
+          const PERF_Y = TOTAL_HEIGHT - 180; const PERF_TOP = PERF_Y - 20; const PERF_LEN = 140;
+          const WELL_HEIGHT = TOTAL_HEIGHT - SURFACE_H; const LIQUID_HEIGHT = WELL_HEIGHT * (config.fluidLevel / 100); const FLUID_Y = TOTAL_HEIGHT - LIQUID_HEIGHT;
+          const isLowLevel = FLUID_Y > (INTAKE_Y + 10);
+          const CABLE_W = Math.max(6, 18 - (config.cableSize * 2)); 
+          const CABLE_COLOR = "#f59e0b"; // Neon amber for cable
+          const CABLE_RIGHT_X = WELL_X + TUBING_WIDTH / 2 + 8; const POTHEAD_X = ESP_WIDTH / 2 - 5; const MLE_X = WELL_X + ESP_WIDTH / 2 + 10;
+          const CASING_LEFT_X = WELL_X - CASING_WIDTH / 2; const CASING_RIGHT_X = WELL_X + CASING_WIDTH / 2;
+          const pipLabelY = Math.max(FLUID_Y, SURFACE_H + 50);
+          
+          let pipPath = `M${CASING_LEFT_X} ${FLUID_Y}`;
+          if (pipLabelY > FLUID_Y + 5) { pipPath += ` L${CASING_LEFT_X - 25} ${FLUID_Y} L${250} ${pipLabelY} L40 ${pipLabelY}`; } 
+          else { pipPath += ` L60 ${FLUID_Y} L40 ${FLUID_Y}`; }
+
+          const bubbles = React.useMemo(() => {
+            if (config.fluidLevel === 0) return [];
+            const rng = seededRandom(123);
+            const items = [];
+            for (let i = 0; i < 70; i++) {
+                const bx = (CASING_LEFT_X + 20) + rng() * (CASING_WIDTH - 40);
+                const by = FLUID_Y + 40 + rng() * (TOTAL_HEIGHT - FLUID_Y - 100);
+                if (by < TOTAL_HEIGHT - RAT_HOLE && by > FLUID_Y) items.push({ x: bx, y: by, type: rng(), rBase: 3 + rng() * 4 });
+            }
+            return items;
+          }, [config.fluidLevel, FLUID_Y, TOTAL_HEIGHT]);
+
+          const Defs = () => (
+            <defs>
+              {/* Dark Night Sky */}
+              <linearGradient id="skyGrad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stopColor="#020617" /><stop offset="100%" stopColor="#1e293b" /></linearGradient>
+              {/* Moon/Planet glow */}
+              <radialGradient id="sunGrad" cx="50%" cy="50%" r="50%" fx="50%" fy="50%"><stop offset="0%" stopColor="#e2e8f0" stopOpacity="0.8" /><stop offset="100%" stopColor="#64748b" stopOpacity="0" /></radialGradient>
+              
+              {/* Dark Metallic Soil */}
+              <pattern id="patSoil" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse"><rect width="40" height="40" fill="#1e293b" /><circle cx="5" cy="5" r="1.5" fill="#475569" opacity="0.6" /></pattern>
+              
+              {/* Dark Rock */}
+              <pattern id="patRock" x="0" y="0" width="60" height="60" patternUnits="userSpaceOnUse"><rect width="60" height="60" fill="#0f172a" /><path d="M0 40 L20 30 M10 10 L30 5" stroke="#334155" strokeWidth="1" opacity="0.4" /></pattern>
+              
+              {/* Chrome/Steel Gradient */}
+              <linearGradient id="metalGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#334155" />
+                  <stop offset="40%" stopColor="#94a3b8" />
+                  <stop offset="50%" stopColor="#f8fafc" />
+                  <stop offset="60%" stopColor="#94a3b8" />
+                  <stop offset="100%" stopColor="#334155" />
+              </linearGradient>
+              
+              {/* Dark Seal Gradient */}
+              <linearGradient id="sealGrad"><stop offset="0%" stopColor="#0f172a" /><stop offset="50%" stopColor="#475569" /><stop offset="100%" stopColor="#0f172a" /></linearGradient>
+              
+              {/* Dark Transformer */}
+              <linearGradient id="trafoGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#1e293b" /><stop offset="1" stopColor="#0f172a" /></linearGradient>
+              
+              {/* Metallic Red Wellhead */}
+              <linearGradient id="whRedGrad"><stop offset="0" stopColor="#450a0a" /><stop offset="0.5" stopColor="#b91c1c" /><stop offset="1" stopColor="#450a0a" /></linearGradient>
+              
+              {/* Casing Interior (Dark) */}
+              <linearGradient id="gradCasingInterior"><stop offset="0" stopColor="#000" stopOpacity="0.8" /><stop offset="0.5" stopColor="#1e293b" stopOpacity="0.1" /><stop offset="1" stopColor="#000" stopOpacity="0.8" /></linearGradient>
+              
+              {/* Cement (Dark Grey) */}
+              <pattern id="cementPat" width="10" height="10" patternUnits="userSpaceOnUse"><rect width="10" height="10" fill="#334155" /><circle cx="3" cy="3" r="1" fill="#64748b" /></pattern>
+              
+              {/* Neon Glow Filter */}
+              <filter id="neonGlow" x="-50%" y="-50%" width="200%" height="200%">
+                  <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
+                  <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+              </filter>
+              
+              <filter id="boxShadow"><feGaussianBlur in="SourceAlpha" stdDeviation="2" /><feOffset dy="2" /><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+              <pattern id="intakeMesh" width="4" height="4" patternUnits="userSpaceOnUse"><rect width="4" height="4" fill="#334155"/><rect width="3" height="3" fill="#0f172a"/></pattern>
+            </defs>
+          );
+
+          // Glassmorphism Callout Dark
+          const Callout = ({ y, title, subtitle }) => (
+            <g>
+                <path d={`M${WELL_X} ${y} L${WELL_X + 210} ${y}`} stroke="#0ea5e9" strokeWidth="1" fill="none" opacity="0.5"/>
+                <circle cx={WELL_X} cy={y} r="3" fill="#0ea5e9" stroke="#fff" strokeWidth="1" filter="url(#neonGlow)"/>
+                <g transform={`translate(${WELL_X + 220}, ${y - 23})`}>
+                    <rect width="220" height="46" rx="4" fill="rgba(15, 23, 42, 0.8)" stroke="#334155" strokeWidth="1" className="backdrop-blur-sm"/>
+                    <path d="M4 0 V46" stroke="#0ea5e9" strokeWidth="4"/>
+                    <text x="16" y="18" fontSize="12" fontWeight="700" fill="#e2e8f0" dominantBaseline="hanging" style={{textShadow: '0 0 5px rgba(226, 232, 240, 0.3)'}}>{title}</text>
+                    <text x="16" y="32" fontSize="11" fontWeight="500" fill="#94a3b8" dominantBaseline="hanging">{subtitle}</text>
+                </g>
+            </g>
+          );
+
+          const tubingColor = "url(#metalGrad)";
+          const casingStroke = "#475569";
+
+          return (
+            <svg viewBox={`0 0 ${BASE_WIDTH} ${TOTAL_HEIGHT}`} style={{width: '100%', height: 'auto', maxHeight: '98vh', maxWidth: '1200px'}} className="block select-none font-sans mx-auto">
+              <Defs />
+              
+              {/* Background Layers */}
+              <rect x="0" y={SURFACE_H} width={BASE_WIDTH} height={150} fill="url(#patSoil)" />
+              <rect x="0" y={SURFACE_H + 150} width={BASE_WIDTH} height={TOTAL_HEIGHT - SURFACE_H - 150} fill="url(#patRock)" />
+              <rect x="0" y={SURFACE_H} width={BASE_WIDTH} height={TOTAL_HEIGHT - SURFACE_H} fill="black" opacity="0.6" /> {/* Dark overlay */}
+              <rect x="0" y="0" width={BASE_WIDTH} height={SURFACE_H} fill="url(#skyGrad)" />
+              
+              {/* Moon */}
+              <circle cx="100" cy="80" r="40" fill="url(#sunGrad)" style={{ mixBlendMode: 'screen' }} />
+              
+              {/* Casing & Cement */}
+              <rect x={CASING_LEFT_X - 20} y={SURFACE_H} width={CASING_WIDTH + 40} height={TOTAL_HEIGHT - SURFACE_H} fill="url(#cementPat)" stroke="#1e293b" />
+              <rect x={CASING_LEFT_X} y={SURFACE_H} width={CASING_WIDTH} height={TOTAL_HEIGHT - SURFACE_H} fill="#020617" /> {/* Dark Borehole */}
+              <rect x={CASING_LEFT_X} y={SURFACE_H} width={CASING_WIDTH} height={TOTAL_HEIGHT - SURFACE_H} fill="url(#gradCasingInterior)" style={{ pointerEvents: 'none' }} />
+
+              {/* Perforations - Neon Amber Glow */}
+              <rect x="0" y={PERF_TOP} width={CASING_LEFT_X} height={PERF_LEN} fill="#f59e0b" fillOpacity="0.1" />
+              <rect x={CASING_RIGHT_X} y={PERF_TOP} width={BASE_WIDTH - CASING_RIGHT_X} height={PERF_LEN} fill="#f59e0b" fillOpacity="0.1" />
+              <line x1="0" y1={PERF_TOP} x2={CASING_LEFT_X} y2={PERF_TOP} stroke="#f59e0b" strokeDasharray="4,2" />
+              <line x1={CASING_RIGHT_X} y1={PERF_TOP} x2={BASE_WIDTH} y2={PERF_TOP} stroke="#f59e0b" strokeDasharray="4,2" />
+              <text x="40" y={PERF_TOP + PERF_LEN/2} transform={`rotate(-90 40 ${PERF_TOP + PERF_LEN/2})`} textAnchor="middle" fontSize="11" fontWeight="bold" fill="#f59e0b" style={{textShadow: '0 0 10px #f59e0b'}}>ZONA PRODUCTORA</text>
+              <g transform={`translate(${CASING_RIGHT_X + 100}, ${PERF_TOP + PERF_LEN / 2})`}>
+                <line x1="-10" y1="0" x2="-60" y2="0" stroke="#64748b" strokeWidth="1" strokeDasharray="2,2" />
+                <circle cx="-60" cy="0" r="2" fill="#64748b" />
+                <text x="0" y="4" fontSize="11" fontWeight="700" fill="#94a3b8">INTERVALO CAÑONEADO</text>
+              </g>
+
+              {/* Fluid - Neon Cyan or Neon Red */}
+              {config.fluidLevel > 0 && (
+                <>
+                    <rect x={CASING_LEFT_X + 1} y={FLUID_Y} width={CASING_WIDTH - 2} height={TOTAL_HEIGHT - FLUID_Y} fill={isLowLevel ? "#ef4444" : "#06b6d4"} fillOpacity={isLowLevel ? 0.3 : 0.2} />
+                    <line x1={CASING_LEFT_X} y1={FLUID_Y} x2={CASING_RIGHT_X} y2={FLUID_Y} stroke={isLowLevel ? "#f87171" : "#22d3ee"} strokeWidth="2" strokeDasharray="6,3" filter="url(#neonGlow)"/>
+                    {bubbles.map((b, i) => <circle key={i} cx={b.x} cy={b.y} r={b.rBase} fill={isLowLevel ? "#fecaca" : "#cffafe"} opacity="0.4" />)}
+                    
+                    {/* PIP Bubble - Dark Glass */}
+                    <g filter="url(#boxShadow)">
+                        <path d={pipPath} stroke={isLowLevel ? "#f87171" : "#22d3ee"} strokeDasharray="3,2" fill="none"/>
+                        <circle cx={CASING_LEFT_X} cy={FLUID_Y} r="3" fill={isLowLevel ? "#ef4444" : "#06b6d4"} stroke="white"/>
+                        <g transform={`translate(20, ${pipLabelY - 22})`}>
+                            <rect width="220" height="44" rx="4" fill="rgba(15, 23, 42, 0.9)" stroke={isLowLevel ? "#ef4444" : "#1e293b"} strokeWidth={1} className="backdrop-blur-md"/>
+                            <path d="M6 0 H0 V44 H6" fill={isLowLevel ? "#ef4444" : "#06b6d4"} />
+                            <text x="16" y="18" fontSize="12" fontWeight="bold" fill={isLowLevel ? "#f87171" : "#e2e8f0"} dominantBaseline="hanging">{isLowLevel ? "⚠️ ALARMA" : "Nivel de Fluido"}</text>
+                            <text x="16" y="31" fontSize="11" fill="#94a3b8" dominantBaseline="hanging">PIP: {config.pip} psi</text>
+                        </g>
+                    </g>
+                </>
+              )}
+              {isLowLevel && <g transform={`translate(${WELL_X + ESP_WIDTH + 10}, ${INTAKE_Y})`}><circle cx="0" cy="25" r="14" fill="#ef4444" stroke="white" strokeWidth="2" filter="url(#neonGlow)"/><text x="0" y="30" textAnchor="middle" fontSize="16" fontWeight="bold" fill="white">!</text></g>}
+              
+              {/* Surface Lines */}
+              <rect x={WELL_X - 360} y={SURFACE_H - 10} width={100} height={10} fill="#334155" stroke="#1e293b" />
+              <rect x={WELL_X - 240} y={SURFACE_H - 10} width={110} height={10} fill="#334155" stroke="#1e293b" />
+
+              {/* Transformador - Dark Tech */}
+              <g transform={`translate(${WELL_X - 350}, ${SURFACE_H - 160})`} filter="url(#boxShadow)">
+                 <rect x="10" y="100" width="10" height="50" fill="#1e293b" /><rect x="60" y="100" width="10" height="50" fill="#1e293b" />
+                 <rect width="80" height="100" fill="url(#trafoGrad)" stroke="#475569" rx="2" />
+                 {[1, 2, 3, 4, 5, 6].map(i => <line key={i} x1={i * (80/7)} y1="5" x2={i * (80/7)} y2="95" stroke="#334155" strokeWidth="2" />)}
+                 <rect x="15" y="-12" width="10" height="12" fill="#334155" stroke="#0f172a" strokeWidth="0.5"/>
+                 <rect x="55" y="-12" width="10" height="12" fill="#334155" stroke="#0f172a" strokeWidth="0.5"/>
+                 <text x="40" y="-25" textAnchor="middle" fontSize="10" fontWeight="bold" fill="#94a3b8">TRANSFORMADOR</text>
+              </g>
+
+              {/* VSD - Dark Tech Screen */}
+              <g transform={`translate(${WELL_X - 230}, ${SURFACE_H - 180})`} filter="url(#boxShadow)">
+                 <rect x="10" y="120" width="10" height="50" fill="#1e293b" /><rect x="70" y="120" width="10" height="50" fill="#1e293b" />
+                 <rect width="90" height="120" fill="#1e293b" stroke="#475569" rx="2" />
+                 <rect x="10" y="15" width="70" height="40" rx="2" fill="#020617" stroke="#334155" />
+                 <text x="45" y="38" textAnchor="middle" fontFamily="monospace" fontSize="14" fill="#22c55e" fontWeight="bold" style={{textShadow: '0 0 5px #22c55e'}}>{config.vsdFreq} Hz</text>
+                 <circle cx="25" cy="70" r="4" fill="#ef4444" opacity="0.5" />
+                 <circle cx="45" cy="70" r="4" fill="#eab308" opacity="0.5" />
+                 <circle cx="65" cy="70" r="4" fill="#22c55e" stroke="#15803d" strokeWidth="0.5" filter="url(#neonGlow)"/>
+                 <line x1="10" y1="95" x2="80" y2="95" stroke="#334155" strokeWidth="2" />
+                 <line x1="10" y1="100" x2="80" y2="100" stroke="#334155" strokeWidth="2" />
+                 <text x="45" y="-15" textAnchor="middle" fontSize="10" fontWeight="bold" fill="#94a3b8">VSD</text>
+              </g>
+              
+              <path d={`M${WELL_X - 270} ${SURFACE_H - 110} L${WELL_X - 230} ${SURFACE_H - 110}`} stroke="#334155" strokeWidth="3"/>
+              <path d={`M${WELL_X - 140} ${SURFACE_H - 100} L${WELL_X - 90} ${SURFACE_H - 100} L${WELL_X - 90} ${SURFACE_H - 55} L${WELL_X - 65} ${SURFACE_H - 55}`} stroke={CABLE_COLOR} strokeWidth={CABLE_W * 0.7} fill="none"/>
+
+              {/* Tubing - Shiny Metal */}
+              <rect x={WELL_X - TUBING_WIDTH / 2} y={SURFACE_H} width={TUBING_WIDTH} height={TUBING_END_Y - SURFACE_H} fill={tubingColor} stroke={casingStroke} />
+              {[100, 200, 300, 400].map(offset => <rect key={offset} x={WELL_X - TUBING_WIDTH / 2 - 2} y={SURFACE_H + offset} width={TUBING_WIDTH + 4} height="8" fill="#334155" stroke="#1e293b" />)}
+
+              {config.yTool ? (
+                <>
+                 <path d={`M${WELL_X - TUBING_WIDTH/2} ${TUBING_END_Y} L${WELL_X + TUBING_WIDTH/2} ${TUBING_END_Y} Q${WELL_X+20} ${TUBING_END_Y+20} ${WELL_X+65} ${TUBING_END_Y+60} L${WELL_X+65} ${TUBING_END_Y+90} L${WELL_X+45} ${TUBING_END_Y+90} L${WELL_X+45} ${TUBING_END_Y+60} L${WELL_X+20} ${TUBING_END_Y+50} L${WELL_X+20} ${TUBING_END_Y+90} L${WELL_X-15} ${TUBING_END_Y+90} L${WELL_X-15} ${TUBING_END_Y+50} Q${WELL_X-20} ${TUBING_END_Y+20} ${WELL_X-TUBING_WIDTH/2} ${TUBING_END_Y} Z`} fill={tubingColor} stroke={casingStroke} filter="url(#boxShadow)"/>
+                 <rect x={WELL_X + 45} y={TUBING_END_Y + 90} width="20" height={(ESP_BOTTOM - (TUBING_END_Y+90)) + 50} fill={tubingColor} stroke={casingStroke} />
+                 {[0, 140, 280, 420].map(offset => {
+                     const y = TUBING_END_Y + 90 + 80 + offset;
+                     if(y < ESP_BOTTOM) return <rect key={offset} x={WELL_X + 42} y={y} width={26} height="10" rx="1" fill="#334155" stroke="#0f172a" />;
+                     return null;
+                 })}
+                 <path d={`M${CABLE_RIGHT_X} ${SURFACE_H} L${CABLE_RIGHT_X} ${TUBING_END_Y} Q${CABLE_RIGHT_X+5} ${TUBING_END_Y+40} ${CABLE_RIGHT_X+5} ${TUBING_END_Y+100} L${CABLE_RIGHT_X+5} ${PUMP_Y}`} stroke={CABLE_COLOR} strokeWidth={CABLE_W} fill="none" strokeLinecap="round"/>
+                 <path d={`M${CABLE_RIGHT_X - 1} ${SURFACE_H} L${CABLE_RIGHT_X - 1} ${TUBING_END_Y} Q${CABLE_RIGHT_X+4} ${TUBING_END_Y+40} ${CABLE_RIGHT_X+4} ${TUBING_END_Y+100} L${CABLE_RIGHT_X+4} ${PUMP_Y}`} stroke="rgba(255,255,255,0.4)" strokeWidth="2" fill="none" />
+                </>
+              ) : (
+                <>
+                <line x1={CABLE_RIGHT_X} y1={SURFACE_H} x2={CABLE_RIGHT_X} y2={PUMP_Y} stroke={CABLE_COLOR} strokeWidth={CABLE_W} strokeLinecap="round" />
+                <line x1={CABLE_RIGHT_X - 1} y1={SURFACE_H} x2={CABLE_RIGHT_X - 1} y2={PUMP_Y} stroke="rgba(255,255,255,0.4)" strokeWidth="2" />
+                {[50, 170, 290, 410].map(offset => <rect key={offset} x={CABLE_RIGHT_X - 6} y={SURFACE_H + offset} width="12" height="12" rx="1" fill="#1e293b" />)}
+                </>
+              )}
+
+              {/* ESP Assembly - High Contrast Metallic */}
+              <g transform={`translate(${WELL_X}, 0)`} filter="url(#boxShadow)">
+                {config.stagesUpper > 0 && <><rect x={-ESP_WIDTH/2} y={PUMP_Y} width={ESP_WIDTH} height={PUMP_UPPER_H} fill={tubingColor} stroke="#475569" />{[1,2,3,4,5].map(i => <line key={i} x1={-ESP_WIDTH/2} y1={PUMP_Y+i*(PUMP_UPPER_H/6)} x2={ESP_WIDTH/2} y2={PUMP_Y+i*(PUMP_UPPER_H/6)} stroke="#1e293b" opacity="0.3"/>)}</>}
+                {config.stagesUpper > 0 && config.stagesLower > 0 && <rect x={-ESP_WIDTH/2 + 10} y={PUMP_Y + PUMP_UPPER_H} width={ESP_WIDTH - 20} height={PUMP_GAP} fill="#334155" />}
+                {config.stagesLower > 0 && <><rect x={-ESP_WIDTH/2} y={PUMP_Y + PUMP_UPPER_H + PUMP_GAP} width={ESP_WIDTH} height={PUMP_LOWER_H} fill={tubingColor} stroke="#475569" />{[1,2,3,4,5].map(i => <line key={i} x1={-ESP_WIDTH/2} y1={PUMP_Y+PUMP_UPPER_H+PUMP_GAP+i*(PUMP_LOWER_H/6)} x2={ESP_WIDTH/2} y2={PUMP_Y+PUMP_UPPER_H+PUMP_GAP+i*(PUMP_LOWER_H/6)} stroke="#1e293b" opacity="0.3"/>)}</>}
+                
+                <rect x={-ESP_WIDTH/2+2} y={INTAKE_Y} width={ESP_WIDTH-4} height={INTAKE_H} fill="#64748b" stroke="#334155" />
+                <rect x={-ESP_WIDTH/2+6} y={INTAKE_Y+8} width={ESP_WIDTH-12} height={INTAKE_H-16} fill="url(#intakeMesh)" stroke="#1e293b" />
+                
+                <rect x={-ESP_WIDTH/2+3} y={SEAL_Y} width={ESP_WIDTH-6} height={SEAL_SECTION_H} fill="url(#sealGrad)" stroke="#1e293b" />
+                <rect x={-ESP_WIDTH/2-2} y={SEAL_Y+SEAL_SECTION_H-4} width={ESP_WIDTH+4} height="8" fill="#1e293b" rx="1" />
+                <rect x={-ESP_WIDTH/2+3} y={SEAL_Y+SEAL_SECTION_H+4} width={ESP_WIDTH-6} height={SEAL_SECTION_H-4} fill="url(#sealGrad)" stroke="#1e293b" />
+                
+                <rect x={-ESP_WIDTH/2} y={MOTOR_Y} width={ESP_WIDTH} height={MOTOR_H} fill={tubingColor} stroke="#475569" />
+                {config.motorType === MotorType.PMM ? [...Array(12)].map((_, k) => <line key={k} x1={-ESP_WIDTH/2} y1={MOTOR_Y + k*(MOTOR_H/12)} x2={ESP_WIDTH/2} y2={MOTOR_Y + k*(MOTOR_H/12)} stroke="#1e293b" opacity="0.2" />) : <><line x1="-12" y1={MOTOR_Y} x2="-12" y2={MOTOR_Y + MOTOR_H} stroke="#1e293b" opacity="0.2" /><line x1="12" y1={MOTOR_Y} x2="12" y2={MOTOR_Y + MOTOR_H} stroke="#1e293b" opacity="0.2" /></>}
+                
+                <g transform={`translate(${POTHEAD_X}, ${MOTOR_Y + 20})`}><rect x="-10" y="0" width="20" height="25" fill="#334155" rx="2" stroke="#1e293b"/><rect x="-6" y="-5" width="12" height="5" fill="#f59e0b" filter="url(#neonGlow)"/></g>
+                
+                {config.sensor && <><rect x={-ESP_WIDTH/2+10} y={SENSOR_Y} width={ESP_WIDTH-20} height="10" fill="#334155"/><rect x={-ESP_WIDTH/2+12} y={SENSOR_Y+10} width={ESP_WIDTH-24} height={SENSOR_H-25} fill={tubingColor} stroke="#334155"/><path d={`M${-ESP_WIDTH/2 + 12} ${SENSOR_Y + SENSOR_H - 15} L${ESP_WIDTH/2 - 12} ${SENSOR_Y + SENSOR_H - 15} Q${0} ${SENSOR_Y + SENSOR_H + 5} ${-ESP_WIDTH/2 + 12} ${SENSOR_Y + SENSOR_H - 15}`} fill="#475569" stroke="#334155" /><rect x={-ESP_WIDTH/2+14} y={SENSOR_Y+25} width={ESP_WIDTH-28} height="6" fill="#fbbf24" stroke="#d97706" strokeWidth="0.5" filter="url(#neonGlow)"/></>}
+                {[70, 140, 210, 280, 350, 420, 490].map(offset => { const y = PUMP_Y + offset; if(y < MOTOR_Y) return <rect key={offset} x={-ESP_WIDTH/2 - 2} y={y} width={ESP_WIDTH + 4} height="4" rx="1" fill="#1e293b" />; return null; })}
+              </g>
+
+              <path d={`M${CABLE_RIGHT_X + (config.yTool ? 5 : 0)} ${PUMP_Y} L${MLE_X} ${PUMP_Y + 20} L${MLE_X} ${MOTOR_Y + 20} L${WELL_X + POTHEAD_X} ${MOTOR_Y + 20}`} stroke={CABLE_COLOR} strokeWidth="5" fill="none" />
+              <path d={`M${CABLE_RIGHT_X + (config.yTool ? 5 : 0) - 1} ${PUMP_Y} L${MLE_X - 1} ${PUMP_Y + 20} L${MLE_X - 1} ${MOTOR_Y + 20} L${WELL_X + POTHEAD_X} ${MOTOR_Y + 20}`} stroke="rgba(255,255,255,0.3)" strokeWidth="2" fill="none" />
+
+              <g transform={`translate(${WELL_X}, ${SURFACE_H})`}>
+                <rect x="-70" y="-20" width="140" height="20" rx="1" fill="#1e293b" stroke="#000" />
+                {[-60, -40, -20, 0, 20, 40, 60].map(i => <circle key={i} cx={i} cy="-10" r="2.5" fill="#475569" />)}
+                <rect x="-40" y="-80" width="80" height="60" fill="url(#whRedGrad)" stroke="#450a0a" strokeWidth="1" />
+                <rect x="-55" y="-90" width="110" height="12" rx="1" fill="#1e293b" stroke="#000" />
+                {[-45, -25, 0, 25, 45].map(i => <circle key={i} cx={i} cy="-84" r="2" fill="#475569" />)}
+                <rect x="-35" y="-160" width="70" height="70" fill="url(#whRedGrad)" stroke="#450a0a" strokeWidth="1" />
+                <rect x="-90" y="-145" width="55" height="18" fill="url(#whRedGrad)" stroke="#450a0a" />
+                <circle cx="-100" cy="-136" r="14" fill="#991b1b" stroke="#450a0a" strokeWidth="2" />
+                <circle cx="-100" cy="-136" r="4" fill="#1e293b" />
+                <rect x="35" y="-145" width="55" height="18" fill="url(#whRedGrad)" stroke="#450a0a" />
+                <circle cx="100" cy="-136" r="14" fill="#991b1b" stroke="#450a0a" strokeWidth="2" />
+                <circle cx="100" cy="-136" r="4" fill="#1e293b" />
+                <rect x="-45" y="-175" width="90" height="15" rx="1" fill="#1e293b" stroke="#000" />
+                <rect x="-15" y="-195" width="30" height="20" fill="#334155" />
+                <rect x="-25" y="-205" width="50" height="10" fill="#020617" />
+                <rect x="-65" y="-70" width="25" height="30" fill="#334155" rx="2" stroke="#0f172a"/>
+                <text x="0" y="-215" textAnchor="middle" fontSize="12" fontWeight="800" fill="#cbd5e1">WELLHEAD</text>
+              </g>
+
+              {config.stagesUpper > 0 && <Callout y={PUMP_Y + PUMP_UPPER_H/2} title="Bomba Upper" subtitle={`Etapas: ${config.stagesUpper}`} />}
+              {config.stagesLower > 0 && <Callout y={PUMP_Y + (config.stagesUpper > 0 ? PUMP_UPPER_H + PUMP_GAP : 0) + PUMP_LOWER_H/2} title="Bomba Lower" subtitle={`Etapas: ${config.stagesLower}`} />}
+              <Callout y={INTAKE_Y + INTAKE_H/2} title="Intake / Separador" subtitle="Entrada de fluido" />
+              <Callout y={SEAL_Y + SEAL_H/2} title="Sección de Sellos" subtitle="Doble cámara" />
+              <Callout y={MOTOR_Y + MOTOR_H/2} title={config.motorType === MotorType.AMM ? "MOTOR AMM" : "MOTOR PMM"} subtitle={`${config.motorHp} HP`} />
+              {config.sensor && <Callout y={SENSOR_Y + SENSOR_H/2} title="Sensor de Fondo" subtitle="P/T/Vib" />}
+            </svg>
+          );
+        };
+
+        const App = () => {
+          // Configuración estática optimizada para visualización
+          const fixedConfig = {
+            zoom: 1.0,
+            vsdFreq: 50,
+            fluidLevel: 75,
+            pip: 1250,
+            cableSize: 4,
+            yTool: false,
+            motorType: MotorType.AMM,
+            motorHp: 400,
+            stagesUpper: 60,
+            stagesLower: 60,
+            sensor: true
+          };
+
+          return (
+            <div className="w-full flex items-center justify-center bg-[#020617] min-h-screen p-4">
+               <DiagramCanvas config={fixedConfig} />
+            </div>
+          );
+        };
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
