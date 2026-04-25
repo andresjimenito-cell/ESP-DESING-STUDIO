@@ -1,4 +1,5 @@
 import path from 'path';
+import fs from 'fs';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
@@ -13,6 +14,38 @@ export default defineConfig(({ mode }) => {
     },
     plugins: [
       react(),
+      {
+        name: 'ai-memory-server',
+        configureServer(server) {
+          server.middlewares.use((req, res, next) => {
+            if (req.url === '/api/ai-memory' && req.method === 'POST') {
+              let body = '';
+              req.on('data', chunk => body += chunk);
+              req.on('end', () => {
+                try {
+                  const data = JSON.parse(body);
+                  fs.writeFileSync(path.resolve('./ai_memory.json'), JSON.stringify(data, null, 2));
+                  res.statusCode = 200;
+                  res.end('OK');
+                } catch (e) {
+                  res.statusCode = 400;
+                  res.end('Invalid JSON');
+                }
+              });
+            } else if (req.url === '/api/ai-memory' && req.method === 'GET') {
+               const p = path.resolve('./ai_memory.json');
+               if (fs.existsSync(p)) {
+                 res.setHeader('Content-Type', 'application/json');
+                 res.end(fs.readFileSync(p));
+               } else {
+                 res.end('[]');
+               }
+            } else {
+              next();
+            }
+          });
+        }
+      },
       VitePWA({
         registerType: 'autoUpdate',
         includeAssets: ['favicon.ico', 'icono.png', 'robots.txt', 'apple-touch-icon.png'],

@@ -3,6 +3,7 @@ import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { SystemParams, EspPump } from '../types';
 import { useLanguage } from '../i18n';
+import { AiMemoryService } from '../services/AiMemoryService';
 
 // Initialize Gemini Client
 // Initialize Gemini Client
@@ -162,7 +163,30 @@ export const useEspCopilot = (params: SystemParams, results: any, activeStep: nu
 
 
     // --- MAIN INTERACTION FUNCTION ---
-    const sendMessage = useCallback(async (userText: string, contextOverride?: any) => {
+    const sendMessage = useCallback(async (userText: string, contextOverride?: any, isAutomatic = false) => {
+        // 1. Verificar si tenemos este caso en memoria (Modo Offline / Caché)
+        const signature = AiMemoryService.generateSignature({
+            rate: params.pressures?.totalRate,
+            pip: results?.pip,
+            frequency: params.targets?.target?.frequency,
+            model: customPump?.model
+        });
+
+        if (isAutomatic) {
+            const cachedCase = AiMemoryService.findSimilarCase(signature);
+            if (cachedCase) {
+                console.log("[AI Memory] Usando diagnóstico previo de la memoria local.");
+                setMessages(prev => [...prev, {
+                    id: crypto.randomUUID(),
+                    role: 'model',
+                    text: `*(Memoria Local)* ${cachedCase.recommendation}`,
+                    timestamp: new Date(),
+                    type: 'analysis'
+                }]);
+                return;
+            }
+        }
+
         if (!chatSession.current) return;
 
         setLoading(true);
@@ -203,6 +227,16 @@ export const useEspCopilot = (params: SystemParams, results: any, activeStep: nu
                 timestamp: new Date(),
                 type: 'analysis'
             }]);
+
+            // 2. Guardar en memoria para el futuro
+            if (text) {
+                AiMemoryService.saveCase({
+                    category: 'design',
+                    technicalSignature: signature,
+                    context: currentContext,
+                    recommendation: text
+                });
+            }
 
         } catch (err) {
             console.error(err);

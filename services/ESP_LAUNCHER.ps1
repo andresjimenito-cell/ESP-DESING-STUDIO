@@ -1,29 +1,41 @@
 # ============================================================
-#  ESP DESIGN SUITE  ·  Launch Script v3.2 (Executive Edition)
+#  ESP DESIGN SUITE  ·  Launch Script v3.3
 #  Optimizado para Windows Terminal / PowerShell 5+
 # ============================================================
 $E = [char]27
-# Paleta de Colores Ejecutiva (Petroleum & Slate)
-$PR = "$E[38;2;60;110;150m"  # Primary: Azul Petróleo Suave
-$SC = "$E[38;2;120;140;160m" # Secondary: Gris Acero
-$OK = "$E[38;2;80;160;120m"  # Success: Verde Bosque Apagado
-$WR = "$E[38;2;180;150;100m" # Warning: Oro Mate
-$ER = "$E[38;2;160;70;70m"   # Error: Carmesí Oscuro
-$WH = "$E[38;2;220;225;235m" # White: Blanco Hielo
-$GY = "$E[38;2;50;65;80m"    # Dark Gray: Pizarra Profundo
-$SL = "$E[38;2;150;160;175m" # Slate: Plateado
-$R = "$E[0m"                 # Reset
+$PR = "$E[38;2;60;110;150m"
+$SC = "$E[38;2;120;140;160m"
+$OK = "$E[38;2;80;160;120m"
+$WR = "$E[38;2;180;150;100m"
+$ER = "$E[38;2;160;70;70m"
+$WH = "$E[38;2;220;225;235m"
+$GY = "$E[38;2;50;65;80m"
+$SL = "$E[38;2;150;160;175m"
+$R = "$E[0m"
 
 $null = $ER
 
-# -- Helpers de cursor --------------------------------------
+# ── Ancho VISUAL (sin contar secuencias ANSI) ──────────────
+function Get-VisualLen {
+    param([string]$s)
+    return ($s -replace '\x1B\[[0-9;]*m', '').Length
+}
+
+# Rellena una cadena con colores hasta alcanzar $Width chars visibles
+function Add-VisualPadding {
+    param([string]$s, [int]$Width)
+    $len = Get-VisualLen $s
+    $need = $Width - $len
+    if ($need -gt 0) { return $s + (" " * $need) }
+    return $s
+}
+
+# ── Helpers de cursor ──────────────────────────────────────
 function Invoke-CursorUp { param([int]$n = 1); Write-Host "$E[${n}A" -NoNewline }
-function Invoke-CursorDown { param([int]$n = 1); Write-Host "$E[${n}B" -NoNewline }
-function Invoke-CursorCol { param([int]$c = 1); Write-Host "$E[${c}G" -NoNewline }
 function Invoke-HideCursor { Write-Host "$E[?25l" -NoNewline }
 function Invoke-ShowCursor { Write-Host "$E[?25h" -NoNewline }
 
-# -- Paleta de barras ---------------------------------------
+# ── Barras ─────────────────────────────────────────────────
 function Get-Bar {
     param([int]$Pct, [int]$W = 20, [string]$Color = $PR)
     $f = [math]::Floor($Pct / 100.0 * $W)
@@ -32,93 +44,119 @@ function Get-Bar {
 }
 
 function Get-ThinBar {
-    param([int]$Pct, [int]$W = 16, [string]$Color = $PR)
+    param([int]$Pct, [int]$W = 14, [string]$Color = $PR)
     $f = [math]::Floor($Pct / 100.0 * $W)
     $e = $W - $f
     return "${Color}$("█"*$f)${GY}$("░"*$e)${R}"
 }
 
-# -- Spinner circular ---------------------------------------
+# ── Spinner ────────────────────────────────────────────────
 $script:SI = 0
 $SPINS = @("·", "o", "O", "o")
-function Get-Spin {
-    $s = $SPINS[$script:SI % 4]; $script:SI++; return $s
-}
+function Get-Spin { $s = $SPINS[$script:SI % 4]; $script:SI++; return $s }
 
-# -- Línea de log ------------------------------------------
+# ── Log buffer ─────────────────────────────────────────────
 $script:LogBuffer = [System.Collections.Generic.List[string]]::new()
 function Add-Log {
     param([string]$Text, [string]$Kind = "")
     $ts = (Get-Date).ToString("HH:mm:ss")
     $col = switch ($Kind) {
-        "ok" { $OK }
-        "warn" { $WR }
-        "err" { $ER }
-        "info" { $PR }
-        default { $SC }
+        "ok" { $OK } "warn" { $WR } "err" { $ER }
+        "info" { $PR } default { $SC }
     }
-    $line = "${GY}[$ts]${R} ${col}${Text}${R}"
-    $script:LogBuffer.Add($line)
+    $script:LogBuffer.Add("${GY}[$ts]${R} ${col}${Text}${R}")
     if ($script:LogBuffer.Count -gt 6) { $script:LogBuffer.RemoveAt(0) }
 }
 
-# ═══════════════════════════════════════════════════════════
-#   HEADER PRINCIPAL
-# ═══════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════════════════════════════
+#   HEADER
+# ══════════════════════════════════════════════════════════════════════════════
 function Show-ESPHeader {
     Clear-Host
+    $yr = (Get-Date).ToString("yyyy")
     Write-Host ""
     Write-Host "   $GY╔══════════════════════════════════════════════════════════════════════════════╗$R"
-    Write-Host "   $GY║$R  $WH ESP DESIGN STUDIO · PROFESSIONAL EDITION$R              $GY$((Get-Date).ToString("yyyy"))$R  $GY║$R"
+    # Línea de título: contenido = 76 chars visibles entre los ║
+    $title = " $WH ESP DESIGN STUDIO $GY· $SC PROFESSIONAL EDITION $GY· $SL $yr $R"
+    Write-Host "   $GY║$R$(Add-VisualPadding $title 76)$GY║$R"
     Write-Host "   $GY╚══════════════════════════════════════════════════════════════════════════════╝$R"
 }
 
-# ═══════════════════════════════════════════════════════════
-#   PANEL DE CONTROL DINÁMICO
-# ═══════════════════════════════════════════════════════════
-$PANEL_LINES = 11
+# ══════════════════════════════════════════════════════════════════════════════
+#   PANEL DUAL — izquierda LOG  |  derecha MÉTRICAS
+#   Ancho total interior: 76 chars  (═══ × 76 entre los ║ externos)
+#   Columna izquierda: 37 chars visibles
+#   Columna derecha:   37 chars visibles
+#   Separador central: 1 char (║)
+# ══════════════════════════════════════════════════════════════════════════════
+$PANEL_LINES = 11   # líneas que ocupa Write-Panel
+
+$ICONS = @{ GIT = "⎇"; PYTHON = "§"; NODE = "N"; DATA = "D"; APP = "*" }
 
 function Write-Panel {
-    param(
-        [string]$Phase,
-        [int]$GlobalPct,
-        [hashtable]$M
-    )
+    param([string]$Phase, [int]$GlobalPct, [hashtable]$M)
 
-    Write-Host "   $SC╔═════════════════════════════════════╦══════════════════════════════════════╗$R"
-    Write-Host "   $SC║$R  ${SL}■ SYSTEM LOG${R}                       $SC║$R  ${SL}■ LIVE METRICS${R}                       $SC║$R"
-    Write-Host "   $SC╠═════════════════════════════════════╬══════════════════════════════════════╣$R"
+    $L = 37   # ancho visible columna izquierda
+    $Rv = 37  # ancho visible columna derecha
+    $TW = 76  # ancho total visible interior
+
+    # Encabezados de columna
+    $hL = Add-VisualPadding " ${SL}■ SYSTEM LOG${R}" $L
+    $hR = Add-VisualPadding " ${SL}■ LIVE METRICS${R}" $Rv
+
+    Write-Host "   $SC╔$("═"*$L)╦$("═"*$Rv)╗$R"
+    Write-Host "   $SC║${R}${hL}$SC║${R}${hR}$SC║$R"
+    Write-Host "   $SC╠$("═"*$L)╬$("═"*$Rv)╣$R"
 
     $mKeys = @("GIT", "PYTHON", "NODE", "DATA", "APP")
 
     for ($i = 0; $i -lt 5; $i++) {
-        $rawLog = if ($i -lt $script:LogBuffer.Count) { $script:LogBuffer[$i] } else { "" }
-        $clean = $rawLog -replace '\x1B\[[0-9;]*m', ''
-        $vis = if ($clean.Length -gt 35) { $clean.Substring(0, 35) } else { $clean }
-        $pad = 35 - $vis.Length
-        $leftDisp = $rawLog + (" " * $pad)
+        # ── Celda izquierda ──────────────────────────────
+        $raw = if ($i -lt $script:LogBuffer.Count) { $script:LogBuffer[$i] } else { "" }
+        $cell = Add-VisualPadding " $raw" $L      # +1 por el espacio inicial
 
+        # ── Celda derecha ────────────────────────────────
         $key = $mKeys[$i]
+        $ico = $ICONS[$key]
         $meta = $M[$key]
-        $bar = Get-ThinBar -Pct $meta.Pct -W 12 -Color $meta.Color
-        $valD = $meta.Val
-        $valClean = $valD -replace '\x1B\[[0-9;]*m', ''
-        $valPad = " " * [math]::Max(0, 10 - $valClean.Length)
+        $bar = Get-ThinBar -Pct $meta.Pct -W 13 -Color $meta.Color
+        $valRaw = $meta.Val                                   # puede tener ANSI
+        # derecha: "  ICO  KEY_______  BAR  VAL  "
+        $right = " ${SL}${ico}${R} ${WH}$($key.PadRight(6))${R} $bar ${meta.Color}${valRaw}${R}"
+        $rightCell = Add-VisualPadding $right $Rv
 
-        Write-Host "   $SC║$R $leftDisp $SC║$R  ${SL}$($key.PadRight(8))$R $bar $valD$valPad $SC║$R"
+        Write-Host "   $SC║${R}${cell}$SC║${R}${rightCell}$SC║$R"
     }
 
-    Write-Host "   $SC╠═════════════════════════════════════╩══════════════════════════════════════╣$R"
+    # ── Fila separadora y barra global ───────────────────
+    Write-Host "   $SC╠$("═"*$L)╩$("═"*$Rv)╣$R"
 
+    # Barra global ocupa todo el interior (76) menos: 1 spin + 1 sp + fase(18) + 1 sp + pct(4) + 1 sp = 26 → barra = 50
+    $barW = 48
     $barColor = if ($GlobalPct -lt 50) { $SC } else { $PR }
-    $gBar = Get-Bar -Pct $GlobalPct -W 44 -Color $barColor
+    $gBar = Get-Bar -Pct $GlobalPct -W $barW -Color $barColor
     $gPct = "$GlobalPct%".PadLeft(4)
-    $phPad = 18
-    $phVis = $Phase -replace '\x1B\[[0-9;]*m', ''
-    if ($phVis.Length -gt $phPad) { $Phase = $Phase.Substring(0, $phPad) }
+    $sp = Get-Spin
 
-    Write-Host "   $SC║$R $(Get-Spin) ${WH}$Phase${R} $gBar $SL$gPct$R $SC║$R"
-    Write-Host "   $SC╚══════════════════════════════════════════════════════════════════════════════╝$R"
+    # Pulso: cada 25% enciende un indicador extra
+    $pulse = switch ([math]::Floor($GlobalPct / 25)) {
+        0 { "${GY}○○○○${R}" }
+        1 { "${SC}●${GY}○○○${R}" }
+        2 { "${PR}●●${GY}○○${R}" }
+        3 { "${OK}●●●${GY}○${R}" }
+        default { "${OK}●●●●${R}" }
+    }
+
+    # Construir la línea de barra y validar que no exceda TW
+    $phaseVis = ($Phase -replace '\x1B\[[0-9;]*m', '')
+    if ($phaseVis.Length -gt 16) { $phaseVis = $phaseVis.Substring(0, 16) }
+    $phasePad = $phaseVis.PadRight(16)
+
+    $globalRow = " $sp ${WH}${phasePad}${R} $gBar $pulse $SL$gPct$R "
+    $globalRow = Add-VisualPadding $globalRow $TW
+
+    Write-Host "   $SC║${R}${globalRow}$SC║$R"
+    Write-Host "   $SC╚$("═"*$TW)╝$R"
 }
 
 function Invoke-PanelRedraw {
@@ -127,6 +165,7 @@ function Invoke-PanelRedraw {
     Write-Panel -Phase $Phase -GlobalPct $GlobalPct -M $M
 }
 
+# ── Métrica helper ─────────────────────────────────────────
 function New-Meta {
     param([int]$Pct = 0, [string]$Val = "---", [string]$Color = $GY)
     return @{ Pct = $Pct; Val = $Val; Color = $Color }
@@ -140,6 +179,7 @@ $M = @{
     APP    = New-Meta
 }
 
+# ── Animación de métrica ───────────────────────────────────
 function Start-MetricAnimation {
     param($Key, $TargetPct, $Phase, $GlobalStart, $GlobalEnd, $M, $Steps = 10)
     $curPct = $M[$Key].Pct
@@ -153,139 +193,215 @@ function Start-MetricAnimation {
     $M[$Key].Pct = $TargetPct
 }
 
+# ══════════════════════════════════════════════════════════════════════════════
+#   PANEL RESUMEN FINAL
+# ══════════════════════════════════════════════════════════════════════════════
 function Show-SummaryPanel {
     param([bool]$NodeFound, [bool]$GitOk, [int]$Port = 3000)
+
+    $TW = 76
     Write-Host ""
-    Write-Host "   $SC╔══════════════════════════════════════════════════════════════════════════════╗$R"
-    Write-Host "   $SC║$R  ${OK}✔ STATUS:${R} $WH System Operational at http://localhost:$Port$R                $SC║$R"
-    Write-Host "   $SC║$R  ${OK}✔ SYNC:${R}   $WH Cloud Connectivity Active (OneDrive/GitHub)$R                 $SC║$R"
-    Write-Host "   $SC╠══════════════════════════════════════════════════════════════════════════════╣$R"
-    Write-Host "   $SC║$R  ${SL}CREADOR:$R $WH ANDRES JIMENEZ (INGENIERO JR)$R                                $SC║$R"
-    Write-Host "   $SC║$R  ${SL}MENTE MAESTRA:$R $WH LENIN PEÑA (ESPECIALISTA ALS)$R                          $SC║$R"
-    Write-Host "   $SC║$R  ${SL}APOYO:$R $WH JAIME OCHOA · WILMER ARCOS$R                                     $SC║$R"
-    Write-Host "   $SC║$R  ${GY}AGRADECIMIENTOS:$R $SC EQUIPO ALS FRONTERA ENERGY$R                              $SC║$R"
-    Write-Host "   $SC╚══════════════════════════════════════════════════════════════════════════════╝$R"
+    Write-Host "   $SC╔$("═"*$TW)╗$R"
+
+    $r1 = " ${OK}✔ STATUS:${R} ${WH}System Operational · http://localhost:${Port}${R}"
+    Write-Host "   $SC║${R}$(Add-VisualPadding $r1 $TW)$SC║$R"
+
+    $r2 = " ${OK}✔ SYNC:${R}   ${WH}Cloud Connectivity Active (OneDrive / GitHub)${R}"
+    Write-Host "   $SC║${R}$(Add-VisualPadding $r2 $TW)$SC║$R"
+
+    Write-Host "   $SC╠$("═"*$TW)╣$R"
+
+    $lines = @(
+        " ${SL}CREADOR      :${R} ${WH}Andrés Jiménez  (Ingeniero Jr)${R}",
+        " ${SL}MENTE MAESTRA:${R} ${WH}Lenin Peña  (Especialista ALS)${R}",
+        " ${SL}APOYO        :${R} ${WH}Jaime Ochoa  ·  Wilmer Arcos${R}",
+        " ${GY}AGRADECIMIENTOS: Equipo ALS Frontera Energy${R}"
+    )
+    foreach ($l in $lines) {
+        Write-Host "   $SC║${R}$(Add-VisualPadding $l $TW)$SC║$R"
+    }
+
+    Write-Host "   $SC╚$("═"*$TW)╝$R"
     Write-Host ""
 }
 
-# -- INICIO
+# ══════════════════════════════════════════════════════════════════════════════
+#   SPLASH DE BOOT
+# ══════════════════════════════════════════════════════════════════════════════
 Invoke-HideCursor
 Show-ESPHeader
 
+$TW = 76
 Write-Host ""
-Write-Host "   $GY╔══════════════════════════════════════════════════════════════════════════════╗$R"
-Write-Host "   $GY║$R       ${PR}███████╗ ███████╗ ██████╗ ${R}                                        $GY║$R"
-Write-Host "   $GY║$R       ${PR}██╔════╝ ██╔════╝ ██╔══██╗${R}                                        $GY║$R"
-Write-Host "   $GY║$R       ${SC}█████╗   ███████╗ ██████╔╝${R}    ${GY}v 3.2${R}                               $GY║$R"
-Write-Host "   $GY║$R       ${SC}██╔══╝   ╚════██║ ██╔═══╝ ${R}    ${GY}EXECUTIVE EDITION${R}                  $GY║$R"
-Write-Host "   $GY║$R       ${GY}███████╗ ███████║ ██║     ${R}    ${GY}ESP Design Suite${R}                  $GY║$R"
-Write-Host "   $GY║$R       ${GY}╚══════╝ ╚══════╝ ╚═╝     ${R}                                        $GY║$R"
-Write-Host "   $GY║$R                     ${GY}[ ${WH}ALS  /  ESP  /  VSD${GY}  ·  ${WH}Frontera Energy${GY} ]${R}          $GY║$R"
-Write-Host "   $GY╚══════════════════════════════════════════════════════════════════════════════╝$R"
+Write-Host "   $GY╔$("═"*$TW)╗$R"
 
+$splashLines = @(
+    "       ${PR}███████╗ ███████╗ ██████╗ ${R}",
+    "       ${PR}██╔════╝ ██╔════╝ ██╔══██╗${R}",
+    "       ${SC}█████╗   ███████╗ ██████╔╝${R}    ${GY}v 3.3${R}",
+    "       ${SC}██╔══╝   ╚════██║ ██╔═══╝ ${R}    ${GY}EXECUTIVE EDITION${R}",
+    "       ${GY}███████╗ ███████║ ██║     ${R}    ${SL}ESP Design Suite${R}",
+    "       ${GY}╚══════╝ ╚══════╝ ╚═╝     ${R}",
+    "                 ${GY}[ ${WH}ALS  /  ESP  /  VSD  ·  Frontera Energy${GY} ]${R}"
+)
+foreach ($l in $splashLines) {
+    Write-Host "   $GY║${R}$(Add-VisualPadding "  $l" $TW)$GY║$R"
+}
+
+Write-Host "   $GY╚$("═"*$TW)╝$R"
 Start-Sleep -Milliseconds 500
 
-Add-Log "Inicializando suite ejecutiva..." "info"
+# ══════════════════════════════════════════════════════════════════════════════
+#   BOOT SEQUENCE
+# ══════════════════════════════════════════════════════════════════════════════
+Add-Log "Inicializando suite" "info"
 Write-Panel -Phase "SISTEMA · Inicio" -GlobalPct 0 -M $M
 
-# -- GIT
-$M.GIT.Val = "WAIT"
-$M.GIT.Color = $SC
+# ── GIT ───────────────────────────────────────────────────
+$M.GIT.Val = "WAIT"; $M.GIT.Color = $SC
 Start-MetricAnimation -Key GIT -TargetPct 30 -Phase "SYNC · Git Check" -GlobalStart 0 -GlobalEnd 8 -M $M
 
-$gitCheck = if ($null -ne (Get-Command git -ErrorAction SilentlyContinue)) { $true } else { $false }
+$gitCheck = $null -ne (Get-Command git -ErrorAction SilentlyContinue)
 if ($gitCheck) {
-    $M.GIT.Val = "PULL"
-    $M.GIT.Color = $PR
+    $M.GIT.Val = "PULL"; $M.GIT.Color = $PR
     Start-MetricAnimation -Key GIT -TargetPct 60 -Phase "SYNC · GitHub" -GlobalStart 8 -GlobalEnd 16 -M $M
     git pull origin main --quiet 2>&1 | Out-Null
     if ($LASTEXITCODE -eq 0) {
-        Add-Log "Sincronización Git OK" "ok"
-        $M.GIT.Val = "READY"
-        $M.GIT.Color = $OK
+        Add-Log "Sincronizacion Git OK" "ok"
+        $M.GIT.Val = "READY"; $M.GIT.Color = $OK
     }
     else {
         Add-Log "GitHub offline" "warn"
-        $M.GIT.Val = "LOCAL"
-        $M.GIT.Color = $WR
+        $M.GIT.Val = "LOCAL"; $M.GIT.Color = $WR
     }
 }
 else {
-    $M.GIT.Val = "NONE"
-    $M.GIT.Color = $WR
+    Add-Log "Git no encontrado" "warn"
+    $M.GIT.Val = "NONE"; $M.GIT.Color = $WR
 }
 $gitOk = ($LASTEXITCODE -eq 0) -and $gitCheck
 Start-MetricAnimation -Key GIT -TargetPct 100 -Phase "SYNC · Finalizado" -GlobalStart 16 -GlobalEnd 22 -M $M
 
-# -- PYTHON
-$M.PYTHON.Val = "WAIT"
-$M.PYTHON.Color = $SC
+# ── PYTHON ────────────────────────────────────────────────
+$M.PYTHON.Val = "WAIT"; $M.PYTHON.Color = $SC
 Start-MetricAnimation -Key PYTHON -TargetPct 20 -Phase "CLOUD · OneDrive" -GlobalStart 22 -GlobalEnd 28 -M $M
 
-$pythonCheck = if ($null -ne (Get-Command python -ErrorAction SilentlyContinue)) { $true } else { $false }
+$pythonCheck = $null -ne (Get-Command python -ErrorAction SilentlyContinue)
 if ($pythonCheck) {
-    $M.PYTHON.Val = "RUN"
-    $M.PYTHON.Color = $PR
+    $M.PYTHON.Val = "RUN"; $M.PYTHON.Color = $PR
     Start-MetricAnimation -Key PYTHON -TargetPct 55 -Phase "CLOUD · Syncing" -GlobalStart 28 -GlobalEnd 36 -M $M
     python services/cloud_connector.py
-    Add-Log "OneDrive Sincronizado" "ok"
-    $M.PYTHON.Val = "DONE"
-    $M.PYTHON.Color = $OK
+    Add-Log "OneDrive sincronizado" "ok"
+    $M.PYTHON.Val = "DONE"; $M.PYTHON.Color = $OK
 }
 else {
-    $M.PYTHON.Val = "MISS"
-    $M.PYTHON.Color = $ER
+    Add-Log "Python no encontrado" "err"
+    $M.PYTHON.Val = "MISS"; $M.PYTHON.Color = $ER
 }
 Start-MetricAnimation -Key PYTHON -TargetPct 100 -Phase "CLOUD · Finalizado" -GlobalStart 36 -GlobalEnd 42 -M $M
 
-# -- NODE
-$M.NODE.Val = "WAIT"
-$M.NODE.Color = $SC
+# ── NODE ──────────────────────────────────────────────────
+$M.NODE.Val = "WAIT"; $M.NODE.Color = $SC
 Start-MetricAnimation -Key NODE -TargetPct 25 -Phase "CORE · Runtime" -GlobalStart 42 -GlobalEnd 50 -M $M
 
-$nodeFound = if ($null -ne (Get-Command node -ErrorAction SilentlyContinue)) { $true } else { $false }
+$nodeFound = $null -ne (Get-Command node -ErrorAction SilentlyContinue)
 if ($nodeFound) {
-    $M.NODE.Val = "V8"
-    $M.NODE.Color = $PR
+    $M.NODE.Val = "V8"; $M.NODE.Color = $PR
     Start-MetricAnimation -Key NODE -TargetPct 60 -Phase "CORE · Modules" -GlobalStart 50 -GlobalEnd 56 -M $M
     Set-Location "app_unified"
     if (-not (Test-Path "node_modules")) {
-        Add-Log "Instalando dependencias" "warn"
-        $M.NODE.Val = "INST"
-        $M.NODE.Color = $WR
+        Add-Log "Instalando dependencias..." "warn"
+        $M.NODE.Val = "INST"; $M.NODE.Color = $WR
+        Invoke-PanelRedraw -Phase "NPM · Installing" -GlobalPct 57 -M $M
         npm.cmd install
     }
-    $M.NODE.Val = "READY"
-    $M.NODE.Color = $OK
+    Add-Log "Node.js listo" "ok"
+    $M.NODE.Val = "READY"; $M.NODE.Color = $OK
     Start-MetricAnimation -Key NODE -TargetPct 100 -Phase "CORE · Finalizado" -GlobalStart 58 -GlobalEnd 64 -M $M
 
-    # -- DATA
-    $M.DATA.Val = "WAIT"
-    $M.DATA.Color = $SC
+    # ── DATA ──────────────────────────────────────────────
+    $M.DATA.Val = "WAIT"; $M.DATA.Color = $SC
     Start-MetricAnimation -Key DATA -TargetPct 40 -Phase "DATA · Pre-Cache" -GlobalStart 64 -GlobalEnd 75 -M $M
     node tools/preprocesar_datos.js
     Add-Log "Cache JSON optimizado" "ok"
-    $M.DATA.Val = "CACHE"
-    $M.DATA.Color = $OK
+    $M.DATA.Val = "CACHE"; $M.DATA.Color = $OK
     Start-MetricAnimation -Key DATA -TargetPct 100 -Phase "DATA · Finalizado" -GlobalStart 75 -GlobalEnd 88 -M $M
 
-    # -- APP
-    $M.APP.Val = "WAIT"
-    $M.APP.Color = $SC
+    # ── APP ───────────────────────────────────────────────
+    $M.APP.Val = "WAIT"; $M.APP.Color = $SC
     Start-MetricAnimation -Key APP -TargetPct 70 -Phase "LAUNCH · Vite" -GlobalStart 88 -GlobalEnd 94 -M $M
-    $M.APP.Val = "LIVE"
-    $M.APP.Color = $OK
+    Add-Log "Servidor Vite activo :3000" "ok"
+    $M.APP.Val = "LIVE"; $M.APP.Color = $OK
     Start-MetricAnimation -Key APP -TargetPct 100 -Phase "SISTEMA ONLINE" -GlobalStart 94 -GlobalEnd 100 -M $M
-    
+
     Start-Sleep -Milliseconds 400
     Invoke-ShowCursor
     Show-SummaryPanel -NodeFound $true -GitOk $gitOk -Port 3000
     npm.cmd run dev -- --logLevel silent
+
 }
 else {
-    # Fallback logic simplified for clarity
+    # ── FALLBACK ──────────────────────────────────────────
     Add-Log "Fallback mode activo" "warn"
+    $M.NODE.Val = "NONE"; $M.NODE.Color = $WR
+    Start-MetricAnimation -Key NODE -TargetPct 100 -Phase "FALLBACK · HTTP" -GlobalStart 50 -GlobalEnd 65 -M $M
+
+    $M.DATA.Val = "N/A"; $M.DATA.Color = $GY
+    $M.APP.Val = "WAIT"; $M.APP.Color = $SC
+    Start-MetricAnimation -Key APP -TargetPct 50 -Phase "FALLBACK · Server" -GlobalStart 65 -GlobalEnd 80 -M $M
+
+    $port = 4001
+    $p = "app_unified\dist"
+    $l = New-Object System.Net.HttpListener
+    while ($true) {
+        try {
+            $l.Prefixes.Clear()
+            $l.Prefixes.Add("http://localhost:$port/")
+            $l.Start(); break
+        }
+        catch { $port++ }
+    }
+
+    Add-Log "HTTP Listener activo :$port" "ok"
+    $M.APP.Val = "LIVE"; $M.APP.Color = $OK
+    Start-MetricAnimation -Key APP -TargetPct 100 -Phase "FALLBACK ONLINE" -GlobalStart 80 -GlobalEnd 100 -M $M
+
+    Start-Sleep -Milliseconds 400
     Invoke-ShowCursor
-    Show-SummaryPanel -NodeFound $false -GitOk $gitOk -Port 4001
-    # ... rest of fallback logic ...
+    Show-SummaryPanel -NodeFound $false -GitOk $gitOk -Port $port
+    Start-Process "http://localhost:$port"
+
+    Write-Host "   ${GY}Server running · Ctrl+C para detener.${R}"
+    Write-Host ""
+
+    while ($l.IsListening) {
+        $c = $l.GetContext()
+        $rq = $c.Request
+        $rs = $c.Response
+        $rel = $rq.Url.LocalPath.TrimStart('/')
+        if ($rel -eq '') { $rel = 'index.html' }
+        try {
+            $f = Join-Path (Get-Item $p).FullName $rel
+            if (Test-Path $f) {
+                $ext = [System.IO.Path]::GetExtension($f)
+                $ct = switch ($ext) {
+                    '.html' { 'text/html' }
+                    '.js' { 'application/javascript' }
+                    '.css' { 'text/css' }
+                    '.png' { 'image/png' }
+                    '.jpg' { 'image/jpeg' }
+                    '.svg' { 'image/svg+xml' }
+                    '.json' { 'application/json' }
+                    default { 'application/octet-stream' }
+                }
+                $b = [System.IO.File]::ReadAllBytes($f)
+                $rs.ContentType = $ct
+                $rs.ContentLength64 = $b.Length
+                $rs.OutputStream.Write($b, 0, $b.Length)
+            }
+            else { $rs.StatusCode = 404 }
+        }
+        catch { $rs.StatusCode = 500 }
+        $rs.Close()
+    }
 }

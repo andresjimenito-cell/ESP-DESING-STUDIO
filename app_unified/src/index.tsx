@@ -4,6 +4,10 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import { LanguageProvider } from './i18n';
 import { ThemeProvider } from './theme';
+import { AiMemoryService } from './services/AiMemoryService';
+
+// Inicializar Memoria IA (Persistencia en Servidor)
+AiMemoryService.init();
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {

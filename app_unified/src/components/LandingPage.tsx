@@ -195,6 +195,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
     const [isBooting, setIsBooting] = useState(true);
     const [bootStep, setBootStep] = useState(0);
+    const [bootPhase, setBootPhase] = useState<'explosion' | 'loading' | 'complete'>('explosion');
 
     const handleLoadMaster = useCallback(async () => {
         setBatchView('loading');
@@ -213,11 +214,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
 
     const bootLogs = [
-        "INITIALIZING CORE.V26...",
-        "LOADING NEURAL NETWORKS...",
-        "SYNCING WELL DATA...",
-        "ENCRYPTING PROTOCOLS...",
-        "SYSTEM READY."
+        { msg: "INITIALIZING CORE.V26...", sub: "SYS", hex: "0x00A1" },
+        { msg: "LOADING NEURAL NETWORKS...", sub: "AI", hex: "0x03F2" },
+        { msg: "MOUNTING PVT ENGINE...", sub: "PVT", hex: "0x07B4" },
+        { msg: "CALIBRATING PUMP CATALOG...", sub: "ESP", hex: "0x0C88" },
+        { msg: "SYNCING WELL DATABASES...", sub: "DB", hex: "0x1AF0" },
+        { msg: "ENCRYPTING CHANNELS...", sub: "SEC", hex: "0x2D10" },
+        { msg: "COMPILING CORRELATIONS...", sub: "ENG", hex: "0x3E44" },
+        { msg: "VALIDATING SURVEY DATA...", sub: "SVY", hex: "0x4F72" },
+        { msg: "ESTABLISHING LINK...", sub: "NET", hex: "0x5C90" },
+        { msg: "SYSTEM READY.", sub: "OK", hex: "0x7FFF" },
     ];
 
     const particles = useMemo(() => {
@@ -233,21 +239,35 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
     useEffect(() => {
         if (isBooting) {
-            const interval = setInterval(() => {
-                setBootStep(prev => {
-                    if (prev < bootLogs.length - 1) return prev + 1;
-                    clearInterval(interval);
-                    return prev;
-                });
-            }, 300); // 300ms per log step
+            // Phase 1: Explosion flash (0 → 0.8s)
+            const explosionTimer = setTimeout(() => setBootPhase('loading'), 800);
+
+            // Phase 2: Log steps start after explosion
+            const logStart = setTimeout(() => {
+                const interval = setInterval(() => {
+                    setBootStep(prev => {
+                        if (prev < bootLogs.length - 1) return prev + 1;
+                        clearInterval(interval);
+                        return prev;
+                    });
+                }, 200); // Faster logs (200ms)
+                // store interval for cleanup
+                (window as any).__bootInterval = interval;
+            }, 900);
+
+            // Phase 3: Complete
+            const completeTimer = setTimeout(() => setBootPhase('complete'), 3000);
 
             const timer = setTimeout(() => {
                 setIsBooting(false);
-            }, 2000); // 2 seconds total boot time
+            }, 3500);
 
             return () => {
-                clearInterval(interval);
+                clearTimeout(explosionTimer);
+                clearTimeout(logStart);
+                clearTimeout(completeTimer);
                 clearTimeout(timer);
+                if ((window as any).__bootInterval) clearInterval((window as any).__bootInterval);
             };
         }
     }, [isBooting]);
@@ -270,8 +290,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     // ─────────────────────────────────────────────────────────────────────────
     if (isBooting) {
         const progress = (bootStep + 1) * 20;
-        const logoSize = 360; // Protagonismo colosal
-        const cx = logoSize / 2; // 180
+        const logoW = 560;
+        const logoH = 315;
+        const cx = logoW / 2;
 
         // Burst particles — deterministas (sin Math.random)
         const burstParticles = Array.from({ length: 48 }).map((_, i) => {
@@ -370,7 +391,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         return (
             <div
                 className="fixed inset-0 z-[999] flex flex-col items-center justify-center overflow-hidden font-mono"
-                style={{ background: 'rgb(var(--color-canvas))' }}
+                style={{ background: '#ffffff' }}
             >
                 <style>{`
                     @keyframes eks-fade-out {
@@ -378,12 +399,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                         100% { opacity: 0; }
                     }
                     @keyframes eks-logo-in {
-                        0%   { opacity: 1; filter: brightness(3) blur(8px) saturate(2); transform: scale(1.5); }
-                        100% { opacity: 1; filter: brightness(1.2) blur(0) drop-shadow(0 0 70px rgb(var(--color-primary) / 1)); transform: scale(1); }
+                        0%   { opacity: 0; transform: scale(0.95); }
+                        100% { opacity: 1; transform: scale(1); }
                     }
-                    @keyframes eks-logo-halo {
-                        0%, 100% { transform: scale(1);    opacity: 0.55; }
-                        50%      { transform: scale(1.14); opacity: 1;    }
+                    @keyframes eks-rect-in {
+                        0%   { opacity: 0; transform: scale(0.85); }
+                        100% { opacity: 0.7; transform: scale(1); }
+                    }
+                    @keyframes eks-bracket-in {
+                        0%   { opacity: 0; transform: scale(1.1); }
+                        100% { opacity: 0.8; transform: scale(1); }
                     }
                     @keyframes eks-shockwave {
                         0%   { transform: scale(0.01); opacity: 1; }
@@ -425,6 +450,19 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                         85%  { opacity: 0.3; }
                         100% { transform: translateY(108%) scale(1);  opacity: 0; }
                     }
+                    @keyframes eks-boom {
+                        0% { transform: scale(1); filter: brightness(1) blur(0px); }
+                        5% { transform: scale(1.05); filter: brightness(10) blur(5px); }
+                        100% { transform: scale(1); filter: brightness(1) blur(0px); }
+                    }
+                    @keyframes eks-shockwave {
+                        0% { transform: scale(0.5); opacity: 1; border-width: 40px; }
+                        100% { transform: scale(4); opacity: 0; border-width: 0px; }
+                    }
+                    @keyframes eks-scanline {
+                        0% { transform: translateY(-100%); }
+                        100% { transform: translateY(100%); }
+                    }
                 `}</style>
 
                 {/* ── THEME CONTROLS ── */}
@@ -441,252 +479,89 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 </div>
 
                 {/* ── LIMPIEZA / ENTRADA SUAVE (FADE-IN DESDE CANVAS) ── */}
+                {/* Fondo limpio y minimalista */}
                 <div style={{
                     position: 'fixed', inset: 0, zIndex: 60, pointerEvents: 'none',
-                    background: 'rgb(var(--color-canvas))',
+                    background: '#ffffff',
                     animation: 'eks-fade-out 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both',
                 }} />
 
-                {/* ── FONDOS: grid + scanlines + viñeta dinámicos ── */}
-                <div style={{
-                    position: 'absolute', inset: 0, opacity: 0.15,
-                    backgroundImage: 'linear-gradient(rgb(var(--color-text-main) / 0.15) 1px,transparent 1px),linear-gradient(90deg,rgb(var(--color-text-main) / 0.15) 1px,transparent 1px)',
-                    backgroundSize: '30px 30px'
-                }} />
-                <div style={{
-                    position: 'absolute', inset: 0, pointerEvents: 'none',
-                    background: 'repeating-linear-gradient(0deg,transparent,transparent 2px,rgb(var(--color-text-main) / 0.04) 2px,rgb(var(--color-text-main) / 0.04) 4px)'
-                }} />
-                <div style={{
-                    position: 'absolute', inset: 0, pointerEvents: 'none',
-                    background: 'radial-gradient(ellipse at center, transparent 28%, rgb(var(--color-canvas) / 0.94) 100%)'
-                }} />
+                {/* ── EXPLOSION / BOOM EFFECT ── */}
+                {bootPhase === 'explosion' && (
+                    <div className="fixed inset-0 z-[1000] pointer-events-none flex items-center justify-center">
+                        <div className="absolute inset-0 bg-white animate-[eks-fade-out_0.8s_ease-out_forwards]" />
+                        <div className="w-1 h-1 rounded-full border-primary animate-[eks-shockwave_1s_ease-out_forwards]" style={{ borderStyle: 'solid' }} />
+                    </div>
+                )}
 
-                {/* ── BARRIDO ── */}
-                <div style={{
-                    position: 'absolute', left: 0, right: 0, height: '2px', zIndex: 30, pointerEvents: 'none',
-                    background: 'linear-gradient(90deg,transparent,rgba(var(--color-primary),0.55),white,rgba(var(--color-primary),0.55),transparent)',
-                    boxShadow: '0 0 24px 12px rgba(var(--color-primary),0.4)',
-                    animation: 'eks-sweep 2.8s ease-in 0.3s forwards',
-                }} />
-
-                {/* ══════════════════════════════════════════════════════
-                    RED NEURONAL — SVG full-screen, capa de fondo
-                ══════════════════════════════════════════════════════ */}
-                <svg
-                    viewBox="0 0 100 100"
-                    preserveAspectRatio="none"
-                    style={{
-                        position: 'absolute', inset: 0, width: '100%', height: '100%',
-                        zIndex: 4, pointerEvents: 'none',
-                        animation: 'eks-neural-in 0.9s ease-out 0.4s both',
-                        filter: 'drop-shadow(0px 0px 4px rgba(var(--color-primary), 0.5))' // HW Accelerated CSS shadow instead of heavy SVG filter
-                    }}
-                >
-                    {/* Trazados Base (Track lines) superfinos con colores eléctricos */}
-                    {pcbTraces.map((t, i) => (
-                        <path
-                            key={`base-${i}`}
-                            d={toPathStr(t.pts)}
-                            fill="none"
-                            stroke={`rgb(${t.colorRGB} / ${t.isPrimary ? 0.75 : 0.35})`}
-                            strokeWidth={t.isPrimary ? "0.12" : "0.05"}
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                        />
-                    ))}
-
-                    {/* Vías / Pads miniaturizadas (Conectores de alta precisión) */}
-                    {pcbVias.map((v, i) => (
-                        <g key={`via-${i}`}>
-                            <circle cx={v.x} cy={v.y} r={v.big ? 0.35 : 0.2} fill={`rgb(${v.colorRGB} / 0.95)`} />
-                            <circle cx={v.x} cy={v.y} r={v.big ? 0.15 : 0.08} fill="white" />
-                            {v.big && (
-                                <circle cx={v.x} cy={v.y} r={0.8} fill="none" stroke={`rgb(${v.colorRGB} / 0.8)`} strokeWidth="0.08">
-                                    <animate attributeName="r" values="0.35; 1.2; 0.35" dur="2s" begin={`${v.delay}s`} repeatCount="indefinite" />
-                                    <animate attributeName="opacity" values="1; 0; 1" dur="2s" begin={`${v.delay}s`} repeatCount="indefinite" />
-                                </circle>
-                            )}
-                        </g>
-                    ))}
-
-                    {/* Data Pulses láser muy veloces, finos y eléctricos */}
-                    {pcbTraces.filter(t => t.isPrimary).map((t, i) => {
-                        const dStr = toPathStr(t.pts);
-                        const len = pathLength(t.pts);
-                        return (
-                            <path
-                                key={`pulse-${i}`}
-                                d={dStr}
-                                fill="none"
-                                stroke={i % 3 === 0 ? "white" : `rgb(${t.colorRGB} / 1)`}
-                                strokeWidth="0.22"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeDasharray={`${len * 0.08} ${len * 1.5}`}
-                            >
-                                <animate
-                                    attributeName="stroke-dashoffset"
-                                    from={len * 1.58} to={-len * 0.08}
-                                    dur={`${t.dur}s`} begin={`${t.delay}s`} repeatCount="indefinite"
-                                />
-                                {/* Parpadeo eléctrico en los pulsos de datos */}
-                                <animate
-                                    attributeName="opacity"
-                                    values="0.2; 1; 0.5; 1; 0"
-                                    keyTimes="0; 0.1; 0.15; 0.2; 1"
-                                    dur={`${t.dur}s`}
-                                    begin={`${t.delay}s`}
-                                    repeatCount="indefinite"
-                                />
-                            </path>
-                        );
-                    })}
-                </svg>
-
-                {/* Lluvia de bits 0/1 */}
-                <div style={{ position: 'absolute', inset: 0, zIndex: 3, pointerEvents: 'none', overflow: 'hidden', fontFamily: 'monospace' }}>
-                    {Array.from({ length: 60 }).map((_, i) => {
-                        const x = (i * 1.67) % 100;
-                        const sz = 7 + (i % 5) * 2;
-                        const del = (i * 0.09) % 5;
-                        const dur = 3.5 + (i % 4) * 1.2;
-                        const al = 0.06 + (i % 4) * 0.07;
-                        return (
-                            <span key={i} style={{
-                                position: 'absolute', left: `${x}%`, top: '-20px',
-                                fontSize: `${sz}px`, fontWeight: 900,
-                                color: `rgb(var(--color-primary) / ${al})`,
-                                opacity: 0,
-                                animation: `neural-fall ${dur}s linear infinite`,
-                                animationDelay: `${del}s`,
-                                textShadow: `0 0 8px rgb(var(--color-primary) / 0.3)`,
-                            }}>
-                                {i % 2 === 0 ? '1' : '0'}
-                            </span>
-                        );
-                    })}
-                </div>
-
-                {/* ── SHOCKWAVES ── */}
-                {[0, 1, 2, 3, 4].map(i => (
-                    <div key={i} style={{
-                        position: 'absolute', top: 'calc(50% - 80px)', left: '50%',
-                        width: '12px', height: '12px', borderRadius: '50%',
-                        marginTop: '-6px', marginLeft: '-6px',
-                        border: `${2.8 - i * 0.4}px solid rgb(var(--color-primary) / ${0.92 - i * 0.1})`,
-                        boxShadow: `0 0 ${18 + i * 6}px rgb(var(--color-primary) / 0.5)`,
-                        transformOrigin: 'center center',
-                        animation: `eks-shockwave ${1.0 + i * 0.12}s cubic-bezier(0.08,0.6,0.25,1) ${i * 0.1}s forwards`,
-                        zIndex: 20, pointerEvents: 'none',
-                    }} />
-                ))}
-
-                {/* ── PARTÍCULAS DE EXPLOSIÓN ── */}
-                <div style={{
-                    position: 'absolute', top: 'calc(50% - 80px)', left: '50%',
-                    width: 0, height: 0, zIndex: 22, pointerEvents: 'none',
-                }}>
-                    {burstParticles.map((p, i) => (
-                        <div key={i} style={{
-                            position: 'absolute',
-                            width: `${p.size}px`, height: `${p.size}px`, borderRadius: '50%',
-                            top: `-${p.size / 2}px`, left: `-${p.size / 2}px`,
-                            background: p.isWhite ? 'rgb(var(--color-text-main))' : 'rgb(var(--color-primary) / 1)',
-                            boxShadow: p.isWhite
-                                ? `0 0 ${p.size * 4}px rgb(var(--color-text-main))`
-                                : `0 0 ${p.size * 3}px rgb(var(--color-primary) / 0.9)`,
-                            ['--ba' as any]: `${p.angle}deg`,
-                            ['--bd' as any]: `-${p.distance}px`,
-                            animation: `eks-burst ${p.duration}s cubic-bezier(0.04,0,0.45,1) ${p.delay}s forwards`,
-                        }} />
-                    ))}
+                {/* ── BACKGROUND TECH GRID ── */}
+                <div className="absolute inset-0 opacity-10 pointer-events-none">
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,#000_100%)] z-10" />
+                    <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(var(--color-primary),0.1)_1px,transparent_1px),linear-gradient(0deg,rgba(var(--color-primary),0.1)_1px,transparent_1px)] bg-[size:50px_50px]" />
+                    <div className="absolute top-0 left-0 right-0 h-[2px] bg-primary/20 animate-[eks-scanline_4s_linear_infinite]" />
                 </div>
 
                 {/* ══════════════════════════════════════════════════════
                     LOGO — protagonista absoluto
                 ══════════════════════════════════════════════════════ */}
-                <div style={{
-                    position: 'relative', zIndex: 70,
-                    display: 'flex', flexDirection: 'column', alignItems: 'center',
-                    gap: '44px',
-                }}>
-                    {/* Contenedor del logo */}
-                    <div style={{ position: 'relative', width: `${logoSize}px`, height: `${logoSize}px` }}>
+                <div
+                    style={{
+                        position: 'relative', zIndex: 70,
+                        display: 'flex', flexDirection: 'column', alignItems: 'center',
+                        gap: '60px',
+                        animation: bootPhase === 'explosion' ? 'eks-boom 1s ease-out' : 'none'
+                    }}
+                >
+                    {/* Contenedor del logo ACAPLADO A 16:9 */}
+                    <div style={{ position: 'relative', width: `${logoW}px`, height: `${logoH}px` }}>
 
-                        {/* Halos de resplandor */}
-                        <div style={{
-                            position: 'absolute', inset: '-55%', borderRadius: '50%',
-                            background: 'rgb(var(--color-primary) / 0.16)',
-                            filter: 'blur(75px)',
-                            animation: 'eks-logo-halo 2.8s ease-in-out infinite 1.2s',
-                        }} />
-                        <div style={{
-                            position: 'absolute', inset: '-22%', borderRadius: '50%',
-                            background: 'rgb(var(--color-primary) / 0.12)',
-                            filter: 'blur(38px)',
-                            animation: 'eks-logo-halo 2.2s ease-in-out infinite 1.9s',
-                        }} />
-
-                        {/* Ping */}
-                        <div style={{
-                            position: 'absolute', inset: '-18%', borderRadius: '50%',
-                            border: '1.5px solid rgb(var(--color-primary) / 0.6)',
-                            animation: 'eks-ping 2.4s ease-out infinite 1.5s',
-                        }} />
-
-                        {/* Anillo exterior 520px — horario */}
-                        <div style={{
-                            position: 'absolute',
-                            top: `${cx - 260}px`, left: `${cx - 260}px`,
-                            width: '520px', height: '520px', borderRadius: '50%',
-                            border: '1px solid rgb(var(--color-primary) / 0.15)',
-                            animation: 'eks-ring-cw 22s linear infinite, eks-ring-in 0.7s ease-out 0.6s both',
-                        }}>
-                            <div style={{
-                                position: 'absolute', top: '-6px', left: 'calc(50% - 6px)',
-                                width: '12px', height: '12px', borderRadius: '50%',
-                                background: 'rgb(var(--color-secondary) / 1)',
-                                boxShadow: '0 0 18px 6px rgb(var(--color-secondary) / 0.8)',
+                        {/* Marcos Rectangulares Potentes */}
+                        {[1.1, 1.25, 1.4].map((s, i) => (
+                            <div key={i} style={{
+                                position: 'absolute', inset: 0,
+                                border: '2px solid rgb(var(--color-primary))',
+                                borderRadius: '16px',
+                                opacity: 0,
+                                transform: `scale(${s})`,
+                                boxShadow: '0 0 15px rgba(var(--color-primary), 0.1)',
+                                animation: `eks-rect-in 1s cubic-bezier(0.16, 1, 0.3, 1) ${0.2 + i * 0.15}s forwards`,
                             }} />
-                        </div>
+                        ))}
 
-                        {/* Anillo medio 420px — antihorario */}
-                        <div style={{
-                            position: 'absolute',
-                            top: `${cx - 210}px`, left: `${cx - 210}px`,
-                            width: '420px', height: '420px', borderRadius: '50%',
-                            border: '1px solid rgb(var(--color-primary) / 0.28)',
-                            animation: 'eks-ring-ccw 13s linear infinite, eks-ring-in 0.7s ease-out 0.75s both',
-                        }}>
-                            <div style={{
-                                position: 'absolute', top: '-7px', left: 'calc(50% - 7px)',
-                                width: '14px', height: '14px', borderRadius: '50%',
-                                background: 'rgb(var(--color-primary) / 1)',
-                                boxShadow: '0 0 22px 7px rgb(var(--color-primary) / 0.9)',
+                        {/* Corner Brackets Reforzados */}
+                        {[
+                            { top: -50, left: -50, borderTop: '3px solid', borderLeft: '3px solid' },
+                            { top: -50, right: -50, borderTop: '3px solid', borderRight: '3px solid' },
+                            { bottom: -50, left: -50, borderBottom: '3px solid', borderLeft: '3px solid' },
+                            { bottom: -50, right: -50, borderBottom: '3px solid', borderRight: '3px solid' },
+                        ].map((b, i) => (
+                            <div key={i} style={{
+                                position: 'absolute', width: '40px', height: '40px',
+                                borderColor: 'rgb(var(--color-primary))',
+                                opacity: 0,
+                                ...b,
+                                animation: `eks-bracket-in 0.8s ease-out 0.5s forwards`,
                             }} />
-                        </div>
+                        ))}
 
-                        {/* Anillo interior 334px */}
-                        <div style={{
-                            position: 'absolute',
-                            top: `${cx - 167}px`, left: `${cx - 167}px`,
-                            width: '334px', height: '334px', borderRadius: '50%',
-                            border: '1px solid rgba(255,255,255,0.06)',
-                            animation: 'eks-ring-cw 7s linear infinite, eks-ring-in 0.7s ease-out 0.9s both',
-                        }} />
-
-                        {/* LOGO ESTATICO ORIGINAL */}
-                        <img
-                            src="/LOGO.png"
-                            alt="ESP Logo"
+                        {/* VIDEO LOGO PURO CON MASCARA RECTANGULAR */}
+                        <video
+                            src="/logo_animated.mp4"
+                            autoPlay
+                            muted
+                            playsInline
+                            preload="auto"
                             style={{
                                 position: 'absolute', inset: 0,
                                 width: '100%', height: '100%', objectFit: 'contain',
                                 zIndex: 10,
                                 pointerEvents: 'none',
-                                mixBlendMode: 'screen',
-                                animation: 'eks-logo-in 1.2s cubic-bezier(0.16, 1, 0.3, 1) both',
+                                // Máscara rectangular con bordes suavizados
+                                maskImage: 'inset(0% round 20px)',
+                                WebkitMaskImage: 'inset(0% round 20px)',
+                                animation: 'eks-logo-in 1.5s cubic-bezier(0.22, 1, 0.36, 1) both',
+                                filter: bootPhase === 'explosion' ? 'drop-shadow(0 0 50px white)' : 'none',
+                                transition: 'filter 0.5s ease-out'
                             }}
                         />
                     </div>
@@ -694,47 +569,34 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     {/* ── TERMINAL + PROGRESO ── */}
                     <div style={{
                         display: 'flex', flexDirection: 'column', alignItems: 'center',
-                        gap: '18px', width: '460px',
-                        animation: 'eks-term-in 0.5s ease-out 0.9s both',
+                        gap: '24px', width: '400px',
+                        animation: 'eks-term-in 0.8s ease-out 0.5s both',
+                        zIndex: 100,
                     }}>
-                        {/* Log line con glitch */}
+                        {/* Log line minimalista para fondo claro */}
                         <div style={{
                             position: 'relative', width: '100%',
                             display: 'flex', alignItems: 'center', gap: '12px',
-                            padding: '15px 24px',
-                            background: 'rgba(var(--color-primary),0.04)',
-                            border: '1px solid rgba(var(--color-primary),0.22)',
+                            padding: '14px 24px',
+                            background: 'rgba(0,0,0,0.04)',
+                            border: '1px solid rgba(0,0,0, 0.1)',
                             borderRadius: '12px',
-                            backdropFilter: 'blur(20px)',
-                            animation: 'eks-glitch 4.5s ease-in-out infinite',
+                            boxShadow: 'inset 0 0 20px rgba(0,0,0,0.02)',
+                            backdropFilter: 'blur(10px)'
                         }}>
-                            {[
-                                { top: 0, left: 0, borderTop: '2px solid', borderLeft: '2px solid' },
-                                { top: 0, right: 0, borderTop: '2px solid', borderRight: '2px solid' },
-                                { bottom: 0, left: 0, borderBottom: '2px solid', borderLeft: '2px solid' },
-                                { bottom: 0, right: 0, borderBottom: '2px solid', borderRight: '2px solid' },
-                            ].map((s, i) => (
-                                <div key={i} style={{
-                                    position: 'absolute', width: '12px', height: '12px',
-                                    borderColor: 'rgba(var(--color-primary),0.7)', ...s,
-                                }} />
-                            ))}
-                            <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '14px', fontWeight: 900 }}>&gt;</span>
-                            <span style={{
-                                flex: 1, textAlign: 'center',
-                                fontSize: '11px', fontWeight: 900,
-                                letterSpacing: '0.35em', textTransform: 'uppercase',
-                                color: '#ffffff',
-                                textShadow: '0 0 18px rgba(var(--color-primary),1), 0 0 40px rgba(var(--color-primary),0.6)',
-                            }}>
-                                {bootLogs[bootStep]}
-                            </span>
-                            <span style={{
-                                display: 'inline-block', width: '8px', height: '14px',
-                                background: 'rgba(var(--color-primary),0.9)',
-                                boxShadow: '0 0 8px rgba(var(--color-primary),1)',
-                                animation: 'eks-blink 0.5s infinite',
-                            }} />
+                            <div className="flex items-center gap-3 w-full">
+                                <span className="text-[9px] font-black text-primary opacity-50 font-mono">[{bootLogs[bootStep].sub}]</span>
+                                <span style={{
+                                    flex: 1, textAlign: 'left',
+                                    fontSize: '10px', fontWeight: 800,
+                                    letterSpacing: '0.2em', textTransform: 'uppercase',
+                                    color: '#333',
+                                    animation: 'eks-glitch 2s infinite'
+                                }}>
+                                    {bootLogs[bootStep].msg}
+                                </span>
+                                <span className="text-[9px] font-black text-primary opacity-30 font-mono">{bootLogs[bootStep].hex}</span>
+                            </div>
                         </div>
 
                         {/* Barra lineal + arco en fila */}
@@ -820,6 +682,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                         </div>
                     </div>
                 </div>
+
+                {/* ── FINAL FLASH ── */}
+                {bootPhase === 'complete' && (
+                    <div className="fixed inset-0 z-[2000] bg-white animate-[eks-fade-out_0.6s_ease-in_reverse_forwards]" />
+                )}
 
                 {/* ── BARRA DE ESTADO inferior ── */}
                 <div style={{ position: 'absolute', bottom: '22px', left: 0, right: 0, display: 'flex', justifyContent: 'center' }}>
@@ -1313,7 +1180,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 <div className="h-[1px] w-12 bg-primary/40"></div>
                 <div className="flex flex-col">
                     <span className="text-[9px] font-black text-primary uppercase tracking-[0.5em]">Status: ALS FRONTERA ACTIVE</span>
-                    <span className="text-[8px] font-bold text-txt-muted uppercase tracking-[0.2em] mt-1">EDS DESIGN STUDIO © 2026 | L. PEÑA & A. JIMÉNEZ</span>
+                    <span className="text-[8px] font-bold text-txt-muted uppercase tracking-[0.2em] mt-1">EDS DESIGN STUDIO © 2026 | LENIN PEÑA & ANDRE JIMENEZ.</span>
                 </div>
             </footer>
 

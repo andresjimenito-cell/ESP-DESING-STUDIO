@@ -27,6 +27,7 @@ import { SecureWrapper } from './SecureWrapper';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { DesignDataImport } from './DesignDataImport';
 import { MatchHistorico } from './MatchHistorico';
+import { AiMemoryService } from '../services/AiMemoryService';
 
 const getApiKey = () => {
     try {
@@ -110,7 +111,7 @@ let _dataLoaded = false;
 const computeWellCapacity = (well: WellFleetItem, wellMatchParams: SystemParams, pump: EspPump) => {
     // Si no hay datos de match, no perdemos tiempo calculando
     if (!wellMatchParams?.historyMatch || !pump) return null;
-    
+
     const test = well.productionTest;
     const q = Math.max(0.1, test.rate);
     const baseFreq = pump.nameplateFrequency || 60;
@@ -635,7 +636,7 @@ const get_ext = (row: Record<string, any>, keys: string[]): any => {
         // 1. Intento Exacto
         const idxExact = normRowKeys.indexOf(nk);
         if (idxExact !== -1) return row[rowKeys[idxExact]];
-        
+
         // 2. Intento Parcial (Solo si el nombre es largo y no es una columna de presión crítica)
         const isCritical = nk.includes('PIP') || nk.includes('THP') || nk.includes('PDP');
         if (nk.length > 3 && !isCritical) {
@@ -764,7 +765,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
 
     const filteredFleet = useMemo(() => {
         let result = fleet;
-        
+
         // Filter by health
         if (healthFilter !== 'all') {
             result = result.filter(well => {
@@ -1050,9 +1051,9 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                     const design: SystemParams = {
                         ...INITIAL_PARAMS,
                         metadata: { ...INITIAL_PARAMS.metadata, wellName, projectName: nickName, comments: `Run: ${runNumber}` },
-                        wellbore: { 
-                            ...INITIAL_PARAMS.wellbore, 
-                            tubingBottom: intakeMD, casingBottom: fondoMD, 
+                        wellbore: {
+                            ...INITIAL_PARAMS.wellbore,
+                            tubingBottom: intakeMD, casingBottom: fondoMD,
                             midPerfsMD: topPerfs || (intakeMD + 200),
                             casing, tubing
                         },
@@ -1311,23 +1312,23 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
 
                 for (const sheetName of workbook.SheetNames) {
                     const sheet = workbook.Sheets[sheetName];
-                    
+
                     // --- BUSCADOR DINÁMICO DE ENCABEZADOS ---
                     const previewRows = XLSX.utils.sheet_to_json(sheet, { header: 1, range: 0, blankrows: false }) as any[][];
                     let headerRowIdx = -1;
                     let dualHeaderRow: string[] = [];
-                    
+
                     for (let i = 0; i < Math.min(40, previewRows.length); i++) {
                         const row = (previewRows[i] || []).map(c => String(c || '').toUpperCase().trim());
                         const hasPozo = row.includes('POZO') || row.includes('WELL');
                         const hasFecha = row.includes('FECHA') || row.includes('DATE');
                         const hasRate = row.includes('BFPD') || row.includes('BOPD') || row.includes('PRODUCCION');
-                        
+
                         if (hasPozo && (hasFecha || hasRate)) {
                             headerRowIdx = i;
                             // Intentamos capturar la fila superior si parece ser un título de categoría (Dual Header)
                             if (i > 0) {
-                                dualHeaderRow = (previewRows[i-1] || []).map(c => String(c || '').toUpperCase().trim());
+                                dualHeaderRow = (previewRows[i - 1] || []).map(c => String(c || '').toUpperCase().trim());
                             }
                             break;
                         }
@@ -1341,7 +1342,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                         const headers = (rowsRaw[0] || []).map((h, idx) => {
                             const sub = String(h || '').toUpperCase().trim();
                             const top = String(dualHeaderRow[idx] || '').toUpperCase().trim();
-                            
+
                             if (top) lastTopHeader = top;
                             const currentTop = top || lastTopHeader;
 
@@ -1353,7 +1354,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                 if (sub !== currentTop) return `${currentTop}_${sub}`;
                                 return sub;
                             }
-                            
+
                             return sub || currentTop || `COL_${idx}`;
                         });
 
@@ -1371,70 +1372,70 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                 }
             }
 
-        if (json.length === 0) {
-            setImportProgress(null);
-            alert('El archivo Excel parece estar vacío o no se detectaron los encabezados (POZO, FECHA).');
-            return;
-        }
+            if (json.length === 0) {
+                setImportProgress(null);
+                alert('El archivo Excel parece estar vacío o no se detectaron los encabezados (POZO, FECHA).');
+                return;
+            }
 
-        setImportProgress({ current: 0, total: json.length, label: 'Sincronizando telemetría en tiempo real...' });
-        const newProductionData: Record<string, ProductionTest[]> = {};
-        
-        const lastValidPipMap: Record<string, number> = {};
+            setImportProgress({ current: 0, total: json.length, label: 'Sincronizando telemetría en tiempo real...' });
+            const newProductionData: Record<string, ProductionTest[]> = {};
 
-        // Bajamos chunkSize de 200 a 100 para evitar tirones
-        const chunkSize = 100;
-        for (let i = 0; i < json.length; i += chunkSize) {
-            const chunk = json.slice(i, i + chunkSize);
-            setImportProgress({ current: i, total: json.length, label: `Vinculando registros históricos: ${i} / ${json.length}...` });
-            await new Promise(r => setTimeout(r, 5));
+            const lastValidPipMap: Record<string, number> = {};
 
-            chunk.forEach((row) => {
-                const name = String(get_ext(row, ['POZO', 'WELL', 'NAME', 'ID']) || '').trim();
-                if (!name) return;
-                const normName = name.toUpperCase().trim();
+            // Bajamos chunkSize de 200 a 100 para evitar tirones
+            const chunkSize = 100;
+            for (let i = 0; i < json.length; i += chunkSize) {
+                const chunk = json.slice(i, i + chunkSize);
+                setImportProgress({ current: i, total: json.length, label: `Vinculando registros históricos: ${i} / ${json.length}...` });
+                await new Promise(r => setTimeout(r, 5));
 
-                const date = d_ext(get_ext(row, ['FECHA', 'DATE', 'DATE OF TEST', 'TIMESTAMP']));
-                const rate = n_ext(get_ext(row, ['BFPD', 'GROSS RATE', 'RATE', 'CAUDAL', 'TASA DE PRUEBA', 'TASAPRUEBA', 'BFPD TEST']));
-                const bsw_raw = get_ext(row, ['BSW PRUEBA', 'BSW_PRUEBA', 'BSW_DIA', 'BSW', 'WATER CUT', 'WATERCUT', 'CORTE DE AGUA', 'B S W', 'CORTE AGUA', 'CORTE_AGUA', 'WATER_CUT']);
-                let bsw = n_ext(bsw_raw);
-                // Normalización: Si el dato viene como decimal (0.98) lo convertimos a porcentaje (98)
-                if (bsw > 0 && bsw <= 1.0) bsw = bsw * 100;
-                
-                // Mapeo exacto para THP/THT usando los encabezados combinados
-                const thp = n_ext(get_ext(row, ['THP_PSI', 'THP', 'PRESION CABEZA', 'P-SURFACE', 'PHT']));
-                const tht = n_ext(get_ext(row, ['THT_°F', 'THT', 'TEMP CABEZA', 'T-SURFACE']));
-                
-                // Normalización de Frecuencia (Hz) con Lógica PMM
-                const freqRaw = get_ext(row, ['FREC DE_OPER', 'FREC DE_DIA', 'FREC.PRUEBA', 'FRECUENCIA', 'FREQUENCY', 'H Z', 'HZ']);
-                let freq = n_ext(freqRaw) || 60;
-                if (freq > 80) freq = freq / 2; // Normalización PMM
+                chunk.forEach((row) => {
+                    const name = String(get_ext(row, ['POZO', 'WELL', 'NAME', 'ID']) || '').trim();
+                    if (!name) return;
+                    const normName = name.toUpperCase().trim();
 
-                // --- LÓGICA PIP PERSISTENTE ---
-                let pip = n_ext(get_ext(row, ['PIP_PSI', 'PIP', 'INTAKE PRESSURE', 'PI P', 'PRESION SUCCION']));
-                if (pip <= 0) {
-                    pip = lastValidPipMap[normName] || 0; 
-                } else {
-                    lastValidPipMap[normName] = pip;
-                }
+                    const date = d_ext(get_ext(row, ['FECHA', 'DATE', 'DATE OF TEST', 'TIMESTAMP']));
+                    const rate = n_ext(get_ext(row, ['BFPD', 'GROSS RATE', 'RATE', 'CAUDAL', 'TASA DE PRUEBA', 'TASAPRUEBA', 'BFPD TEST']));
+                    const bsw_raw = get_ext(row, ['BSW PRUEBA', 'BSW_PRUEBA', 'BSW_DIA', 'BSW', 'WATER CUT', 'WATERCUT', 'CORTE DE AGUA', 'B S W', 'CORTE AGUA', 'CORTE_AGUA', 'WATER_CUT']);
+                    let bsw = n_ext(bsw_raw);
+                    // Normalización: Si el dato viene como decimal (0.98) lo convertimos a porcentaje (98)
+                    if (bsw > 0 && bsw <= 1.0) bsw = bsw * 100;
 
-                const pdp = n_ext(get_ext(row, ['PDESC', 'DISCHARGE PRESSURE', 'PDP', 'P-DISCHARGE', 'PD']));
+                    // Mapeo exacto para THP/THT usando los encabezados combinados
+                    const thp = n_ext(get_ext(row, ['THP_PSI', 'THP', 'PRESION CABEZA', 'P-SURFACE', 'PHT']));
+                    const tht = n_ext(get_ext(row, ['THT_°F', 'THT', 'TEMP CABEZA', 'T-SURFACE']));
 
-                const pt: ProductionTest = {
-                    date: date || new Date().toISOString().split('T')[0],
-                    rate,
-                    freq,
-                    pip, thp,
-                    tht: tht || 80,
-                    waterCut: bsw,
-                    gor: 0, hp: 0, pdp,
-                    hasMatchData: rate > 5 || (pip > 0 && thp > 0)
-                };
+                    // Normalización de Frecuencia (Hz) con Lógica PMM
+                    const freqRaw = get_ext(row, ['FREC DE_OPER', 'FREC DE_DIA', 'FREC.PRUEBA', 'FRECUENCIA', 'FREQUENCY', 'H Z', 'HZ']);
+                    let freq = n_ext(freqRaw) || 60;
+                    if (freq > 80) freq = freq / 2; // Normalización PMM
 
-                if (!newProductionData[normName]) newProductionData[normName] = [];
-                newProductionData[normName].push(pt);
-            });
-        }
+                    // --- LÓGICA PIP PERSISTENTE ---
+                    let pip = n_ext(get_ext(row, ['PIP_PSI', 'PIP', 'INTAKE PRESSURE', 'PI P', 'PRESION SUCCION']));
+                    if (pip <= 0) {
+                        pip = lastValidPipMap[normName] || 0;
+                    } else {
+                        lastValidPipMap[normName] = pip;
+                    }
+
+                    const pdp = n_ext(get_ext(row, ['PDESC', 'DISCHARGE PRESSURE', 'PDP', 'P-DISCHARGE', 'PD']));
+
+                    const pt: ProductionTest = {
+                        date: date || new Date().toISOString().split('T')[0],
+                        rate,
+                        freq,
+                        pip, thp,
+                        tht: tht || 80,
+                        waterCut: bsw,
+                        gor: 0, hp: 0, pdp,
+                        hasMatchData: rate > 5 || (pip > 0 && thp > 0)
+                    };
+
+                    if (!newProductionData[normName]) newProductionData[normName] = [];
+                    newProductionData[normName].push(pt);
+                });
+            }
 
             console.log("[SCADA Import] Distinct wells found in Excel:", Object.keys(newProductionData).length);
 
@@ -1444,7 +1445,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                 Object.entries(newProductionData).forEach(([wellName, tests]) => {
                     const latest = tests[tests.length - 1];
                     const normKey = norm_ext(wellName);
-                    
+
                     // --- LÓGICA DE RUTEO INTELIGENTE (RUN ACTUAL) ---
                     // Buscamos todos los candidatos que compartan el nombre base del pozo
                     const candidates = merged.filter(w => {
@@ -1487,7 +1488,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                 Object.entries(newProductionData).forEach(([wellName, tests]) => {
                     const latest = tests[tests.length - 1];
                     const normKey = norm_ext(wellName);
-                    
+
                     // Identificar el Run Actual en el diccionario de diseños
                     const allDesignKeys = Object.keys(updated);
                     const candidates = allDesignKeys.filter(k => norm_ext(k.split('#')[0].trim()) === normKey);
@@ -2575,18 +2576,18 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                             </button>
 
                             {onNavigateToDesign && (
-                            <SecureWrapper isLocked={true} tooltip="Módulo de Diseño Restringido">
-                                <button
-                                    onClick={() => {
-                                        onNavigateToDesign(wellMatchParams, pump);
-                                    }}
-                                    className="flex items-center gap-3 px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all border bg-primary/10 text-primary border-primary/20 hover:bg-primary hover:text-white hover:shadow-glow-primary/40 relative"
-                                    title="Ir a Diseño (Phase 5)"
-                                >
-                                    <Settings className="w-5 h-5" />
-                                    Ir a Diseño
-                                </button>
-                            </SecureWrapper>
+                                <SecureWrapper isLocked={true} tooltip="Módulo de Diseño Restringido">
+                                    <button
+                                        onClick={() => {
+                                            onNavigateToDesign(wellMatchParams, pump);
+                                        }}
+                                        className="flex items-center gap-3 px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all border bg-primary/10 text-primary border-primary/20 hover:bg-primary hover:text-white hover:shadow-glow-primary/40 relative"
+                                        title="Ir a Diseño (Phase 5)"
+                                    >
+                                        <Settings className="w-5 h-5" />
+                                        Ir a Diseño
+                                    </button>
+                                </SecureWrapper>
                             )}
 
                             <SecureWrapper isLocked={true} tooltip="Módulo de Ajuste Histórico Restringido">
@@ -2731,7 +2732,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                                     </div>
                                                 )}
                                             </div>
-                                            <button 
+                                            <button
                                                 onClick={() => importDbRef.current?.click()}
                                                 className="w-full py-4 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 hover:border-primary/60 rounded-xl font-black uppercase tracking-widest text-xs transition-all flex items-center justify-center gap-2"
                                             >
@@ -2862,6 +2863,10 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                     from { transform: translateX(100%); opacity: 0; }
                     to { transform: translateX(0); opacity: 1; }
                 }
+                @keyframes eks-scanline {
+                    0% { transform: translateY(-100%); }
+                    100% { transform: translateY(100%); }
+                }
             `}</style>
             {showFullMatch && selectedWell && (
                 <div className="fixed inset-0 z-[100] bg-canvas/95 backdrop-blur-xl animate-fadeIn overflow-hidden flex flex-col">
@@ -2923,25 +2928,34 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
 
             {/* FULL-SCREEN IMPORT PROGRESS OVERLAY */}
             {importProgress && (
-                <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-canvas/80 backdrop-blur-2xl animate-fadeIn">
+                <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-canvas/90 backdrop-blur-3xl animate-fadeIn">
                     {/* Background Decorative Elements */}
-                    <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-primary/20 rounded-full blur-[150px] animate-pulse"></div>
-                    <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-secondary/10 rounded-full blur-[150px] animate-pulse-slow"></div>
-                    
-                    <div className="bg-surface/40 backdrop-blur-3xl border border-white/10 rounded-[4rem] p-16 shadow-[0_0_120px_rgba(var(--color-primary),0.15)] flex flex-col items-center gap-10 max-w-2xl w-full relative overflow-hidden group">
+                    <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-20">
+                        <div style={{
+                            position: 'absolute', inset: 0,
+                            backgroundImage: `linear-gradient(rgba(var(--color-primary),0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(var(--color-primary),0.1) 1px, transparent 1px)`,
+                            backgroundSize: '60px 60px',
+                        }} />
+                        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent h-[200%] animate-[eks-scanline_10s_linear_infinite]" />
+                    </div>
+
+                    <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-primary/20 rounded-full blur-[180px] animate-pulse"></div>
+                    <div className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] bg-secondary/15 rounded-full blur-[180px] animate-pulse-slow"></div>
+
+                    <div className="bg-surface/60 backdrop-blur-3xl border border-white/10 rounded-[4rem] p-16 shadow-[0_0_150px_rgba(var(--color-primary),0.2)] flex flex-col items-center gap-10 max-w-2xl w-full relative overflow-hidden group">
                         {/* Shimmer effect */}
                         <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent -translate-x-full group-hover:animate-[shimmer_3s_infinite] pointer-events-none"></div>
-                        
+
                         <div className="relative">
-                            {/* Complex animated icon */}
-                            <div className="relative w-32 h-32 flex items-center justify-center">
+                            {/* Complex animated icon WITH LOGO */}
+                            <div className="relative w-40 h-40 flex items-center justify-center">
                                 <div className="absolute inset-0 bg-primary/20 rounded-full animate-ping opacity-40"></div>
                                 <div className="absolute inset-0 border-2 border-primary/30 rounded-full"></div>
                                 <div className="absolute inset-2 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
                                 <div className="absolute inset-6 border-2 border-secondary/20 border-b-secondary rounded-full animate-spin-[4s_linear_infinite] opacity-60"></div>
-                                
-                                <div className="relative z-10 p-6 bg-gradient-to-br from-primary to-primary-dark rounded-3xl shadow-glow-primary">
-                                    <Activity className="w-12 h-12 text-white animate-pulse" />
+
+                                <div className="relative z-10 p-4 bg-white/5 backdrop-blur-xl rounded-[2.5rem] shadow-glow-primary border border-white/10">
+                                    <img src="/LOGO.png" alt="Logo" className="w-20 h-20 object-contain drop-shadow-[0_0_15px_rgba(var(--color-primary),0.8)]" />
                                 </div>
                             </div>
                         </div>
@@ -2953,30 +2967,31 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                 </h3>
                                 <div className="h-1 w-24 bg-primary mx-auto rounded-full shadow-glow-primary opacity-60"></div>
                             </div>
-                            
-                            <p className="text-txt-muted text-xs font-bold uppercase tracking-[0.4em] opacity-40 flex items-center gap-3">
-                                <RefreshCw className="w-3 h-3 animate-spin" />
-                                Optimizando Entorno de Operaciones
+
+                            <p className="text-txt-muted text-[10px] font-black uppercase tracking-[0.5em] opacity-50 flex items-center gap-3">
+                                <RefreshCw className="w-3 h-3 animate-spin text-primary" />
+                                Synchronizing Operations Center
                             </p>
 
-                            <div className="w-full mt-8 space-y-4">
-                                <div className="w-full h-3 bg-canvas/60 rounded-full overflow-hidden border border-white/5 shadow-inner p-[2px]">
-                                    <div 
-                                        className="h-full bg-gradient-to-r from-primary via-secondary to-primary bg-[length:200%_100%] animate-shimmer-fast rounded-full transition-all duration-500 ease-out shadow-glow-primary" 
+                            <div className="w-full mt-10 space-y-5">
+                                <div className="w-full h-4 bg-canvas/60 rounded-full overflow-hidden border border-white/10 shadow-inner p-[3px] relative">
+                                    <div
+                                        className="h-full bg-gradient-to-r from-primary via-secondary to-primary bg-[length:200%_100%] animate-shimmer-fast rounded-full transition-all duration-700 ease-out shadow-[0_0_20px_rgba(var(--color-primary),0.6)]"
                                         style={{ width: `${(importProgress.current / Math.max(1, importProgress.total)) * 100}%` }}
                                     ></div>
+                                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer pointer-events-none"></div>
                                 </div>
 
-                                <div className="flex justify-between items-end">
+                                <div className="flex justify-between items-end px-2">
                                     <div className="flex flex-col items-start">
-                                        <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-1">Estado del Sistema</span>
-                                        <span className="text-[11px] font-bold text-txt-muted uppercase tracking-widest bg-white/5 px-3 py-1 rounded-lg border border-white/5">
-                                            {importProgress.current} de {importProgress.total} registros
+                                        <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-1.5">System Status</span>
+                                        <span className="text-[11px] font-black text-txt-muted uppercase tracking-widest bg-white/5 px-4 py-1.5 rounded-xl border border-white/10 font-mono">
+                                            {importProgress.current} / {importProgress.total} Nodes
                                         </span>
                                     </div>
                                     <div className="text-right">
-                                        <span className="block text-4xl font-black text-txt-main tracking-tighter leading-none italic">
-                                            {Math.round((importProgress.current / Math.max(1, importProgress.total)) * 100)}<small className="text-lg text-primary ml-1">%</small>
+                                        <span className="block text-5xl font-black text-txt-main tracking-tighter leading-none italic drop-shadow-lg">
+                                            {Math.round((importProgress.current / Math.max(1, importProgress.total)) * 100)}<small className="text-xl text-primary ml-1 not-italic">%</small>
                                         </span>
                                     </div>
                                 </div>
@@ -3138,6 +3153,27 @@ const FloatingAiPanel = ({ fleet, selectedWell, language, t }: { fleet: WellFlee
             setMsgs(p => [...p, { role: 'model', text: `❌ Connection error: ${err.message || 'Unknown issue'}` }]);
         }
         setLoading(false);
+
+        // --- NEW: SAVE TO AI MEMORY ---
+        if (session && input && msgs.length > 0) {
+             const signature = AiMemoryService.generateSignature(selectedWell ? {
+                 rate: selectedWell.currentRate,
+                 pip: selectedWell.productionTest.pip,
+                 frequency: selectedWell.productionTest.freq,
+                 model: selectedWell.status
+             } : { fleetCount: fleet.length });
+
+             const lastMsg = msgs[msgs.length - 1];
+             if (lastMsg.role === 'model') {
+                 AiMemoryService.saveCase({
+                     category: 'diagnosis',
+                     wellName: selectedWell?.name,
+                     technicalSignature: signature,
+                     context: selectedWell || { fleetCount: fleet.length },
+                     recommendation: lastMsg.text
+                 });
+             }
+        }
     };
 
     return (
@@ -3162,9 +3198,18 @@ const FloatingAiPanel = ({ fleet, selectedWell, language, t }: { fleet: WellFlee
                                 </div>
                             </div>
                         </div>
-                        <button onClick={() => setIsOpen(false)} className="p-2 hover:bg-surface-light rounded-xl transition-colors">
-                            <X className="w-4 h-4 text-txt-muted" />
-                        </button>
+                        <div className="flex items-center gap-1">
+                            <button 
+                                onClick={() => AiMemoryService.exportMemory()} 
+                                className="p-2 hover:bg-white/10 rounded-xl transition-all group"
+                                title={language === 'es' ? 'Exportar Memoria IA (Archivo .json)' : 'Export AI Memory (.json)'}
+                            >
+                                <Download className="w-4 h-4 text-txt-muted group-hover:text-primary" />
+                            </button>
+                            <button onClick={() => setIsOpen(false)} className="p-2 hover:bg-surface-light rounded-xl transition-colors">
+                                <X className="w-4 h-4 text-txt-muted" />
+                            </button>
+                        </div>
                     </div>
 
                     {/* MESSAGES */}
