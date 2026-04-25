@@ -984,6 +984,17 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                     const wellName = String(get_ext(row, ['POZO', 'WELL']) || `WELL-${i + idx}`).toUpperCase().trim();
                     if (!wellName) return;
 
+                    // --- LÓGICA DE RUNS (NICK) ---
+                    const nickName = String(get_ext(row, ['NICK', 'NOMBRE_NICK']) || wellName).toUpperCase().trim();
+                    let runNumber = 0;
+                    if (nickName.includes('#')) {
+                        const parts = nickName.split('#');
+                        runNumber = parseInt(parts[parts.length - 1], 10) || 0;
+                    } else if (wellName === nickName) {
+                        // Si el Nick es igual al pozo y no tiene #, asumimos Run 0 o 1
+                        runNumber = 1;
+                    }
+
                     const pStatic = n_ext(get_ext(row, ['P ESTATICA (PSI)', 'P ESTATICA', 'STATIC PRESSURE', 'PESTATICA']));
                     const pipMin = n_ext(get_ext(row, ['PIP MINIMA (PSI)', 'PIP MINIMA', 'PIPMINIMA', 'MIN PIP']));
                     const ip = n_ext(get_ext(row, ['IP (BFPD/PSI)', 'IP (BFP/PSI)', 'PRODUCTIVITY INDEX', 'PI (BFPD/PSI)']));
@@ -1038,7 +1049,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
 
                     const design: SystemParams = {
                         ...INITIAL_PARAMS,
-                        metadata: { ...INITIAL_PARAMS.metadata, wellName, projectName: wellName },
+                        metadata: { ...INITIAL_PARAMS.metadata, wellName, projectName: nickName, comments: `Run: ${runNumber}` },
                         wellbore: { 
                             ...INITIAL_PARAMS.wellbore, 
                             tubingBottom: intakeMD, casingBottom: fondoMD, 
@@ -1079,10 +1090,11 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                         design.selectedVSD = foundVsd;
                     }
 
-                    newDesigns[wellName] = design;
+                    // Usamos nickName como llave primaria para evitar sobreescritura entre runs
+                    newDesigns[nickName] = design;
                     wellsToAdd.push({
-                        id: `EXCEL-${wellName}-${Date.now()}-${i + idx}`,
-                        name: wellName,
+                        id: `EXCEL-${nickName}-${Date.now()}-${i + idx}`,
+                        name: nickName,
                         status: 'normal',
                         health: { pump: 'normal', motor: 'normal', seal: 'normal', sensor: 'active', cable: 'normal' },
                         predictive: { ttf: 365, vsdStatus: 'optimal', vsdAnalysis: 'Excel Import', transformerStatus: 'optimal', transformerAnalysis: 'Normal', ventBoxStatus: 'optimal', ventBoxAnalysis: 'Normal' },
@@ -1105,6 +1117,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
             setFleet(prev => {
                 const merged = [...prev];
                 wellsToAdd.forEach(nw => {
+                    // Usamos el nick completo para la búsqueda exacta en la flota
                     const idx = merged.findIndex(w => w.name.toUpperCase() === nw.name.toUpperCase());
                     if (idx !== -1) merged[idx] = { ...merged[idx], ...nw };
                     else merged.push(nw);
@@ -1431,18 +1444,41 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                 Object.entries(newProductionData).forEach(([wellName, tests]) => {
                     const latest = tests[tests.length - 1];
                     const normKey = norm_ext(wellName);
-                    const idx = merged.findIndex(w => norm_ext(w.name) === normKey);
-                    if (idx !== -1) {
-                        merged[idx] = {
-                            ...merged[idx],
-                            currentRate: latest.rate,
-                            productionTest: latest,
-                            lastUpdate: latest.date
-                        };
-                        matchCount++;
+                    
+                    // --- LÓGICA DE RUTEO INTELIGENTE (RUN ACTUAL) ---
+                    // Buscamos todos los candidatos que compartan el nombre base del pozo
+                    const candidates = merged.filter(w => {
+                        const baseName = w.name.split('#')[0].trim();
+                        return norm_ext(baseName) === normKey;
+                    });
+
+                    if (candidates.length > 0) {
+                        // El "Run Actual" es aquel cuyo nick tiene el número más alto después del #
+                        let targetWell = candidates[0];
+                        let maxRun = -1;
+
+                        candidates.forEach(c => {
+                            const parts = c.name.split('#');
+                            const run = parts.length > 1 ? parseInt(parts[parts.length - 1], 10) || 0 : 0;
+                            if (run > maxRun) {
+                                maxRun = run;
+                                targetWell = c;
+                            }
+                        });
+
+                        const idx = merged.findIndex(w => w.id === targetWell.id);
+                        if (idx !== -1) {
+                            merged[idx] = {
+                                ...merged[idx],
+                                currentRate: latest.rate,
+                                productionTest: latest,
+                                lastUpdate: latest.date
+                            };
+                            matchCount++;
+                        }
                     }
                 });
-                console.log("[SCADA Import] Total fleet matches updated:", matchCount);
+                console.log("[SCADA Import] Total fleet matches updated (Latest Run Only):", matchCount);
                 return merged;
             });
 
@@ -1451,12 +1487,28 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                 Object.entries(newProductionData).forEach(([wellName, tests]) => {
                     const latest = tests[tests.length - 1];
                     const normKey = norm_ext(wellName);
-                    const designKey = Object.keys(updated).find(k => norm_ext(k) === normKey);
-                    if (designKey) {
-                        updated[designKey] = {
-                            ...updated[designKey],
+                    
+                    // Identificar el Run Actual en el diccionario de diseños
+                    const allDesignKeys = Object.keys(updated);
+                    const candidates = allDesignKeys.filter(k => norm_ext(k.split('#')[0].trim()) === normKey);
+
+                    if (candidates.length > 0) {
+                        let targetKey = candidates[0];
+                        let maxRun = -1;
+
+                        candidates.forEach(k => {
+                            const parts = k.split('#');
+                            const run = parts.length > 1 ? parseInt(parts[parts.length - 1], 10) || 0 : 0;
+                            if (run > maxRun) {
+                                maxRun = run;
+                                targetKey = k;
+                            }
+                        });
+
+                        updated[targetKey] = {
+                            ...updated[targetKey],
                             metadata: {
-                                ...updated[designKey].metadata,
+                                ...updated[targetKey].metadata,
                                 date: latest.date
                             },
                             historyMatch: {
@@ -1465,7 +1517,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                 waterCut: latest.waterCut, matchDate: latest.date,
                                 startDate: latest.date, tht: latest.tht || 80,
                                 hp: 0, gor: 0, pd: latest.pdp, fluidLevel: 0,
-                                submergence: 0, pStatic: updated[designKey].inflow.pStatic
+                                submergence: 0, pStatic: updated[targetKey].inflow.pStatic
                             }
                         };
                     }
