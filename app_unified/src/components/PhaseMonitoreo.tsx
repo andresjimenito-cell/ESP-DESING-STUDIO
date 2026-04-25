@@ -839,16 +839,17 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
         let mounted = true;
         const loadAutoFiles = async () => {
             try {
-                setImportProgress({ current: 0, total: 100, label: 'Cargando memorias instantáneas JSON...' });
-                await new Promise(r => setTimeout(r, 100));
+                setImportProgress({ current: 0, total: 100, label: 'Inicializando Centro de Control...' });
+                await new Promise(r => setTimeout(r, 200));
 
-                // 1. Cargar la Flota Base (De JSON precalculado si existe)
+                // 1. Cargar la Flota Base
+                setImportProgress({ current: 10, total: 100, label: 'Sincronizando Base de Datos Maestra...' });
                 const resDesigns = await fetch('/designs_precalc.json').catch(() => null);
                 if (resDesigns && resDesigns.ok && mounted) {
                     const payload = await resDesigns.json();
                     await processExcelDesignsBuffer(payload, true, true);
                 } else if (mounted) {
-                    // Fallback a Excel Lento
+                    setImportProgress({ current: 15, total: 100, label: 'Leyendo Registro de Diseños (XLSX)...' });
                     const resExcel = await fetch('/DATAS DE DISEÑO.xlsx');
                     if (resExcel.ok) {
                         const buf = await resExcel.arrayBuffer();
@@ -856,14 +857,16 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                     }
                 }
 
-                await new Promise(r => setTimeout(r, 50));
+                await new Promise(r => setTimeout(r, 100));
 
                 // 2. Cargar Pruebas de Producción SCADA
+                setImportProgress({ current: 50, total: 100, label: 'Recuperando Telemetría SCADA...' });
                 const resScada = await fetch('/scada_precalc.json').catch(() => null);
                 if (resScada && resScada.ok && mounted) {
                     const payload = await resScada.json();
                     await processScadaBuffer(payload, true, true);
                 } else if (mounted) {
+                    setImportProgress({ current: 60, total: 100, label: 'Procesando Reportes de Producción...' });
                     const resExcel = await fetch('/PRUEBAS DE PRODUCCION.xlsx');
                     if (resExcel.ok) {
                         const buf = await resExcel.arrayBuffer();
@@ -872,6 +875,8 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                 }
 
                 if (mounted) {
+                    setImportProgress({ current: 100, total: 100, label: 'Sistema Listo.' });
+                    await new Promise(r => setTimeout(r, 400));
                     setImportProgress(null);
                     _dataLoaded = true;
                 }
@@ -881,8 +886,8 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
             }
         };
 
-        // Timeout to let initial render finish smoothly
-        setTimeout(loadAutoFiles, 500);
+        // Delay inicial para suavizar la transición
+        setTimeout(loadAutoFiles, 300);
 
         return () => { mounted = false; };
     }, []);
@@ -959,21 +964,21 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
             const newDesigns: Record<string, SystemParams> = {};
             const wellsToAdd: WellFleetItem[] = [];
 
-            setImportProgress({ current: 0, total: json.length, label: 'Iniciando procesamiento de flota...' });
+            setImportProgress({ current: 0, total: json.length, label: 'Iniciando análisis de flota...' });
 
-            // Process in chunks to avoid blocking the main thread
-            const chunkSize = 15;
+            // Reducimos el chunkSize de 15 a 8 para máxima fluidez en la UI
+            const chunkSize = 8;
             for (let i = 0; i < json.length; i += chunkSize) {
                 const chunk = json.slice(i, i + chunkSize);
 
                 setImportProgress({
                     current: i,
                     total: json.length,
-                    label: `Procesando batch de ${chunk.length} pozos...`
+                    label: `Analizando configuraciones: ${i} de ${json.length} pozos...`
                 });
 
-                // Small delay to allow UI to breathe
-                await new Promise(resolve => setTimeout(resolve, 0));
+                // Aumentamos ligeramente el delay para asegurar repintado del navegador
+                await new Promise(resolve => setTimeout(resolve, 5));
 
                 chunk.forEach((row, idx) => {
                     const wellName = String(get_ext(row, ['POZO', 'WELL']) || `WELL-${i + idx}`).toUpperCase().trim();
@@ -1359,17 +1364,17 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
             return;
         }
 
-        setImportProgress({ current: 0, total: json.length, label: 'Sincronizando telemetría con la flota...' });
+        setImportProgress({ current: 0, total: json.length, label: 'Sincronizando telemetría en tiempo real...' });
         const newProductionData: Record<string, ProductionTest[]> = {};
         
-        // --- MEMORIA DE POZO PARA PIP ---
         const lastValidPipMap: Record<string, number> = {};
 
-        const chunkSize = 200;
+        // Bajamos chunkSize de 200 a 100 para evitar tirones
+        const chunkSize = 100;
         for (let i = 0; i < json.length; i += chunkSize) {
             const chunk = json.slice(i, i + chunkSize);
-            setImportProgress({ current: i, total: json.length, label: `Procesando ${i} de ${json.length} registros...` });
-            await new Promise(r => setTimeout(r, 0));
+            setImportProgress({ current: i, total: json.length, label: `Vinculando registros históricos: ${i} / ${json.length}...` });
+            await new Promise(r => setTimeout(r, 5));
 
             chunk.forEach((row) => {
                 const name = String(get_ext(row, ['POZO', 'WELL', 'NAME', 'ID']) || '').trim();
@@ -2866,34 +2871,63 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
 
             {/* FULL-SCREEN IMPORT PROGRESS OVERLAY */}
             {importProgress && (
-                <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-canvas/60 backdrop-blur-md animate-fadeIn">
-                    <div className="bg-surface/90 border border-primary/30 rounded-[2.5rem] p-12 shadow-[0_0_80px_rgba(var(--color-primary),0.2)] flex flex-col items-center gap-8 max-w-xl w-full light-sweep relative overflow-hidden">
-                        <div className="absolute inset-0 bg-primary/5 blur-[100px] rounded-full pointer-events-none"></div>
-
-                        <div className="relative w-28 h-28 flex items-center justify-center flex-shrink-0 group">
-                            <Database className="w-12 h-12 text-primary animate-pulse relative z-10" />
-                            <div className="absolute inset-0 border-[6px] border-primary/20 border-t-primary rounded-full animate-spin"></div>
-                            <div className="absolute inset-2 border-[6px] border-secondary/20 border-b-secondary rounded-full animate-spin-[3s_linear_infinite] opacity-70"></div>
-                        </div>
-
-                        <div className="flex flex-col items-center w-full relative z-10 gap-2">
-                            <h3 className="text-2xl font-black text-txt-main uppercase tracking-[0.2em] text-center drop-shadow-md">
-                                {importProgress.label.replace('...', '')}
-                            </h3>
-                            <p className="text-txt-muted text-[10px] font-bold uppercase tracking-[0.2em] bg-surface-light border border-white/5 px-4 py-1.5 rounded-full animate-pulse mt-1">
-                                Por favor espere, procesando volumen de datos...
-                            </p>
-
-                            <div className="w-full h-4 bg-canvas/80 rounded-full overflow-hidden border border-white/10 shadow-inner mt-6 relative">
-                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent"></div>
-                                <div className="h-full bg-gradient-to-r from-primary to-secondary transition-all duration-300 relative shadow-glow-primary" style={{ width: `${(importProgress.current / Math.max(1, importProgress.total)) * 100}%` }}>
-                                    <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
+                <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-canvas/80 backdrop-blur-2xl animate-fadeIn">
+                    {/* Background Decorative Elements */}
+                    <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-primary/20 rounded-full blur-[150px] animate-pulse"></div>
+                    <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-secondary/10 rounded-full blur-[150px] animate-pulse-slow"></div>
+                    
+                    <div className="bg-surface/40 backdrop-blur-3xl border border-white/10 rounded-[4rem] p-16 shadow-[0_0_120px_rgba(var(--color-primary),0.15)] flex flex-col items-center gap-10 max-w-2xl w-full relative overflow-hidden group">
+                        {/* Shimmer effect */}
+                        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent -translate-x-full group-hover:animate-[shimmer_3s_infinite] pointer-events-none"></div>
+                        
+                        <div className="relative">
+                            {/* Complex animated icon */}
+                            <div className="relative w-32 h-32 flex items-center justify-center">
+                                <div className="absolute inset-0 bg-primary/20 rounded-full animate-ping opacity-40"></div>
+                                <div className="absolute inset-0 border-2 border-primary/30 rounded-full"></div>
+                                <div className="absolute inset-2 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+                                <div className="absolute inset-6 border-2 border-secondary/20 border-b-secondary rounded-full animate-spin-[4s_linear_infinite] opacity-60"></div>
+                                
+                                <div className="relative z-10 p-6 bg-gradient-to-br from-primary to-primary-dark rounded-3xl shadow-glow-primary">
+                                    <Activity className="w-12 h-12 text-white animate-pulse" />
                                 </div>
                             </div>
+                        </div>
 
-                            <div className="flex justify-between w-full mt-3 px-2">
-                                <span className="text-xs font-black text-txt-muted uppercase tracking-widest opacity-60">Progreso Global</span>
-                                <span className="text-base font-mono font-black text-primary glow-sm">{Math.round((importProgress.current / Math.max(1, importProgress.total)) * 100)}%</span>
+                        <div className="flex flex-col items-center w-full relative z-10 gap-4 text-center">
+                            <div className="space-y-1">
+                                <h3 className="text-3xl font-black text-txt-main uppercase tracking-[0.3em] drop-shadow-2xl">
+                                    {importProgress.label.replace('...', '')}
+                                </h3>
+                                <div className="h-1 w-24 bg-primary mx-auto rounded-full shadow-glow-primary opacity-60"></div>
+                            </div>
+                            
+                            <p className="text-txt-muted text-xs font-bold uppercase tracking-[0.4em] opacity-40 flex items-center gap-3">
+                                <RefreshCw className="w-3 h-3 animate-spin" />
+                                Optimizando Entorno de Operaciones
+                            </p>
+
+                            <div className="w-full mt-8 space-y-4">
+                                <div className="w-full h-3 bg-canvas/60 rounded-full overflow-hidden border border-white/5 shadow-inner p-[2px]">
+                                    <div 
+                                        className="h-full bg-gradient-to-r from-primary via-secondary to-primary bg-[length:200%_100%] animate-shimmer-fast rounded-full transition-all duration-500 ease-out shadow-glow-primary" 
+                                        style={{ width: `${(importProgress.current / Math.max(1, importProgress.total)) * 100}%` }}
+                                    ></div>
+                                </div>
+
+                                <div className="flex justify-between items-end">
+                                    <div className="flex flex-col items-start">
+                                        <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-1">Estado del Sistema</span>
+                                        <span className="text-[11px] font-bold text-txt-muted uppercase tracking-widest bg-white/5 px-3 py-1 rounded-lg border border-white/5">
+                                            {importProgress.current} de {importProgress.total} registros
+                                        </span>
+                                    </div>
+                                    <div className="text-right">
+                                        <span className="block text-4xl font-black text-txt-main tracking-tighter leading-none italic">
+                                            {Math.round((importProgress.current / Math.max(1, importProgress.total)) * 100)}<small className="text-lg text-primary ml-1">%</small>
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
