@@ -239,11 +239,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     clearInterval(interval);
                     return prev;
                 });
-            }, 280);
+            }, 300); // 300ms per log step
 
             const timer = setTimeout(() => {
                 setIsBooting(false);
-            }, 2000);
+            }, 2000); // 2 seconds total boot time
 
             return () => {
                 clearInterval(interval);
@@ -378,8 +378,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                         100% { opacity: 0; }
                     }
                     @keyframes eks-logo-in {
-                        0%   { opacity: 0; filter: brightness(22) blur(40px) saturate(4); transform: scale(3.5); }
-                        30%  { opacity: 1; filter: brightness(5) blur(4px);  transform: scale(1.08); }
+                        0%   { opacity: 1; filter: brightness(3) blur(8px) saturate(2); transform: scale(1.5); }
                         100% { opacity: 1; filter: brightness(1.2) blur(0) drop-shadow(0 0 70px rgb(var(--color-primary) / 1)); transform: scale(1); }
                     }
                     @keyframes eks-logo-halo {
@@ -677,16 +676,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                             animation: 'eks-ring-cw 7s linear infinite, eks-ring-in 0.7s ease-out 0.9s both',
                         }} />
 
-                        {/* LOGO */}
+                        {/* LOGO ESTATICO ORIGINAL */}
                         <img
                             src="/LOGO.png"
-                            alt="EDS Core"
+                            alt="ESP Logo"
                             style={{
                                 position: 'absolute', inset: 0,
                                 width: '100%', height: '100%', objectFit: 'contain',
-                                animation: 'eks-logo-in 0.85s cubic-bezier(0.16,1,0.3,1) 0.1s both',
-                                filter: 'drop-shadow(0 0 65px rgb(var(--color-primary) / 0.95)) drop-shadow(0 0 140px rgb(var(--color-primary) / 0.4)) brightness(1.4)',
                                 zIndex: 10,
+                                pointerEvents: 'none',
+                                mixBlendMode: 'screen',
+                                animation: 'eks-logo-in 1.2s cubic-bezier(0.16, 1, 0.3, 1) both',
                             }}
                         />
                     </div>
@@ -854,30 +854,40 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     return (
         <div className="h-screen w-full bg-canvas relative flex items-center justify-center overflow-hidden font-sans text-txt-main selection:bg-primary/30 transition-colors duration-700 animate-landing-entry">
 
-            {/* --- BACKGROUND LAYER SYSTEM --- */}
-            <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-                <div className="ambient-light bg-primary/20 top-[-10%] left-[-10%] w-[70vw] h-[70vw]" style={{ animationDuration: '15s' }}></div>
+            {/* --- PREMIUM BACKGROUND LAYER SYSTEM --- */}
+            <div className="fixed inset-0 overflow-hidden pointer-events-none z-0 bg-canvas">
+                {/* Dynamic Ambient Orbs */}
+                <div className="absolute top-[-20%] left-[-10%] w-[60vw] h-[60vw] rounded-full bg-primary/10 mix-blend-screen filter blur-[100px] animate-pulse-slow"></div>
+                <div className="absolute bottom-[-20%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-secondary/10 mix-blend-screen filter blur-[120px] animate-pulse-slow" style={{ animationDelay: '2s' }}></div>
+                <div className="absolute top-[40%] left-[30%] w-[30vw] h-[30vw] rounded-full bg-accent/5 mix-blend-screen filter blur-[80px] animate-float"></div>
 
+                {/* Parallax Industrial Background */}
                 <div
-                    className="absolute inset-[-5%] bg-cover bg-center opacity-10 mix-blend-luminosity grayscale transition-transform duration-700 ease-out"
+                    className="absolute inset-[-10%] bg-cover bg-center opacity-5 mix-blend-overlay transition-transform duration-1000 ease-out"
                     style={{
-                        backgroundImage: `url('https://images.unsplash.com/photo-1599940824399-b87987ced72a?q=80&w=2927&auto=format&fit=crop')`,
-                        transform: `translate3d(${mousePos.x * -0.8}px, ${mousePos.y * -0.8}px, 0) scale(1.02)`
+                        backgroundImage: `url('https://images.unsplash.com/photo-1605217613423-0a6108ce817f?q=80&w=2927&auto=format&fit=crop')`,
+                        transform: `translate3d(${mousePos.x * -0.5}px, ${mousePos.y * -0.5}px, 0) scale(1.05)`
                     }}
                 />
 
-                <div className="absolute bottom-[-10%] left-[-20%] right-[-20%] h-[40vh] bg-[linear-gradient(rgba(var(--color-primary),0.12)_1px,transparent_1px),linear-gradient(90deg,rgba(var(--color-primary),0.12)_1px,transparent_1px)] bg-[size:50px_50px] [transform:perspective(1000px)_rotateX(75deg)] opacity-40 animate-scan"></div>
+                {/* Animated Tech Grid */}
+                <div className="absolute inset-0 bg-[linear-gradient(rgba(var(--color-text-main),0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(var(--color-text-main),0.03)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_at_center,black_20%,transparent_80%)]"></div>
 
+                {/* Perspective Floor Grid */}
+                <div className="absolute bottom-[-20%] left-[-20%] right-[-20%] h-[50vh] bg-[linear-gradient(rgba(var(--color-primary),0.15)_1px,transparent_1px),linear-gradient(90deg,rgba(var(--color-primary),0.15)_1px,transparent_1px)] bg-[size:60px_60px] [transform:perspective(1000px)_rotateX(70deg)] opacity-50 animate-scan [mask-image:linear-gradient(to_top,black_10%,transparent_100%)]"></div>
+
+                {/* Upward Floating Particles with Glow */}
                 {particles.map(p => (
                     <div
                         key={p.id}
-                        className="absolute bottom-[-10px] bg-primary rounded-full animate-float"
+                        className="absolute bottom-[-20px] rounded-full animate-float-particle"
                         style={{
                             left: `${p.left}%`,
                             width: `${p.size}px`,
                             height: `${p.size}px`,
                             opacity: p.opacity,
-                            boxShadow: `0 0 8px rgba(var(--color-primary), 0.8)`,
+                            background: `radial-gradient(circle at center, rgb(var(--color-primary)) 0%, transparent 100%)`,
+                            boxShadow: `0 0 ${p.size * 3}px rgb(var(--color-primary))`,
                             animationDelay: `${p.delay}s`,
                             animationDuration: `${p.duration}s`,
                         }}
@@ -912,7 +922,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                         <span className="text-[10px] font-black uppercase tracking-widest font-mono text-primary">{theme}</span>
                     </button>
                     <div className="w-[1px] h-4 bg-white/10 mx-1"></div>
-                    <button 
+                    <button
                         onClick={() => {
                             if (isAdmin) {
                                 logoutAdmin();
@@ -939,26 +949,38 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
                 {/* LEFT: CONTENT */}
                 <div className="xl:col-span-7 space-y-10 animate-fadeInLeft">
-                    <div className="space-y-4">
+                    <div className="space-y-6 relative">
+                        {/* Decorative background glow for text */}
+                        <div className="absolute -left-10 top-10 w-40 h-40 bg-primary/20 blur-[80px] rounded-full pointer-events-none"></div>
+
                         <div className="flex items-center gap-4">
-                            <span className="px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-[9px] font-black text-primary uppercase tracking-[0.3em]">
+                            <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-primary/20 to-transparent border border-primary/30 text-[9px] font-black text-primary uppercase tracking-[0.3em] backdrop-blur-sm shadow-[0_0_15px_rgba(var(--color-primary),0.2)]">
+                                <span className="relative flex h-2 w-2">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                                </span>
                                 {t('lp.engineering')}
-                            </span>
+                            </div>
                         </div>
-                        <h1 className="text-7xl md:text-8xl xl:text-[8.5rem] font-black text-txt-main leading-[0.8] tracking-tighter select-none">
-                            ESP DESIGN STUDIO<span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary/80">IA</span>
+                        <h1 className="text-7xl md:text-8xl xl:text-[8.5rem] font-black text-txt-main leading-[0.85] tracking-tighter select-none drop-shadow-2xl">
+                            ESP DESIGN <br /> STUDIO<span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-secondary to-accent animate-gradient-x bg-[length:200%_auto]">IA</span>
                         </h1>
                     </div>
 
-                    <p className="text-lg text-txt-muted max-w-xl font-medium leading-relaxed border-l-2 border-primary/30 pl-8 py-2">
-                        {t('lp.desc')}
-                    </p>
+                    <div className="relative">
+                        <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-gradient-to-b from-primary via-primary/50 to-transparent rounded-full"></div>
+                        <p className="text-lg text-txt-muted max-w-xl font-medium leading-relaxed pl-8 py-2 text-shadow-sm">
+                            {t('lp.desc')}
+                        </p>
+                    </div>
 
-                    <div className="flex flex-wrap gap-4 pt-4">
+                    <div className="flex flex-wrap gap-4 pt-6">
                         {[{ icon: Zap, label: 'VFD Sim' }, { icon: Database, label: 'PVT Core' }, { icon: Cpu, label: 'AI Suite' }].map((item, i) => (
-                            <div key={i} className="px-6 py-3 rounded-xl glass-surface-light border border-white/10 flex items-center gap-3 hover:border-primary/40 transition-colors">
-                                <item.icon className="w-4 h-4 text-primary" />
-                                <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">{item.label}</span>
+                            <div key={i} className="group px-6 py-3.5 rounded-2xl bg-white/5 border border-white/10 flex items-center gap-3 hover:bg-white/10 hover:border-primary/50 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_10px_20px_rgba(var(--color-primary),0.1)] cursor-default backdrop-blur-md">
+                                <div className="p-2 rounded-xl bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                                    <item.icon className="w-4 h-4 text-primary group-hover:scale-110 transition-transform" />
+                                </div>
+                                <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80 group-hover:opacity-100 text-txt-main">{item.label}</span>
                             </div>
                         ))}
                     </div>
@@ -967,11 +989,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 {/* RIGHT: FORM CARD */}
                 <div className="xl:col-span-5 flex justify-center xl:justify-end animate-fadeInRight">
                     <div className="w-full max-w-[560px] relative group">
+                        {/* Glow Behind Card */}
+                        <div className="absolute -inset-1 bg-gradient-to-r from-primary/40 via-secondary/20 to-primary/40 rounded-[48px] blur-2xl opacity-40 group-hover:opacity-80 transition duration-1000 animate-pulse-slow"></div>
                         <div className="absolute -inset-4 bg-primary/10 rounded-[48px] blur-3xl opacity-50 group-hover:opacity-100 transition duration-1000"></div>
 
-                        <div className="relative glass-surface border border-white/10 rounded-[40px] p-8 md:p-12 shadow-3xl backdrop-blur-3xl overflow-hidden">
-                            <div className="absolute top-0 right-0 p-6 opacity-20">
-                                <Sparkles className="w-12 h-12 text-primary" />
+                        <div className="relative bg-canvas/40 border border-white/10 rounded-[40px] p-8 md:p-12 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)] backdrop-blur-3xl overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/5 before:to-transparent before:pointer-events-none">
+                            {/* Inner ambient light */}
+                            <div className="absolute top-[-50px] right-[-50px] w-[150px] h-[150px] bg-primary/30 rounded-full blur-[60px] pointer-events-none"></div>
+
+                            <div className="absolute top-0 right-0 p-8 opacity-40">
+                                <Sparkles className="w-10 h-10 text-primary animate-pulse" />
                             </div>
 
                             <div className="mb-10 space-y-2">
@@ -990,40 +1017,57 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                                         <SecureWrapper isLocked={true} tooltip="Módulo de Diseño Bloqueado" className="w-full">
                                             <button
                                                 onClick={() => setMenuLevel('design')}
-                                                className="group relative w-full h-24 overflow-hidden rounded-3xl transition-all active:scale-[0.98] border border-white/20 bg-primary hover:shadow-[0_0_40px_rgba(var(--color-primary),0.3)] shadow-glow-primary/20"
+                                                className="group relative w-full h-28 overflow-hidden rounded-[2rem] transition-all duration-500 active:scale-[0.98] border border-primary/30 bg-primary hover:shadow-[0_0_60px_rgba(var(--color-primary),0.4)] backdrop-blur-xl"
                                             >
-                                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-shimmer"></div>
+                                                {/* Animated overlay effects */}
+                                                <div className="absolute inset-0 bg-gradient-to-br from-transparent to-black/30 group-hover:to-black/10 transition-colors duration-500"></div>
+                                                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 mix-blend-overlay"></div>
+                                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-[150%] group-hover:animate-[shimmer_2s_infinite] skew-x-[-20deg]"></div>
+                                                <div className="absolute right-0 top-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 group-hover:scale-150 transition-transform duration-700"></div>
+
                                                 <div className="relative z-10 flex items-center justify-between px-8 h-full">
                                                     <div className="flex items-center gap-6">
-                                                        <div className="w-14 h-14 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg bg-white/20">
-                                                            <Palette className="w-7 h-7 text-white" />
+                                                        <div className="w-16 h-16 rounded-2xl flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-2xl bg-white/20 backdrop-blur-sm border border-white/30">
+                                                            <Palette className="w-8 h-8 text-white drop-shadow-md" />
                                                         </div>
                                                         <div className="text-left font-black uppercase text-white leading-tight">
-                                                            <span className="block text-xl tracking-wider">Diseño e Ingeniería</span>
-                                                            <span className="block text-[10px] opacity-70 tracking-[0.3em] mt-1.5 font-bold">Design & Engineering</span>
+                                                            <span className="block text-2xl tracking-wide drop-shadow-md">Diseño e Ingeniería</span>
+                                                            <span className="block text-[10px] opacity-80 tracking-[0.4em] mt-2 font-bold flex items-center gap-2">
+                                                                Design & Engineering <span className="w-8 h-[1px] bg-white/50 inline-block"></span>
+                                                            </span>
                                                         </div>
                                                     </div>
-                                                    <ChevronRight className="w-6 h-6 text-white group-hover:translate-x-2 transition-transform" />
+                                                    <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors border border-white/10">
+                                                        <ChevronRight className="w-6 h-6 text-white group-hover:translate-x-1 transition-transform" />
+                                                    </div>
                                                 </div>
                                             </button>
                                         </SecureWrapper>
 
                                         <button
                                             onClick={() => onMonitoring()}
-                                            className="group relative w-full h-24 overflow-hidden rounded-3xl transition-all active:scale-[0.98] border border-white/20 bg-secondary hover:shadow-[0_0_40px_rgba(var(--color-secondary),0.3)] shadow-glow-secondary/20"
+                                            className="group relative w-full h-28 overflow-hidden rounded-[2rem] transition-all duration-500 active:scale-[0.98] border border-secondary/30 bg-secondary hover:shadow-[0_0_60px_rgba(var(--color-secondary),0.4)] backdrop-blur-xl"
                                         >
-                                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-shimmer"></div>
+                                            <div className="absolute inset-0 bg-gradient-to-br from-transparent to-black/30 group-hover:to-black/10 transition-colors duration-500"></div>
+                                            <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10 mix-blend-overlay"></div>
+                                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-[150%] group-hover:animate-[shimmer_2s_infinite] skew-x-[-20deg]"></div>
+                                            <div className="absolute left-0 bottom-0 w-32 h-32 bg-white/10 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2 group-hover:scale-150 transition-transform duration-700"></div>
+
                                             <div className="relative z-10 flex items-center justify-between px-8 h-full">
                                                 <div className="flex items-center gap-6">
-                                                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg bg-white/20">
-                                                        <Activity className="w-7 h-7 text-white" />
+                                                    <div className="w-16 h-16 rounded-2xl flex items-center justify-center group-hover:scale-110 group-hover:-rotate-3 transition-all duration-500 shadow-2xl bg-white/20 backdrop-blur-sm border border-white/30">
+                                                        <Activity className="w-8 h-8 text-white drop-shadow-md" />
                                                     </div>
                                                     <div className="text-left font-black uppercase text-white leading-tight">
-                                                        <span className="block text-xl tracking-wider">Centro de Control</span>
-                                                        <span className="block text-[10px] opacity-70 tracking-[0.3em] mt-1.5 font-bold">Monitoring & Operations</span>
+                                                        <span className="block text-2xl tracking-wide drop-shadow-md">Centro de Control</span>
+                                                        <span className="block text-[10px] opacity-80 tracking-[0.4em] mt-2 font-bold flex items-center gap-2">
+                                                            Monitoring & Operations <span className="w-8 h-[1px] bg-white/50 inline-block"></span>
+                                                        </span>
                                                     </div>
                                                 </div>
-                                                <ArrowUpRight className="w-6 h-6 text-white group-hover:translate-x-1 group-hover:-translate-y-1 transition-all" />
+                                                <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors border border-white/10">
+                                                    <ArrowUpRight className="w-6 h-6 text-white group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                                                </div>
                                             </div>
                                         </button>
                                     </div>
@@ -1289,22 +1333,42 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     to { background-position: 0 100px; }
                 }
                 .animate-scan { animation: scan 8s linear infinite; }
+                
+                @keyframes float-particle {
+                    0% { transform: translateY(10vh) scale(0.8); opacity: 0; }
+                    20% { opacity: 1; transform: translateY(-10vh) scale(1); }
+                    80% { opacity: 1; transform: translateY(-80vh) scale(1); }
+                    100% { transform: translateY(-110vh) scale(0.5); opacity: 0; }
+                }
+                .animate-float-particle { animation: float-particle linear infinite; }
+                
                 @keyframes float {
-                    0% { transform: translateY(5vh); opacity: 0; }
-                    20% { opacity: 1; }
-                    80% { opacity: 1; }
-                    100% { transform: translateY(-110vh); opacity: 0; }
+                    0%, 100% { transform: translateY(0); }
+                    50% { transform: translateY(-20px); }
                 }
-                .animate-float { animation: float linear infinite; }
+                .animate-float { animation: float 6s ease-in-out infinite; }
+
+                @keyframes pulse-slow {
+                    0%, 100% { opacity: 0.4; transform: scale(1); }
+                    50% { opacity: 0.7; transform: scale(1.05); }
+                }
+                .animate-pulse-slow { animation: pulse-slow 8s ease-in-out infinite; }
+
                 @keyframes shimmer {
-                    100% { transform: translateX(100%); }
+                    100% { transform: translateX(200%); }
                 }
-                .animate-shimmer { animation: shimmer 1.5s infinite; }
+
                 @keyframes blink {
                     0%, 100% { opacity: 1; }
                     50% { opacity: 0; }
                 }
                 .animate-blink { animation: blink 0.5s infinite; }
+
+                @keyframes gradient-x {
+                    0%, 100% { background-position: 0% 50%; }
+                    50% { background-position: 100% 50%; }
+                }
+                .animate-gradient-x { animation: gradient-x 4s ease infinite; }
 
                 @keyframes landing-entry {
                     0% { opacity: 0; filter: blur(20px) brightness(2); transform: scale(0.95); }
@@ -1315,19 +1379,21 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 .animate-landing-entry { animation: landing-entry 1s ease-out forwards; }
 
                 @keyframes fadeInLeft {
-                    0% { opacity: 0; transform: translateX(-30px); }
+                    0% { opacity: 0; transform: translateX(-40px); }
                     100% { opacity: 1; transform: translateX(0); }
                 }
-                .animate-fadeInLeft { animation: fadeInLeft 0.8s ease-out 0.2s forwards; }
+                .animate-fadeInLeft { animation: fadeInLeft 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards; }
 
                 @keyframes fadeInRight {
-                    0% { opacity: 0; transform: translateX(30px); }
+                    0% { opacity: 0; transform: translateX(40px); }
                     100% { opacity: 1; transform: translateX(0); }
                 }
-                .animate-fadeInRight { animation: fadeInRight 0.8s ease-out 0.4s forwards; }
+                .animate-fadeInRight { animation: fadeInRight 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.4s forwards; }
 
                 .glass-surface { background: rgba(var(--color-surface-rgb), 0.7); backdrop-filter: blur(40px); }
                 .glass-surface-light { background: rgba(var(--color-surface-rgb), 0.3); backdrop-filter: blur(12px); }
+                
+                .text-shadow-sm { text-shadow: 0 2px 10px rgba(0,0,0,0.2); }
             `}</style>
         </div>
     );

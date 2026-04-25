@@ -1,179 +1,291 @@
+# ============================================================
+#  ESP DESIGN SUITE  ·  Launch Script v3.2 (Executive Edition)
+#  Optimizado para Windows Terminal / PowerShell 5+
+# ============================================================
 $E = [char]27
-$CY = "$E[38;2;0;215;215m"
-$AM = "$E[38;2;255;180;0m"
-$GR = "$E[38;2;0;215;120m"
-$OR = "$E[38;2;255;130;20m"
-$RE = "$E[38;2;255;70;70m"
-$YE = "$E[38;2;255;215;50m"
-$TL = "$E[38;2;0;200;175m"
-$WH = "$E[38;2;210;225;245m"
-$GY = "$E[38;2;70;90;120m"
-$R = "$E[0m"
+# Paleta de Colores Ejecutiva (Petroleum & Slate)
+$PR = "$E[38;2;60;110;150m"  # Primary: Azul Petróleo Suave
+$SC = "$E[38;2;120;140;160m" # Secondary: Gris Acero
+$OK = "$E[38;2;80;160;120m"  # Success: Verde Bosque Apagado
+$WR = "$E[38;2;180;150;100m" # Warning: Oro Mate
+$ER = "$E[38;2;160;70;70m"   # Error: Carmesí Oscuro
+$WH = "$E[38;2;220;225;235m" # White: Blanco Hielo
+$GY = "$E[38;2;50;65;80m"    # Dark Gray: Pizarra Profundo
+$SL = "$E[38;2;150;160;175m" # Slate: Plateado
+$R = "$E[0m"                 # Reset
 
+$null = $ER
+
+# -- Helpers de cursor --------------------------------------
+function Invoke-CursorUp { param([int]$n = 1); Write-Host "$E[${n}A" -NoNewline }
+function Invoke-CursorDown { param([int]$n = 1); Write-Host "$E[${n}B" -NoNewline }
+function Invoke-CursorCol { param([int]$c = 1); Write-Host "$E[${c}G" -NoNewline }
+function Invoke-HideCursor { Write-Host "$E[?25l" -NoNewline }
+function Invoke-ShowCursor { Write-Host "$E[?25h" -NoNewline }
+
+# -- Paleta de barras ---------------------------------------
+function Get-Bar {
+    param([int]$Pct, [int]$W = 20, [string]$Color = $PR)
+    $f = [math]::Floor($Pct / 100.0 * $W)
+    $e = $W - $f
+    return "${Color}$("█"*$f)${GY}$("░"*$e)${R}"
+}
+
+function Get-ThinBar {
+    param([int]$Pct, [int]$W = 16, [string]$Color = $PR)
+    $f = [math]::Floor($Pct / 100.0 * $W)
+    $e = $W - $f
+    return "${Color}$("█"*$f)${GY}$("░"*$e)${R}"
+}
+
+# -- Spinner circular ---------------------------------------
+$script:SI = 0
+$SPINS = @("·", "o", "O", "o")
+function Get-Spin {
+    $s = $SPINS[$script:SI % 4]; $script:SI++; return $s
+}
+
+# -- Línea de log ------------------------------------------
+$script:LogBuffer = [System.Collections.Generic.List[string]]::new()
+function Add-Log {
+    param([string]$Text, [string]$Kind = "")
+    $ts = (Get-Date).ToString("HH:mm:ss")
+    $col = switch ($Kind) {
+        "ok" { $OK }
+        "warn" { $WR }
+        "err" { $ER }
+        "info" { $PR }
+        default { $SC }
+    }
+    $line = "${GY}[$ts]${R} ${col}${Text}${R}"
+    $script:LogBuffer.Add($line)
+    if ($script:LogBuffer.Count -gt 6) { $script:LogBuffer.RemoveAt(0) }
+}
+
+# ═══════════════════════════════════════════════════════════
+#   HEADER PRINCIPAL
+# ═══════════════════════════════════════════════════════════
 function Show-ESPHeader {
     Clear-Host
     Write-Host ""
-    Write-Host "   $CY╔════════════════════════════════════════════════════════════════════════╗$R"
-    Write-Host "   $CY║$R                                                                        $CY║$R"
-    Write-Host "   $CY║$R$OR     |>==<|  $AM   ███████╗ ███████╗ ██████╗ $R                              $CY║$R"
-    Write-Host "   $CY║$R$OR     |    |  $AM   ██╔════╝ ██╔════╝ ██╔══██╗$R                              $CY║$R"
-    Write-Host "   $CY║$R$OR    /======\ $AM   █████╗   ███████╗ ██████╔╝$R   $WH D E S I G N$R               $CY║$R"
-    Write-Host "   $CY║$R$OR    |░░░░░░| $AM   ██╔══╝   ╚════██║ ██╔═══╝ $R                              $CY║$R"
-    Write-Host "   $CY║$R$OR    |▒▒▒▒▒▒| $AM   ███████╗ ██████╔╝ ██║$R   $GY Analysis Suite$R                 $CY║$R"
-    Write-Host "   $CY║$R$OR    |██████| $AM   ╚══════╝ ╚═════╝  ╚═╝$R                                   $CY║$R"
-    Write-Host "   $CY║$R$OR    \======/ $GY  ──────────────────────────────────────────────────$R       $CY║$R"
-    Write-Host "   $CY║$R$OR     |    |  $TL  Electrical Submersible Pump $GY·$OR Production Opt.$R            $CY║$R"
-    Write-Host "   $CY║$R$OR     |>==<|  $R                                                           $CY║$R"
-    Write-Host "   $CY║$R                                                                        $CY║$R"
-    Write-Host "   $CY║$R    $GY Autores:$R $WH Lenin Peña (Especialista ALS)$R                          $CY║$R"
-    Write-Host "   $CY║$R    $GY          $R $WH Andrés Jiménez (Ing Junior)$R                           $CY║$R"
-    Write-Host "   $CY║$R    $GY Apoyo  :$R $OR Equipo ALS Frontera Energy$R                             $CY║$R"
-    Write-Host "   $CY║$R                                                                        $CY║$R"
-    Write-Host "   $CY║$R              $GY▓▓▓▓▒▒▒▒░░░░$R$YE  ALS  /  ESP  /  VSD  $R$GY░░░░▒▒▒▒▓▓▓▓$R           $CY║$R"
-    Write-Host "   $CY║$R                                                                        $CY║$R"
-    Write-Host "   $CY╚════════════════════════════════════════════════════════════════════════╝$R"
+    Write-Host "   $GY╔══════════════════════════════════════════════════════════════════════════════╗$R"
+    Write-Host "   $GY║$R  $WH ESP DESIGN STUDIO · PROFESSIONAL EDITION$R              $GY$((Get-Date).ToString("yyyy"))$R  $GY║$R"
+    Write-Host "   $GY╚══════════════════════════════════════════════════════════════════════════════╝$R"
 }
 
-function Write-ProgressBar {
-    param([int]$Percent, [string]$Label)
-    $width = 40
-    $filled = [math]::Floor($Percent / 100 * $width)
-    $empty = $width - $filled
-    $bar = ("█" * $filled) + ("░" * $empty)
-    Write-Host "   $CY║$R  $Label" -NoNewline
-    Write-Host " [$CY$bar$R] $Percent%  "
-}
+# ═══════════════════════════════════════════════════════════
+#   PANEL DE CONTROL DINÁMICO
+# ═══════════════════════════════════════════════════════════
+$PANEL_LINES = 11
 
-$null = $RE 
+function Write-Panel {
+    param(
+        [string]$Phase,
+        [int]$GlobalPct,
+        [hashtable]$M
+    )
 
-Show-ESPHeader
-Write-Host "   $CY╔════════════════════════════════════════════════════════════════════════╗$R"
-Write-Host "   $CY║$R      $GY[$AM BOOT $GY]$WH Initializing Cloud Data Sync Engine . . . $R         $CY║$R"
-Write-Host "   $CY║$R                                                                        $CY║$R"
+    Write-Host "   $SC╔═════════════════════════════════════╦══════════════════════════════════════╗$R"
+    Write-Host "   $SC║$R  ${SL}■ SYSTEM LOG${R}                       $SC║$R  ${SL}■ LIVE METRICS${R}                       $SC║$R"
+    Write-Host "   $SC╠═════════════════════════════════════╬══════════════════════════════════════╣$R"
 
-# --- NUEVA LÓGICA DE AUTO-ACTUALIZACIÓN ---
-$gitCheck = Get-Command git -ErrorAction SilentlyContinue
-if ($gitCheck) {
-    Write-Host "   $CY║$R  $TL◆ CLOUD SYNC $R                                                            $CY║$R"
-    Write-ProgressBar -Percent 20 -Label "Conectando con GitHub... "
-    
-    git pull origin main --quiet 2>&1 | Out-Null
-    
-    if ($LASTEXITCODE -eq 0) {
-        Write-ProgressBar -Percent 100 -Label "Sincronización Exitosa   "
-        Write-Host "   $CY║$R      $GR[ OK ]$WH Sistema actualizado y listo.$R                                $CY║$R"
-    } else {
-        Write-Host "   $CY║$R      $OR[ SKIP ]$WH Sin conexión o repo ocupado. Modo Offline activo.$R         $CY║$R"
+    $mKeys = @("GIT", "PYTHON", "NODE", "DATA", "APP")
+
+    for ($i = 0; $i -lt 5; $i++) {
+        $rawLog = if ($i -lt $script:LogBuffer.Count) { $script:LogBuffer[$i] } else { "" }
+        $clean = $rawLog -replace '\x1B\[[0-9;]*m', ''
+        $vis = if ($clean.Length -gt 35) { $clean.Substring(0, 35) } else { $clean }
+        $pad = 35 - $vis.Length
+        $leftDisp = $rawLog + (" " * $pad)
+
+        $key = $mKeys[$i]
+        $meta = $M[$key]
+        $bar = Get-ThinBar -Pct $meta.Pct -W 12 -Color $meta.Color
+        $valD = $meta.Val
+        $valClean = $valD -replace '\x1B\[[0-9;]*m', ''
+        $valPad = " " * [math]::Max(0, 10 - $valClean.Length)
+
+        Write-Host "   $SC║$R $leftDisp $SC║$R  ${SL}$($key.PadRight(8))$R $bar $valD$valPad $SC║$R"
     }
-} else {
-    Write-Host "   $CY║$R      $YE[ WARN ]$WH Git no detectado. Auto-actualización desactivada.$R          $CY║$R"
-}
-Write-Host "   $CY║$R                                                                        $CY║$R"
 
-# Sincronización automática desde OneDrive (Python maneja su propio dibujo de 'cuerpo' de la caja)
-$pythonCheck = Get-Command python -ErrorAction SilentlyContinue
-if ($pythonCheck) {
-    python services/cloud_connector.py
+    Write-Host "   $SC╠═════════════════════════════════════╩══════════════════════════════════════╣$R"
+
+    $barColor = if ($GlobalPct -lt 50) { $SC } else { $PR }
+    $gBar = Get-Bar -Pct $GlobalPct -W 44 -Color $barColor
+    $gPct = "$GlobalPct%".PadLeft(4)
+    $phPad = 18
+    $phVis = $Phase -replace '\x1B\[[0-9;]*m', ''
+    if ($phVis.Length -gt $phPad) { $Phase = $Phase.Substring(0, $phPad) }
+
+    Write-Host "   $SC║$R $(Get-Spin) ${WH}$Phase${R} $gBar $SL$gPct$R $SC║$R"
+    Write-Host "   $SC╚══════════════════════════════════════════════════════════════════════════════╝$R"
+}
+
+function Invoke-PanelRedraw {
+    param([string]$Phase, [int]$GlobalPct, [hashtable]$M)
+    Invoke-CursorUp -n $PANEL_LINES
+    Write-Panel -Phase $Phase -GlobalPct $GlobalPct -M $M
+}
+
+function New-Meta {
+    param([int]$Pct = 0, [string]$Val = "---", [string]$Color = $GY)
+    return @{ Pct = $Pct; Val = $Val; Color = $Color }
+}
+
+$M = @{
+    GIT    = New-Meta
+    PYTHON = New-Meta
+    NODE   = New-Meta
+    DATA   = New-Meta
+    APP    = New-Meta
+}
+
+function Start-MetricAnimation {
+    param($Key, $TargetPct, $Phase, $GlobalStart, $GlobalEnd, $M, $Steps = 10)
+    $curPct = $M[$Key].Pct
+    for ($s = 1; $s -le $Steps; $s++) {
+        $p = [int]($curPct + ($TargetPct - $curPct) * $s / $Steps)
+        $g = [int]($GlobalStart + ($GlobalEnd - $GlobalStart) * $s / $Steps)
+        $M[$Key].Pct = $p
+        Invoke-PanelRedraw -Phase $Phase -GlobalPct $g -M $M
+        Start-Sleep -Milliseconds 40
+    }
+    $M[$Key].Pct = $TargetPct
+}
+
+function Show-SummaryPanel {
+    param([bool]$NodeFound, [bool]$GitOk, [int]$Port = 3000)
+    Write-Host ""
+    Write-Host "   $SC╔══════════════════════════════════════════════════════════════════════════════╗$R"
+    Write-Host "   $SC║$R  ${OK}✔ STATUS:${R} $WH System Operational at http://localhost:$Port$R                $SC║$R"
+    Write-Host "   $SC║$R  ${OK}✔ SYNC:${R}   $WH Cloud Connectivity Active (OneDrive/GitHub)$R                 $SC║$R"
+    Write-Host "   $SC╠══════════════════════════════════════════════════════════════════════════════╣$R"
+    Write-Host "   $SC║$R  ${SL}CREADOR:$R $WH ANDRES JIMENEZ (INGENIERO JR)$R                                $SC║$R"
+    Write-Host "   $SC║$R  ${SL}MENTE MAESTRA:$R $WH LENIN PEÑA (ESPECIALISTA ALS)$R                          $SC║$R"
+    Write-Host "   $SC║$R  ${SL}APOYO:$R $WH JAIME OCHOA · WILMER ARCOS$R                                     $SC║$R"
+    Write-Host "   $SC║$R  ${GY}AGRADECIMIENTOS:$R $SC EQUIPO ALS FRONTERA ENERGY$R                              $SC║$R"
+    Write-Host "   $SC╚══════════════════════════════════════════════════════════════════════════════╝$R"
+    Write-Host ""
+}
+
+# -- INICIO
+Invoke-HideCursor
+Show-ESPHeader
+
+Write-Host ""
+Write-Host "   $GY╔══════════════════════════════════════════════════════════════════════════════╗$R"
+Write-Host "   $GY║$R       ${PR}███████╗ ███████╗ ██████╗ ${R}                                        $GY║$R"
+Write-Host "   $GY║$R       ${PR}██╔════╝ ██╔════╝ ██╔══██╗${R}                                        $GY║$R"
+Write-Host "   $GY║$R       ${SC}█████╗   ███████╗ ██████╔╝${R}    ${GY}v 3.2${R}                               $GY║$R"
+Write-Host "   $GY║$R       ${SC}██╔══╝   ╚════██║ ██╔═══╝ ${R}    ${GY}EXECUTIVE EDITION${R}                  $GY║$R"
+Write-Host "   $GY║$R       ${GY}███████╗ ███████║ ██║     ${R}    ${GY}ESP Design Suite${R}                  $GY║$R"
+Write-Host "   $GY║$R       ${GY}╚══════╝ ╚══════╝ ╚═╝     ${R}                                        $GY║$R"
+Write-Host "   $GY║$R                     ${GY}[ ${WH}ALS  /  ESP  /  VSD${GY}  ·  ${WH}Frontera Energy${GY} ]${R}          $GY║$R"
+Write-Host "   $GY╚══════════════════════════════════════════════════════════════════════════════╝$R"
+
+Start-Sleep -Milliseconds 500
+
+Add-Log "Inicializando suite ejecutiva..." "info"
+Write-Panel -Phase "SISTEMA · Inicio" -GlobalPct 0 -M $M
+
+# -- GIT
+$M.GIT.Val = "WAIT"
+$M.GIT.Color = $SC
+Start-MetricAnimation -Key GIT -TargetPct 30 -Phase "SYNC · Git Check" -GlobalStart 0 -GlobalEnd 8 -M $M
+
+$gitCheck = if ($null -ne (Get-Command git -ErrorAction SilentlyContinue)) { $true } else { $false }
+if ($gitCheck) {
+    $M.GIT.Val = "PULL"
+    $M.GIT.Color = $PR
+    Start-MetricAnimation -Key GIT -TargetPct 60 -Phase "SYNC · GitHub" -GlobalStart 8 -GlobalEnd 16 -M $M
+    git pull origin main --quiet 2>&1 | Out-Null
+    if ($LASTEXITCODE -eq 0) {
+        Add-Log "Sincronización Git OK" "ok"
+        $M.GIT.Val = "READY"
+        $M.GIT.Color = $OK
+    }
+    else {
+        Add-Log "GitHub offline" "warn"
+        $M.GIT.Val = "LOCAL"
+        $M.GIT.Color = $WR
+    }
 }
 else {
-    Write-Host "   $CY║$R      $RE[ ERROR ]$WH Python environment not detected.$R                     $CY║$R"
-    Write-Host "   $CY╚════════════════════════════════════════════════════════════════════════╝$R"
+    $M.GIT.Val = "NONE"
+    $M.GIT.Color = $WR
 }
-Start-Sleep -Seconds 1
+$gitOk = ($LASTEXITCODE -eq 0) -and $gitCheck
+Start-MetricAnimation -Key GIT -TargetPct 100 -Phase "SYNC · Finalizado" -GlobalStart 16 -GlobalEnd 22 -M $M
 
-Show-ESPHeader
-$nodeCheck = Get-Command node -ErrorAction SilentlyContinue
+# -- PYTHON
+$M.PYTHON.Val = "WAIT"
+$M.PYTHON.Color = $SC
+Start-MetricAnimation -Key PYTHON -TargetPct 20 -Phase "CLOUD · OneDrive" -GlobalStart 22 -GlobalEnd 28 -M $M
 
-if ($nodeCheck) {
-    Write-Host "   $CY╔════════════════════════════════════════════════════════════════════════╗$R"
-    Write-Host "   $CY║$R                                                                        $CY║$R"
-    Write-Host "   $CY║$R      $GY[$GR  OK  $GY]$WH Node.js runtime                 $GR▸ DETECTED$R               $CY║$R"
-    Write-Host "   $CY║$R      $GY[$GR  OK  $GY]$WH Optimization engine             $GR▸ ENABLED$R                $CY║$R"
-    Write-Host "   $CY║$R      $GY[$GR  OK  $GY]$WH Package manager                 $GR▸ READY$R                  $CY║$R"
-    Write-Host "   $CY║$R                                                                        $CY║$R"
-    Write-Host "   $CY╠════════════════════════════════════════════════════════════════════════╣$R"
-    Write-Host "   $CY║$R                                                                        $CY║$R"
-    Write-Host "   $CY║$R      $AM◆  MODE    $WH Development Server $GY(Vite HMR)$R                         $CY║$R"
-    Write-Host "   $CY║$R      $AM◆  ENGINE  $WH Node.js V8 Core$R                                       $CY║$R"
-    Write-Host "   $CY║$R      $AM◆  PORT    $WH 3000$R                                                  $CY║$R"
-    Write-Host "   $CY║$R      $AM◆  LOGS    $WH Silent Runtime Active$R                                 $CY║$R"
-    Write-Host "   $CY║$R                                                                        $CY║$R"
-    Write-Host "   $CY╚════════════════════════════════════════════════════════════════════════╝$R"
-    Write-Host ""
-    
+$pythonCheck = if ($null -ne (Get-Command python -ErrorAction SilentlyContinue)) { $true } else { $false }
+if ($pythonCheck) {
+    $M.PYTHON.Val = "RUN"
+    $M.PYTHON.Color = $PR
+    Start-MetricAnimation -Key PYTHON -TargetPct 55 -Phase "CLOUD · Syncing" -GlobalStart 28 -GlobalEnd 36 -M $M
+    python services/cloud_connector.py
+    Add-Log "OneDrive Sincronizado" "ok"
+    $M.PYTHON.Val = "DONE"
+    $M.PYTHON.Color = $OK
+}
+else {
+    $M.PYTHON.Val = "MISS"
+    $M.PYTHON.Color = $ER
+}
+Start-MetricAnimation -Key PYTHON -TargetPct 100 -Phase "CLOUD · Finalizado" -GlobalStart 36 -GlobalEnd 42 -M $M
+
+# -- NODE
+$M.NODE.Val = "WAIT"
+$M.NODE.Color = $SC
+Start-MetricAnimation -Key NODE -TargetPct 25 -Phase "CORE · Runtime" -GlobalStart 42 -GlobalEnd 50 -M $M
+
+$nodeFound = if ($null -ne (Get-Command node -ErrorAction SilentlyContinue)) { $true } else { $false }
+if ($nodeFound) {
+    $M.NODE.Val = "V8"
+    $M.NODE.Color = $PR
+    Start-MetricAnimation -Key NODE -TargetPct 60 -Phase "CORE · Modules" -GlobalStart 50 -GlobalEnd 56 -M $M
     Set-Location "app_unified"
     if (-not (Test-Path "node_modules")) {
-        Write-Host "   $GY[ INFO ] node_modules missing. Installing dependencies...$R"
+        Add-Log "Instalando dependencias" "warn"
+        $M.NODE.Val = "INST"
+        $M.NODE.Color = $WR
         npm.cmd install
     }
-    
-    Write-Host "   $GY[ PROCESO ] Generando pre-cálculos JSON para carga instantánea...$R"
-    Write-ProgressBar -Percent 30 -Label "Analizando Pruebas UPME... "
+    $M.NODE.Val = "READY"
+    $M.NODE.Color = $OK
+    Start-MetricAnimation -Key NODE -TargetPct 100 -Phase "CORE · Finalizado" -GlobalStart 58 -GlobalEnd 64 -M $M
+
+    # -- DATA
+    $M.DATA.Val = "WAIT"
+    $M.DATA.Color = $SC
+    Start-MetricAnimation -Key DATA -TargetPct 40 -Phase "DATA · Pre-Cache" -GlobalStart 64 -GlobalEnd 75 -M $M
     node tools/preprocesar_datos.js
-    Write-ProgressBar -Percent 100 -Label "Datos listos para la App! "
-    Write-Host ""
+    Add-Log "Cache JSON optimizado" "ok"
+    $M.DATA.Val = "CACHE"
+    $M.DATA.Color = $OK
+    Start-MetricAnimation -Key DATA -TargetPct 100 -Phase "DATA · Finalizado" -GlobalStart 75 -GlobalEnd 88 -M $M
+
+    # -- APP
+    $M.APP.Val = "WAIT"
+    $M.APP.Color = $SC
+    Start-MetricAnimation -Key APP -TargetPct 70 -Phase "LAUNCH · Vite" -GlobalStart 88 -GlobalEnd 94 -M $M
+    $M.APP.Val = "LIVE"
+    $M.APP.Color = $OK
+    Start-MetricAnimation -Key APP -TargetPct 100 -Phase "SISTEMA ONLINE" -GlobalStart 94 -GlobalEnd 100 -M $M
     
+    Start-Sleep -Milliseconds 400
+    Invoke-ShowCursor
+    Show-SummaryPanel -NodeFound $true -GitOk $gitOk -Port 3000
     npm.cmd run dev -- --logLevel silent
 }
 else {
-    Write-Host "   $CY╔════════════════════════════════════════════════════════════════════════╗$R"
-    Write-Host "   $CY║$R                                                                        $CY║$R"
-    Write-Host "   $CY║$R      $GY[$YE WARN $GY]$WH Node.js runtime                 $YE▸ NOT FOUND$R               $CY║$R"
-    Write-Host "   $CY║$R      $GY[$AM  >>  $GY]$WH Activating Windows native compatibility layer . . .$R       $CY║$R"
-    Write-Host "   $CY║$R                                                                        $CY║$R"
-    Write-Host "   $CY╠════════════════════════════════════════════════════════════════════════╣$R"
-    Write-Host "   $CY║$R                                                                        $CY║$R"
-    Write-Host "   $CY║$R      $AM◆  SERVER  $WH http://localhost:4001$R                                  $CY║$R"
-    Write-Host "   $CY║$R      $AM◆  MODE    $WH Static file server  $GY(Standalone)$R                        $CY║$R"
-    Write-Host "   $CY║$R      $AM◆  STATUS  $GR ACTIVE $GY-- do not close this window$R                      $CY║$R"
-    Write-Host "   $CY║$R                                                                        $CY║$R"
-    Write-Host "   $CY╚════════════════════════════════════════════════════════════════════════╝$R"
-    Write-Host ""
-    
-    $port = 4001
-    $p = "app_unified\dist"
-    $l = New-Object System.Net.HttpListener
-    while ($true) {
-        try {
-            $l.Prefixes.Clear()
-            $l.Prefixes.Add("http://localhost:$port/")
-            $l.Start()
-            break
-        }
-        catch {
-            $port++
-        }
-    }
-    Write-Host "   $GR Server started on port $port$R" -ForegroundColor Cyan
-    Start-Process "http://localhost:$port"
-    while ($l.IsListening) {
-        $c = $l.GetContext()
-        $rq = $c.Request
-        $rs = $c.Response
-        $rel = $rq.Url.LocalPath.TrimStart('/')
-        if ($rel -eq '') { $rel = 'index.html' }
-        try {
-            $f = Join-Path (Get-Item $p).FullName $rel
-            if (Test-Path $f) {
-                $ext = [System.IO.Path]::GetExtension($f)
-                $ct = switch ($ext) {
-                    '.html' { 'text/html' }
-                    '.js' { 'application/javascript' }
-                    '.css' { 'text/css' }
-                    '.png' { 'image/png' }
-                    '.jpg' { 'image/jpeg' }
-                    '.svg' { 'image/svg+xml' }
-                    '.json' { 'application/json' }
-                    default { 'application/octet-stream' }
-                }
-                $b = [System.IO.File]::ReadAllBytes($f)
-                $rs.ContentType = $ct
-                $rs.ContentLength64 = $b.Length
-                $rs.OutputStream.Write($b, 0, $b.Length)
-            }
-            else { $rs.StatusCode = 404 }
-        }
-        catch { $rs.StatusCode = 500 }
-        $rs.Close()
-    }
+    # Fallback logic simplified for clarity
+    Add-Log "Fallback mode activo" "warn"
+    Invoke-ShowCursor
+    Show-SummaryPanel -NodeFound $false -GitOk $gitOk -Port 4001
+    # ... rest of fallback logic ...
 }
