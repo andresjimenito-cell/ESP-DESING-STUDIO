@@ -164,16 +164,19 @@ const RangeLimitsChart = ({ designs, activeSk }: { designs: DesignSnapshot[]; ac
                 const curMin = kMin * f * f;
                 const curMax = (kMax > 0 && hMaxBase > 0) ? kMax * f * f : 0;
 
-                // Truncation logic for limits too
+                // Truncation logic using the already calculated headNow
+
                 if (!stopState[di].minLimit) {
                     const lMin = kMin * f * f;
-                    if (lMin > 0 || f === 0) row[`min_${di}`] = lMin;
+                    // Truncate if above head
+                    if ((lMin > 0 && lMin < headNow) || f === 0) row[`min_${di}`] = lMin;
                     else { stopState[di].minLimit = true; row[`min_${di}`] = null; }
                 } else { row[`min_${di}`] = null; }
 
                 if (!stopState[di].maxLimit) {
                     const lMax = kMax * f * f;
-                    if (lMax > 0 || f === 0) row[`max_${di}`] = lMax;
+                    // Truncate if above head
+                    if ((lMax > 0 && lMax < headNow) || f === 0) row[`max_${di}`] = lMax;
                     else { stopState[di].maxLimit = true; row[`max_${di}`] = null; }
                 } else { row[`max_${di}`] = null; }
             });
@@ -244,17 +247,24 @@ const RangeLimitsChart = ({ designs, activeSk }: { designs: DesignSnapshot[]; ac
                             const fullLabel = cfg.label;
                             return (
                                 <React.Fragment key={i}>
+                                    <defs>
+                                        <filter id={`glow_${i}`} x="-20%" y="-20%" width="140%" height="140%">
+                                            <feGaussianBlur stdDeviation="3" result="blur" />
+                                            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                                        </filter>
+                                    </defs>
                                     {/* Main Head Curve */}
                                     <Line
                                         yAxisId="head"
                                         type="monotone"
                                         dataKey={`head_${i}`}
                                         stroke={color}
-                                        strokeWidth={4}
+                                        strokeWidth={5}
                                         dot={false}
                                         connectNulls={false}
                                         isAnimationActive={false}
                                         name={`${fullLabel} Head`}
+                                        style={{ filter: `url(#glow_${i})` }}
                                     />
                                     {/* Efficiency Curve */}
                                     <Line
@@ -262,9 +272,9 @@ const RangeLimitsChart = ({ designs, activeSk }: { designs: DesignSnapshot[]; ac
                                         type="monotone"
                                         dataKey={`eff_${i}`}
                                         stroke={color}
-                                        strokeWidth={2}
-                                        strokeDasharray="5 5"
-                                        opacity={0.6}
+                                        strokeWidth={2.5}
+                                        strokeDasharray="8 4"
+                                        opacity={0.7}
                                         dot={false}
                                         connectNulls={false}
                                         isAnimationActive={false}
@@ -333,6 +343,8 @@ const MiniDesignChart = ({ design, colorCfg, activeSkGlobal }: { design: DesignS
         const freq = design.params.targets?.[activeSk]?.frequency ?? design.frequency ?? 60;
         const pts = generateMultiCurveData(design.pump, sp, freq, 62);
         const match = findIntersection(pts);
+
+        const bf = design.pump.nameplateFrequency || 60;
         let op = null;
         if (match) {
             const res = calculateSystemResults(match.flow, match.head, sp, design.pump, freq);
@@ -431,11 +443,13 @@ const MiniDesignChart = ({ design, colorCfg, activeSkGlobal }: { design: DesignS
                                 dot={false} connectNulls={false} isAnimationActive={false} legendType="none" />
                         ))}
                         <Line yAxisId="head" type="monotone" dataKey="userHz"
-                            stroke={colorCfg.b} strokeWidth={3} dot={false} connectNulls={false} isAnimationActive={false} />
+                            stroke={colorCfg.b} strokeWidth={5} dot={false} connectNulls={false} isAnimationActive={false}
+                            style={{ filter: 'drop-shadow(0 0 8px ' + colorCfg.b + '80)' }} />
                         <Line yAxisId="eff" type="monotone" dataKey="efficiency"
-                            stroke="#10b981" strokeWidth={1.2} strokeDasharray="4 3" dot={false} connectNulls={false} opacity={0.7} isAnimationActive={false} />
+                            stroke="#10b981" strokeWidth={2.5} strokeDasharray="8 4" dot={false} connectNulls={false} opacity={0.8} isAnimationActive={false} />
                         <Line yAxisId="head" type="monotone" dataKey="systemCurve"
-                            stroke="#ef4444" strokeWidth={1.5} strokeDasharray="5 3" dot={false} connectNulls={false} opacity={0.7} isAnimationActive={false} />
+                            stroke="#ef4444" strokeWidth={3} strokeDasharray="10 5" dot={false} connectNulls={false} opacity={0.9} isAnimationActive={false} />
+
                         <Line yAxisId="head" type="monotone" dataKey="minLimit" stroke="#f59e0b" strokeWidth={0.8} strokeDasharray="2 3" dot={false} opacity={0.4} isAnimationActive={false} />
                         <Line yAxisId="head" type="monotone" dataKey="maxLimit" stroke="#f59e0b" strokeWidth={0.8} strokeDasharray="2 3" dot={false} opacity={0.4} isAnimationActive={false} />
                         {allOps.map((op: any, i: number) => {
@@ -732,72 +746,49 @@ export const ComparatorDashboard = ({ designs }: { designs: DesignSnapshot[] }) 
             console.warn("Iframe no listo para sincronización o no hay diseños.");
             return;
         }
-        console.log(">>> Ejecutando syncWithIframe. Scenario:", globalSk);
         const maxBep = Math.max(...designs.map(d => d.pump?.bepRate || 3000));
         const limitFlow = maxBep * 2;
         const masterFlows = Array.from({ length: 81 }, (_, i) => i * (limitFlow / 80));
-
-        const designTargets = designs.map(d => calculateScenarioResults(d, globalSk));
-        const stopStates = designs.map(() => ({ head: false }));
+        const SCENARIOS: ("min" | "target" | "max")[] = ["min", "target", "max"];
+        const designTargets = designs.map(d => ({
+            min: calculateScenarioResults(d, 'min'),
+            target: calculateScenarioResults(d, 'target'),
+            max: calculateScenarioResults(d, 'max')
+        }));
 
         const chartData = masterFlows.map(f => {
             const row: any = { flow: f };
             designs.forEach((d, di) => {
                 if (!d.pump) return;
                 const p = d.pump;
-                const sp = getScenarioParams(d.params, globalSk);
-                const currentFreq = d.params.targets?.[globalSk]?.frequency ?? d.frequency ?? 60;
                 const bf = p.nameplateFrequency || 60;
 
-                // 1. Current frequency head (Main Curve with truncation)
-                if (stopStates[di].head) {
-                    row[`Pump Head (ft) _${di}`] = null;
-                } else {
+                SCENARIOS.forEach(sk => {
+                    const currentFreq = d.params.targets?.[sk]?.frequency ?? d.frequency ?? 60;
                     const hNow = calculateAffinityHead(f, currentFreq, bf, p);
-                    if (hNow !== null && hNow > 0) {
-                        row[`Pump Head (ft) _${di}`] = hNow;
-                    } else if (f > 0) {
-                        stopStates[di].head = true;
-                        row[`Pump Head (ft) _${di}`] = null;
-                    } else {
-                        row[`Pump Head (ft) _${di}`] = hNow;
+                    
+                    row[`Pump Head (ft) _${di}_${sk}`] = (hNow !== null && hNow > 0) ? hNow : null;
+
+                    const res = designTargets[di][sk];
+                    if (res && res.flow > 0) {
+                        const closestFlow = masterFlows.reduce((prev, curr) =>
+                            Math.abs(curr - res.flow) < Math.abs(prev - res.flow) ? curr : prev
+                        );
+                        if (Math.abs(f - closestFlow) < (limitFlow / 160)) {
+                            row[`Target Point _${di}_${sk}`] = res.tdh || res.head;
+                        } else {
+                            row[`Target Point _${di}_${sk}`] = null;
+                        }
                     }
-                }
 
-                // 2. System Curve
-                try {
-                    const sysH = calculateSystemTDH(f, sp);
-                    const aof = calculateAOF(sp);
-                    if (f < aof * 0.98 && isFinite(sysH) && sysH > 0) {
-                        row[`System Head (ft) _${di}`] = sysH;
-                    } else {
-                        row[`System Head (ft) _${di}`] = null;
-                    }
-                } catch { row[`System Head (ft) _${di}`] = null; }
-
-                // 3. Target Point (Single Dot)
-                const res = designTargets[di];
-                if (res && res.flow > 0) {
-                    const closestFlow = masterFlows.reduce((prev, curr) =>
-                        Math.abs(curr - res.flow) < Math.abs(prev - res.flow) ? curr : prev
-                    );
-                    if (Math.abs(f - closestFlow) < (limitFlow / 160)) { // Half step tolerance
-                        row[`Target Point _${di}`] = res.tdh || res.head;
-                    } else {
-                        row[`Target Point _${di}`] = null;
-                    }
-                }
-
-                // 4. Limits (K-constant based)
-                const hMinBase = calculateBaseHead(p.minRate || 0, p) || 0;
-                const hMaxBase = calculateBaseHead(p.maxRate || 0, p) || 0;
-                const kMin = p.minRate > 0 ? hMinBase / (p.minRate * p.minRate) : 0;
-                const kMax = p.maxRate > 0 ? hMaxBase / (p.maxRate * p.maxRate) : 0;
-
-                const lMin = kMin * f * f;
-                const lMax = kMax * f * f;
-                row[`Min Range Limit (ft) _${di}`] = lMin <= 10000 ? lMin : null;
-                row[`Max Range Limit (ft) _${di}`] = lMax <= 10000 ? lMax : null;
+                    const hMinBase = calculateBaseHead(p.minRate || 0, p) || 0;
+                    const hMaxBase = calculateBaseHead(p.maxRate || 0, p) || 0;
+                    const kMin = p.minRate > 0 ? hMinBase / (p.minRate * p.minRate) : 0;
+                    const kMax = p.maxRate > 0 ? hMaxBase / (p.maxRate * p.maxRate) : 0;
+                    
+                    row[`Min Range Limit (ft) _${di}_${sk}`] = (kMin * f * f) <= 50000 ? (kMin * f * f) : null;
+                    row[`Max Range Limit (ft) _${di}_${sk}`] = (kMax * f * f) <= 50000 ? (kMax * f * f) : null;
+                });
             });
             return row;
         });
@@ -805,7 +796,7 @@ export const ComparatorDashboard = ({ designs }: { designs: DesignSnapshot[] }) 
         iframeRef.current.contentWindow?.postMessage({
             type: 'UPDATE_CHART',
             data: chartData,
-            title: globalSk.toUpperCase(),
+            title: "UNIFIED MULTI-SCENARIO ANALYSIS",
             theme: (theme === 'executive' || theme === 'heritage') ? 'light' : 'dark',
             designColors: designs.map((d, i) => getDesignStyle(d.pump, i).b),
             designLabels: designs.map((d, i) => getDesignStyle(d.pump, i).label)
@@ -843,19 +834,7 @@ export const ComparatorDashboard = ({ designs }: { designs: DesignSnapshot[] }) 
                 </div>
                 <div className="flex items-center gap-4">
                     <div className="flex p-1.5 bg-canvas/60 rounded-[20px] border border-surface-light shadow-inner relative z-10">
-                        {SCENARIO_KEYS.map(sk => (
-                            <button
-                                key={sk}
-                                onClick={() => {
-                                    console.log("Switching Performance Scenario to:", sk);
-                                    setGlobalSk(sk);
-                                }}
-                                className={`px-8 py-3 rounded-[16px] text-xs font-black uppercase tracking-widest transition-all duration-300 relative z-20 ${globalSk === sk
-                                    ? 'bg-primary text-white shadow-glow-primary scale-105'
-                                    : 'text-txt-muted hover:text-txt-main hover:bg-white/5'}`}>
-                                {sk === 'min' ? 'MIN' : sk === 'target' ? 'OBJ' : 'MAX'}
-                            </button>
-                        ))}
+                        {/* Escenarios eliminados por redundancia con la leyenda del gráfico */}
                     </div>
 
                     <button
@@ -893,8 +872,8 @@ export const ComparatorDashboard = ({ designs }: { designs: DesignSnapshot[] }) 
                                     }
                                 }
 
-                                 const otherStops = new Array(designs.length - 1).fill(false);
-                                 const rows = pts0.map((p0, ri) => {
+                                const otherStops = new Array(designs.length - 1).fill(false);
+                                const rows = pts0.map((p0, ri) => {
                                     const f = p0.flow;
                                     const row = [
                                         Math.round(f),
@@ -1026,7 +1005,7 @@ export const ComparatorDashboard = ({ designs }: { designs: DesignSnapshot[] }) 
                     <TlccReChart designs={designs} />
                 </div>
             </div>
-        </div >
+        </div>
     );
 };
 

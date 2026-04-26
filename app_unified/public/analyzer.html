@@ -8,475 +8,1212 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        dark: {
-                            bg: '#0f172a',
-                            card: '#1e293b',
-                            border: '#334155',
-                            text: '#f1f5f9'
-                        }
-                    }
-                }
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --ink: #1a2332;
+            --ink-mid: #000000;
+            --accent: #0d5c8f;
+            --accent2: #e05a2b;
+            --accent3: #1a8c5e;
+            --accent4: #7b3fa0;
+            --accent5: #c0392b;
+            --bg-page: #eef0f4;
+            --bg-surface: #f5f6f8;
+            --bg-card: #ffffff;
+            --bg-header: #f8f9fb;
+            --border-main: rgba(26, 35, 50, 0.12);
+            --border-acc: rgba(13, 92, 143, 0.25);
+            --text-primary: #000000;
+            --text-secondary: #1a2332;
+            --text-muted: #2e4057;
+            --accent-light: rgba(13, 92, 143, 0.08);
+            --accent2-light: rgba(224, 90, 43, 0.08);
+            --status-bg: var(--bg-surface);
+            --status-text: var(--text-secondary);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body {
+            height: 100%;
+            overflow: hidden;
+            background: var(--bg-page);
+            color: var(--text-primary);
+            font-family: 'Outfit', sans-serif;
+        }
+
+        /* Subtle dot-grid background */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: radial-gradient(circle, rgba(13, 92, 143, 0.12) 1px, transparent 1px);
+            background-size: 28px 28px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .z1 {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header */
+        .hdr {
+            height: 64px;
+            background: var(--bg-header);
+            border-bottom: 1px solid var(--border-main);
+            display: flex;
+            align-items: center;
+            padding: 0 28px;
+            gap: 20px;
+            position: relative;
+            box-shadow: 0 1px 0 rgba(13, 92, 143, 0.06), 0 2px 12px rgba(26, 35, 50, 0.04);
+        }
+
+        /* Thin accent bar at bottom of header */
+        .hdr::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--accent), var(--accent2), var(--accent3), var(--accent));
+            background-size: 300% 100%;
+            animation: barFlow 6s linear infinite;
+            opacity: 0.7;
+        }
+
+        @keyframes barFlow {
+            0% {
+                background-position: 0% 0;
+            }
+
+            100% {
+                background-position: 300% 0;
             }
         }
-    </script>
-    <style>
-        .chart-container {
-            position: relative;
-            margin: auto;
-            /* Aumentado para que sea protagonista */
-            height: 82vh;
+
+        .logo-mark {
+            width: 38px;
+            height: 38px;
+            border: 1.5px solid var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+            background: var(--accent-light);
+            animation: logoGlow 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes logoGlow {
+            from {
+                filter: drop-shadow(0 0 4px rgba(13, 92, 143, 0.2));
+            }
+
+            to {
+                filter: drop-shadow(0 0 12px rgba(13, 92, 143, 0.5));
+            }
+        }
+
+        .logo-mark svg {
+            width: 18px;
+            height: 18px;
+            color: var(--accent);
+        }
+
+        .logo-text {
+            font-family: 'Outfit', sans-serif;
+            font-size: 13px;
+            font-weight: 900;
+            letter-spacing: 0.15em;
+            color: var(--accent);
+            line-height: 1;
+        }
+
+        .logo-sub {
+            font-family: 'Outfit', sans-serif;
+            font-size: 9px;
+            font-weight: 600;
+            color: var(--text-muted);
+            letter-spacing: 0.2em;
+            margin-top: 3px;
+        }
+
+        .corner-dec {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border-color: var(--accent);
+            border-style: solid;
+            opacity: 0.4;
+        }
+
+        .corner-dec.tl {
+            top: 6px;
+            left: 6px;
+            border-width: 1px 0 0 1px;
+        }
+
+        .corner-dec.tr {
+            top: 6px;
+            right: 6px;
+            border-width: 1px 1px 0 0;
+        }
+
+        .corner-dec.bl {
+            bottom: 6px;
+            left: 6px;
+            border-width: 0 0 1px 1px;
+        }
+
+        .corner-dec.br {
+            bottom: 6px;
+            right: 6px;
+            border-width: 0 1px 1px 0;
+        }
+
+        /* Sheet tabs */
+        #sheet-selector {
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            padding: 4px 0;
+            scrollbar-width: none;
+        }
+
+        #sheet-selector::-webkit-scrollbar {
+            display: none;
+        }
+
+        .sheet-tab {
+            font-family: 'Outfit', sans-serif;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            padding: 6px 14px;
+            border: 1px solid var(--border-main);
+            background: transparent;
+            color: var(--text-muted);
+            cursor: pointer;
+            white-space: nowrap;
+            clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+            transition: all 0.25s;
+        }
+
+        .sheet-tab:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: var(--accent-light);
+        }
+
+        .sheet-tab.active {
+            border-color: var(--accent);
+            color: #fff;
+            background: var(--accent);
+            font-weight: 700;
+        }
+
+        /* Main layout */
+        .main-wrap {
+            height: calc(100vh - 64px);
+            display: flex;
+            flex-direction: column;
+            padding: 16px 20px;
+            gap: 12px;
+        }
+
+        /* Upload section */
+        #upload-section {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .upload-card {
+            max-width: 560px;
             width: 100%;
+            border: 1px solid var(--border-acc);
+            background: var(--bg-card);
+            padding: 52px 48px;
+            text-align: center;
+            position: relative;
+            animation: cardIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 4px 24px rgba(13, 92, 143, 0.07), 0 1px 4px rgba(26, 35, 50, 0.06);
         }
 
-        .glass {
-            background: rgba(255, 255, 255, 0.7);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+        @keyframes cardIn {
+            from {
+                opacity: 0;
+                transform: translateY(24px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
-        .dark .glass {
-            background: rgba(30, 41, 59, 0.7);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+        .upload-card .corner-dec {
+            opacity: 0.6;
+        }
+
+        .upload-icon-wrap {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 80px;
+            height: 80px;
+            border: 1.5px solid var(--accent);
+            margin: 0 auto 28px;
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+            background: var(--accent-light);
+            animation: iconPulse 2.5s ease-in-out infinite alternate;
+        }
+
+        @keyframes iconPulse {
+            from {
+                filter: drop-shadow(0 0 6px rgba(13, 92, 143, 0.15));
+            }
+
+            to {
+                filter: drop-shadow(0 0 20px rgba(13, 92, 143, 0.4));
+            }
+        }
+
+        .upload-icon-wrap svg {
+            width: 32px;
+            height: 32px;
+            color: var(--accent);
+        }
+
+        .upload-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 20px;
+            font-weight: 900;
+            letter-spacing: 0.05em;
+            color: var(--ink);
+            margin-bottom: 10px;
+        }
+
+        .upload-sub {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 0.22em;
+            color: var(--text-muted);
+            margin-bottom: 36px;
+        }
+
+        .btn-upload {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 36px;
+            border: 1.5px solid var(--accent);
+            background: var(--accent-light);
+            color: var(--accent);
+            font-family: 'Outfit', sans-serif;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.1em;
+            cursor: pointer;
+            clip-path: polygon(12px 0%, 100% 0%, calc(100% - 12px) 100%, 0% 100%);
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-upload::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: var(--accent);
+            transform: translateX(-110%);
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 0;
+        }
+
+        .btn-upload:hover::before {
+            transform: translateX(0);
+        }
+
+        .btn-upload:hover {
+            color: #fff;
+            box-shadow: 0 6px 20px rgba(13, 92, 143, 0.25);
+        }
+
+        .btn-upload span {
+            position: relative;
+            z-index: 1;
+        }
+
+        #file-info {
+            margin-top: 16px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 0.2em;
+            color: var(--accent2);
+            height: 16px;
+            animation: blink 1.4s step-end infinite;
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1
+            }
+
+            50% {
+                opacity: 0.3
+            }
         }
 
         #drop-zone.dragover {
-            border-color: #3b82f6;
-            background-color: rgba(59, 130, 246, 0.1);
-            transform: scale(1.02);
+            border-color: var(--accent);
+            background: var(--accent-light);
+        }
+
+        /* Result container */
+        #resultContainer {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            animation: fadeIn 0.7s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0
+            }
+
+            to {
+                opacity: 1
+            }
+        }
+
+        .chart-card {
+            flex: 1;
+            border: 1px solid var(--border-main);
+            background: var(--bg-card);
+            padding: 24px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 24px rgba(26, 35, 50, 0.08);
+            border-radius: 16px;
+        }
+
+        /* Subtle ambient color in corners of chart card */
+        .chart-card::before {
+            content: '';
+            position: absolute;
+            top: -40px;
+            left: -40px;
+            width: 160px;
+            height: 160px;
+            background: radial-gradient(circle, rgba(13, 92, 143, 0.06) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .chart-card::after {
+            content: '';
+            position: absolute;
+            bottom: -40px;
+            right: -40px;
+            width: 160px;
+            height: 160px;
+            background: radial-gradient(circle, rgba(224, 90, 43, 0.05) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .chart-container {
+            position: relative;
+            height: calc(100% - 10px);
+            width: 100%;
+        }
+
+        .status-bar {
+            height: 40px;
+            border: 1px solid var(--border-main);
+            background: var(--status-bg);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 18px;
+            flex-shrink: 0;
+            box-shadow: 0 1px 4px rgba(26, 35, 50, 0.04);
+            color: var(--status-text);
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--accent3);
+            box-shadow: 0 0 6px rgba(26, 140, 94, 0.5);
+            animation: dotPulse 2s ease-in-out infinite;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--accent3);
+            box-shadow: 0 0 6px rgba(26, 140, 94, 0.5);
+            animation: dotPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes dotPulse {
+
+            0%,
+            100% {
+                opacity: 1;
+                box-shadow: 0 0 6px rgba(26, 140, 94, 0.5)
+            }
+
+            50% {
+                opacity: 0.6;
+                box-shadow: 0 0 2px rgba(26, 140, 94, 0.2)
+            }
+        }
+
+        .status-label {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 9px;
+            letter-spacing: 0.15em;
+            color: var(--text-muted);
+        }
+
+        .status-value {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800;
+            font-size: 10px;
+            letter-spacing: 0.05em;
+            color: var(--accent);
+        }
+
+        .btn-reset {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800;
+            font-size: 9px;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            background: none;
+            border: 1px solid var(--border-main);
+            padding: 4px 14px;
+            cursor: pointer;
+            clip-path: polygon(6px 0%, 100% 0%, calc(100% - 6px) 100%, 0% 100%);
+            transition: all 0.2s;
+        }
+
+        .btn-reset:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: var(--accent-light);
+        }
+
+        /* Ticker */
+        .ticker {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            flex-shrink: 0;
+        }
+
+        .ticker-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800;
+            font-size: 9px;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+        }
+
+        .ticker-item .val {
+            color: var(--accent);
+            font-weight: 900;
+        }
+
+        .ticker-item .val.amber {
+            color: var(--accent2);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        canvas {
+            image-rendering: auto;
         }
     </style>
 </head>
 
-<body
-    class="bg-slate-50 dark:bg-dark-bg text-slate-900 dark:text-dark-text transition-colors duration-300 min-h-screen overflow-x-hidden">
+<body>
+    <div class="z1" style="display:flex;flex-direction:column;height:100vh;">
 
-    <!-- Navegación Superior Estrecha -->
-    <nav class="sticky top-0 z-50 glass px-6 py-2 flex justify-between items-center shadow-sm">
-        <div class="flex items-center gap-2">
-            <div class="bg-blue-600 p-1.5 rounded-lg">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+        <!-- HEADER -->
+        <header class="hdr">
+            <div class="logo-mark">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
                         d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                 </svg>
             </div>
-            <h1
-                class="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-500 dark:from-blue-400 dark:to-indigo-300">
-                Pump Curve Analyzer
-            </h1>
-        </div>
-        <div class="flex items-center gap-4">
-            <div id="sheet-selector" class="flex flex-wrap gap-1"></div>
-            <button id="theme-toggle"
-                class="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
-                <svg id="theme-toggle-dark-icon" class="hidden w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
-                </svg>
-                <svg id="theme-toggle-light-icon" class="hidden w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path
-                        d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z">
-                    </path>
-                </svg>
-            </button>
-        </div>
-    </nav>
-
-    <main class="w-full px-4 pb-4">
-        <!-- Pantalla de Carga -->
-        <section id="upload-section" class="max-w-3xl mx-auto mt-20">
-            <div id="drop-zone"
-                class="bg-white dark:bg-dark-card border-2 border-dashed border-slate-300 dark:border-slate-700 p-20 rounded-3xl shadow-2xl text-center transition-all duration-300">
-                <div
-                    class="mb-6 inline-flex p-4 bg-blue-50 dark:bg-blue-900/30 rounded-full text-blue-600 dark:text-blue-400">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                    </svg>
-                </div>
-                <h2 class="text-2xl font-bold mb-2">Analizador de Curvas</h2>
-                <p class="text-slate-500 dark:text-slate-400 mb-8 font-medium">Arrastra tu Excel para comenzar el
-                    análisis visual.</p>
-
-                <input class="hidden" id="file_input" type="file" accept=".xlsx, .xls, .csv, .xlsm">
-                <button onclick="document.getElementById('file_input').click()"
-                    class="px-10 py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl shadow-lg shadow-blue-500/30 transition-all hover:-translate-y-0.5 active:translate-y-0">
-                    Seleccionar Archivo
-                </button>
-                <div id="file-info" class="mt-6 text-sm font-medium text-blue-500 animate-pulse"></div>
+            <div>
+                <div class="logo-text">CURVE INTENSITY</div>
+                <div class="logo-sub">ADVANCED ESP ENGINEERING VIEW</div>
             </div>
-        </section>
 
-        <!-- Error Box -->
-        <div id="errorBox"
-            class="hidden max-w-2xl mx-auto mt-6 p-4 bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 text-red-700 dark:text-red-400 rounded-lg shadow-md">
-            <div class="flex items-center gap-3">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd"
-                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                        clip-rule="evenodd" />
-                </svg>
-                <p id="errorMsg" class="text-sm font-medium"></p>
+            <div id="sheet-selector"></div>
+
+            <div class="ticker">
+                <!-- Ticker removed for cleanup as it was static -->
             </div>
-        </div>
+        </header>
 
-        <!-- Área de Gráfico (Protagonista) -->
-        <section id="resultContainer" class="hidden animate-in fade-in zoom-in duration-500 mt-2">
-            <div
-                class="bg-white dark:bg-dark-card p-4 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800">
-                <div class="chart-container">
-                    <canvas id="pumpChart"></canvas>
-                </div>
+        <!-- MAIN -->
+        <main class="main-wrap">
 
-                <div class="mt-4 flex flex-wrap justify-between items-center border-t dark:border-slate-800 pt-3 gap-4">
-                    <div class="flex flex-wrap gap-x-6 gap-y-2 items-center text-slate-500 dark:text-slate-400">
-                        <div class="flex items-center gap-2">
-                            <span class="w-6 h-0.5 bg-blue-500"></span>
-                            <span class="text-[10px] uppercase tracking-wider font-bold">Presión/Head</span>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <span class="w-6 h-0.5 border-t-2 border-dashed border-slate-400"></span>
-                            <span class="text-[10px] uppercase tracking-wider font-bold">Eficiencia (Opaca)</span>
-                        </div>
-                        <div class="flex items-center gap-2 text-blue-500 cursor-pointer hover:underline"
-                            onclick="window.location.reload()">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                            </svg>
-                            <span class="text-[10px] font-bold">CARGAR OTRO</span>
-                        </div>
+            <!-- UPLOAD SECTION -->
+            <section id="upload-section">
+                <div id="drop-zone" class="upload-card">
+                    <div class="corner-dec tl"></div>
+                    <div class="corner-dec tr"></div>
+                    <div class="corner-dec bl"></div>
+                    <div class="corner-dec br"></div>
+
+                    <div class="upload-icon-wrap">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                        </svg>
                     </div>
-                    <div class="text-[10px] text-slate-400 italic font-medium">
-                        * Doble eje activado. Escala de eficiencia fija 0-100%.
+
+                    <div class="upload-title">ANALIZADOR DE CURVAS</div>
+                    <div class="upload-sub">CARGA TU DISEÑO PARA VISUALIZACIÓN DE ALTA INTENSIDAD</div>
+
+                    <input class="hidden" id="file_input" type="file" accept=".xlsx, .xls, .csv, .xlsm">
+                    <button onclick="document.getElementById('file_input').click()" class="btn-upload">
+                        <span>▶ SELECCIONAR ARCHIVO</span>
+                    </button>
+                    <div id="file-info"></div>
+                </div>
+            </section>
+
+            <!-- CHART AREA -->
+            <section id="resultContainer" class="hidden" style="flex:1;display:flex;flex-direction:column;gap:10px;">
+                <div class="chart-card">
+                    <div class="corner-dec tl"></div>
+                    <div class="corner-dec tr"></div>
+                    <div class="corner-dec bl"></div>
+                    <div class="corner-dec br"></div>
+                    <div class="chart-container">
+                        <canvas id="pumpChart"></canvas>
                     </div>
                 </div>
-            </div>
-        </section>
-    </main>
+
+                <div class="status-bar">
+                    <div class="status-item">
+                        <div class="status-dot"></div>
+                        <span class="status-label">SISTEMA</span>
+                        <span class="status-value">ONLINE</span>
+                    </div>
+                    <div class="status-item" style="gap:24px;">
+                        <div class="status-item">
+                            <span class="status-label">MODE</span>
+                            <span class="status-value">VIBRANT</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">RENDERER</span>
+                            <span class="status-value">CHART.JS</span>
+                        </div>
+                    </div>
+                    <button onclick="window.location.reload()" class="btn-reset">↺ REINICIAR</button>
+                </div>
+            </section>
+
+        </main>
+    </div>
 
     <script>
-        // --- Tema ---
-        const themeToggle = document.getElementById('theme-toggle');
-        const darkIcon = document.getElementById('theme-toggle-dark-icon');
-        const lightIcon = document.getElementById('theme-toggle-light-icon');
-
-        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            document.documentElement.classList.add('dark');
-            lightIcon.classList.remove('hidden');
-        } else {
-            darkIcon.classList.remove('hidden');
-        }
-
-        themeToggle.addEventListener('click', () => {
-            document.documentElement.classList.toggle('dark');
-            darkIcon.classList.toggle('hidden');
-            lightIcon.classList.toggle('hidden');
-            // Re-render chart on theme change to update colors
-            if (myChart) {
-                if (currentWorkbook) processSheet(currentSheetName);
-                else if (lastAutoData) processAutoData(lastAutoData.data, lastAutoData.title);
-            }
-        });
-
-        // --- Lógica ---
         let myChart = null;
         let currentWorkbook = null;
-        let currentSheetName = "";
-        let lastAutoData = null;
-        const fileInput = document.getElementById('file_input');
-        const dropZone = document.getElementById('drop-zone');
 
-        fileInput.addEventListener('change', (e) => { if (e.target.files.length) loadWorkbook(e.target.files[0]); });
-        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
-        dropZone.addEventListener('dragleave', () => { dropZone.classList.remove('dragover'); });
-        dropZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropZone.classList.remove('dragover');
-            if (e.dataTransfer.files.length) loadWorkbook(e.dataTransfer.files[0]);
-        });
+        // PLUGIN PARA ILUMINACION Y SOMBRA EN LAS LINEAS
+        const intensityPlugin = {
+            id: 'intensityPlugin',
+            beforeDraw: (chart) => {
+                const { ctx } = chart;
+                ctx.save();
+                ctx.shadowBlur = 15;
+                ctx.shadowOffsetX = 0;
+                ctx.shadowOffsetY = 8;
+            },
+            afterDraw: (chart) => {
+                chart.ctx.restore();
+            }
+        };
 
-        // ESCUCHA DE MENSAJES PARA SINCRONIZACIÓN AUTOMÁTICA
         window.addEventListener('message', (event) => {
-            const { type, data, title, theme, designColors, designLabels } = event.data;
+            const { type, data, title, designColors, designLabels, theme } = event.data;
             if (type === 'UPDATE_CHART') {
-                console.log("Datos recibidos del Dashboard:", title);
-
-                // Sincronizar tema con la app principal
-                if (theme === 'dark') {
-                    document.documentElement.classList.add('dark');
-                    document.getElementById('theme-toggle-light-icon').classList.remove('hidden');
-                    document.getElementById('theme-toggle-dark-icon').classList.add('hidden');
-                } else {
-                    document.documentElement.classList.remove('dark');
-                    document.getElementById('theme-toggle-dark-icon').classList.remove('hidden');
-                    document.getElementById('theme-toggle-light-icon').classList.add('hidden');
-                }
-
-                lastAutoData = { data, title, theme, designColors, designLabels };
-                processAutoData(data, title, designColors, designLabels);
+                processAutoData(data, title, designColors, designLabels, theme);
             }
         });
 
-        function processAutoData(data, title, designColors, designLabels) {
+        function processAutoData(data, title, designColors, designLabels, theme = 'light') {
             if (!data || data.length === 0) return;
-
-            document.getElementById('errorBox').classList.add('hidden');
+            applyTheme(theme);
             document.getElementById('upload-section').classList.add('hidden');
-            document.getElementById('resultContainer').classList.remove('hidden');
-
+            const rc = document.getElementById('resultContainer');
+            rc.classList.remove('hidden');
+            rc.style.display = 'flex';
             const headers = Object.keys(data[0]);
             const labels = data.map(row => row.flow);
             const datasets = buildDatasets(headers, data, true, designColors, designLabels);
-
-            renderChart(labels, datasets, title);
+            renderChart(labels, datasets, title, theme);
         }
 
+        function applyTheme(theme) {
+            const root = document.documentElement;
+            if (theme === 'dark') {
+                root.style.setProperty('--bg-page', '#070d14');
+                root.style.setProperty('--bg-card', '#0a1520');
+                root.style.setProperty('--text-primary', '#ffffff');
+                root.style.setProperty('--text-secondary', '#eef0f4');
+                root.style.setProperty('--text-muted', '#8fa3b4');
+                root.style.setProperty('--border-main', 'rgba(255,255,255,0.1)');
+                root.style.setProperty('--bg-header', '#0a1520');
+                root.style.setProperty('--ink', '#ffffff');
+                root.style.setProperty('--ink-mid', '#ffffff');
+                root.style.setProperty('--status-bg', '#0d1117');
+                root.style.setProperty('--status-text', '#ffffff');
+            } else {
+                root.style.setProperty('--bg-page', '#eef0f4');
+                root.style.setProperty('--bg-card', '#ffffff');
+                root.style.setProperty('--text-primary', '#000000');
+                root.style.setProperty('--text-secondary', '#1a2332');
+                root.style.setProperty('--text-muted', '#2e4057');
+                root.style.setProperty('--border-main', 'rgba(26,35,50,0.12)');
+                root.style.setProperty('--bg-header', '#f8f9fb');
+                root.style.setProperty('--ink', '#1a2332');
+                root.style.setProperty('--ink-mid', '#000000');
+                root.style.setProperty('--status-bg', '#f5f6f8');
+                root.style.setProperty('--status-text', '#1a2332');
+            }
+        }
+
+        const fileInput = document.getElementById('file_input');
+        fileInput.addEventListener('change', (e) => { if (e.target.files.length) loadWorkbook(e.target.files[0]); });
+
+        const dropZone = document.getElementById('drop-zone');
+        dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+        dropZone.addEventListener('drop', e => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            const f = e.dataTransfer.files[0];
+            if (f) { document.getElementById('file-info').textContent = '>> ' + f.name; loadWorkbook(f); }
+        });
+
         function loadWorkbook(file) {
-            document.getElementById('file-info').innerText = "Abriendo: " + file.name;
+            document.getElementById('file-info').textContent = '>> PROCESANDO: ' + file.name;
             const reader = new FileReader();
             reader.onload = function (e) {
-                try {
-                    const data = new Uint8Array(e.target.result);
-                    currentWorkbook = XLSX.read(data, { type: 'array' });
-
-                    const selector = document.getElementById('sheet-selector');
-                    selector.innerHTML = '';
-
-                    currentWorkbook.SheetNames.forEach((name, index) => {
-                        const btn = document.createElement('button');
-                        btn.innerText = name;
-                        btn.className = "px-3 py-1 rounded-md text-[10px] font-bold border border-slate-200 dark:border-slate-700 hover:bg-blue-600 hover:text-white transition-all";
-                        btn.onclick = () => {
-                            document.querySelectorAll('#sheet-selector button').forEach(b => b.classList.remove('bg-blue-600', 'text-white', 'border-blue-600'));
-                            btn.classList.add('bg-blue-600', 'text-white', 'border-blue-600');
-                            currentSheetName = name;
-                            processSheet(name);
-                        };
-                        selector.appendChild(btn);
-                        if (index === 0) btn.click();
-                    });
-
-                } catch (err) {
-                    showError("Error al procesar: " + err.message);
-                }
+                const data = new Uint8Array(e.target.result);
+                currentWorkbook = XLSX.read(data, { type: 'array' });
+                const selector = document.getElementById('sheet-selector');
+                selector.innerHTML = '';
+                currentWorkbook.SheetNames.forEach((name, index) => {
+                    const btn = document.createElement('button');
+                    btn.innerText = name.toUpperCase();
+                    btn.className = 'sheet-tab';
+                    btn.onclick = () => {
+                        document.querySelectorAll('.sheet-tab').forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                        processSheet(name);
+                    };
+                    selector.appendChild(btn);
+                    if (index === 0) btn.click();
+                });
             };
             reader.readAsArrayBuffer(file);
         }
 
-        function hexToRgba(hex, opacity) {
-            let r = 0, g = 0, b = 0;
-            if (hex.length == 4) {
-                r = parseInt(hex[1] + hex[1], 16); g = parseInt(hex[2] + hex[2], 16); b = parseInt(hex[3] + hex[3], 16);
-            } else if (hex.length == 7) {
-                r = parseInt(hex.substring(1, 3), 16); g = parseInt(hex.substring(3, 5), 16); b = parseInt(hex.substring(5, 7), 16);
-            }
-            return `rgba(${r}, ${g}, ${b}, ${opacity})`;
-        }
-
         function buildDatasets(headers, rows, isAuto = false, designColors = [], designLabels = []) {
             const datasets = [];
-            const colors = designColors.length ? designColors : ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#06b6d4', '#ec4899', '#64748b', '#22c5e', '#f43f5e'];
+            const vibrantColors = designColors.length ? designColors : ['#0d5c8f', '#e05a2b', '#1a8c5e', '#7b3fa0', '#c0392b'];
 
             for (let j = 0; j < headers.length; j++) {
                 const headName = headers[j];
                 if (headName.toLowerCase() === 'flow') continue;
-
                 const h = headName.toLowerCase();
                 const isEff = h.includes('efficiency') || h.includes('%') || h.includes('eff');
-                const isHz = h.includes('hz') || h.includes('pump head');
-                const isLimit = h.includes('limit') || h.includes('range');
                 const isSystem = h.includes('system');
                 const isPoint = h.includes('target') || h.includes('point');
 
-                // Color Logic
-                let baseColor = colors[j % colors.length];
+                if (isSystem || isPoint) continue;
+
+                let baseColor = vibrantColors[j % vibrantColors.length];
                 let pumpSuffix = "";
-
-                // Detectar si pertenece a Bomba 0, 1, 2 o 3 por el sufijo
-                if (h.includes('_0')) {
-                    baseColor = colors[0] || '#3b82f6';
-                    pumpSuffix = designLabels[0] ? ` (${designLabels[0]})` : " (B1)";
-                } else if (h.includes('_1')) {
-                    baseColor = colors[1] || '#ef4444';
-                    pumpSuffix = designLabels[1] ? ` (${designLabels[1]})` : " (B2)";
-                } else if (h.includes('_2')) {
-                    baseColor = colors[2] || '#10b981';
-                    pumpSuffix = designLabels[2] ? ` (${designLabels[2]})` : " (B3)";
-                } else if (h.includes('_3')) {
-                    baseColor = colors[3] || '#a855f7';
-                    pumpSuffix = designLabels[3] ? ` (${designLabels[3]})` : " (B4)";
-                }
-
-                const opacity = isEff ? 0.35 : (isHz ? 0.6 : (isLimit ? 0.6 : (isSystem ? 0.8 : (isPoint ? 1.0 : 1.0))));
-                const width = isLimit ? 2 : (isHz ? 2.5 : (isSystem ? 3.5 : (isPoint ? 0 : 2.5)));
-
-                let stopped = false;
-                const chartData = rows.map((r, ri) => {
-                    const val = isAuto ? r[headName] : r[j];
-                    if (stopped) return null;
-                    
-                    const isHeadOrHz = h.includes('pump head') || h.includes('hz') || h.includes('tdh');
-                    const numVal = parseFloat(val);
-
-                    if (isHeadOrHz && !isEff && !isSystem && !isPoint) {
-                        if (numVal > 0) return numVal;
-                        if (ri > 0) { stopped = true; return null; }
-                        return numVal; // Flow 0
-                    }
-                    return (val !== null && val !== undefined && !isNaN(val) && val >= 0) ? val : (isAuto && r.flow === 0 ? val : null);
-                });
+                if (h.includes('_0')) { baseColor = vibrantColors[0]; pumpSuffix = designLabels[0] ? ` (${designLabels[0]})` : ""; }
+                else if (h.includes('_1')) { baseColor = vibrantColors[1]; pumpSuffix = designLabels[1] ? ` (${designLabels[1]})` : ""; }
+                else if (h.includes('_2')) { baseColor = vibrantColors[2]; pumpSuffix = designLabels[2] ? ` (${designLabels[2]})` : ""; }
+                else if (h.includes('_3')) { baseColor = vibrantColors[3]; pumpSuffix = designLabels[3] ? ` (${designLabels[3]})` : ""; }
 
                 datasets.push({
-                    label: headName.replace(/(_0|_1|_2|_3)/g, '').toUpperCase().trim() + pumpSuffix,
-                    data: chartData,
-                    borderColor: isPoint ? baseColor : hexToRgba(baseColor, opacity),
-                    backgroundColor: isPoint ? baseColor : 'transparent',
-                    borderWidth: width,
-                    // Solo System Head es sólida, el resto (incluida Pump Head) es punteada
-                    borderDash: isSystem || isPoint ? [] : (isEff ? [8, 4] : [5, 5]),
-                    pointRadius: isPoint ? 6 : 0,
-                    pointHoverRadius: isPoint ? 8 : 10,
-                    showLine: !isPoint,
-                    tension: isSystem ? 0.1 : 0.3,
+                    label: headName.replace(/(_0|_1|_2|_3)/g, '').toUpperCase() + pumpSuffix,
+                    data: [],
+                    borderColor: baseColor,
+                    backgroundColor: 'transparent',
+                    borderWidth: 3,
+                    borderDash: isEff ? [12, 6] : [8, 4],
+                    pointRadius: 0,
+                    tension: 0.1,
                     yAxisID: isEff ? 'y1' : 'y',
-                    isEfficiency: isEff
+                    shadowColor: baseColor
                 });
+
+                const isHead = h.includes('pump head');
+                const isLimit = (h.includes('min') || h.includes('max')) && h.includes('limit');
+                const dIdxMatch = h.match(/_([0-3])/);
+                const dIdx = dIdxMatch ? parseInt(dIdxMatch[1]) : -1;
+                const skMatch = h.match(/_(min|target|max)$/);
+                const sk = skMatch ? skMatch[1] : "target";
+
+                if ((isHead || isLimit) && dIdx !== -1) {
+                    const headKey = `Pump Head (ft) _${dIdx}_${sk}`;
+                    const minKey = `Min Range Limit (ft) _${dIdx}_${sk}`;
+                    const maxKey = `Max Range Limit (ft) _${dIdx}_${sk}`;
+                    const targetKey = `Target Point _${dIdx}_${sk}`;
+
+                    let newXYData = [];
+                    let targetPoint = null;
+                    let hasEnteredRange = false;
+
+                    for (let ri = 0; ri < rows.length; ri++) {
+                        const r = rows[ri];
+                        const x = isAuto ? r.flow : labels[ri];
+                        const val = isAuto ? r[headName] : r[j];
+                        const headL = isAuto ? r[headKey] : null;
+                        const minL = isAuto ? r[minKey] : null;
+                        const maxL = isAuto ? r[maxKey] : null;
+
+                        if (isAuto && r[targetKey] !== null && r[targetKey] !== undefined) {
+                            targetPoint = { x: r.flow, y: r[targetKey] };
+                        }
+
+                        if (isHead) {
+                            const inRange = (minL == null || val <= minL) && (maxL == null || val >= maxL);
+                            const isRightOfMax = maxL != null && val < maxL;
+
+                            if (inRange) {
+                                if (!hasEnteredRange && ri > 0) {
+                                    const rPrev = rows[ri - 1];
+                                    const xPrev = isAuto ? rPrev.flow : labels[ri - 1];
+                                    const valPrev = isAuto ? rPrev[headName] : rows[ri - 1][j];
+                                    const minPrev = isAuto ? rPrev[minKey] : null;
+                                    if (minPrev !== null && valPrev > minPrev) {
+                                        const t = (valPrev - minPrev) / ((valPrev - minPrev) + (minL - val));
+                                        newXYData.push({ x: xPrev + t * (x - xPrev), y: valPrev + t * (val - valPrev) });
+                                    }
+                                    hasEnteredRange = true;
+                                }
+                                newXYData.push({ x, y: val });
+                            } else if (isRightOfMax && newXYData.length > 0) {
+                                const rPrev = rows[ri - 1];
+                                if (rPrev) {
+                                    const xPrev = isAuto ? rPrev.flow : labels[ri - 1];
+                                    const valPrev = isAuto ? rPrev[headName] : rows[ri - 1][j];
+                                    const maxPrev = isAuto ? rPrev[maxKey] : null;
+                                    if (maxPrev !== null && valPrev >= maxPrev) {
+                                        const t = (valPrev - maxPrev) / ((valPrev - maxPrev) + (maxL - val));
+                                        newXYData.push({ x: xPrev + t * (x - xPrev), y: valPrev + t * (val - valPrev) });
+                                    }
+                                }
+                                break;
+                            }
+                        }
+
+                        if (isLimit) {
+                            const headForLimit = isAuto ? r[headKey] : null;
+                            if (headForLimit === null || headForLimit <= 1) continue;
+                            const isBelow = val <= headForLimit;
+                            if (isBelow) {
+                                newXYData.push({ x, y: val });
+                            } else {
+                                const rPrev = rows[ri - 1];
+                                if (rPrev) {
+                                    const xPrev = isAuto ? rPrev.flow : labels[ri - 1];
+                                    const valPrev = isAuto ? rPrev[headName] : rows[ri - 1][j];
+                                    const headPrev = isAuto ? rPrev[headKey] : null;
+                                    if (headPrev !== null && valPrev <= headPrev) {
+                                        const t = (headPrev - valPrev) / ((val - headForLimit) + (headPrev - valPrev));
+                                        newXYData.push({ x: xPrev + t * (x - xPrev), y: valPrev + t * (val - valPrev) });
+                                    }
+                                }
+                                break;
+                            }
+                        }
+                    }
+
+                    const activeDS = datasets[datasets.length - 1];
+                    activeDS.data = newXYData;
+
+                    const scenarioTag = ` [${sk.toUpperCase()}]`;
+                    const pumpName = designLabels[dIdx] || `BOMBA ${dIdx + 1}`;
+
+                    activeDS.pumpName = pumpName;
+                    activeDS.scenario = sk;
+
+                    if (isHead) {
+                        const isPrimary = (sk === 'target' || sk === 'obj');
+                        activeDS.label = isPrimary ? pumpName : `${pumpName} [${sk.toUpperCase()}]`;
+                        activeDS.isPrimary = isPrimary; // Bandera para la leyenda
+                    } else if (isLimit) {
+                        activeDS.label = `LÍMITES ${pumpName} [${sk.toUpperCase()}]`;
+                    }
+
+                    if (sk === 'min') {
+                        activeDS.borderColor = baseColor + '55';
+                        activeDS.borderDash = [4, 4];
+                        activeDS.borderWidth = 1.5;
+                    } else if (sk === 'max') {
+                        activeDS.borderColor = baseColor;
+                        activeDS.borderWidth = 4;
+                    }
+
+                    if (isHead && targetPoint) {
+                        datasets.push({
+                            label: `DESIGN HEAD MARKER _${dIdx}_${sk}`,
+                            data: [{ x: 0, y: targetPoint.y }, { x: targetPoint.x, y: targetPoint.y }],
+                            borderColor: baseColor, borderWidth: 1, borderDash: [2, 2],
+                            pointRadius: 0, tension: 0, yAxisID: 'y', display: false
+                        });
+                        datasets.push({
+                            label: `DESIGN FLOW MARKER _${dIdx}_${sk}`,
+                            data: [{ x: targetPoint.x, y: 0 }, { x: targetPoint.x, y: targetPoint.y }],
+                            borderColor: baseColor, borderWidth: 1, borderDash: [2, 2],
+                            pointRadius: 0, tension: 0, yAxisID: 'y', display: false
+                        });
+                    }
+                } else {
+                    datasets[datasets.length - 1].data = rows.map((r, ri) => ({
+                        x: isAuto ? r.flow : labels[ri],
+                        y: isAuto ? r[headName] : r[j]
+                    }));
+                }
             }
             return datasets;
         }
 
         function processSheet(sheetName) {
             const sheet = currentWorkbook.Sheets[sheetName];
-            const matrix = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: null, blankrows: false });
-
-            if (matrix.length < 2) return;
-
-            document.getElementById('errorBox').classList.add('hidden');
-            document.getElementById('upload-section').classList.add('hidden');
-            document.getElementById('resultContainer').classList.remove('hidden');
-
+            const matrix = XLSX.utils.sheet_to_json(sheet, { header: 1 });
             const headers = matrix[0];
-            const dataRows = matrix.slice(1);
-            const sortedDataRows = dataRows.filter(row => row[0] !== null && !isNaN(parseFloat(row[0]))).sort((a, b) => parseFloat(a[0]) - parseFloat(b[0]));
-            const labels = sortedDataRows.map(row => parseFloat(row[0]));
-
-            const datasets = buildDatasets(headers, sortedDataRows, false);
-            renderChart(labels, datasets, sheetName);
+            const sortedDataRows = matrix.slice(1).filter(row => row[0] != null).sort((a, b) => a[0] - b[0]);
+            renderChart(sortedDataRows.map(r => r[0]), buildDatasets(headers, sortedDataRows, false), sheetName);
         }
 
-        function renderChart(labels, datasets, title) {
-            const isDark = document.documentElement.classList.contains('dark');
-            const textColor = isDark ? '#94a3b8' : '#64748b';
-            const gridColor = isDark ? '#334155' : '#e2e8f0';
+        function renderChart(labels, datasets, title, theme = 'light') {
+            document.getElementById('upload-section').classList.add('hidden');
+            const rc = document.getElementById('resultContainer');
+            rc.classList.remove('hidden');
+            rc.style.display = 'flex';
 
             const ctx = document.getElementById('pumpChart').getContext('2d');
             if (myChart) myChart.destroy();
 
+            const isDark = theme === 'dark';
+            const textColor = isDark ? '#ffffff' : '#000000';
+            const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
+
+            // Custom chart background
+            const bgPlugin = {
+                id: 'bgPlugin',
+                beforeDraw(chart) {
+                    const { ctx, chartArea } = chart;
+                    if (!chartArea) return;
+                    ctx.save();
+                    ctx.fillStyle = 'transparent';
+                    ctx.fillRect(chartArea.left, chartArea.top, chartArea.width, chartArea.height);
+                    ctx.restore();
+                }
+            };
+
+            // Glow plugin
+            const glowPlugin = {
+                id: 'glowPlugin',
+                afterDatasetsDraw(chart) {
+                    const { ctx } = chart;
+                    chart.data.datasets.forEach((ds, i) => {
+                        const meta = chart.getDatasetMeta(i);
+                        if (!meta.visible || meta.hidden) return;
+                        if (!ds.borderColor || ds.borderColor === 'transparent') return;
+                        const col = ds.borderColor;
+                        if (col.length > 7) return;
+                        const line = meta.dataset;
+                        if (!line) return;
+                        ctx.save();
+                        ctx.shadowColor = col;
+                        ctx.shadowBlur = 18;
+                        ctx.globalAlpha = isDark ? 0.8 : 0.6;
+                        line.draw(ctx);
+                        ctx.globalAlpha = isDark ? 0.5 : 0.35;
+                        ctx.shadowBlur = 36;
+                        line.draw(ctx);
+                        ctx.restore();
+                    });
+                }
+            };
+
+            // Plugin Leyenda Flotante Interna (Para ver BH Verde, NOV Azul, etc.)
+            const internalLegendPlugin = {
+                id: 'internalLegendPlugin',
+                afterDraw(chart) {
+                    const { ctx, chartArea: { right, top } } = chart;
+                    const items = [];
+                    const seen = new Set();
+                    chart.data.datasets.forEach(ds => {
+                        // Incluimos cualquier dataset que parezca una curva de bomba y no sea un marcador
+                        const isMarker = ds.label && ds.label.includes('MARKER');
+                        const hasData = ds.data && ds.data.length > 0;
+                        const name = ds.pumpName || ds.label;
+                        if (name && hasData && !isMarker && !seen.has(name)) {
+                            // Solo mostrar curvas de Head o Primarias para no saturar con eficiencia
+                            const isHead = ds.label && (ds.label.toLowerCase().includes('head') || !ds.label.toLowerCase().includes('eff'));
+                            if (isHead || ds.isPrimary) {
+                                seen.add(name);
+                                items.push({ name: name.replace(/_([0-3])_(target|min|max)/g, ''), color: ds.borderColor });
+                            }
+                        }
+                    });
+                    if (items.length === 0) return;
+
+                    ctx.save();
+                    const w = 160;
+                    const h = items.length * 24 + 20;
+                    const x = right - w - 10;
+                    const y = top + 10;
+
+                    // Fondo con fallback para roundRect
+                    ctx.fillStyle = isDark ? 'rgba(7, 13, 20, 0.9)' : 'rgba(255, 255, 255, 0.9)';
+                    ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.2)' : 'rgba(13, 92, 143, 0.2)';
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    if (ctx.roundRect) ctx.roundRect(x, y, w, h, 8);
+                    else ctx.rect(x, y, w, h);
+                    ctx.fill();
+                    ctx.stroke();
+
+                    // Título de la leyenda interna
+                    ctx.font = '900 8px Outfit';
+                    ctx.fillStyle = isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)';
+                    ctx.textAlign = 'left';
+                    ctx.fillText('ESTADO DE BOMBAS', x + 12, y + 12);
+
+                    items.forEach((it, i) => {
+                        const iy = y + 26 + (i * 24);
+                        ctx.fillStyle = it.color;
+                        ctx.beginPath();
+                        ctx.arc(x + 18, iy, 6, 0, Math.PI * 2);
+                        ctx.fill();
+                        
+                        ctx.shadowColor = it.color;
+                        ctx.shadowBlur = 8;
+                        ctx.fill();
+                        ctx.shadowBlur = 0;
+
+                        ctx.font = '900 10px Outfit';
+                        ctx.fillStyle = isDark ? '#ffffff' : '#1a2332';
+                        ctx.textAlign = 'left';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(it.name.toUpperCase(), x + 34, iy);
+                    });
+                    ctx.restore();
+                }
+            };
+
+            // Plugin Etiquetas en el Inicio de Curvas
+            const curveLabelsPlugin = {
+                id: 'curveLabelsPlugin',
+                afterDatasetsDraw(chart) {
+                    const { ctx } = chart;
+                    chart.data.datasets.forEach((ds, i) => {
+                        const meta = chart.getDatasetMeta(i);
+                        if (!meta.visible || ds.label?.includes('MARKER')) return;
+                        
+                        // Solo etiquetamos curvas principales o las que tengan nombre de bomba explícito
+                        if (!ds.isPrimary && !ds.pumpName && !ds.label?.toLowerCase().includes('head')) return;
+
+                        const points = meta.data;
+                        if (!points || points.length === 0) return;
+                        const p = points[0];
+
+                        ctx.save();
+                        ctx.font = '900 10px Outfit';
+                        const text = (ds.pumpName || ds.label).replace(/_([0-3])_(target|min|max)/g, '').toUpperCase();
+                        ctx.fillStyle = ds.borderColor;
+                        ctx.textAlign = 'left';
+                        ctx.textBaseline = 'bottom';
+                        ctx.shadowColor = isDark ? 'black' : 'white';
+                        ctx.shadowBlur = 5;
+                        ctx.fillText(text, p.x + 8, p.y - 4);
+                        ctx.restore();
+                    });
+                }
+            };
+
             myChart = new Chart(ctx, {
                 type: 'line',
                 data: { labels, datasets },
+                plugins: [intensityPlugin, bgPlugin, glowPlugin, internalLegendPlugin, curveLabelsPlugin],
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    animation: { duration: 1000, easing: 'easeOutQuart' },
-                    interaction: { mode: 'index', intersect: false },
+                    animation: { duration: 1800, easing: 'easeOutQuart' },
                     plugins: {
                         title: {
                             display: true,
                             text: title.toUpperCase(),
-                            color: isDark ? '#f1f5f9' : '#0f172a',
-                            font: { size: 14, weight: '900', family: 'system-ui' },
-                            padding: { bottom: 20 }
+                            color: isDark ? '#a8c8e0' : '#0d5c8f',
+                            font: { size: 14, weight: '900', family: 'Outfit' },
+                            padding: { bottom: 18 }
                         },
                         legend: {
+                            display: true,
                             position: 'bottom',
+                            onClick: (e) => e.stopPropagation(), // Desactivar funcionalidad
                             labels: {
-                                boxWidth: 30,
-                                boxHeight: 2,
+                                font: { family: 'Outfit', size: 13, weight: '900' },
+                                usePointStyle: true,
+                                pointStyle: 'rectRounded',
+                                pointStyleWidth: 18,
+                                padding: 25,
                                 color: textColor,
-                                font: { size: 10, weight: 'bold' },
-                                padding: 15
+                                generateLabels: function (chart) {
+                                    const seen = new Set();
+                                    const labels = [];
+                                    chart.data.datasets.forEach((ds, i) => {
+                                        // Whitelist: datasets marcados como primarios o que tengan un pumpName único
+                                        const isCandidate = ds.isPrimary === true || (ds.pumpName && !ds.label.includes('['));
+                                        if (isCandidate && ds.pumpName && !seen.has(ds.pumpName)) {
+                                            seen.add(ds.pumpName);
+                                            labels.push({
+                                                text: ds.pumpName.toUpperCase(),
+                                                fillStyle: ds.borderColor,
+                                                strokeStyle: ds.borderColor,
+                                                lineWidth: 2,
+                                                pointStyle: 'rectRounded',
+                                                fontColor: textColor,
+                                                datasetIndex: i
+                                            });
+                                        }
+                                    });
+                                    return labels;
+                                }
                             }
                         },
                         tooltip: {
-                            backgroundColor: isDark ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.9)',
-                            titleColor: isDark ? '#f1f5f9' : '#0f172a',
-                            bodyColor: isDark ? '#cbd5e1' : '#334155',
-                            borderColor: isDark ? '#475569' : '#cbd5e1',
-                            borderWidth: 1,
-                            padding: 12,
+                            enabled: true,
+                            backgroundColor: isDark ? 'rgba(10,21,32,0.98)' : 'rgba(26,35,50,0.98)',
+                            padding: 16,
                             cornerRadius: 8,
+                            titleFont: { family: 'Outfit', size: 12, weight: '900' },
+                            titleColor: '#ffffff',
+                            bodyFont: { family: 'Outfit', size: 12, weight: '600' },
+                            bodyColor: '#eef0f4',
                             usePointStyle: true,
+                            boxPadding: 8,
+                            borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+                            borderWidth: 1,
                             callbacks: {
                                 label: function (context) {
                                     let label = context.dataset.label || '';
                                     if (label) label += ': ';
-                                    if (context.parsed.y !== null) {
-                                        label += context.parsed.y.toLocaleString();
-                                        label += context.dataset.yAxisID === 'y1' ? ' %' : ' ft';
-                                    }
-                                    return label;
+                                    if (context.parsed.y !== null) label += context.parsed.y.toFixed(1);
+                                    return '  ' + label;
                                 }
                             }
                         }
                     },
+                    interaction: { mode: 'index', intersect: false },
+                    hover: { mode: 'index', intersect: false },
                     scales: {
                         x: {
                             type: 'linear',
-                            min: 0,
-                            max: (context) => {
-                                const maxVal = Math.max(...context.chart.data.labels);
-                                return Math.ceil((maxVal * 1.1) / 500) * 500;
+                            grid: { color: gridColor, lineWidth: 1 },
+                            border: { color: textColor, width: 1.5 },
+                            ticks: {
+                                font: { size: 11, family: 'Outfit', weight: '800' },
+                                color: textColor,
+                                padding: 12,
+                                maxTicksLimit: 12
                             },
-                            grid: { color: gridColor, drawTicks: false },
-                            ticks: { color: textColor, font: { size: 10, weight: 'bold' } },
-                            title: { display: true, text: 'FLOW (BPD)', color: textColor, font: { size: 11, weight: '900' } }
+                            title: {
+                                display: true,
+                                text: 'FLOW (BPD)',
+                                font: { weight: '900', family: 'Outfit', size: 12 },
+                                color: textColor,
+                                padding: { top: 10 }
+                            }
                         },
                         y: {
-                            position: 'left',
-                            min: 0,
-                            max: (context) => {
-                                let maxVal = 1000;
-                                context.chart.data.datasets.forEach(ds => {
-                                    if (ds.yAxisID === 'y') {
-                                        const validData = ds.data.filter(v => v !== null && v !== undefined);
-                                        if (validData.length > 0) {
-                                            const dsMax = Math.max(...validData);
-                                            if (dsMax > maxVal) maxVal = dsMax;
-                                        }
-                                    }
-                                });
-                                return Math.min(10000, Math.ceil((maxVal * 1.1) / 500) * 500);
+                            grid: { color: gridColor, lineWidth: 1 },
+                            border: { color: textColor, width: 1.5 },
+                            ticks: {
+                                font: { size: 11, family: 'Outfit', weight: '800' },
+                                color: textColor,
+                                padding: 12
                             },
-                            grid: { color: gridColor, drawTicks: false },
-                            ticks: { color: textColor, font: { size: 10, weight: 'bold' } },
-                            title: { display: true, text: 'HEAD / PRESSURE (FT)', color: textColor, font: { size: 11, weight: '900' } }
+                            title: {
+                                display: true,
+                                text: 'HEAD (FT)',
+                                font: { weight: '900', family: 'Outfit', size: 12 },
+                                color: textColor
+                            }
                         },
                         y1: {
                             position: 'right',
-                            min: 0,
-                            max: 100,
+                            min: 0, max: 100,
                             grid: { display: false },
-                            ticks: { color: textColor, font: { size: 10, weight: 'bold' } },
-                            title: { display: true, text: 'EFFICIENCY (%)', color: textColor, font: { size: 11, weight: '900' } }
+                            border: { color: '#1a8c5e', width: 1.5 },
+                            ticks: {
+                                color: '#1a8c5e',
+                                font: { family: 'Outfit', size: 11, weight: '800' },
+                                callback: v => v + '%'
+                            }
                         }
                     }
                 }
             });
-        }
-
-        function showError(msg) {
-            const err = document.getElementById('errorBox');
-            document.getElementById('errorMsg').innerText = msg;
-            err.classList.remove('hidden');
         }
     </script>
 </body>

@@ -156,66 +156,6 @@ const UploadZone = ({ onFile, idx }: { onFile: (s: DesignSnapshot) => void; idx:
 
 
 
-// ── HARDWARE MATRIX ───────────────────────────────────────────────────────────
-const PumpHardwareMatrix = ({ designs }: { designs: DesignSnapshot[] }) => {
-    const { language, t } = useLanguage();
-    const specs = [
-        { l: t('dc.manufacturer'), k: 'pump.manufacturer' },
-        { l: t('dc.pumpModel'), k: 'pump.model' },
-        { l: t('dc.totalStages'), k: 'pump.stages' },
-        { l: t('dc.housingCount'), k: 'pump.housingCount' },
-        { l: t('dc.series'), k: 'pump.series' },
-        { l: t('dc.motorHp'), k: 'params.selectedMotor.hp' },
-        { l: t('dc.motorVolt'), k: 'params.selectedMotor.voltage' },
-        { l: t('dc.motorAmps'), k: 'params.selectedMotor.amps' },
-    ];
-
-    return (
-        <div className="glass-surface rounded-[24px] border border-surface-light p-4 shadow-lg mb-4 card-shine overflow-hidden relative light-sweep">
-            <div className="animate-scan-line opacity-10" />
-            <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 bg-primary/10 rounded-xl border border-primary/20">
-                    <Settings className="w-4 h-4 text-primary" />
-                </div>
-                <h3 className="text-xs font-black uppercase tracking-[0.25em] text-txt-main text-glow">
-                    {language === 'es' ? 'ESPECIFICACIONES DE HARDWARE' : 'HARDWARE SPECIFICATIONS'}
-                </h3>
-            </div>
-            <div className="overflow-x-auto custom-scrollbar">
-                <table className="w-full border-collapse">
-                    <thead>
-                        <tr className="border-b border-surface-light/20">
-                            <th className="py-3 px-4 text-left text-[11px] font-black uppercase text-txt-muted/70 w-[200px] tracking-wider">Spec</th>
-                            {designs.map((d, i) => {
-                                const cfg = getDesignStyle(d.pump, i);
-                                return (
-                                    <th key={i} className="py-3 px-4 text-center text-xs font-black uppercase tracking-[0.15em] border-l border-white/5" style={{ color: cfg.b }}>
-                                        {cfg.t}
-                                    </th>
-                                );
-                            })}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {specs.map((s, si) => (
-                            <tr key={si} className="border-b border-surface-light/5 row-highlight transition-all">
-                                <td className="py-3 px-4 text-xs font-black text-txt-muted/80 uppercase tracking-tight">{s.l}</td>
-                                {designs.map((d, i) => {
-                                    const val = s.k.split('.').reduce((o, key) => o?.[key], d as any);
-                                    return (
-                                        <td key={i} className="py-3 px-4 text-center text-sm font-black text-txt-main border-l border-white/5 font-mono">
-                                            {typeof val === 'number' ? f0(val) : (val || '—')}
-                                        </td>
-                                    );
-                                })}
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    );
-};
 
 // BHA Comparison removed as per user request
 
@@ -327,7 +267,7 @@ const DecisionRadar = ({ designs, scores }: { designs: DesignSnapshot[]; scores:
 
 
 // ── BAR BENCHMARKING Metrics ────────────────────────────────────────────────
-const TechnicalBarBenchmarking = ({ designs }: { designs: DesignSnapshot[] }) => {
+const TechnicalBarBenchmarking = ({ designs, isCompact = false }: { designs: DesignSnapshot[], isCompact?: boolean }) => {
     const { language } = useLanguage();
 
     const data = useMemo(() => {
@@ -348,7 +288,7 @@ const TechnicalBarBenchmarking = ({ designs }: { designs: DesignSnapshot[] }) =>
     }, [designs]);
 
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+        <div className={isCompact ? "flex flex-col gap-4" : "grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4"}>
             {/* Efficiency Chart */}
             <div className="glass-surface rounded-[24px] border border-surface-light p-5 shadow-lg relative overflow-hidden card-shine light-sweep">
                 <div className="flex items-center gap-2 mb-4">
@@ -565,174 +505,35 @@ export const DesignComparator: React.FC<Props> = ({ onBack, initialDesign }) => 
 
                 <div className="px-4 py-4 space-y-6">
                     {canCompare ? (
-                        <div className="space-y-6">
-                            {/* BENTO LAYOUT: RANKING + RADAR + KPI */}
-                            <div className="grid grid-cols-12 gap-4">
-                                {/* LEFT: RANKING */}
-                                <div className="col-span-12 lg:col-span-4 space-y-2">
-                                    <div className="grid grid-cols-2 gap-2">
-                                        {designs.map((d, i) => {
-                                            const sc = scores[i];
-                                            const cfg = getDesignStyle(d.pump, i);
-                                            const isWinner = sc === bestScore;
-                                            return (
-                                                <div key={i} className={`p-2 rounded-[16px] border transition-all duration-500 relative group glass-surface ${isWinner
-                                                    ? 'bg-gradient-to-br from-primary/10 to-transparent border-primary/30 shadow-lg shadow-primary/5'
-                                                    : 'opacity-90'
-                                                    }`}>
-                                                    <div className="flex justify-between items-center mb-1">
-                                                        <span className="text-[10px] font-black uppercase tracking-tighter" style={{ color: cfg.b }}>{cfg.t}</span>
-                                                        <span className="text-[13px] font-black italic tracking-tighter" style={{ color: cfg.b }}>{sc}</span>
-                                                    </div>
-                                                    <div className="w-full bg-canvas/40 h-1 rounded-full overflow-hidden mb-1.5">
-                                                        <div className="h-full rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(var(--color-primary),0.5)]" style={{ width: `${sc}%`, background: cfg.b }} />
-                                                    </div>
-                                                    <p className="text-[10px] font-black text-txt-main/70 truncate uppercase tracking-tight">{d.pump?.model}</p>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-
-                                {/* RIGHT: KEY PERFORMANCE INDICATORS - COMPARATIVE VIEW */}
-                                <div className="col-span-12 lg:col-span-8 grid grid-cols-4 gap-2">
-                                    {[
-                                        { l: language === 'es' ? 'Eficiencia %' : 'Efficiency %', m: 'eff', i: Zap, c: 'text-primary', bg: 'from-primary/10' },
-                                        { l: language === 'es' ? 'Mín PIP (psi)' : 'Min PIP (psi)', m: 'pip', i: Activity, c: 'text-emerald-500', bg: 'from-emerald-500/10' },
-                                        { l: language === 'es' ? 'Intensidad' : 'Energy Int.', m: 'int', i: Cpu, c: 'text-indigo-500', bg: 'from-indigo-500/10' },
-                                        { l: language === 'es' ? 'Rango (BPD)' : 'Range (BPD)', m: 'range', i: TrendingUp, c: 'text-amber-500', bg: 'from-amber-500/10' },
-                                    ].map((kpi, idx) => {
-                                        const values = designs.map(d => {
-                                            const rObj = calculateScenarioResults(d, 'target');
-                                            const rMin = calculateScenarioResults(d, 'min');
-                                            const rMax = calculateScenarioResults(d, 'max');
-                                            if (kpi.m === 'eff') return rObj?.effEstimated || 0;
-                                            if (kpi.m === 'pip') return rMin?.pip || 0;
-                                            if (kpi.m === 'int') return ((rObj?.electrical?.kw || 0) / (rObj?.flow || 1)) * 1000;
-                                            if (kpi.m === 'range') return (rMax?.flow || 0) - (rMin?.flow || 0);
-                                            return 0;
-                                        });
-
-                                        return (
-                                            <div key={idx} className={`glass-surface p-3 rounded-[24px] border border-surface-light flex flex-col group bg-gradient-to-br ${kpi.bg}`}>
-                                                <div className="flex items-center justify-between mb-3">
-                                                    <div className={`p-2 rounded-xl bg-canvas/40 border border-surface-light shadow-inner`}>
-                                                        <kpi.i className={`w-3.5 h-3.5 ${kpi.c}`} />
-                                                    </div>
-                                                    <p className="text-[9px] font-black text-txt-main uppercase tracking-[0.2em] opacity-60 group-hover:opacity-100 transition-opacity">{kpi.l}</p>
-                                                </div>
-
-                                                <div className="space-y-2">
-                                                    {designs.map((d, i) => (
-                                                        <div key={i} className="flex items-center justify-between gap-2 overflow-hidden">
-                                                            <div className="flex items-center gap-1.5 min-w-0">
-                                                                <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: getDesignStyle(d.pump, i).b }} />
-                                                                <span className="text-[8px] font-black text-txt-muted uppercase truncate">{getDesignStyle(d.pump, i).t}</span>
-                                                            </div>
-                                                            <span className="text-[11px] font-black text-txt-main font-mono whitespace-nowrap">
-                                                                {kpi.m === 'eff' ? f1(values[i]) + '%' :
-                                                                    kpi.m === 'pip' ? f0(values[i]) :
-                                                                        kpi.m === 'int' ? f1(values[i]) :
-                                                                            f0(values[i])}
-                                                            </span>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
+                        <div className="flex flex-col xl:flex-row gap-6">
+                            {/* MAIN COLUMN: PERFORMANCE CURVES */}
+                            <div className="flex-1 order-2 xl:order-1">
+                                <div className="glass-surface rounded-[40px] border border-surface-light p-6 shadow-2xl relative overflow-hidden card-shine">
+                                    <div className="animate-scan-line opacity-5" />
+                                    <ComparatorCurves designs={designs} />
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <PumpHardwareMatrix designs={designs} />
-                                <div className="glass-surface rounded-[24px] border border-surface-light p-4 shadow-lg mb-4 flex flex-col items-center justify-center overflow-hidden relative card-shine light-sweep">
-                                    <div className="animate-scan-line opacity-10" />
-                                    <DecisionRadar designs={designs} scores={scores} />
-                                </div>
-                            </div>
-
-                            <TechnicalBarBenchmarking designs={designs} />
-
-                            {/* MIDDLE: TECHNICAL RANGE MATRIX (ENHANCED) */}
-                            <div className="grid grid-cols-1 gap-8">
-                                <div className="glass-surface rounded-[40px] border border-surface-light p-8 shadow-2xl space-y-6 overflow-hidden relative card-shine light-sweep">
-                                    <div className="animate-scan-line opacity-20" />
-                                    <div className="flex items-center justify-between relative z-10">
-                                        <div className="flex items-center gap-4">
-                                            <div className="p-3 bg-secondary/10 rounded-2xl border border-secondary/20 shadow-inner">
-                                                <Activity className="w-5 h-5 text-secondary animate-pulse" />
-                                            </div>
-                                            <h3 className="text-xs font-black uppercase tracking-[0.3em] text-txt-main text-glow">{t('dc.techMatrix')}</h3>
+                            {/* RIGHT COLUMN: DECISION RADAR & METRICS */}
+                            <div className="w-full xl:w-[420px] space-y-6 order-1 xl:order-2">
+                                {/* RADAR */}
+                                <div className="glass-surface rounded-[32px] border border-surface-light p-6 shadow-lg relative overflow-hidden card-shine light-sweep">
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <div className="p-2 bg-primary/10 rounded-xl">
+                                            <RadarIcon className="w-4 h-4 text-primary" />
                                         </div>
+                                        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-txt-main">Análisis Multicriterio</h3>
                                     </div>
-
-                                    <div className="overflow-x-auto custom-scrollbar">
-                                        <table className="w-full text-left border-collapse min-w-[900px]">
-                                            <thead>
-                                                <tr className="border-b border-surface-light">
-                                                    <th className="py-4 px-6 text-xs font-black uppercase text-txt-muted/70 sticky left-0 bg-surface z-20 border-r border-white/5">{language === 'es' ? 'Variable' : 'Variable'}</th>
-                                                    {designs.map((d, i) => (
-                                                        <th key={i} colSpan={3} className="py-4 px-3 text-center border-l border-white/5 bg-canvas/20">
-                                                            <span className="text-[11px] font-black uppercase tracking-[0.15em]" style={{ color: getDesignStyle(d.pump, i).b }}>{getDesignStyle(d.pump, i).t}</span>
-                                                        </th>
-                                                    ))}
-                                                </tr>
-                                                <tr className="bg-canvas/40">
-                                                    <th className="py-2 px-6 border-b border-white/5 sticky left-0 z-20 bg-surface border-r border-white/5"></th>
-                                                    {designs.map((_, i) => (
-                                                        <React.Fragment key={i}>
-                                                            <th className="py-2 px-2 text-[10px] font-black text-center text-txt-muted uppercase tracking-tighter border-l border-white/5">Min</th>
-                                                            <th className="py-2 px-2 text-[10px] font-black text-center text-primary uppercase tracking-tighter bg-primary/10">Obj</th>
-                                                            <th className="py-2 px-2 text-[10px] font-black text-center text-txt-muted uppercase tracking-tighter">Max</th>
-                                                        </React.Fragment>
-                                                    ))}
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {[
-                                                    { l: 'Flow BPD', k: 'flow', f: f0, icon: TrendingUp },
-                                                    { l: 'Head ft', k: 'tdh', f: f0, icon: Gauge },
-                                                    { l: 'Power kW', k: 'electrical.kw', f: f1, icon: Zap },
-                                                    { l: language === 'es' ? 'Costo $/día' : 'Cost $/day', k: 'cost', f: f0, icon: DollarSign, calc: (r: any, d: any) => r?.electrical?.kw * 24 * (d.params?.simulation?.costPerKwh || 0.12) },
-                                                    { l: 'PIP psi', k: 'pip', f: f0, icon: Activity },
-                                                    { l: 'Eff %', k: 'effEstimated', f: f1, icon: BarChart3 },
-                                                    { l: 'Motor %', k: 'motorLoad', f: f0, icon: Cpu },
-                                                    { l: 'GVF %', k: 'gasAnalysis.voidFraction', f: (v: any) => f1(v * 100), icon: Droplets },
-                                                    { l: language === 'es' ? 'Etapas' : 'Stages', k: 'stages', f: f0, icon: Layers, calc: (_: any, d: any) => d.pump?.stages },
-                                                    { l: language === 'es' ? 'Cuerpos' : 'Bodies', f: f0, icon: List, calc: (_: any, d: any) => d.pump?.housingCount || 1 },
-                                                    { l: 'kW/kBPD', k: 'intensity', f: f1, icon: ShieldCheck, calc: (r: any) => (r?.electrical?.kw / (r?.flow || 1)) * 1000 },
-                                                ].map((row, ri) => (
-                                                    <tr key={ri} className="border-b border-surface-light/10 row-highlight transition-all group">
-                                                        <td className="py-4 px-6 text-[11px] font-black text-txt-main sticky left-0 bg-surface/90 backdrop-blur-md z-20 flex items-center gap-3 group-hover:pl-8 transition-all duration-300 border-r border-white/5 border-b border-white/5">
-                                                            <row.icon className="w-4 h-4 opacity-70 group-hover:opacity-100 group-hover:text-primary transition-all" />
-                                                            {row.l}
-                                                        </td>
-                                                        {designs.map((d, i) => {
-                                                            const res = ['min', 'target', 'max'].map(sk => calculateScenarioResults(d, sk as any)) as any[];
-                                                            return (
-                                                                <React.Fragment key={i}>
-                                                                    <td className="py-4 px-2 text-center text-[13px] font-bold border-l border-white/5 opacity-80 font-mono">
-                                                                        {row.calc ? row.f(row.calc(res[0], d)) : row.f(row.k.split('.').reduce((o, i) => o?.[i], res[0]))}
-                                                                    </td>
-                                                                    <td className="py-4 px-2 text-center text-[13px] font-black text-primary bg-primary/10 font-mono">
-                                                                        {row.calc ? row.f(row.calc(res[1], d)) : row.f(row.k.split('.').reduce((o, i) => o?.[i], res[1]))}
-                                                                    </td>
-                                                                    <td className="py-4 px-2 text-center text-[13px] font-bold opacity-80 font-mono border-r border-white/5">
-                                                                        {row.calc ? row.f(row.calc(res[2], d)) : row.f(row.k.split('.').reduce((o, i) => o?.[i], res[2]))}
-                                                                    </td>
-                                                                </React.Fragment>
-                                                            );
-                                                        })}
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
+                                    <div className="h-[320px] flex items-center justify-center">
+                                        <DecisionRadar designs={designs} scores={scores} />
                                     </div>
                                 </div>
-                            </div>
 
-                            <ComparatorCurves designs={designs} />
+                                {/* BAR METRICS */}
+                                <div className="space-y-4">
+                                    <TechnicalBarBenchmarking designs={designs} isCompact={true} />
+                                </div>
+                            </div>
                         </div>
                     ) : (
                         <div className="flex flex-col items-center justify-center h-[70vh] text-center space-y-10 animate-fadeIn">

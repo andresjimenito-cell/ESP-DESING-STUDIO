@@ -961,11 +961,11 @@ export const generateMultiCurveData = (pump: EspPump, system: SystemParams, user
             }
         }
 
-        if (kMin > 0 && flow <= maxConeFlowMin) {
+        if (kMin > 0) {
             const minH = kMin * Math.pow(flow, 2);
             point.minLimit = minH > 0 ? Number(minH.toFixed(2)) : null;
         }
-        if (kMax > 0 && flow <= maxConeFlowMax) {
+        if (kMax > 0) {
             const maxH = kMax * Math.pow(flow, 2);
             point.maxLimit = maxH > 0 ? Number(maxH.toFixed(2)) : null;
         }
