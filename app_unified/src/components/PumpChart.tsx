@@ -147,45 +147,45 @@ export const PumpChart: React.FC<PumpChartProps> = ({ data, pump, currentFrequen
             {payload
               .filter((entry: any) => ['userHz', 'systemCurve', 'catalogPumpCurve', 'idealSystemCurve', 'manualSystemCurve'].includes(entry.dataKey))
               .map((entry: any, index: number) => {
-              if (entry.value === null || entry.value === undefined) return null;
+                if (entry.value === null || entry.value === undefined) return null;
 
-              // Rename keys for better readability in tooltip
-              let name = entry.name;
-              if (entry.dataKey === 'pumpMin') name = t('chart.rangeMin');
-              if (entry.dataKey === 'sysMin') name = t('chart.sysMin');
-              if (entry.dataKey === 'pumpMax') name = t('chart.rangeMax');
-              if (entry.dataKey === 'sysMax') name = t('chart.sysMax');
-              if (entry.dataKey === 'designPumpCurve') name = t('chart.design');
-              if (entry.dataKey === 'userHz') name = isDiagnosticMode ? `${t('p5.pump')} Teórica @ ${currentFrequency}Hz` : `${t('p5.pump')} @ ${currentFrequency}Hz`;
-              if (entry.dataKey === 'systemCurve') name = isDiagnosticMode ? 'Sistema Teórico' : t('chart.sysCurve');
-              if (entry.dataKey === 'minLimit') name = t('chart.limitMin');
-              if (entry.dataKey === 'manualSystemCurve') name = "Curva Escenario";
+                // Rename keys for better readability in tooltip
+                let name = entry.name;
+                if (entry.dataKey === 'pumpMin') name = t('chart.rangeMin');
+                if (entry.dataKey === 'sysMin') name = t('chart.sysMin');
+                if (entry.dataKey === 'pumpMax') name = t('chart.rangeMax');
+                if (entry.dataKey === 'sysMax') name = t('chart.sysMax');
+                if (entry.dataKey === 'designPumpCurve') name = t('chart.design');
+                if (entry.dataKey === 'userHz') name = isDiagnosticMode ? `${t('p5.pump')} Teórica @ ${currentFrequency}Hz` : `${t('p5.pump')} @ ${currentFrequency}Hz`;
+                if (entry.dataKey === 'systemCurve') name = isDiagnosticMode ? 'Sistema Teórico' : t('chart.sysCurve');
+                if (entry.dataKey === 'minLimit') name = t('chart.limitMin');
+                if (entry.dataKey === 'manualSystemCurve') name = "Curva Escenario";
 
-              // Standard frequencies
-              if (entry.dataKey === 'hz30') name = '30 Hz';
-              if (entry.dataKey === 'hz40') name = '40 Hz';
-              if (entry.dataKey === 'hz50') name = '50 Hz';
-              if (entry.dataKey === 'hz60') name = '60 Hz';
-              if (entry.dataKey === 'hz70') name = '70 Hz';
-              if (entry.dataKey === 'catalogPumpCurve') name = isDiagnosticMode ? `Bomba Ajustada (Kh)` : 'Catálogo (Bomba Nueva)';
-              if (entry.dataKey === 'idealSystemCurve') name = isDiagnosticMode ? `Sistema Ajustado (Kf)` : 'Sistema Catálogo';
+                // Standard frequencies
+                if (entry.dataKey === 'hz30') name = '30 Hz';
+                if (entry.dataKey === 'hz40') name = '40 Hz';
+                if (entry.dataKey === 'hz50') name = '50 Hz';
+                if (entry.dataKey === 'hz60') name = '60 Hz';
+                if (entry.dataKey === 'hz70') name = '70 Hz';
+                if (entry.dataKey === 'catalogPumpCurve') name = isDiagnosticMode ? `Bomba Ajustada (Kh)` : 'Catálogo (Bomba Nueva)';
+                if (entry.dataKey === 'idealSystemCurve') name = isDiagnosticMode ? `Sistema Ajustado (Kf)` : 'Sistema Catálogo';
 
-              const isEff = entry.dataKey === 'efficiency';
-              const unit = isEff ? '%' : ' ft';
-              const val = entry.value.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+                const isEff = entry.dataKey === 'efficiency';
+                const unit = isEff ? '%' : ' ft';
+                const val = entry.value.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
-              return (
-                <div key={index} className="flex justify-between gap-6 items-center">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full shadow-[0_0_5px_currentColor]" style={{ backgroundColor: entry.color, color: entry.color }}></div>
-                    <span className="font-bold text-txt-muted text-xs">{name}</span>
+                return (
+                  <div key={index} className="flex justify-between gap-6 items-center">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full shadow-[0_0_5px_currentColor]" style={{ backgroundColor: entry.color, color: entry.color }}></div>
+                      <span className="font-bold text-txt-muted text-xs">{name}</span>
+                    </div>
+                    <span className="font-mono font-black text-txt-main text-sm drop-shadow-sm">
+                      {val}<span className="opacity-70 text-xs ml-0.5">{unit}</span>
+                    </span>
                   </div>
-                  <span className="font-mono font-black text-txt-main text-sm drop-shadow-sm">
-                    {val}<span className="opacity-70 text-xs ml-0.5">{unit}</span>
-                  </span>
-                </div>
-              );
-            })}
+                );
+              })}
           </div>
         </div>
       );
@@ -202,8 +202,10 @@ export const PumpChart: React.FC<PumpChartProps> = ({ data, pump, currentFrequen
           <h3 className="text-xl font-black text-txt-main tracking-tight leading-none uppercase drop-shadow-md">
             {t('p5.perfCurve')}
           </h3>
-          <p className="text-[10px] font-bold text-txt-muted uppercase mt-1 tracking-wider">
+          <p className="text-[10px] font-bold text-txt-muted uppercase mt-1 tracking-wider flex flex-wrap items-center gap-y-1">
             {pump.manufacturer} <span className="opacity-40 px-1">|</span> {pump.series} <span className="opacity-40 px-1">|</span> <span className="text-secondary font-black">{pump.model}</span>
+            <span className="opacity-40 px-1 ml-1">|</span> <span className="text-primary font-black uppercase">{pump.stages} {t('p5.stages') || 'STAGES'}</span>
+            <span className="opacity-40 px-1 ml-1">|</span> <span className="text-txt-main font-black uppercase">{t('p5.targetFreq') || 'TARGET FREQ'}: {currentFrequency} HZ</span>
           </p>
         </div>
 
@@ -221,7 +223,7 @@ export const PumpChart: React.FC<PumpChartProps> = ({ data, pump, currentFrequen
         <ResponsiveContainer width="100%" height="99%" minHeight={minHeight !== undefined ? minHeight - 30 : 280}>
           <ComposedChart
             data={safeData}
-            margin={{ top: 10, right: 10, left: -20, bottom: 20 }}
+            margin={{ top: 10, right: 20, left: 10, bottom: 20 }}
           >
             <defs>
               <filter id="glow-primary" height="300%" width="300%" x="-100%" y="-100%">
@@ -262,10 +264,10 @@ export const PumpChart: React.FC<PumpChartProps> = ({ data, pump, currentFrequen
               tickLine={false}
               axisLine={{ stroke: colorGrid, strokeWidth: 1.5 }}
               tickFormatter={formatNumber}
-              width={50}
-              tickMargin={4}
+              width={65}
+              tickMargin={8}
             >
-              <Label value={`${t('chart.head')} (ft)`} angle={-90} position="insideLeft" offset={10} dx={-5} style={{ fontSize: 8, fill: colorTextMuted, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.15em', fontFamily: 'Inter, system-ui, sans-serif' }} />
+              <Label value={`${t('chart.head')} (ft)`} angle={-90} position="insideLeft" offset={15} dx={-10} style={{ fontSize: 8, fill: colorTextMuted, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.15em', fontFamily: 'Inter, system-ui, sans-serif' }} />
             </YAxis>
 
             <Tooltip content={<CustomTooltip />} cursor={{ stroke: colorTextMuted, strokeWidth: 2, strokeDasharray: '4 4' }} />
@@ -356,8 +358,8 @@ export const PumpChart: React.FC<PumpChartProps> = ({ data, pump, currentFrequen
             <Line yAxisId="left" type="monotone" dataKey="pumpMin" stroke={colorTextMuted} strokeWidth={1.5} dot={false} name={t('chart.rangeMin')} isAnimationActive={false} connectNulls={false} strokeDasharray="5 5" opacity={0.4} />
             <Line yAxisId="left" type="monotone" dataKey="pumpMax" stroke={colorTextMuted} strokeWidth={1.5} dot={false} name={t('chart.rangeMax')} isAnimationActive={false} connectNulls={false} strokeDasharray="5 5" opacity={0.4} />
 
-            <Line yAxisId="left" type="monotone" dataKey="minLimit" stroke="#ef4444" strokeDasharray="4 4" strokeWidth={2} dot={false} name={t('chart.limitMin')} isAnimationActive={false} connectNulls={false} opacity={0.9} />
-            <Line yAxisId="left" type="monotone" dataKey="maxLimit" stroke="#ef4444" strokeDasharray="4 4" strokeWidth={2} dot={false} name={t('chart.limitMax')} isAnimationActive={false} connectNulls={false} opacity={0.9} />
+            <Line yAxisId="left" type="monotone" dataKey="minLimit" stroke="#950000ff" strokeDasharray="4 4" strokeWidth={2} dot={false} name={t('chart.limitMin')} isAnimationActive={false} connectNulls={false} opacity={0.9} />
+            <Line yAxisId="left" type="monotone" dataKey="maxLimit" stroke="#950000ff" strokeDasharray="4 4" strokeWidth={2} dot={false} name={t('chart.limitMax')} isAnimationActive={false} connectNulls={false} opacity={0.9} />
 
             {/* --- MAIN PUMP CURVE (User Hz) - DOTTED & THINNER --- */}
             <Line
