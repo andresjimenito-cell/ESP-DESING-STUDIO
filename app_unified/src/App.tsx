@@ -625,17 +625,35 @@ const App: React.FC = () => {
         );
     }
 
-    if (mainContent) return mainContent;
+    // ── GLOBAL BACKGROUND (shared across ALL modes) ──
+    const globalBackground = (
+        <div className="aurora-bg">
+            {/* Background Image Layer */}
+            <div 
+                className="absolute inset-0 bg-center no-repeat opacity-25 filter blur-sm brightness-110 pointer-events-none" 
+                style={{ 
+                    backgroundImage: "url('/main_bg.png')",
+                    backgroundSize: "100% 100%"
+                }}
+            ></div>
+            <div className="aurora-1 opacity-60"></div>
+            <div className="aurora-2 opacity-40"></div>
+            <div className="blueprint-grid absolute inset-0 opacity-10"></div>
+            <div className="absolute top-[-10%] left-[20%] w-[30vw] h-[30vw] bg-primary/10 rounded-full blur-[120px] animate-pulse"></div>
+            <div className="absolute bottom-[-10%] right-[20%] w-[30vw] h-[30vw] bg-secondary/10 rounded-full blur-[120px] animate-pulse-slow"></div>
+        </div>
+    );
+
+    if (mainContent) return (
+        <div className="relative min-h-screen">
+            {globalBackground}
+            {mainContent}
+        </div>
+    );
 
     return (
-        <div className="flex h-screen bg-canvas font-sans overflow-hidden text-txt-main selection:bg-primary/30 transition-colors duration-500 relative">
-            <div className="aurora-bg">
-                <div className="aurora-1 opacity-60"></div>
-                <div className="aurora-2 opacity-40"></div>
-                <div className="blueprint-grid absolute inset-0 opacity-10"></div>
-                <div className="absolute top-[-10%] left-[20%] w-[30vw] h-[30vw] bg-primary/10 rounded-full blur-[120px] animate-pulse"></div>
-                <div className="absolute bottom-[-10%] right-[20%] w-[30vw] h-[30vw] bg-secondary/10 rounded-full blur-[120px] animate-pulse-slow"></div>
-            </div>
+        <div className="flex h-screen font-sans overflow-hidden text-txt-main selection:bg-primary/30 transition-colors duration-500 relative">
+            {globalBackground}
 
             {toast.show && (
                 <div className="fixed top-20 right-8 z-[100] animate-fadeIn">

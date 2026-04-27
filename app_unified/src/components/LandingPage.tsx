@@ -757,23 +757,19 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
     // --- RENDER DEL LANDING PAGE ---
     return (
-        <div className="h-screen w-full bg-canvas relative flex items-center justify-center overflow-hidden font-sans text-txt-main selection:bg-primary/30 transition-colors duration-700 animate-landing-entry">
+        <div className="h-screen w-full relative flex items-center justify-center overflow-hidden font-sans text-txt-main selection:bg-primary/30 transition-colors duration-700 animate-landing-entry">
 
             {/* --- PREMIUM BACKGROUND LAYER SYSTEM --- */}
-            <div className="fixed inset-0 overflow-hidden pointer-events-none z-0 bg-canvas">
-                {/* Dynamic Ambient Orbs */}
-                <div className="absolute top-[-20%] left-[-10%] w-[60vw] h-[60vw] rounded-full bg-primary/10 mix-blend-screen filter blur-[100px] animate-pulse-slow"></div>
-                <div className="absolute bottom-[-20%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-secondary/10 mix-blend-screen filter blur-[120px] animate-pulse-slow" style={{ animationDelay: '2s' }}></div>
-                <div className="absolute top-[40%] left-[30%] w-[30vw] h-[30vw] rounded-full bg-accent/5 mix-blend-screen filter blur-[80px] animate-float"></div>
-
-                {/* Parallax Industrial Background */}
-                <div
-                    className="absolute inset-[-10%] bg-cover bg-center opacity-5 mix-blend-overlay transition-transform duration-1000 ease-out"
-                    style={{
-                        backgroundImage: `url('https://images.unsplash.com/photo-1605217613423-0a6108ce817f?q=80&w=2927&auto=format&fit=crop')`,
-                        transform: `translate3d(${mousePos.x * -0.5}px, ${mousePos.y * -0.5}px, 0) scale(1.05)`
+            <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+                {/* Background Image Layer - Forced to fit (100% 100%) */}
+                <div 
+                    className="absolute inset-0 bg-center no-repeat opacity-20 filter blur-sm transition-transform duration-1000 ease-out" 
+                    style={{ 
+                        backgroundImage: "url('/main_bg.png')",
+                        backgroundSize: "100% 100%",
+                        transform: `translate3d(${mousePos.x * -0.5}px, ${mousePos.y * -0.5}px, 0)`
                     }}
-                />
+                ></div>
 
                 {/* Animated Tech Grid */}
                 <div className="absolute inset-0 bg-[linear-gradient(rgba(var(--color-text-main),0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(var(--color-text-main),0.03)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_at_center,black_20%,transparent_80%)]"></div>
