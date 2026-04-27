@@ -1894,6 +1894,10 @@ export const Phase6: React.FC<Props> = ({ params, setParams, pump, designFreq, t
                                 <DesignMetric label={t('p5.freq')} value={`${params.targets[compareScenario].frequency} Hz`} />
                                 <DesignMetric label="TDH" value={`${designRes.tdh?.toFixed(0)} ft`} />
                                 <DesignMetric label={t('p3.pip')} value={`${designRes.pip?.toFixed(0)} psi`} />
+                                <DesignMetric label="INTAKE MD" value={`${designParams.pressures.pumpDepthMD?.toFixed(0)} ft`} />
+                                <DesignMetric label="INTAKE TVD" value={`${interpolateTVD(designParams.pressures.pumpDepthMD, designParams.survey).toFixed(0)} ft`} />
+                                <DesignMetric label="PMP (MD)" value={`${designParams.wellbore.midPerfsMD?.toFixed(0)} ft`} />
+                                <DesignMetric label="PMP (TVD)" value={`${interpolateTVD(designParams.wellbore.midPerfsMD, designParams.survey).toFixed(0)} ft`} />
                             </div>
                         )}
                     </div>

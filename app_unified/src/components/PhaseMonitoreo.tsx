@@ -2947,15 +2947,19 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                         <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent -translate-x-full group-hover:animate-[shimmer_3s_infinite] pointer-events-none"></div>
 
                         <div className="relative">
-                            {/* Complex animated icon WITH LOGO */}
-                            <div className="relative w-40 h-40 flex items-center justify-center">
-                                <div className="absolute inset-0 bg-primary/20 rounded-full animate-ping opacity-40"></div>
-                                <div className="absolute inset-0 border-2 border-primary/30 rounded-full"></div>
-                                <div className="absolute inset-2 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
-                                <div className="absolute inset-6 border-2 border-secondary/20 border-b-secondary rounded-full animate-spin-[4s_linear_infinite] opacity-60"></div>
-
-                                <div className="relative z-10 p-4 bg-white/5 backdrop-blur-xl rounded-[2.5rem] shadow-glow-primary border border-white/10">
-                                    <img src="/LOGO.png" alt="Logo" className="w-20 h-20 object-contain drop-shadow-[0_0_15px_rgba(var(--color-primary),0.8)]" />
+                            {/* ENLARGED VIDEO CONTAINER FOR LOADING */}
+                            <div className="relative w-[400px] h-[300px] flex items-center justify-center">
+                                <div className="absolute inset-0 bg-primary/10 rounded-full blur-[100px] animate-pulse"></div>
+                                
+                                <div className="relative z-10 w-full h-full overflow-hidden rounded-[2rem] border border-white/10 shadow-[0_0_50px_rgba(var(--color-primary),0.2)] bg-canvas/40 backdrop-blur-md">
+                                    <video 
+                                        src="/loading_mini.mp4" 
+                                        autoPlay 
+                                        loop 
+                                        muted 
+                                        playsInline 
+                                        className="w-full h-full object-contain p-2"
+                                    />
                                 </div>
                             </div>
                         </div>

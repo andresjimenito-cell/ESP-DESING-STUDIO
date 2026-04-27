@@ -37,27 +37,43 @@ const FormationLabel = ({ viewBox, name, color }: any) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // Custom Tooltip
 // ─────────────────────────────────────────────────────────────────────────────
-const CustomTooltip = ({ active, payload, colorSurface, colorSurfaceLight, colorTextMuted }: any) => {
+// Custom Tooltip defined inside TrajectoryPlot or passed values
+const CustomTooltip = ({ active, payload, colorSurface, colorSurfaceLight, colorTextMuted, params, pumpTVD, perfsTVD }: any) => {
     if (!active || !payload?.length) return null;
     const d = payload[0]?.payload;
+    const t = (k: string) => k; // Fallback or useLanguage
+
+    // Identify Zone
+    const isCased = d.md <= params.wellbore.casingBottom;
+    const zoneName = isCased ? 'Cased Hole' : 'Open Hole';
+    const zoneColor = isCased ? '#94a3b8' : '#fbbf24';
+
+    // Identify Equipment Proximity
+    let equipment = null;
+    if (Math.abs(d.tvd - pumpTVD) < 30) equipment = { name: 'ESP PUMP', color: '#0ea5e9' };
+    else if (Math.abs(d.tvd - perfsTVD) < 50) equipment = { name: 'PERFORATIONS', color: '#10b981' };
+
     return (
         <div style={{
-            background: colorSurface, border: `1px solid ${colorSurfaceLight}`,
-            borderRadius: 12, padding: '10px 14px', boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
-            minWidth: 150, backdropFilter: 'blur(8px)',
+            background: `${colorSurface}ee`, border: `1px solid ${colorSurfaceLight}`,
+            borderRadius: 16, padding: '12px 16px', boxShadow: '0 12px 40px rgba(0,0,0,0.7)',
+            minWidth: 180, backdropFilter: 'blur(12px)', zIndex: 1000
         }}>
-            <p style={{
-                color: colorTextMuted, fontSize: 9, fontFamily: 'monospace', marginBottom: 6,
-                letterSpacing: '0.12em', textTransform: 'uppercase'
-            }}>Survey Point</p>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: 6 }}>
+                <span style={{ color: zoneColor, fontSize: 9, fontWeight: 900, fontFamily: 'monospace', letterSpacing: '0.1em' }}>{zoneName}</span>
+                {equipment && (
+                    <span style={{ background: `${equipment.color}20`, color: equipment.color, fontSize: 8, fontWeight: 900, padding: '2px 6px', borderRadius: 4, border: `1px solid ${equipment.color}40` }}>{equipment.name}</span>
+                )}
+            </div>
+
             {[
                 { label: 'TVD', value: `${Math.round(d?.tvd ?? 0)} ft`, color: '#38bdf8' },
                 { label: 'MD', value: `${Math.round(d?.md ?? 0)} ft`, color: '#a78bfa' },
-                { label: 'DEP', value: `${Math.round(d?.departure ?? 0)} ft`, color: '#34d399' },
+                { label: 'Departure', value: `${Math.round(d?.departure ?? 0)} ft`, color: '#34d399' },
             ].map(({ label, value, color }) => (
-                <div key={label} style={{ display: 'flex', justifyContent: 'space-between', gap: 20, marginTop: 3 }}>
-                    <span style={{ color: colorTextMuted, fontSize: 10, fontFamily: 'monospace' }}>{label}</span>
-                    <span style={{ color, fontSize: 10, fontWeight: 700, fontFamily: 'monospace' }}>{value}</span>
+                <div key={label} style={{ display: 'flex', justifyContent: 'space-between', gap: 24, marginTop: 4 }}>
+                    <span style={{ color: colorTextMuted, fontSize: 10, fontFamily: 'monospace', fontWeight: 600 }}>{label}</span>
+                    <span style={{ color, fontSize: 10, fontWeight: 800, fontFamily: 'monospace' }}>{value}</span>
                 </div>
             ))}
         </div>
@@ -85,7 +101,7 @@ const DrillingRig = (props: any) => {
     const baseCol = isDark ? "#1F2937" : "#CBD5E1";
 
     return (
-        <g transform={`translate(${sx}, ${sy})`}>
+        <g transform={`translate(${sx}, ${sy - 8})`}>
             <rect x={-W - 5} y={1} width={(W + 5) * 2} height={8} rx={2} fill={baseCol} stroke={towerCol} strokeWidth={1} />
             <rect x={-W - 9} y={8} width={(W + 9) * 2} height={5} rx={1} fill={isDark ? "#111827" : "#94A3B8"} stroke={towerCol} strokeWidth={1} />
             <line x1={-W} y1={0} x2={0} y2={-H} stroke={towerCol} strokeWidth={2.5} />
@@ -122,32 +138,26 @@ const DrillingRig = (props: any) => {
 //   differences between consecutive survey stations.
 // ─────────────────────────────────────────────────────────────────────────────
 const getSmoothAngleDeg = (
-    tvdVal: number,
+    mdVal: number,
     processedData: any[],
     xScale: (v: number) => number,
     yScale: (v: number) => number,
 ): number => {
-    const idx = processedData.findIndex((d: any) => d.tvd >= tvdVal);
+    // Search by MD for maximum stability
+    const idx = processedData.findIndex((d: any) => d.md >= mdVal);
     if (idx < 1) return 0;
 
-    const HALF_WIN = 4;
-    let sumSin = 0, sumCos = 0;
+    // For angular (linear) lines, the angle is simply the slope of the segment
+    const p0 = processedData[idx - 1];
+    const p1 = processedData[idx];
 
-    for (let i = Math.max(1, idx - HALF_WIN); i <= Math.min(processedData.length - 1, idx + HALF_WIN); i++) {
-        const p0 = processedData[i - 1];
-        const p1 = processedData[i];
-        const sdx = xScale(p1.departure) - xScale(p0.departure);
-        const sdy = yScale(p1.tvd) - yScale(p0.tvd);
-        const len = Math.sqrt(sdx * sdx + sdy * sdy);
-        if (len < 0.001) continue;
-        const dist = Math.abs(i - idx);
-        const weight = HALF_WIN + 1 - dist;
-        sumSin += weight * (sdx / len);
-        sumCos += weight * (sdy / len);
-    }
+    const sdx = xScale(p1.departure) - xScale(p0.departure);
+    const sdy = yScale(p1.tvd) - yScale(p0.tvd);
 
-    if (Math.abs(sumSin) < 0.001 && Math.abs(sumCos) < 0.001) return 0;
-    return Math.atan2(sumSin, sumCos) * 180 / Math.PI;
+    const len = Math.sqrt(sdx * sdx + sdy * sdy);
+    if (len < 0.001) return 0;
+
+    return Math.atan2(sdx, sdy) * 180 / Math.PI;
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -159,8 +169,10 @@ interface WellboreSymbolsProps {
     processedData: any[];
     pumpDep: number;
     pumpTVD: number;
+    pumpMD: number;
     perfsDep: number;
     perfsTVD: number;
+    perfsMD: number;
     perfsTVDRange: number;
     colorPrimary: string;
     colorTextMuted: string;
@@ -171,8 +183,8 @@ interface WellboreSymbolsProps {
 const WellboreSymbols = ({
     xAxisMap, yAxisMap,
     processedData,
-    pumpDep, pumpTVD,
-    perfsDep, perfsTVD, perfsTVDRange,
+    pumpDep, pumpTVD, pumpMD,
+    perfsDep, perfsTVD, perfsMD, perfsTVDRange,
     colorPrimary, colorTextMuted,
     payZoneLabel, theme,
 }: WellboreSymbolsProps) => {
@@ -184,7 +196,7 @@ const WellboreSymbols = ({
 
     const isDark = theme === 'fusion' || theme === 'cyber';
     const ac = colorPrimary;
-    const perf = '#10B981';
+    const perf = isDark ? '#D97706' : '#78350F'; // Deep Amber / Brown
 
     // ── Screen coordinates ──────────────────────────────────────────────────
     const ex = xScale(pumpDep);
@@ -193,101 +205,95 @@ const WellboreSymbols = ({
     const py = yScale(perfsTVD);
 
     // ── Smooth angles along the wellbore ───────────────────────────────────
-    const eAngle = getSmoothAngleDeg(pumpTVD, processedData, xScale, yScale);
-    const pAngle = getSmoothAngleDeg(perfsTVD, processedData, xScale, yScale);
+    const eAngle = getSmoothAngleDeg(pumpMD, processedData, xScale, yScale);
+    const pAngle = getSmoothAngleDeg(perfsMD, processedData, xScale, yScale);
 
     // ── Perf interval size in screen pixels ────────────────────────────────
     const rawPx = Math.abs(yScale(perfsTVD + perfsTVDRange) - yScale(perfsTVD));
     const halfInt = Math.max(16, Math.min(34, rawPx));
-    const shots = [-halfInt * 0.72, -halfInt * 0.33, 0, halfInt * 0.33, halfInt * 0.72];
+    const shots = [-halfInt * 0.85, -halfInt * 0.5, -halfInt * 0.2, 0, halfInt * 0.2, halfInt * 0.5, halfInt * 0.85];
 
     // ── ESP Pump body dimensions — compact to sit cleanly inside the wellbore ──
-    //    PH: half-height along wellbore axis  |  PW: half-width across
-    const PH = 13;   // reduced from 20 → fits tighter inside wellbore
-    const PW = 3;    // reduced from 4  → slimmer profile
+    const PH = 13;
+    const PW = 3;
 
     return (
         <g>
             {/* ═══════════════════════════════════════════════════════
-                ESP — body rotated along wellbore, label always horizontal
+                ESP — body rotated along wellbore
                 ═══════════════════════════════════════════════════════ */}
-
-            {/* Outer glow ring (not rotated, stays circular) */}
             <circle cx={ex} cy={ey} r={10}
                 fill="none" stroke={ac} strokeWidth={1} strokeOpacity={0.2}
                 style={{ filter: 'drop-shadow(0 0 5px rgb(var(--color-primary)/0.35))' }} />
 
-            {/* Body — rotated along wellbore */}
             <g transform={`translate(${ex}, ${ey}) rotate(${eAngle})`}>
-                {/* Outer casing of pump */}
                 <rect x={-PW - 1.5} y={-PH - 1.5} width={(PW + 1.5) * 2} height={(PH + 1.5) * 2} rx={3}
                     fill={isDark ? "#0A1628" : "#EFF6FF"} stroke={ac} strokeWidth={1.2} />
-                {/* Stage bands — 3 stripes (reduced from 4) */}
                 {[-PH * 0.55, 0, PH * 0.55].map((bandY, i) => (
                     <rect key={i}
                         x={-PW - 0.5} y={bandY - 2.5} width={(PW + 0.5) * 2} height={4} rx={1}
                         fill={ac} fillOpacity={0.35} stroke={ac} strokeWidth={0.5} />
                 ))}
-                {/* Center shaft line */}
-                <line x1={0} y1={-PH} x2={0} y2={PH}
-                    stroke={ac} strokeWidth={0.6} opacity={0.5} />
-                {/* Top connection stub */}
+                <line x1={0} y1={-PH} x2={0} y2={PH} stroke={ac} strokeWidth={0.6} opacity={0.5} />
                 <rect x={-1.5} y={-PH - 6} width={3} height={6} rx={1} fill={ac} fillOpacity={0.7} />
-                {/* Bottom intake */}
                 <rect x={-2} y={PH} width={4} height={5} rx={1}
                     fill={ac} fillOpacity={0.4} stroke={ac} strokeWidth={0.5} strokeDasharray="2 1" />
             </g>
 
-            {/* Dot at center (stays at exact pump position) */}
             <circle cx={ex} cy={ey} r={2.5} fill={ac}
                 style={{ filter: 'drop-shadow(0 0 4px rgb(var(--color-primary)))' }} />
 
-            {/* Label badge — always horizontal, offset to the right */}
-            <g transform={`translate(${ex + 14}, ${ey - 15})`}>
-                <rect x={0} y={0} width={50} height={30} rx={5}
-                    fill={isDark ? "#060E1E" : "#EFF6FF"}
-                    stroke={ac} strokeWidth={1.2}
-                    style={{ filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.45))' }} />
-                <text x={25} y={12} textAnchor="middle" fill={ac}
-                    fontSize={10} fontWeight="900" fontFamily="monospace">ESP</text>
-                <text x={25} y={23} textAnchor="middle" fill={colorTextMuted}
-                    fontSize={7.5} fontFamily="monospace">PUMP</text>
-                {/* Connector line from badge to center dot */}
-                <line x1={-12} y1={15} x2={0} y2={15} stroke={ac} strokeWidth={1} opacity={0.5} />
-                <circle cx={-14} cy={15} r={1.5} fill={ac} opacity={0.6} />
+            {/* Label badge — ESP PUMP */}
+            <g transform={`translate(${ex + 18}, ${ey - 22})`}>
+                <rect x={0} y={0} width={82} height={38} rx={4}
+                    fill={isDark ? "rgba(10,20,35,0.85)" : "rgba(248,250,252,0.9)"}
+                    stroke={isDark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.15)"}
+                    strokeWidth={1}
+                    style={{ backdropFilter: 'blur(8px)' }} />
+                <rect x={0} y={0} width={2} height={38} fill={ac} />
+                <text x={8} y={12} fill={ac} fontSize={9} fontWeight="900" fontFamily="monospace" letterSpacing="0.05em">ESP PUMP</text>
+                <text x={8} y={24} fill={colorTextMuted} fontSize={7.5} fontWeight="700" fontFamily="monospace">MD: {Math.round(pumpMD)}'</text>
+                <text x={8} y={33} fill={isDark ? "#fff" : "#000"} fontSize={7.5} fontWeight="800" fontFamily="monospace">TVD: {Math.round(pumpTVD)}'</text>
+                <line x1={-12} y1={19} x2={0} y2={19} stroke={isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.3)"} strokeWidth={0.5} />
             </g>
 
             {/* ═══════════════════════════════════════════════════════
-                PERFORATIONS — only the glowing bullet tips, no inner body/casing
+                PERFORATIONS — Technical / Earth-Black Aesthetic
                 ═══════════════════════════════════════════════════════ */}
 
-            {/* Subtle ambient glow around interval */}
+            {/* Geological hatching background for interval */}
             <g transform={`translate(${px}, ${py}) rotate(${pAngle})`}>
-                <rect x={-14} y={-halfInt - 4} width={28} height={(halfInt + 4) * 2} rx={10}
-                    fill={perf} fillOpacity={0.05}
-                    style={{ filter: 'blur(5px)' }} />
+                <rect x={-12} y={-halfInt} width={24} height={halfInt * 2}
+                    fill="url(#patRes)" fillOpacity={0.4} stroke={perf} strokeWidth={0.5} strokeOpacity={0.3} />
             </g>
 
-            {/* Perforations — only external glowing shot tips */}
+            {/* Perforation Shots — Industrial Black / Brown markers */}
             <g transform={`translate(${px}, ${py}) rotate(${pAngle})`}>
                 {shots.map((offset, i) => (
                     <g key={i}>
-                        {/* Left shot — short stub + glowing tip */}
-                        <line x1={0} y1={offset} x2={-18} y2={offset}
-                            stroke={perf} strokeWidth={1} opacity={0.4} />
-                        <circle cx={-20} cy={offset} r={3}
-                            fill={perf}
-                            style={{ filter: 'drop-shadow(0 0 5px #39ff6aff)' }} />
-                        {/* Right shot — short stub + glowing tip */}
-                        <line x1={0} y1={offset} x2={18} y2={offset}
-                            stroke={perf} strokeWidth={1} opacity={0.4} />
-                        <circle cx={20} cy={offset} r={3}
-                            fill={perf}
-                            style={{ filter: 'drop-shadow(0 0 5px #39ff6aff)' }} />
+                        <line x1={-15} y1={offset} x2={15} y2={offset}
+                            stroke={perf} strokeWidth={1} strokeOpacity={0.6} strokeDasharray="2 2" />
+                        <rect x={-16} y={offset - 1} width={4} height={2} fill={perf} />
+                        <rect x={12} y={offset - 1} width={4} height={2} fill={perf} />
                     </g>
                 ))}
             </g>
 
+            {/* Label badge — PERFORADOS — Earth-Industrial Style */}
+            <g transform={`translate(${px + 28}, ${py - 10})`}>
+                <rect x={0} y={0} width={82} height={38} rx={4}
+                    fill={isDark ? "rgba(20,15,10,0.9)" : "rgba(252,250,248,0.95)"}
+                    stroke={isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"}
+                    strokeWidth={1}
+                    style={{ backdropFilter: 'blur(8px)' }} />
+                <rect x={0} y={0} width={2} height={38} fill={perf} />
+
+                <text x={8} y={12} fill={perf} fontSize={9} fontWeight="900" fontFamily="monospace" letterSpacing="0.05em">PERFORADOS</text>
+                <text x={8} y={24} fill={colorTextMuted} fontSize={7.5} fontWeight="700" fontFamily="monospace">MD: {Math.round(perfsMD)}'</text>
+                <text x={8} y={33} fill={isDark ? "#fff" : "#000"} fontSize={7.5} fontWeight="800" fontFamily="monospace">TVD: {Math.round(perfsTVD)}'</text>
+
+                <line x1={-22} y1={19} x2={0} y2={19} stroke={isDark ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.2)"} strokeWidth={0.5} />
+            </g>
         </g>
     );
 };
@@ -314,13 +320,13 @@ export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params }
         shale: { pat: 'patShale', label: 'SHALE', color: isDark ? '#475569' : '#334155' },
         sand: { pat: 'patSand', label: 'SANDSTONE', color: isDark ? '#CA8A04' : '#B45309' },
         salt: { pat: 'patSalt', label: 'SALT DOME', color: isDark ? '#E2E8F0' : '#CBD5E1' },
-        granite: { pat: 'patGranite', label: 'GRANITE', color: isDark ? '#6B7280' : '#4B5563' },
+        granite: { pat: 'patGranite', label: 'GRANITE', color: isDark ? '#4c390cff' : '#4B5563' },
         res: { pat: 'patRes', label: 'RESERVOIR', color: '#ffff20ff' },
     };
 
     const { processedData, tubingData, pumpDep, pumpTVD, perfsDep, perfsTVD, maxTVD, kopPoint } = useMemo(() => {
         let departure = 0;
-        const data = survey.map((pt, i) => {
+        let data = survey.map((pt, i) => {
             if (i > 0) {
                 const dMD = pt.md - survey[i - 1].md;
                 const dTVD = pt.tvd - survey[i - 1].tvd;
@@ -333,6 +339,11 @@ export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params }
                 casedTvd: pt.md <= params.wellbore.casingBottom ? pt.tvd : null,
             };
         });
+
+        // Ensure data starts at surface (0,0)
+        if (data.length > 0 && data[0].md > 0) {
+            data = [{ departure: 0, tvd: 0, md: 0, casedTvd: 0 }, ...data];
+        }
 
         const pumpTVDVal = interpolateTVD(params.pressures.pumpDepthMD, survey);
         const pumpPt = data.find(d => d.tvd >= pumpTVDVal);
@@ -363,6 +374,12 @@ export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params }
             i > 0 &&
             (d.departure - data[i - 1].departure) / Math.max(1, d.tvd - data[i - 1].tvd) > 0.035
         );
+
+        // Ensure maxTVD covers both survey and TD
+        const surveyMax = Math.max(...survey.map(s => s.tvd), 1000);
+        const tdTVD = interpolateTVD(params.totalDepthMD, survey);
+        const calcMax = Math.max(surveyMax, tdTVD);
+
         return {
             processedData: data,
             tubingData: tubingD,
@@ -370,10 +387,10 @@ export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params }
             pumpTVD: pumpTVDVal,
             perfsDep: perfsPt?.departure ?? 0,
             perfsTVD: perfsTVDVal,
-            maxTVD: Math.ceil(Math.max(...survey.map(s => s.tvd), 1000) / 1000) * 1000,
+            maxTVD: Math.ceil(calcMax / 1000) * 1000 + 500,
             kopPoint: kop,
         };
-    }, [survey, params.wellbore.casingBottom, params.pressures.pumpDepthMD, params.wellbore.midPerfsMD]);
+    }, [survey, params.wellbore.casingBottom, params.pressures.pumpDepthMD, params.wellbore.midPerfsMD, params.totalDepthMD]);
 
     const airGap = 400;
     const perfsTVDRange = maxTVD * 0.025;
@@ -385,7 +402,7 @@ export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params }
         { y1: maxTVD * 0.45, y2: maxTVD * 0.60, geo: GEO.salt },
         { y1: maxTVD * 0.60, y2: maxTVD * 0.75, geo: GEO.sand },
         { y1: maxTVD * 0.75, y2: maxTVD * 0.90, geo: GEO.granite },
-        { y1: maxTVD * 0.90, y2: maxTVD * 1.5, geo: GEO.res },
+        { y1: maxTVD * 0.90, y2: 30000, geo: GEO.res }, // Extended to ensure coverage
     ];
 
     return (
@@ -510,8 +527,9 @@ export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params }
                             dataKey="departure"
                             type="number"
                             orientation="top"
-                            domain={[0, (max: number) => Math.max(max + 1800, 3500)]}
+                            domain={[-200, (max: number) => Math.max(max + 1800, 3500)]}
                             tick={{ fill: colorTextMuted, fontSize: 10, fontFamily: 'monospace', fontWeight: 700 }}
+                            tickFormatter={(v) => (v < 0 ? '' : v)}
                             axisLine={{ stroke: colorSurfaceLight }}
                             tickLine={false}
                         />
@@ -521,21 +539,68 @@ export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params }
                             reversed
                             domain={[-airGap, maxTVD]}
                             tick={{ fill: colorTextMuted, fontSize: 10, fontFamily: 'monospace', fontWeight: 700 }}
+                            tickFormatter={(v) => (v < 0 ? '' : v)}
                             axisLine={{ stroke: colorSurfaceLight }}
                             tickLine={false}
                             width={62}
                         />
 
-                        <Tooltip content={
-                            <CustomTooltip
-                                colorSurface={colorSurface}
-                                colorSurfaceLight={colorSurfaceLight}
-                                colorTextMuted={colorTextMuted}
-                            />
-                        } />
+                        <Tooltip
+                            shared={true}
+                            content={
+                                <CustomTooltip
+                                    colorSurface={colorSurface}
+                                    colorSurfaceLight={colorSurfaceLight}
+                                    colorTextMuted={colorTextMuted}
+                                    params={params}
+                                    pumpTVD={pumpTVD}
+                                    perfsTVD={perfsTVD}
+                                />
+                            }
+                        />
 
                         <ReferenceLine y={params.totalDepthMD} stroke="#EF4444" strokeWidth={1.5} strokeDasharray="5 4"
                             label={{ position: 'insideBottomRight', value: `▼ ${t('p1.td')}`, fill: '#EF4444', fontSize: 11, fontWeight: 'bold' }} />
+
+                        {/* CASING — Outer Boundary (Continuous from surface to bottom) */}
+                        <Line type="linear" dataKey="tvd" stroke={isDark ? "#334155" : "#cbd5e1"} strokeWidth={18}
+                            dot={false} isAnimationActive={false} strokeOpacity={0.75} />
+
+                        <Line type="linear" dataKey="tvd" stroke={isDark ? "#1e293b" : "#f1f5f9"} strokeWidth={14}
+                            dot={false} isAnimationActive={false} />
+
+                        {/* TUBING — Inner String (Surface to Pump Depth only) */}
+                        <Line
+                            type="linear"
+                            data={tubingData}
+                            dataKey="tvd"
+                            stroke={colorPrimary}
+                            strokeWidth={3}
+                            dot={false}
+                            isAnimationActive={true}
+                            animationDuration={2000}
+                            filter="url(#glow)"
+                        />
+
+                        <Customized component={(props: any) => <DrillingRig {...props} theme={theme} />} />
+
+                        <Customized component={(props: any) => (
+                            <WellboreSymbols
+                                {...props}
+                                processedData={processedData}
+                                pumpDep={pumpDep}
+                                pumpTVD={pumpTVD}
+                                pumpMD={params.pressures.pumpDepthMD}
+                                perfsDep={perfsDep}
+                                perfsTVD={perfsTVD}
+                                perfsMD={params.wellbore.midPerfsMD}
+                                perfsTVDRange={perfsTVDRange}
+                                colorPrimary={colorPrimary}
+                                colorTextMuted={colorTextMuted}
+                                payZoneLabel={t('p1.pay_zone')}
+                                theme={theme}
+                            />
+                        )} />
 
                         {kopPoint && (
                             <ReferenceDot x={kopPoint.departure} y={kopPoint.tvd} r={0}>
@@ -564,52 +629,6 @@ export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params }
                                 }} />
                             </ReferenceDot>
                         )}
-
-                        {/* Wellbore lines */}
-                        <Line type="monotone" dataKey="tvd" stroke="#000" strokeWidth={20}
-                            dot={false} isAnimationActive={false} strokeOpacity={0.28} />
-
-                        {/* CASING */}
-                        <Line type="monotone" dataKey="casedTvd" stroke="url(#casingGrad)" strokeWidth={10}
-                            dot={false} isAnimationActive={true} connectNulls={false} strokeLinecap="round" />
-                        <Line type="monotone" dataKey="casedTvd" stroke="#030712" strokeWidth={3}
-                            dot={false} isAnimationActive={false} connectNulls={false} strokeOpacity={0.75} />
-
-                        {/* OPEN HOLE / BOREHOLE */}
-                        <Line type="monotone" dataKey="tvd" stroke="#374151" strokeWidth={5}
-                            dot={false} isAnimationActive={false} strokeOpacity={0.55} strokeDasharray="5 4" />
-
-                        {/* TUBING (Inner String) — Now correctly stops at Pump Depth */}
-                        <Line
-                            type="monotone"
-                            data={tubingData}
-                            dataKey="tvd"
-                            stroke={colorPrimary}
-                            strokeWidth={3}
-                            dot={false}
-                            strokeDasharray="10 5"
-                            isAnimationActive={true}
-                            animationDuration={2000}
-                            filter="url(#glow)"
-                        />
-
-                        <Customized component={(props: any) => <DrillingRig {...props} theme={theme} />} />
-
-                        <Customized component={(props: any) => (
-                            <WellboreSymbols
-                                {...props}
-                                processedData={processedData}
-                                pumpDep={pumpDep}
-                                pumpTVD={pumpTVD}
-                                perfsDep={perfsDep}
-                                perfsTVD={perfsTVD}
-                                perfsTVDRange={perfsTVDRange}
-                                colorPrimary={colorPrimary}
-                                colorTextMuted={colorTextMuted}
-                                payZoneLabel={t('p1.pay_zone')}
-                                theme={theme}
-                            />
-                        )} />
 
                     </ComposedChart>
                 </ResponsiveContainer>

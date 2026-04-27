@@ -121,6 +121,9 @@ interface LandingPageProps {
     };
 }
 
+// ── Persistent session state ──────────────────────────────────────────────────
+let hasBootedThisSession = false;
+
 export const LandingPage: React.FC<LandingPageProps> = ({
     onStart,
     onCompare,
@@ -196,6 +199,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     const [isBooting, setIsBooting] = useState(true);
     const [bootStep, setBootStep] = useState(0);
     const [bootPhase, setBootPhase] = useState<'explosion' | 'loading' | 'complete'>('explosion');
+    const [videoReady, setVideoReady] = useState(false);
 
     const handleLoadMaster = useCallback(async () => {
         setBatchView('loading');
@@ -239,8 +243,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
     useEffect(() => {
         if (isBooting) {
-            // Phase 1: Explosion flash (0 → 0.8s)
-            const explosionTimer = setTimeout(() => setBootPhase('loading'), 800);
+            // Check if it's the first time this session using a module-level variable
+            // This resets on page refresh, which is what the user wants.
+            const isFirstLoad = !hasBootedThisSession;
+            
+            // Adjust durations based on first load vs subsequent visits
+            const explosionDuration = isFirstLoad ? 1200 : 600;
+            const logInterval = isFirstLoad ? 600 : 150;
+            const bootPhaseCompleteDelay = isFirstLoad ? 8500 : 2500;
+            const bootFinishedDelay = isFirstLoad ? 9500 : 3000;
+
+            // Phase 1: Explosion flash
+            const explosionTimer = setTimeout(() => setBootPhase('loading'), explosionDuration);
 
             // Phase 2: Log steps start after explosion
             const logStart = setTimeout(() => {
@@ -250,17 +264,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                         clearInterval(interval);
                         return prev;
                     });
-                }, 200); // Faster logs (200ms)
-                // store interval for cleanup
+                }, logInterval);
                 (window as any).__bootInterval = interval;
-            }, 900);
+            }, explosionDuration + 100);
 
             // Phase 3: Complete
-            const completeTimer = setTimeout(() => setBootPhase('complete'), 3000);
+            const completeTimer = setTimeout(() => setBootPhase('complete'), bootPhaseCompleteDelay);
 
             const timer = setTimeout(() => {
                 setIsBooting(false);
-            }, 3500);
+                hasBootedThisSession = true; // Mark as booted for next time
+            }, bootFinishedDelay);
 
             return () => {
                 clearTimeout(explosionTimer);
@@ -410,14 +424,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                         0%   { opacity: 0; transform: scale(1.1); }
                         100% { opacity: 0.8; transform: scale(1); }
                     }
-                    @keyframes eks-shockwave {
-                        0%   { transform: scale(0.01); opacity: 1; }
-                        100% { transform: scale(50);   opacity: 0; }
-                    }
                     @keyframes eks-burst {
                         0%   { transform: rotate(var(--ba)) translateY(0);         opacity: 1; }
                         65%  { opacity: 0.9; }
                         100% { transform: rotate(var(--ba)) translateY(var(--bd)); opacity: 0; }
+                    }
+                    @keyframes eks-shimmer-x {
+                        0% { transform: translateX(-200%) skewX(-12deg); opacity: 0; }
+                        20% { opacity: 1; }
+                        80% { opacity: 1; }
+                        100% { transform: translateX(200%) skewX(-12deg); opacity: 0; }
                     }
                     @keyframes eks-sweep {
                         0%   { top: -4px; opacity: 0; }
@@ -455,9 +471,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                         5% { transform: scale(1.05); filter: brightness(10) blur(5px); }
                         100% { transform: scale(1); filter: brightness(1) blur(0px); }
                     }
-                    @keyframes eks-shockwave {
-                        0% { transform: scale(0.5); opacity: 1; border-width: 40px; }
-                        100% { transform: scale(4); opacity: 0; border-width: 0px; }
+                    @keyframes eks-pulse-glow {
+                        0% { filter: blur(25px) brightness(1) drop-shadow(0 0 10px rgba(var(--color-primary), 0.3)); transform: scale(0.98); opacity: 0.5; }
+                        100% { filter: blur(15px) brightness(1.4) drop-shadow(0 0 40px rgba(var(--color-primary), 0.7)); transform: scale(1.02); opacity: 0.9; }
                     }
                     @keyframes eks-scanline {
                         0% { transform: translateY(-100%); }
@@ -490,7 +506,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 {bootPhase === 'explosion' && (
                     <div className="fixed inset-0 z-[1000] pointer-events-none flex items-center justify-center">
                         <div className="absolute inset-0 bg-white animate-[eks-fade-out_0.8s_ease-out_forwards]" />
-                        <div className="w-1 h-1 rounded-full border-primary animate-[eks-shockwave_1s_ease-out_forwards]" style={{ borderStyle: 'solid' }} />
                     </div>
                 )}
 
@@ -509,7 +524,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                         position: 'relative', zIndex: 70,
                         display: 'flex', flexDirection: 'column', alignItems: 'center',
                         gap: '60px',
-                        animation: bootPhase === 'explosion' ? 'eks-boom 1s ease-out' : 'none'
+                        animation: 'eks-logo-in 1.2s cubic-bezier(0.22, 1, 0.36, 1) both',
+                        filter: bootPhase === 'explosion' ? 'drop-shadow(0 0 50px white)' : 'none',
+                        transition: 'filter 0.5s ease-out'
                     }}
                 >
                     {/* Contenedor del logo ACAPLADO A 16:9 */}
@@ -544,6 +561,27 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                             }} />
                         ))}
 
+                        {/* STATIC PLACEHOLDER LOGO (Visible while video loads) */}
+                        <div style={{
+                            position: 'absolute', inset: 0,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            zIndex: 5,
+                            opacity: videoReady ? 0 : 1,
+                            transition: 'opacity 1s ease-in-out',
+                            animation: !videoReady ? 'eks-pulse-glow 2s infinite alternate ease-in-out' : 'none'
+                        }}>
+                            <img 
+                                src="/LOGO.png" 
+                                alt="Loading..."
+                                style={{ 
+                                    width: '80%', height: '80%', objectFit: 'contain',
+                                    filter: 'blur(10px) brightness(1.1)',
+                                }} 
+                            />
+                            {/* Overlay Destello */}
+                            {!videoReady && <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -skew-x-12 translate-x-[-200%] animate-[eks-shimmer-x_3s_infinite_1s]" />}
+                        </div>
+
                         {/* VIDEO LOGO PURO CON MASCARA RECTANGULAR */}
                         <video
                             src="/logo_animated.mp4"
@@ -551,17 +589,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                             muted
                             playsInline
                             preload="auto"
+                            onPlaying={() => setVideoReady(true)}
                             style={{
                                 position: 'absolute', inset: 0,
                                 width: '100%', height: '100%', objectFit: 'contain',
                                 zIndex: 10,
                                 pointerEvents: 'none',
+                                opacity: videoReady ? 1 : 0,
                                 // Máscara rectangular con bordes suavizados
                                 maskImage: 'inset(0% round 20px)',
                                 WebkitMaskImage: 'inset(0% round 20px)',
-                                animation: 'eks-logo-in 1.5s cubic-bezier(0.22, 1, 0.36, 1) both',
-                                filter: bootPhase === 'explosion' ? 'drop-shadow(0 0 50px white)' : 'none',
-                                transition: 'filter 0.5s ease-out'
+                                transition: 'opacity 1s ease-in-out'
                             }}
                         />
                     </div>
