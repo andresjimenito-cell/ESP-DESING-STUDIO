@@ -19,7 +19,7 @@ import { DesignDataImport } from './components/DesignDataImport';
 import { BatchDesignProcessor } from './components/BatchDesignProcessor';
 import { TUBING_CATALOG, CASING_CATALOG, STANDARD_PUMPS, STANDARD_MOTORS, CABLE_CATALOG, VSD_CATALOG } from '@/data';
 import {
-    Activity, RotateCcw, Ruler, Droplets, Target, Hexagon, CheckCircle2, Clock, ClipboardCheck, Maximize, Minimize, Globe, AlertCircle, Sparkles, RefreshCw, Send, ChevronDown, ChevronRight, AlertTriangle, Layers, Palette, FileSpreadsheet, Maximize2, Printer, GitCompareArrows, Zap, Settings
+    Activity, RotateCcw, Ruler, Droplets, Target, Hexagon, CheckCircle2, Clock, ClipboardCheck, Maximize, Minimize, Globe, AlertCircle, Sparkles, RefreshCw, Send, ChevronDown, ChevronRight, AlertTriangle, Layers, Palette, FileSpreadsheet, Maximize2, Printer, GitCompareArrows, Zap, Settings, ArrowLeft
 } from 'lucide-react';
 import { EspPump, EspMotor, SystemParams, SurveyPoint } from '@/types';
 import { useLanguage } from '@/i18n';
@@ -269,21 +269,21 @@ const App: React.FC = () => {
                 const name = n.toLowerCase();
                 return name.includes('pump') || name.includes('bomba') || name.includes('catalog');
             }) || workbook.SheetNames[0];
-            
+
             const pumpSheet = workbook.Sheets[pumpSheetName];
             const pumpJson = xlsxUtils.sheet_to_json(pumpSheet, { header: 1 }) as any[][];
             const pumps: EspPump[] = [];
             let pHeaderIdx = -1;
-            
+
             for (let i = 0; i < Math.min(pumpJson.length, 30); i++) {
                 const row = (pumpJson[i] || []).map(c => normalizeKey(String(c)));
                 const hasModel = row.some(c => c.includes('model') || c.includes('name') || c.includes('nombre'));
                 const hasHeadCurve = row.some(c => c.includes('h0') || c.includes('curva') || c.includes('head'));
                 const hasFlow = row.some(c => c.includes('rate') || c.includes('caudal') || c.includes('bpd'));
-                
-                if (hasModel && (hasHeadCurve || hasFlow)) { 
-                    pHeaderIdx = i; 
-                    break; 
+
+                if (hasModel && (hasHeadCurve || hasFlow)) {
+                    pHeaderIdx = i;
+                    break;
                 }
             }
 
@@ -297,7 +297,7 @@ const App: React.FC = () => {
                     headers.forEach((key, col) => {
                         const val = row[col];
                         if (val === undefined || val === null || val === '') return;
-                        
+
                         const k = key.toLowerCase();
                         if (k.includes('manufacturer') || k.includes('fabricante') || k.includes('brand') || k.includes('marca')) p.manufacturer = String(val);
                         else if (k.includes('series') || k.includes('serie')) p.series = String(val);
@@ -371,7 +371,7 @@ const App: React.FC = () => {
             if (pumps.length > 0) setPumpCatalog(pumps);
             if (motors.length > 0) setMotorCatalog(motors);
             else if (motors.length === 0) {
-                 const fallbackMotors: any[] = [];
+                const fallbackMotors: any[] = [];
                 [30, 40, 50, 60, 75, 100, 125, 150, 200, 250, 300, 350, 400, 450, 500, 600, 700, 800, 900, 1000].forEach(hp => {
                     fallbackMotors.push({
                         id: `std-${hp}`, manufacturer: 'Generic', series: '456', model: `${hp}HP-STD`,
@@ -629,9 +629,9 @@ const App: React.FC = () => {
     const globalBackground = (
         <div className="aurora-bg">
             {/* Background Image Layer */}
-            <div 
-                className="absolute inset-0 bg-center no-repeat opacity-25 filter blur-sm brightness-110 pointer-events-none" 
-                style={{ 
+            <div
+                className="absolute inset-0 bg-center no-repeat opacity-25 filter blur-sm brightness-110 pointer-events-none"
+                style={{
                     backgroundImage: "url('/main_bg.png')",
                     backgroundSize: "100% 100%"
                 }}
@@ -680,15 +680,33 @@ const App: React.FC = () => {
                 }}
             />
 
-            <aside className="w-[300px] flex-none border-r border-surface-light/40 bg-canvas/40 backdrop-blur-3xl flex flex-col z-10 shadow-2xl relative overflow-hidden group">
+            <aside className="w-[300px] flex-none border-r border-white/5 bg-canvas/80 backdrop-blur-3xl flex flex-col z-30 shadow-[10px_0_50px_rgba(0,0,0,0.5)] relative overflow-hidden group">
+                {/* Brillo de borde lateral */}
+                <div className="absolute right-0 top-0 w-[1px] h-full bg-gradient-to-b from-white/10 via-white/5 to-transparent"></div>
                 <div className="p-8 pb-6 bg-gradient-to-b from-surface/40 to-transparent shrink-0 relative z-10">
                     <div className="flex items-center gap-4 mb-3">
-                        <div className="w-14 h-14 bg-gradient-to-br from-primary via-primary to-secondary rounded-2xl shadow-glow-primary border border-white/10 group/logo overflow-hidden flex items-center justify-center p-2.5">
-                            <img src="/icono.png" alt="Icono" className="w-full h-full object-contain filter drop-shadow-md brightness-110" />
+                        <div className="w-14 h-14 flex items-center justify-center group/logo transition-all duration-500">
+                            <img src="/app-logo.png" alt="Icono" className="w-full h-full object-contain filter drop-shadow-xl brightness-110 group-hover/logo:scale-110 transition-transform duration-500" />
                         </div>
-                        <div>
-                            <h1 className="text-xl font-black text-txt-main uppercase tracking-tighter leading-none">{t('app.title')}</h1>
-                            <p className="text-[10px] text-primary font-black uppercase tracking-[0.3em] mt-1 opacity-80">{t('app.subtitle')}</p>
+                        <div className="flex-1 flex justify-between items-center">
+                            <div>
+                                <h1 className="text-xl font-black text-txt-main uppercase tracking-tighter leading-none">{t('app.title')}</h1>
+                                <p className="text-[10px] text-primary font-black uppercase tracking-[0.3em] mt-1 opacity-80">{t('app.subtitle')}</p>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    const msg = language === 'es'
+                                        ? "¿Estás seguro de volver al menú principal? Se perderán los cambios no guardados."
+                                        : "Are you sure you want to return to the main menu? Unsaved changes will be lost.";
+                                    if (window.confirm(msg)) {
+                                        setAppState({ appMode: 'landing' });
+                                    }
+                                }}
+                                title="Volver al Menú"
+                                className="w-10 h-10 rounded-full glass-surface hover:bg-red-500/10 border border-white/5 hover:border-red-500/30 flex items-center justify-center transition-all duration-500 group/back active:scale-90 shadow-lg"
+                            >
+                                <ArrowLeft className="w-5 h-5 text-txt-muted group-hover:text-red-500 group-hover:-translate-x-1 transition-all" />
+                            </button>
                         </div>
                     </div>
                 </div>

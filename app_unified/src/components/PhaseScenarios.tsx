@@ -223,61 +223,7 @@ export const PhaseScenarios: React.FC<Props> = ({ params, setParams, results }) 
     return (
         <div className="flex flex-col h-full gap-6 animate-fadeIn overflow-hidden p-1">
 
-            {/* HEADER TOOLBAR */}
-            <div className="glass-surface rounded-[2.5rem] p-6 border border-white/10 shadow-2xl flex justify-between items-center relative overflow-hidden group shrink-0">
-                <div className="absolute inset-0 bg-gradient-to-r from-primary/[0.05] via-transparent to-secondary/[0.05]"></div>
-                
-                <div className="relative z-10 flex items-center gap-6">
-                    <div className="relative">
-                        <div className="p-4 bg-gradient-to-br from-primary to-primary-light rounded-[1.5rem] shadow-glow-primary border border-white/20 animate-pulse-subtle">
-                            <Layers className="w-8 h-8 text-white" />
-                        </div>
-                        <div className="absolute -top-2 -right-2 w-5 h-5 bg-secondary rounded-full flex items-center justify-center border-2 border-canvas">
-                            <Zap className="w-3 h-3 text-white" />
-                        </div>
-                    </div>
-                    <div>
-                        <div className="flex items-center gap-3">
-                            <h2 className="text-2xl font-black text-txt-main uppercase tracking-tighter leading-none">{t('scen.title')}</h2>
-                            <div className="px-3 py-1 bg-surface-light/50 rounded-lg border border-white/5">
-                                <span className="text-[9px] font-black text-primary uppercase tracking-[0.2em]">{params.inflow.model} CORE</span>
-                            </div>
-                        </div>
-                        <p className="text-[10px] text-txt-muted font-bold uppercase tracking-[0.3em] mt-2 opacity-60 flex items-center gap-2">
-                             <Waves className="w-3 h-3" /> Multi-Phase Reservoir Sensitivity Analysis
-                        </p>
-                    </div>
-                </div>
-
-                <div className="flex gap-4 relative z-10">
-                    {/* Well Status HUD */}
-                    <div className="flex items-center gap-6 px-8 py-3 bg-canvas/30 rounded-3xl border border-white/5 shadow-inner backdrop-blur-md">
-                        <div className="flex flex-col items-center">
-                            <span className="text-[8px] font-black text-txt-muted uppercase tracking-widest mb-1">Static Pressure</span>
-                            <span className="text-sm font-black text-secondary font-mono tracking-tighter">{params.inflow.pStatic.toFixed(0)} <small className="opacity-40 uppercase">psi</small></span>
-                        </div>
-                        <div className="w-px h-8 bg-white/10"></div>
-                        <div className="flex flex-col items-center">
-                            <span className="text-[8px] font-black text-txt-muted uppercase tracking-widest mb-1">AOF Limit</span>
-                            <span className="text-sm font-black text-danger font-mono tracking-tighter">{aof.toFixed(0)} <small className="opacity-40 uppercase">bpd</small></span>
-                        </div>
-                    </div>
-                    
-                    {/* Theme switcher moved to local for convenience or just the palette icon */}
-                    <div className="flex gap-2">
-                         <button className="w-12 h-12 glass-surface-light rounded-2xl flex items-center justify-center text-txt-muted hover:text-primary hover:border-primary/40 transition-all border border-white/5 shadow-lg active:scale-95">
-                             <Palette className="w-5 h-5" />
-                         </button>
-                         <div className="h-12 w-px bg-white/10 mx-2"></div>
-                         <div className="flex flex-col justify-center">
-                            <span className="text-[8px] font-black text-txt-muted uppercase tracking-widest text-right">Active Scenario</span>
-                            <span className="text-xs font-black text-primary uppercase tracking-tighter text-right">
-                                {params.activeScenario === 'min' ? t('scen.min') : params.activeScenario === 'target' ? t('scen.target') : t('scen.max')}
-                            </span>
-                         </div>
-                    </div>
-                </div>
-            </div>
+            {/* HEADER TOOLBAR REMOVED AS PER USER REQUEST */}
 
             {/* ANALYTIC DASHBOARD BODY */}
             <div className="flex-1 min-h-0 flex gap-6 overflow-hidden">

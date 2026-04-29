@@ -246,7 +246,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             // Check if it's the first time this session using a module-level variable
             // This resets on page refresh, which is what the user wants.
             const isFirstLoad = !hasBootedThisSession;
-            
+
             // Adjust durations based on first load vs subsequent visits
             const explosionDuration = isFirstLoad ? 1200 : 600;
             const logInterval = isFirstLoad ? 600 : 150;
@@ -570,13 +570,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                             transition: 'opacity 1s ease-in-out',
                             animation: !videoReady ? 'eks-pulse-glow 2s infinite alternate ease-in-out' : 'none'
                         }}>
-                            <img 
-                                src="/LOGO.png" 
+                            <img
+                                src="/LOGO.png"
                                 alt="Loading..."
-                                style={{ 
+                                style={{
                                     width: '80%', height: '80%', objectFit: 'contain',
                                     filter: 'blur(10px) brightness(1.1)',
-                                }} 
+                                }}
                             />
                             {/* Overlay Destello */}
                             {!videoReady && <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -skew-x-12 translate-x-[-200%] animate-[eks-shimmer-x_3s_infinite_1s]" />}
@@ -762,9 +762,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             {/* --- PREMIUM BACKGROUND LAYER SYSTEM --- */}
             <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
                 {/* Background Image Layer - Forced to fit (100% 100%) */}
-                <div 
-                    className="absolute inset-0 bg-center no-repeat opacity-20 filter blur-sm transition-transform duration-1000 ease-out" 
-                    style={{ 
+                <div
+                    className="absolute inset-0 bg-center no-repeat opacity-20 filter blur-sm transition-transform duration-1000 ease-out"
+                    style={{
                         backgroundImage: "url('/main_bg.png')",
                         backgroundSize: "100% 100%",
                         transform: `translate3d(${mousePos.x * -0.5}px, ${mousePos.y * -0.5}px, 0)`

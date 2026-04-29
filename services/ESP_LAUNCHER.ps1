@@ -337,6 +337,15 @@ if ($nodeFound) {
     Start-Sleep -Milliseconds 400
     Invoke-ShowCursor
     Show-SummaryPanel -NodeFound $true -GitOk $gitOk -Port 3000
+    
+    # Intentar detectar Chrome, si no usar Edge (que siempre está en Windows)
+    $browser = "msedge"
+    if (Test-Path "${env:ProgramFiles}\Google\Chrome\Application\chrome.exe") { $browser = "chrome" }
+    elseif (Test-Path "${env:ProgramFiles(x86)}\Google\Chrome\Application\chrome.exe") { $browser = "chrome" }
+    
+    Add-Log "Lanzando ventana en $browser..." "info"
+    Start-Process $browser "--app=http://localhost:3000"
+    
     npm.cmd run dev -- --logLevel silent
 
 }
@@ -369,7 +378,13 @@ else {
     Start-Sleep -Milliseconds 400
     Invoke-ShowCursor
     Show-SummaryPanel -NodeFound $false -GitOk $gitOk -Port $port
-    Start-Process "http://localhost:$port"
+    
+    # Intentar detectar Chrome, si no usar Edge
+    $browser = "msedge"
+    if (Test-Path "${env:ProgramFiles}\Google\Chrome\Application\chrome.exe") { $browser = "chrome" }
+    elseif (Test-Path "${env:ProgramFiles(x86)}\Google\Chrome\Application\chrome.exe") { $browser = "chrome" }
+    
+    Start-Process $browser "--app=http://localhost:$port"
 
     Write-Host "   ${GY}Server running · Ctrl+C para detener.${R}"
     Write-Host ""

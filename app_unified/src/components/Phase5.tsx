@@ -96,26 +96,26 @@ const KPICard = ({ label, value, unit, icon: Icon, colorClass, highlight = false
     const isMet = target > 0 && Math.abs(parseFloat(value) - target) / target < 0.02;
 
     return (
-        <div className={`relative glass-surface rounded-[2rem] border ${border} p-6 flex flex-col justify-between overflow-hidden group hover:scale-[1.03] hover:border-primary/40 transition-all duration-500 min-h-[110px] light-sweep`}>
-            {isMet && <div className="absolute top-0 right-0 px-3 py-1 bg-primary text-[8px] font-black text-white rounded-bl-xl z-20 animate-fadeIn shadow-glow-primary uppercase tracking-widest flex items-center gap-1.5"><CheckCircle2 className="w-2.5 h-2.5" /> MET</div>}
-            <div className={`absolute -right-10 -top-10 w-24 h-24 bg-${colorClass}/10 blur-3xl rounded-full pointer-events-none group-hover:scale-150 transition-transform duration-1000`}></div>
+        <div className={`relative glass-surface rounded-2xl border ${border} p-3 flex flex-col justify-between overflow-hidden group hover:scale-[1.02] hover:border-primary/40 transition-all duration-500 min-h-[90px] light-sweep shadow-lg`}>
+            {isMet && <div className="absolute top-0 right-0 px-2 py-0.5 bg-primary text-[7px] font-black text-white rounded-bl-lg z-20 animate-fadeIn shadow-glow-primary uppercase tracking-widest flex items-center gap-1"><CheckCircle2 className="w-2 h-2" /> MET</div>}
+            <div className={`absolute -right-10 -top-10 w-20 h-20 bg-${colorClass}/10 blur-3xl rounded-full pointer-events-none group-hover:scale-150 transition-transform duration-1000`}></div>
 
             <div className="flex justify-between items-start z-10">
-                <div className="flex flex-col gap-1">
-                    <span className="text-[9px] font-black uppercase tracking-[0.25em] text-txt-main/60 mb-0.5 group-hover:text-primary/80 transition-opacity">{label}</span>
-                    <div className="flex items-baseline gap-2">
-                        <span className={`text-3xl font-black tracking-tighter text-txt-main font-mono`}>{safeValue}</span>
-                        <span className="text-[10px] font-black text-txt-main/40 uppercase tracking-widest">{unit}</span>
+                <div className="flex flex-col gap-0.5">
+                    <span className="text-[8px] font-black uppercase tracking-[0.2em] text-txt-main/60 mb-0.5 group-hover:text-primary/80 transition-opacity">{label}</span>
+                    <div className="flex items-baseline gap-1.5">
+                        <span className={`text-2xl font-black tracking-tighter text-txt-main font-mono`}>{safeValue}</span>
+                        <span className="text-[9px] font-black text-txt-main/40 uppercase tracking-widest">{unit}</span>
                     </div>
                     {target > 0 && (
-                        <div className="mt-2 flex items-center gap-2 px-2 py-0.5 rounded-lg bg-white/5 border border-white/5 w-fit">
-                            <div className="text-[8px] font-black text-txt-muted uppercase tracking-tighter opacity-50">TARGET:</div>
-                            <div className={`text-[10px] font-black font-mono ${isMet ? 'text-primary' : 'text-secondary/70'}`}>{target.toLocaleString()}</div>
+                        <div className="mt-1 flex items-center gap-1.5 px-1.5 py-0.5 rounded bg-white/5 border border-white/5 w-fit">
+                            <div className="text-[7px] font-black text-txt-muted uppercase tracking-tighter opacity-50">TARGET:</div>
+                            <div className={`text-[9px] font-black font-mono ${isMet ? 'text-primary' : 'text-secondary/70'}`}>{target.toLocaleString()}</div>
                         </div>
                     )}
                 </div>
-                <div className={`p-3.5 rounded-2xl glass-surface-light text-${colorClass === 'primary' ? 'primary' : 'secondary'} border border-white/5 shadow-inner group-hover:shadow-glow-${colorClass === 'primary' ? 'primary' : 'secondary'} transition-all duration-500`}>
-                    {Icon && <Icon className={`w-5 h-5 ${glow ? 'animate-pulse' : ''}`} />}
+                <div className={`p-2 rounded-xl glass-surface-light text-${colorClass === 'primary' ? 'primary' : 'secondary'} border border-white/5 shadow-inner group-hover:shadow-glow-${colorClass === 'primary' ? 'primary' : 'secondary'} transition-all duration-500`}>
+                    {Icon && <Icon className={`w-4 h-4 ${glow ? 'animate-pulse' : ''}`} />}
                 </div>
             </div>
         </div>
@@ -136,6 +136,39 @@ const DigitalReadout = ({ label, value, unit, color }: any) => {
             </div>
             <div className={`w-1 h-8 rounded-full bg-${color}/10 border border-${color}/20 group-hover:scale-y-110 transition-transform duration-500`}></div>
         </div>
+    );
+};
+
+const NavTab = ({ icon: Icon, imgSrc, label, active, onClick, color = "primary" }: any) => {
+    return (
+        <button
+            onClick={onClick}
+            className={`flex flex-col items-center justify-center gap-0.5 p-1 rounded-2xl transition-all duration-500 border-2 relative overflow-hidden group ${
+                active 
+                ? `bg-${color}/25 border-${color}/60 shadow-glow-${color} scale-[1.05] z-10` 
+                : 'glass-surface border-white/10 text-txt-muted hover:border-white/30 hover:bg-white/10'
+            }`}
+        >
+            {active && (
+                <>
+                    <div className={`absolute inset-0 bg-gradient-to-br from-${color}/20 to-transparent opacity-50`}></div>
+                    <div className={`absolute top-0 left-0 w-full h-1 bg-${color} shadow-glow-${color} animate-pulse`}></div>
+                </>
+            )}
+            <div className={`p-0.5 rounded-xl transition-all duration-500 relative z-10 ${active ? `bg-${color} text-white shadow-glow-${color} rotate-3` : 'bg-white/10 group-hover:bg-white/20'}`}>
+                {imgSrc ? (
+                    <img src={imgSrc} alt={label} className={`w-13 h-13 object-contain transition-all duration-500 ${active ? 'brightness-125 contrast-125' : 'opacity-40 grayscale group-hover:opacity-80 group-hover:grayscale-0'}`} />
+                ) : (
+                    Icon && <Icon className={`w-5 h-5 ${active ? 'animate-pulse' : ''}`} />
+                )}
+            </div>
+            <span className={`text-[7px] font-black uppercase tracking-widest transition-all duration-500 relative z-10 ${active ? `text-${color} text-glow-${color}` : 'opacity-60 group-hover:opacity-100'}`}>
+                {label}
+            </span>
+            {!active && (
+                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-white/20 group-hover:w-1/2 transition-all duration-500"></div>
+            )}
+        </button>
     );
 };
 
@@ -823,6 +856,7 @@ export const Phase5: React.FC<Phase5Props> = ({ params, setParams, customPump, s
     const [activeChart, setActiveChart] = useState<'pump' | 'multi' | 'motor'>('pump');
     const [viewMode, setViewMode] = useState<'analytics' | 'table'>('analytics');
     const [isTableMaximized, setIsTableMaximized] = useState(false);
+    const [activeComp, setActiveComp] = useState<'derating' | 'pumps' | 'motors' | 'cables' | 'vsd' | null>(null);
 
     // --- DERATING STATE ---
     const [derating, setDerating] = useState({ head: 1.0, power: 1.0, eff: 1.0 });
@@ -1114,7 +1148,7 @@ export const Phase5: React.FC<Phase5Props> = ({ params, setParams, customPump, s
     };
 
     return (
-        <div className="h-full flex flex-col gap-6 animate-fadeIn pb-2 overflow-hidden px-1">
+        <div className="h-full flex flex-col gap-3 animate-fadeIn pb-2 overflow-hidden px-1">
             <ReportSelectorModal isOpen={showReportSelector} onClose={() => setShowReportSelector(false)} onSelect={(type: string) => { setShowReportSelector(false); setReportConfig({ isOpen: true, type }); }} />
             <AISourceModal isOpen={showAIModal} onClose={() => setShowAIModal(false)} onSelectSource={runAIOptimization} />
             <AIRecommendationsModal
@@ -1125,21 +1159,21 @@ export const Phase5: React.FC<Phase5Props> = ({ params, setParams, customPump, s
             />
             {reportConfig.isOpen && <DesignReport onClose={() => setReportConfig({ isOpen: false, type: 'target' })} type={reportConfig.type} params={params} pump={effectivePump} results={activeResults} frequency={frequency} motor={params.selectedMotor} cable={params.selectedCable} />}
 
-            {/* HEADER */}
-            <div className="flex justify-between items-center px-4 shrink-0 h-16 glass-surface rounded-3xl border border-white/5 shadow-xl relative overflow-hidden group">
-                <div className="absolute left-0 top-0 w-2 h-full bg-primary shadow-glow-primary"></div>
-                <div className="flex items-center gap-5 relative z-10 pl-2">
-                    <div className="p-3 bg-primary/20 rounded-2xl border border-white/10 shadow-glow-primary">
-                        <Cpu className="w-6 h-6 text-primary" />
+            {/* HEADER - COMPACT */}
+            <div className="flex justify-between items-center px-4 shrink-0 h-14 glass-surface rounded-2xl border border-white/5 shadow-lg relative overflow-hidden group">
+                <div className="absolute left-0 top-0 w-1.5 h-full bg-primary shadow-glow-primary"></div>
+                <div className="flex items-center gap-4 relative z-10 pl-1">
+                    <div className="p-2 bg-primary/20 rounded-xl border border-white/10 shadow-glow-primary">
+                        <Cpu className="w-5 h-5 text-primary" />
                     </div>
                     <div>
-                        <h2 className="text-xl font-black text-txt-main uppercase tracking-tighter leading-none">{t('p5.solver')}</h2>
-                        <p className="text-[10px] text-txt-muted font-black uppercase tracking-[0.2em] mt-1.5 opacity-60">Technical Optimization Workspace</p>
+                        <h2 className="text-lg font-black text-txt-main uppercase tracking-tighter leading-none">{t('p5.solver')}</h2>
+                        <p className="text-[9px] text-txt-muted font-black uppercase tracking-[0.1em] mt-1 opacity-50">Technical Workspace</p>
                     </div>
                 </div>
-                <div className="flex items-center gap-3 relative z-10 pr-2">
-                    <button onClick={handleExportJson} className="glass-surface hover:bg-white/10 text-success hover:text-success/80 px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase transition-all flex items-center gap-2.5 border border-success/30 shadow-sm light-sweep">
-                        <Save className="w-4 h-4" /> {useLanguage().language === 'es' ? 'GUARDAR JSON' : 'SAVE JSON'}
+                <div className="flex items-center gap-2 relative z-10 pr-1">
+                    <button onClick={handleExportJson} className="glass-surface hover:bg-white/10 text-success hover:text-success/80 px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all flex items-center gap-2 border border-success/30 shadow-sm light-sweep">
+                        <Save className="w-3.5 h-3.5" /> {useLanguage().language === 'es' ? 'GUARDAR' : 'SAVE'}
                     </button>
                     <button onClick={() => {
                         if (onCompare && customPump) {
@@ -1152,21 +1186,21 @@ export const Phase5: React.FC<Phase5Props> = ({ params, setParams, customPump, s
                                 frequency: frequency
                             });
                         }
-                    }} className="glass-surface hover:bg-white/10 text-indigo-500 hover:text-indigo-400 px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase transition-all flex items-center gap-2.5 border border-indigo-500/20 shadow-sm light-sweep">
-                        <GitCompareArrows className="w-4 h-4" /> {useLanguage().language === 'es' ? 'COMPARAR' : 'COMPARE'}
+                    }} className="glass-surface hover:bg-white/10 text-indigo-500 hover:text-indigo-400 px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all flex items-center gap-2 border border-indigo-500/20 shadow-sm light-sweep">
+                        <GitCompareArrows className="w-3.5 h-3.5" /> {useLanguage().language === 'es' ? 'COMPARAR' : 'COMPARE'}
                     </button>
 
-                    <button onClick={() => setShowPumpModal(true)} className="glass-surface hover:bg-white/10 text-txt-muted hover:text-txt-main px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase transition-all flex items-center gap-2.5 border border-white/5 shadow-sm light-sweep">
-                        <Database className="w-4 h-4" /> {t('p5.loadDb')}
+                    <button onClick={() => setShowPumpModal(true)} className="glass-surface hover:bg-white/10 text-txt-muted hover:text-txt-main px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all flex items-center gap-2 border border-white/5 shadow-sm light-sweep">
+                        <Database className="w-3.5 h-3.5" /> {t('p5.loadDb')}
                     </button>
-                    <button onClick={() => setShowAIModal(true)} className="btn-premium-primary animate-pulse-glow text-white px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase flex items-center gap-2.5 transition-all active:scale-95 light-sweep">
-                        <Sparkles className="w-4 h-4 animate-pulse text-white" /> {t('p5.auto')}
+                    <button onClick={() => setShowAIModal(true)} className="btn-premium-primary animate-pulse-glow text-white px-5 py-2 rounded-xl text-[9px] font-black uppercase flex items-center gap-2 transition-all active:scale-95 light-sweep">
+                        <Sparkles className="w-3.5 h-3.5 animate-pulse text-white" /> {t('p5.auto')}
                     </button>
                 </div>
             </div>
 
             {/* TELEMETRY GRID - Symmetric 6-column layout */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 shrink-0 px-1">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 shrink-0 px-1">
                 <KPICard label={t('kpi.activeProd')} value={activeFlow?.toLocaleString() || '-'} unit="BPD" icon={Droplets} colorClass="primary" highlight={true} glow={isFlowTargetMet} target={targetFlow} />
                 <KPICard label={t('kpi.genHead')} value={activeHead?.toLocaleString(undefined, { maximumFractionDigits: 0 }) || '-'} unit="FT" icon={Activity} colorClass={isHeadTargetMet ? "primary" : "secondary"} highlight={true} glow={isHeadTargetMet} target={reqTdh} />
                 <KPICard label={t('kpi.sysEff')} value={activeResults?.effEstimated?.toFixed(1) || '-'} unit="%" icon={Zap} colorClass="primary" />
@@ -1175,103 +1209,118 @@ export const Phase5: React.FC<Phase5Props> = ({ params, setParams, customPump, s
                 <KPICard label={t('sens.pwf')} value={activeResults?.pwf?.toFixed(0) || '-'} unit="PSI" icon={ArrowDown} colorClass="primary" />
             </div>
 
-            {/* SYMMETRIC SCENARIO BRIDGE - FULL WIDTH */}
+            {/* SYMMETRIC SCENARIO BRIDGE - FULL WIDTH (COMPACT) */}
             <div className="px-1 shrink-0">
-                <div className="glass-surface p-1.5 rounded-[2rem] border border-white/5 shadow-xl flex items-center gap-3 relative overflow-hidden group">
+                <div className="glass-surface p-1 rounded-2xl border border-white/5 shadow-lg flex items-center gap-2 relative overflow-hidden group">
                     <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-secondary/5"></div>
                     {['min', 'target', 'max'].map((s) => (
                         <button
                             key={s}
                             onClick={() => switchScenario(s as any)}
-                            className={`flex-1 py-4 rounded-[1.5rem] text-[10px] font-black uppercase transition-all duration-500 flex items-center justify-center gap-4 relative z-10 border ${params.activeScenario === s ? 'bg-primary/20 text-primary border-primary/40 shadow-glow-primary/20 scale-[1.01]' : 'glass-surface-light border-white/5 text-txt-muted hover:text-txt-main hover:border-white/10'}`}
+                            className={`flex-1 py-2 rounded-xl text-[9px] font-black uppercase transition-all duration-500 flex items-center justify-center gap-3 relative z-10 border ${params.activeScenario === s ? 'bg-primary/20 text-primary border-primary/40 shadow-glow-primary/10' : 'glass-surface-light border-white/5 text-txt-muted hover:text-txt-main hover:border-white/10'}`}
                         >
-                            <div className={`p-2 rounded-xl border ${params.activeScenario === s ? 'bg-primary/20 border-primary' : 'bg-white/5 border-white/10'}`}>
-                                <Target className="w-4 h-4" />
+                            <div className={`p-1.5 rounded-lg border ${params.activeScenario === s ? 'bg-primary/25 border-primary shadow-glow-primary' : 'bg-white/5 border-white/10'}`}>
+                                <Target className="w-3.5 h-3.5" />
                             </div>
-                            <div className="flex flex-col items-start gap-0.5">
-                                <span className={`text-[8px] tracking-[0.2em] font-black ${params.activeScenario === s ? 'opacity-100' : 'opacity-40'}`}>{s === 'min' ? 'IDLE' : s === 'target' ? 'NOMINAL' : 'LIMIT'}</span>
-                                <span className="text-sm font-mono tracking-tighter leading-none">{params.targets[s as keyof typeof params.targets].rate} <small className="opacity-60 text-[9px]">BPD</small></span>
+                            <div className="flex items-center gap-2">
+                                <span className={`text-[7px] tracking-[0.1em] font-black ${params.activeScenario === s ? 'text-primary' : 'opacity-40'}`}>{s === 'min' ? 'IDLE' : s === 'target' ? 'NOMINAL' : 'LIMIT'}</span>
+                                <span className="text-xs font-mono tracking-tighter leading-none">{params.targets[s as keyof typeof params.targets].rate} <small className="opacity-60 text-[8px]">BPD</small></span>
                             </div>
-                            {params.activeScenario === s && <div className="absolute top-1 right-4 w-1.5 h-1.5 bg-primary rounded-full shadow-glow-primary animate-pulse"></div>}
+                            {params.activeScenario === s && <div className="absolute top-1 right-3 w-1 h-1 bg-primary rounded-full shadow-glow-primary animate-pulse"></div>}
                         </button>
                     ))}
                 </div>
             </div>
 
             {/* MAIN CONTENT AREA */}
-            <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-6 overflow-hidden pr-1">
+            <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-4 overflow-hidden pr-1">
 
 
                 {/* 1. SELECTION & SCHEMATIC PANEL (Left) */}
-                <div className="flex-1 lg:flex-[0.28] flex flex-col gap-6 overflow-y-auto custom-scrollbar min-h-0 pr-1">
+                <div className="flex-1 lg:flex-[0.28] flex flex-col gap-4 overflow-y-auto custom-scrollbar min-h-0 pr-1">
 
-                    {/* --- COMPONENT SELECTION (MINIMIZED BY DEFAULT) --- */}
-                    <CollapsibleSection title="ESP COMPONENTS" icon={Layers} isOpen={openSections.bhaComponents} onToggle={() => toggleSection('bhaComponents')} colorClass="primary">
-                        <div className="p-4 space-y-4 bg-canvas/30 rounded-b-2xl">
-                            {/* Sync Button instead of Standard/Imported Toggle */}
-                            {onReloadCatalog && (
-                                <button 
-                                    onClick={onReloadCatalog} 
-                                    className="w-full py-3 rounded-2xl bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 text-[10px] font-black uppercase transition-all flex items-center justify-center gap-3 shadow-sm group"
-                                >
-                                    <Clock className="w-4 h-4 group-hover:rotate-180 transition-transform duration-700" />
-                                    {useLanguage().language === 'es' ? 'SINCRONIZAR CATÁLOGO' : 'SYNC CATALOG'}
-                                </button>
-                            )}
+                    {/* --- COMPONENT NAVIGATION (5 BUTTONS) --- */}
+                    <div className="flex flex-col gap-2">
+                        <div className="grid grid-cols-5 gap-2 px-1">
+                            <NavTab imgSrc="/ICONOS/ICONO DERRATEO.PNG" label={useLanguage().language === 'es' ? "DERRATEO" : "DERATE"} active={activeComp === 'derating'} onClick={() => setActiveComp(activeComp === 'derating' ? null : 'derating')} color="primary" />
+                            <NavTab imgSrc="/ICONOS/ICONO PUMP .PNG" label={useLanguage().language === 'es' ? "BOMBAS" : "PUMPS"} active={activeComp === 'pumps'} onClick={() => setActiveComp(activeComp === 'pumps' ? null : 'pumps')} color="primary" />
+                            <NavTab imgSrc="/ICONOS/ICONO MOTOR.PNG" label={useLanguage().language === 'es' ? "MOTORES" : "MOTORS"} active={activeComp === 'motors'} onClick={() => setActiveComp(activeComp === 'motors' ? null : 'motors')} color="secondary" />
+                            <NavTab imgSrc="/ICONOS/ICONO CABLE.PNG" label={useLanguage().language === 'es' ? "CABLES" : "CABLES"} active={activeComp === 'cables'} onClick={() => setActiveComp(activeComp === 'cables' ? null : 'cables')} color="primary" />
+                            <NavTab imgSrc="/ICONOS/ICONO VSD.PNG" label="VSD" active={activeComp === 'vsd'} onClick={() => setActiveComp(activeComp === 'vsd' ? null : 'vsd')} color="secondary" />
+                        </div>
 
-                            <CollapsibleSection title="PUMP DERATING" icon={TrendingDown} isOpen={openSections.derating} onToggle={() => toggleSection('derating')} colorClass="primary">
-                                <div className="p-5 space-y-5 bg-white/5">
-                                    <div className="flex justify-between items-center mb-1">
-                                        <span className="text-[8px] font-black text-txt-muted uppercase tracking-widest opacity-60">Factors</span>
-                                        <button onClick={resetDerating} className="text-[8px] font-black text-primary uppercase tracking-widest hover:text-txt-main">Reset</button>
+                        <div className="animate-fadeIn">
+                            {/* --- DERRATEO --- */}
+                            {activeComp === 'derating' && (
+                                <div className="glass-surface rounded-[2rem] border border-white/5 shadow-xl overflow-hidden p-6 space-y-6">
+                                    <div className="flex items-center gap-3 mb-2">
+                                        <div className="p-2.5 rounded-2xl bg-primary/20 text-primary border border-white/5">
+                                            <TrendingDown className="w-4 h-4" />
+                                        </div>
+                                        <span className="text-[10px] font-black text-txt-main uppercase tracking-[0.2em]">PUMP DERATING FACTORS</span>
                                     </div>
-                                    <div className="space-y-5">
-                                        <div><div className="flex justify-between text-[9px] font-black mb-1.5"><span className="text-txt-muted uppercase">HEAD</span><span className="text-secondary font-mono">{derating.head.toFixed(2)}x</span></div><input type="range" min="0.5" max="1.5" step="0.01" value={derating.head} onChange={(e) => setDerating(prev => ({ ...prev, head: parseFloat(e.target.value) }))} className="w-full h-1 bg-canvas rounded-lg appearance-none cursor-pointer accent-secondary" /></div>
-                                        <div><div className="flex justify-between text-[9px] font-black mb-1.5"><span className="text-txt-muted uppercase">POWER</span><span className="text-secondary font-mono">{derating.power.toFixed(2)}x</span></div><input type="range" min="0.5" max="1.5" step="0.01" value={derating.power} onChange={(e) => setDerating(prev => ({ ...prev, power: parseFloat(e.target.value) }))} className="w-full h-1 bg-canvas rounded-lg appearance-none cursor-pointer accent-secondary" /></div>
-                                        <div><div className="flex justify-between text-[9px] font-black mb-1.5"><span className="text-txt-muted uppercase">EFF</span><span className="text-primary font-mono">{derating.eff.toFixed(2)}x</span></div><input type="range" min="0.5" max="1.5" step="0.01" value={derating.eff} onChange={(e) => setDerating(prev => ({ ...prev, eff: parseFloat(e.target.value) }))} className="w-full h-1 bg-canvas rounded-lg appearance-none cursor-pointer accent-primary shadow-glow-primary" /></div>
+                                    <div className="space-y-6">
+                                        <div className="flex justify-between items-center px-2">
+                                            <span className="text-[8px] font-black text-txt-muted uppercase tracking-widest opacity-60">Fine-tune performance factors</span>
+                                            <button onClick={resetDerating} className="text-[8px] font-black text-primary uppercase tracking-widest hover:text-txt-main">Reset Defaults</button>
+                                        </div>
+                                        <div className="space-y-6">
+                                            <div><div className="flex justify-between text-[9px] font-black mb-2"><span className="text-txt-muted uppercase">HEAD DERATING</span><span className="text-secondary font-mono">{derating.head.toFixed(2)}x</span></div><input type="range" min="0.5" max="1.5" step="0.01" value={derating.head} onChange={(e) => setDerating(prev => ({ ...prev, head: parseFloat(e.target.value) }))} className="w-full h-1 bg-canvas rounded-lg appearance-none cursor-pointer accent-secondary" /></div>
+                                            <div><div className="flex justify-between text-[9px] font-black mb-2"><span className="text-txt-muted uppercase">POWER DERATING</span><span className="text-secondary font-mono">{derating.power.toFixed(2)}x</span></div><input type="range" min="0.5" max="1.5" step="0.01" value={derating.power} onChange={(e) => setDerating(prev => ({ ...prev, power: parseFloat(e.target.value) }))} className="w-full h-1 bg-canvas rounded-lg appearance-none cursor-pointer accent-secondary" /></div>
+                                            <div><div className="flex justify-between text-[9px] font-black mb-2"><span className="text-txt-muted uppercase">EFFICIENCY DERATING</span><span className="text-primary font-mono">{derating.eff.toFixed(2)}x</span></div><input type="range" min="0.5" max="1.5" step="0.01" value={derating.eff} onChange={(e) => setDerating(prev => ({ ...prev, eff: parseFloat(e.target.value) }))} className="w-full h-1 bg-canvas rounded-lg appearance-none cursor-pointer accent-primary shadow-glow-primary" /></div>
+                                        </div>
                                     </div>
                                 </div>
-                            </CollapsibleSection>
+                            )}
 
-                            <CollapsibleSection title={t('p5.pumps')} icon={Settings} isOpen={openSections.pumps} onToggle={() => toggleSection('pumps')} colorClass="primary">
-                                <div className="p-3 space-y-3 bg-white/5">
+                            {/* --- PUMPS --- */}
+                            {activeComp === 'pumps' && (
+                                <div className="glass-surface rounded-[2rem] border border-white/5 shadow-xl overflow-hidden p-4 space-y-4">
+                                    {onReloadCatalog && (
+                                        <button 
+                                            onClick={onReloadCatalog} 
+                                            className="w-full py-3 rounded-2xl bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 text-[10px] font-black uppercase transition-all flex items-center justify-center gap-3 shadow-sm group"
+                                        >
+                                            <Clock className="w-4 h-4 group-hover:rotate-180 transition-transform duration-700" />
+                                            {useLanguage().language === 'es' ? 'SINCRONIZAR CATÁLOGO' : 'SYNC CATALOG'}
+                                        </button>
+                                    )}
                                     <div className="space-y-3">
                                         <div className="relative">
-                                            <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search..." className="w-full bg-canvas/40 border border-white/10 rounded-xl py-2.5 pl-9 pr-4 text-[10px] font-black text-txt-main outline-none focus:border-primary/40 uppercase" />
-                                            <Search className="w-3.5 h-3.5 text-txt-muted absolute left-3 top-1/2 -translate-y-1/2" />
+                                            <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search Pump Model..." className="w-full bg-canvas/40 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-[10px] font-black text-txt-main outline-none focus:border-primary/40 uppercase" />
+                                            <Search className="w-4 h-4 text-txt-muted absolute left-3.5 top-1/2 -translate-y-1/2" />
                                         </div>
                                         <div className="flex gap-2">
-                                            <select value={filterSeries} onChange={(e) => setFilterSeries(e.target.value)} className="flex-1 glass-surface-light text-[9px] font-black text-txt-muted px-2 py-2 rounded-xl outline-none border border-white/5">
+                                            <select value={filterSeries} onChange={(e) => setFilterSeries(e.target.value)} className="flex-1 glass-surface-light text-[9px] font-black text-txt-muted px-3 py-2.5 rounded-xl outline-none border border-white/5">
                                                 <option value="ALL">All Series</option>
                                                 {uniqueSeries.map(s => <option key={s} value={s}>{s}</option>)}
                                             </select>
-                                            <select value={filterManuf} onChange={(e) => setFilterManuf(e.target.value)} className="flex-1 glass-surface-light text-[9px] font-black text-txt-muted px-2 py-2 rounded-xl outline-none border border-white/5">
+                                            <select value={filterManuf} onChange={(e) => setFilterManuf(e.target.value)} className="flex-1 glass-surface-light text-[9px] font-black text-txt-muted px-3 py-2.5 rounded-xl outline-none border border-white/5">
                                                 <option value="ALL">All Manuf</option>
                                                 {uniqueManuf.map(m => <option key={m} value={m}>{m}</option>)}
                                             </select>
                                         </div>
-                                        {/* Viability Filter Toggle */}
                                         <button 
                                             onClick={() => setShowViableOnly(!showViableOnly)}
-                                            className={`w-full py-2 rounded-xl text-[9px] font-black uppercase transition-all flex items-center justify-center gap-2 border ${showViableOnly ? 'bg-primary/20 text-primary border-primary/30' : 'bg-white/5 text-txt-muted border-white/10 hover:border-white/20'}`}
+                                            className={`w-full py-2.5 rounded-xl text-[9px] font-black uppercase transition-all flex items-center justify-center gap-2 border ${showViableOnly ? 'bg-primary/20 text-primary border-primary/30' : 'bg-white/5 text-txt-muted border-white/10 hover:border-white/20'}`}
                                         >
-                                            <Filter className="w-3 h-3" />
+                                            <Filter className="w-3.5 h-3.5" />
                                             {showViableOnly ? 'Showing Viable Only' : 'Showing All Pumps'}
                                         </button>
                                     </div>
-                                    <div className="max-h-[300px] overflow-y-auto custom-scrollbar space-y-2 pr-1">
+                                    <div className="max-h-[350px] overflow-y-auto custom-scrollbar space-y-2 pr-1">
                                         {Object.entries(groupedPumps).map(([series, items]: [string, any[]]) => (
                                             <div key={series} className="space-y-1.5">
-                                                <div className="text-[8px] font-black text-txt-muted uppercase tracking-widest pl-2 py-1 bg-primary/5 rounded-md">{series}</div>
+                                                <div className="text-[8px] font-black text-txt-muted uppercase tracking-widest pl-3 py-1.5 bg-primary/5 rounded-lg">{series}</div>
                                                 {items.map((item: any, idx: number) => {
                                                     const isActive = item.pump.id === customPump?.id;
                                                     return (
-                                                        <button key={idx} onClick={() => handleManualSelect(item)} className={`w-full text-left p-2.5 rounded-xl border transition-all flex justify-between items-center group ${isActive ? 'bg-primary/10 border-primary' : 'glass-surface-light border-white/5 hover:border-primary/40'}`}>
+                                                        <button key={idx} onClick={() => handleManualSelect(item)} className={`w-full text-left p-3 rounded-xl border transition-all flex justify-between items-center group ${isActive ? 'bg-primary/10 border-primary shadow-glow-primary/5' : 'glass-surface-light border-white/5 hover:border-primary/40'}`}>
                                                             <div className="min-w-0 flex-1">
                                                                 <div className={`text-[10px] font-black uppercase truncate ${isActive ? 'text-primary' : 'text-txt-main'}`}>{item.pump.model}</div>
-                                                                <div className="text-[7px] text-txt-muted font-black uppercase opacity-60">{item.pump.manufacturer}</div>
+                                                                <div className="text-[7px] text-txt-muted font-black uppercase opacity-60 tracking-widest">{item.pump.manufacturer}</div>
                                                             </div>
-                                                            <div className={`px-2 py-1 rounded-lg text-[8px] font-black ml-2 ${isActive ? 'bg-primary text-white' : 'bg-white/5 text-txt-muted'}`}>{item.reqStages} STG</div>
+                                                            <div className={`px-2.5 py-1 rounded-lg text-[8px] font-black ml-2 ${isActive ? 'bg-primary text-white shadow-glow-primary' : 'bg-white/5 text-txt-muted'}`}>{item.reqStages} STG</div>
                                                         </button>
                                                     );
                                                 })}
@@ -1279,125 +1328,115 @@ export const Phase5: React.FC<Phase5Props> = ({ params, setParams, customPump, s
                                         ))}
                                     </div>
                                 </div>
-                            </CollapsibleSection>
+                            )}
 
-                            <CollapsibleSection title={t('p5.motors')} icon={Zap} isOpen={openSections.motors} onToggle={() => toggleSection('motors')} colorClass="secondary">
-                                <div className="p-3 space-y-3 bg-white/5">
-                                    {/* HP Requerida Banner */}
-                                    <div className="flex items-center gap-3 p-3 rounded-xl bg-secondary/10 border border-secondary/20">
-                                        <Zap className="w-4 h-4 text-secondary shrink-0" />
+                            {/* --- MOTORS --- */}
+                            {activeComp === 'motors' && (
+                                <div className="glass-surface rounded-[2rem] border border-white/5 shadow-xl overflow-hidden p-4 space-y-4">
+                                    <div className="flex items-center gap-3 p-4 rounded-2xl bg-secondary/10 border border-secondary/20 shadow-inner">
+                                        <Zap className="w-5 h-5 text-secondary shrink-0" />
                                         <div className="flex-1 min-w-0">
-                                            <div className="text-[8px] font-black text-txt-muted uppercase tracking-widest">POTENCIA REQUERIDA (BHP)</div>
-                                            <div className="text-base font-black text-secondary font-mono">
-                                                {activeResults?.hpTotal?.toFixed(1) || '-'} <span className="text-[9px] text-txt-muted">HP</span>
+                                            <div className="text-[8px] font-black text-txt-muted uppercase tracking-[0.2em] mb-1">REQ POWER (BHP)</div>
+                                            <div className="text-xl font-black text-secondary font-mono tracking-tighter">
+                                                {activeResults?.hpTotal?.toFixed(1) || '-'} <span className="text-[10px] text-txt-muted opacity-60 uppercase font-bold tracking-widest">HP</span>
                                             </div>
                                         </div>
                                         <div className="text-right">
-                                            <div className="text-[8px] font-black text-txt-muted uppercase tracking-widest">A NIVEL MOTOR</div>
-                                            <div className="text-base font-black text-primary font-mono">{activeResults?.requiredMotorHp?.toFixed(1) || '-'} <span className="text-[9px] text-txt-muted">HP</span></div>
+                                            <div className="text-[8px] font-black text-txt-muted uppercase tracking-[0.2em] mb-1">MOTOR LEVEL</div>
+                                            <div className="text-xl font-black text-primary font-mono tracking-tighter">{activeResults?.requiredMotorHp?.toFixed(1) || '-'} <span className="text-[10px] text-txt-muted opacity-60 uppercase font-bold tracking-widest">HP</span></div>
                                         </div>
                                     </div>
 
                                     <div className="space-y-3">
                                         <div className="relative">
-                                            <input type="text" value={motorSearch} onChange={(e) => setMotorSearch(e.target.value)} placeholder="Search Motor..." className="w-full bg-canvas/40 border border-white/10 rounded-xl py-2.5 pl-9 pr-4 text-[10px] font-black text-txt-main outline-none focus:border-secondary/40 uppercase" />
-                                            <Search className="w-3.5 h-3.5 text-txt-muted absolute left-3 top-1/2 -translate-y-1/2" />
+                                            <input type="text" value={motorSearch} onChange={(e) => setMotorSearch(e.target.value)} placeholder="Search Motor..." className="w-full bg-canvas/40 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-[10px] font-black text-txt-main outline-none focus:border-secondary/40 uppercase" />
+                                            <Search className="w-4 h-4 text-txt-muted absolute left-3.5 top-1/2 -translate-y-1/2" />
                                         </div>
                                         <div className="flex gap-2">
-                                            <select value={motorFilterSeries} onChange={(e) => setMotorFilterSeries(e.target.value)} className="flex-1 glass-surface-light text-[9px] font-black text-txt-muted px-2 py-2 rounded-xl outline-none border border-white/5">
+                                            <select value={motorFilterSeries} onChange={(e) => setMotorFilterSeries(e.target.value)} className="flex-1 glass-surface-light text-[9px] font-black text-txt-muted px-3 py-2.5 rounded-xl outline-none border border-white/5">
                                                 <option value="ALL">All Series</option>
                                                 {uniqueMotorSeries.map(s => <option key={s} value={s}>{s}</option>)}
                                             </select>
-                                            <select value={motorFilterManuf} onChange={(e) => setMotorFilterManuf(e.target.value)} className="flex-1 glass-surface-light text-[9px] font-black text-txt-muted px-2 py-2 rounded-xl outline-none border border-white/5">
+                                            <select value={motorFilterManuf} onChange={(e) => setMotorFilterManuf(e.target.value)} className="flex-1 glass-surface-light text-[9px] font-black text-txt-muted px-3 py-2.5 rounded-xl outline-none border border-white/5">
                                                 <option value="ALL">All Manuf</option>
                                                 {uniqueMotorManuf.map(m => <option key={m} value={m}>{m}</option>)}
                                             </select>
                                         </div>
                                     </div>
 
-                                    <div className="max-h-[250px] overflow-y-auto custom-scrollbar space-y-2 pr-1">
+                                    <div className="max-h-[350px] overflow-y-auto custom-scrollbar space-y-2 pr-1">
                                         {processedMotors.map(({ motor, isFit }, idx) => {
                                             const isActive = params.selectedMotor?.id === motor.id;
                                             return (
-                                                <button key={idx} onClick={() => { handleMotorSelect(motor); setActiveChart('motor'); }} className={`w-full text-left p-3 rounded-xl border transition-all flex justify-between items-center ${isActive ? 'bg-secondary/15 border-secondary shadow-glow-secondary/10' : isFit ? 'glass-surface-light border-white/5 hover:border-secondary/40' : 'bg-red-500/10 border-red-500/30 grayscale contrast-75'} group`}>
+                                                <button key={idx} onClick={() => { handleMotorSelect(motor); setActiveChart('motor'); }} className={`w-full text-left p-4 rounded-xl border transition-all flex justify-between items-center ${isActive ? 'bg-secondary/15 border-secondary shadow-glow-secondary/10' : isFit ? 'glass-surface-light border-white/5 hover:border-secondary/40' : 'bg-red-500/10 border-red-500/30 grayscale contrast-75'} group`}>
                                                     <div className="min-w-0 flex-1">
-                                                        <div className={`text-[10px] font-black uppercase truncate ${isActive ? 'text-secondary' : 'text-txt-main'}`}>{motor.model}</div>
-                                                        <div className="flex items-center gap-2">
-                                                            <div className="text-[7px] text-txt-muted font-black uppercase opacity-60 tracking-wider">{(motor.manufacturer)}</div>
+                                                        <div className={`text-[11px] font-black uppercase truncate ${isActive ? 'text-secondary' : 'text-txt-main'}`}>{motor.model}</div>
+                                                        <div className="flex items-center gap-2 mt-1">
+                                                            <div className="text-[8px] text-txt-muted font-black uppercase opacity-60 tracking-widest">{(motor.manufacturer)}</div>
                                                             <div className="h-1 w-1 rounded-full bg-white/10"></div>
-                                                            <div className="text-[8px] font-black text-primary font-mono">{motor.hp} HP</div>
+                                                            <div className="text-[9px] font-black text-primary font-mono">{motor.hp} HP</div>
                                                         </div>
                                                     </div>
-                                                    <div className="text-right ml-2 group-hover:scale-110 transition-transform">
-                                                        <div className="text-[9px] font-black font-mono text-txt-main">{motor.voltage}V</div>
-                                                        <div className="text-[7px] font-black text-txt-muted opacity-40 uppercase">{motor.series}</div>
+                                                    <div className="text-right ml-4 group-hover:scale-105 transition-transform">
+                                                        <div className="text-sm font-black font-mono text-txt-main tracking-tighter">{motor.voltage}V</div>
+                                                        <div className="text-[7px] font-black text-txt-muted opacity-40 uppercase tracking-widest">{motor.series}</div>
                                                     </div>
                                                 </button>
                                             );
                                         })}
                                     </div>
                                 </div>
-                            </CollapsibleSection>
+                            )}
 
-                            <CollapsibleSection title="CABLE" icon={Cable} isOpen={openSections.cables} onToggle={() => toggleSection('cables')} colorClass="primary">
-                                <div className="p-3 space-y-3 bg-white/5">
-                                    <div className="max-h-[200px] overflow-y-auto custom-scrollbar space-y-2 pr-1">
+                            {/* --- CABLES --- */}
+                            {activeComp === 'cables' && (
+                                <div className="glass-surface rounded-[2rem] border border-white/5 shadow-xl overflow-hidden p-4 space-y-4">
+                                    <div className="relative">
+                                        <input type="text" value={cableSearch} onChange={(e) => setCableSearch(e.target.value)} placeholder="Filter Cable..." className="w-full bg-canvas/40 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-[10px] font-black text-txt-main outline-none focus:border-primary/40 uppercase" />
+                                        <Search className="w-4 h-4 text-txt-muted absolute left-3.5 top-1/2 -translate-y-1/2" />
+                                    </div>
+                                    <div className="max-h-[350px] overflow-y-auto custom-scrollbar space-y-2 pr-1">
                                         {processedCables.map((cbl, idx) => {
                                             const isActive = params.selectedCable?.id === cbl.id;
                                             return (
-                                                <button key={idx} onClick={() => handleCableSelect(cbl)} className={`w-full text-left p-3 rounded-xl border transition-all flex justify-between items-center ${isActive ? 'bg-primary/10 border-primary' : 'glass-surface-light border-white/5 hover:border-primary/40'}`}>
+                                                <button key={idx} onClick={() => handleCableSelect(cbl)} className={`w-full text-left p-4 rounded-xl border transition-all flex justify-between items-center group ${isActive ? 'bg-primary/10 border-primary shadow-glow-primary/5' : 'glass-surface-light border-white/5 hover:border-primary/40'}`}>
                                                     <div className="min-w-0 flex-1">
-                                                        <div className={`text-[10px] font-black uppercase truncate ${isActive ? 'text-primary' : 'text-txt-main'}`}>{cbl.awg} {cbl.type}</div>
-                                                        <div className="text-[7px] text-txt-muted font-black uppercase opacity-60">{cbl.model}</div>
+                                                        <div className={`text-[11px] font-black uppercase truncate ${isActive ? 'text-primary' : 'text-txt-main'}`}>{cbl.awg} {cbl.type}</div>
+                                                        <div className="text-[8px] text-txt-muted font-black uppercase opacity-60 tracking-widest mt-1">{cbl.model}</div>
                                                     </div>
+                                                    <ChevronRight className={`w-4 h-4 text-primary transition-all ${isActive ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4 group-hover:opacity-40 group-hover:translate-x-0'}`} />
                                                 </button>
                                             );
                                         })}
                                     </div>
                                 </div>
-                            </CollapsibleSection>
+                            )}
 
-                            {/* ===== VSD / VARIADOR SELECTOR ===== */}
-                            <CollapsibleSection title="VSD / VARIADOR" icon={Monitor} isOpen={openSections.vsd} onToggle={() => toggleSection('vsd')} colorClass="secondary">
-                                <div className="p-3 space-y-3 bg-white/5">
-                                    {/* Required kVA Banner */}
+                            {/* --- VSD --- */}
+                            {activeComp === 'vsd' && (
+                                <div className="glass-surface rounded-[2rem] border border-white/5 shadow-xl overflow-hidden p-4 space-y-4">
                                     {(activeResults?.electrical?.kva || 0) > 0 && (
-                                        <div className="flex items-center gap-3 p-3 rounded-xl bg-secondary/10 border border-secondary/20">
-                                            <Zap className="w-4 h-4 text-secondary shrink-0" />
+                                        <div className="flex items-center gap-3 p-4 rounded-2xl bg-secondary/10 border border-secondary/20 shadow-inner">
+                                            <Monitor className="w-5 h-5 text-secondary shrink-0" />
                                             <div className="flex-1 min-w-0">
-                                                <div className="text-[8px] font-black text-txt-muted uppercase tracking-widest">REQ. mín. VSD (x1.25)</div>
-                                                <div className="text-base font-black text-secondary font-mono">
-                                                    {(activeResults.electrical.kva * 1.25).toFixed(1)} <span className="text-[9px] text-txt-muted">kVA</span>
+                                                <div className="text-[8px] font-black text-txt-muted uppercase tracking-[0.2em] mb-1">REQ. MIN. VSD (x1.25)</div>
+                                                <div className="text-xl font-black text-secondary font-mono tracking-tighter">
+                                                    {(activeResults.electrical.kva * 1.25).toFixed(1)} <span className="text-[10px] text-txt-muted opacity-60 uppercase font-bold tracking-widest">kVA</span>
                                                 </div>
                                             </div>
                                             <div className="text-right">
-                                                <div className="text-[8px] font-black text-txt-muted uppercase tracking-widest">I motor</div>
-                                                <div className="text-base font-black text-primary font-mono">{activeResults.electrical.amps?.toFixed(1) || '-'} <span className="text-[9px] text-txt-muted">A</span></div>
+                                                <div className="text-[8px] font-black text-txt-muted uppercase tracking-[0.2em] mb-1">I MOTOR</div>
+                                                <div className="text-xl font-black text-primary font-mono tracking-tighter">{activeResults.electrical.amps?.toFixed(1) || '-'} <span className="text-[10px] text-txt-muted opacity-60 uppercase font-bold tracking-widest">A</span></div>
                                             </div>
                                         </div>
                                     )}
-                                    {/* Selected VSD summary */}
-                                    {(params as any).selectedVSD && (
-                                        <div className="flex items-center gap-3 p-3 rounded-xl bg-primary/10 border border-primary/20">
-                                            <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
-                                            <div className="min-w-0 flex-1">
-                                                <div className="text-[9px] font-black text-primary uppercase tracking-widest">VSD SELECCIONADO</div>
-                                                <div className="text-[10px] font-black text-txt-main truncate">{(params as any).selectedVSD.model} — {(params as any).selectedVSD.kvaRating} kVA</div>
-                                            </div>
-                                        </div>
-                                    )}
-                                    {/* Search */}
+
                                     <div className="relative">
-                                        <input
-                                            type="text" value={vsdSearch}
-                                            onChange={(e) => setVsdSearch(e.target.value)}
-                                            placeholder="Buscar VSD por modelo o fabricante..."
-                                            className="w-full bg-canvas/40 border border-white/5 rounded-xl py-2.5 pl-9 pr-4 text-[10px] font-black text-txt-main outline-none focus:border-secondary/40 uppercase"
-                                        />
-                                        <Search className="w-3.5 h-3.5 text-txt-muted absolute left-3 top-1/2 -translate-y-1/2" />
+                                        <input type="text" value={vsdSearch} onChange={(e) => setVsdSearch(e.target.value)} placeholder="Search VSD Model..." className="w-full bg-canvas/40 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-[10px] font-black text-txt-main outline-none focus:border-secondary/40 uppercase" />
+                                        <Search className="w-4 h-4 text-txt-muted absolute left-3.5 top-1/2 -translate-y-1/2" />
                                     </div>
-                                    {/* VSD List */}
-                                    <div className="max-h-[360px] overflow-y-auto custom-scrollbar space-y-2 pr-1">
+
+                                    <div className="max-h-[350px] overflow-y-auto custom-scrollbar space-y-2 pr-1">
                                         {processedVSDs.map(({ vsd, isFit, isUnder, margin }, idx) => {
                                             const isActive = (params as any).selectedVSD?.id === vsd.id;
                                             return (
@@ -1405,74 +1444,47 @@ export const Phase5: React.FC<Phase5Props> = ({ params, setParams, customPump, s
                                                     key={idx}
                                                     onClick={() => handleVSDSelect(vsd)}
                                                     disabled={isUnder}
-                                                    className={`w-full text-left p-3 rounded-xl border transition-all ${isActive ? 'bg-secondary/15 border-secondary shadow-glow-secondary/20'
+                                                    className={`w-full text-left p-4 rounded-xl border transition-all ${isActive ? 'bg-secondary/15 border-secondary shadow-glow-secondary/20'
                                                         : isUnder ? 'opacity-25 grayscale pointer-events-none'
                                                             : isFit ? 'glass-surface-light border-green-500/30 hover:border-secondary/40'
                                                                 : 'glass-surface-light border-white/5 hover:border-white/20 opacity-60'
-                                                        }`}
+                                                        } group`}
                                                 >
-                                                    {/* Header */}
-                                                    <div className="flex justify-between items-start mb-2.5">
+                                                    <div className="flex justify-between items-start mb-3">
                                                         <div className="min-w-0 flex-1">
-                                                            <div className={`text-[10px] font-black uppercase leading-tight ${isActive ? 'text-secondary' : isFit ? 'text-txt-main' : 'text-txt-muted'}`}>
+                                                            <div className={`text-[11px] font-black uppercase leading-tight ${isActive ? 'text-secondary' : isFit ? 'text-txt-main' : 'text-txt-muted'}`}>
                                                                 {vsd.model}
                                                             </div>
-                                                            <div className="text-[7px] text-txt-muted font-black uppercase opacity-60">{vsd.brand} · {vsd.manufacturer}</div>
+                                                            <div className="text-[7px] text-txt-muted font-black uppercase opacity-60 tracking-widest mt-0.5">{vsd.brand} · {vsd.manufacturer}</div>
                                                         </div>
-                                                        <div className={`px-2 py-1 rounded-lg text-[8px] font-black ml-2 shrink-0 ${isActive ? 'bg-secondary text-white'
+                                                        <div className={`px-2.5 py-1.5 rounded-lg text-[9px] font-black ml-4 shrink-0 font-mono ${isActive ? 'bg-secondary text-white shadow-glow-secondary'
                                                             : isFit ? 'bg-green-500/20 text-green-400'
                                                                 : 'bg-white/10 text-txt-muted'
                                                             }`}>
                                                             {vsd.kvaRating} kVA
                                                         </div>
                                                     </div>
-                                                    {/* Specs grid */}
-                                                    <div className="grid grid-cols-3 gap-x-3 gap-y-1.5">
-                                                        <div>
-                                                            <div className="text-[6px] font-black text-txt-muted uppercase tracking-widest">V entrada</div>
-                                                            <div className="text-[8px] font-black text-txt-main font-mono leading-tight">{vsd.inputVoltage}</div>
-                                                        </div>
-                                                        <div>
-                                                            <div className="text-[6px] font-black text-txt-muted uppercase tracking-widest">V salida</div>
-                                                            <div className="text-[8px] font-black text-txt-main font-mono leading-tight">{vsd.outputVoltage}</div>
-                                                        </div>
-                                                        <div>
-                                                            <div className="text-[6px] font-black text-txt-muted uppercase tracking-widest">Frecuencia</div>
-                                                            <div className="text-[8px] font-black text-txt-main font-mono leading-tight">{vsd.outputFrequency}</div>
-                                                        </div>
-                                                        <div>
-                                                            <div className="text-[6px] font-black text-txt-muted uppercase tracking-widest">THD</div>
-                                                            <div className="text-[8px] font-black text-txt-main font-mono">{vsd.thd}</div>
-                                                        </div>
-                                                        <div>
-                                                            <div className="text-[6px] font-black text-txt-muted uppercase tracking-widest">Eficiencia</div>
-                                                            <div className="text-[8px] font-black text-secondary font-mono">{vsd.efficiency}%</div>
-                                                        </div>
-                                                        <div>
-                                                            <div className="text-[6px] font-black text-txt-muted uppercase tracking-widest">Carcasa</div>
-                                                            <div className="text-[8px] font-black text-txt-main font-mono">{vsd.enclosure}</div>
-                                                        </div>
+                                                    <div className="grid grid-cols-3 gap-x-4 gap-y-2">
+                                                        <div><div className="text-[6px] font-black text-txt-muted uppercase tracking-widest opacity-60">V INPUT</div><div className="text-[9px] font-black text-txt-main font-mono">{vsd.inputVoltage}</div></div>
+                                                        <div><div className="text-[6px] font-black text-txt-muted uppercase tracking-widest opacity-60">V OUTPUT</div><div className="text-[9px] font-black text-txt-main font-mono">{vsd.outputVoltage}</div></div>
+                                                        <div><div className="text-[6px] font-black text-txt-muted uppercase tracking-widest opacity-60">FREQ</div><div className="text-[9px] font-black text-txt-main font-mono">{vsd.outputFrequency}</div></div>
                                                     </div>
-                                                    {/* Compatibility indicator */}
                                                     {isFit && margin !== null && (
-                                                        <div className="mt-2 pt-2 border-t border-white/5 flex items-center gap-2">
+                                                        <div className="mt-3 pt-3 border-t border-white/5 flex items-center gap-2">
                                                             <div className="h-1 flex-1 bg-white/5 rounded-full overflow-hidden">
-                                                                <div className="h-full bg-green-500/60 rounded-full" style={{ width: `${Math.min(100, 100 / (1 + margin / 100))}%` }}></div>
+                                                                <div className="h-full bg-green-500/60 rounded-full shadow-glow-green" style={{ width: `${Math.min(100, 100 / (1 + margin / 100))}%` }}></div>
                                                             </div>
-                                                            <span className="text-[7px] font-black text-green-400 uppercase tracking-wider">+{margin.toFixed(0)}% sobre req.</span>
+                                                            <span className="text-[7px] font-black text-green-400 uppercase tracking-widest">+{margin.toFixed(0)}% MARGIN</span>
                                                         </div>
-                                                    )}
-                                                    {vsd.notes && (
-                                                        <div className="mt-1.5 text-[7px] text-txt-muted font-bold italic opacity-50 truncate">{vsd.notes}</div>
                                                     )}
                                                 </button>
                                             );
                                         })}
                                     </div>
                                 </div>
-                            </CollapsibleSection>
+                            )}
                         </div>
-                    </CollapsibleSection>
+                    </div>
 
                     {/* BHA SCHEMATIC */}
                     <CollapsibleSection title={t('vis.bha')} icon={Layers} isOpen={openSections.visualStack} onToggle={() => toggleSection('visualStack')} colorClass="secondary">
@@ -1494,8 +1506,8 @@ export const Phase5: React.FC<Phase5Props> = ({ params, setParams, customPump, s
                 </div>
 
                 {/* 2. MAIN RESULTS DASHBOARD (Center) */}
-                <div className="flex-1 lg:flex-[0.44] flex flex-col gap-6 overflow-y-auto custom-scrollbar min-h-0 pr-2 pb-4">
-                    <div className="flex items-center justify-between gap-4">
+                <div className="flex-1 lg:flex-[0.44] flex flex-col gap-2 overflow-y-auto custom-scrollbar min-h-0 pr-2 pb-4">
+                    <div className="flex items-center justify-between gap-2">
                         <div className="flex-1 flex glass-surface p-1.5 rounded-[1.5rem] border border-white/5 shadow-inner shrink-0 relative overflow-hidden group">
                             <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-secondary/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                             <button onClick={() => setViewMode('analytics')} className={`flex-1 py-3 rounded-2xl text-xs font-black uppercase flex items-center justify-center gap-3 transition-all relative z-10 ${viewMode === 'analytics' ? 'bg-primary/20 text-primary shadow-glow-primary/10 border border-primary/20' : 'text-txt-muted hover:text-txt-main hover:bg-white/5'}`}>
@@ -1508,8 +1520,8 @@ export const Phase5: React.FC<Phase5Props> = ({ params, setParams, customPump, s
                     </div>
 
                     {viewMode === 'analytics' ? (
-                        <>
-                            <div className="flex glass-surface p-1.5 rounded-[1.5rem] border border-white/5 shadow-inner shrink-0 relative overflow-hidden group">
+                        <div className="flex flex-col gap-2">
+                            <div className="flex glass-surface p-1 rounded-2xl border border-white/5 shadow-inner shrink-0 relative overflow-hidden group">
                                 <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-secondary/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                                 <button onClick={() => setActiveChart('pump')} className={`flex-1 py-3 rounded-2xl text-[10px] font-black uppercase flex items-center justify-center gap-3 transition-all relative z-10 ${activeChart === 'pump' ? 'bg-primary/10 text-primary border border-primary/20' : 'text-txt-muted hover:text-txt-main hover:bg-white/5'}`}>
                                     <Layers className="w-4 h-4" /> {t('p5.perfCurve')}
@@ -1521,7 +1533,7 @@ export const Phase5: React.FC<Phase5Props> = ({ params, setParams, customPump, s
                                     <Zap className="w-4 h-4" /> {t('p5.motorCurve')}
                                 </button>
                             </div>
-                            <div className="glass-surface-light rounded-[2.5rem] border border-white/5 shadow-2xl overflow-hidden p-3 relative flex flex-col shrink-0 group transition-all duration-700 h-[620px]">
+                            <div className="glass-surface-light rounded-3xl border border-white/5 shadow-2xl overflow-hidden p-2 relative flex flex-col shrink-0 group transition-all duration-700 h-[600px]">
                                 <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                                 <div className="absolute top-4 right-6 flex gap-2 z-20">
                                     <div className="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
@@ -1568,7 +1580,7 @@ export const Phase5: React.FC<Phase5Props> = ({ params, setParams, customPump, s
                                 )}
                             </div>
 
-                        </>
+                        </div>
                     ) : (
                         <div className="flex-1 min-h-0 flex flex-col gap-4 animate-fadeIn">
                             <div className="glass-surface-light rounded-[2.5rem] border border-white/5 shadow-2xl overflow-hidden flex flex-col p-1.5 h-[620px]">
