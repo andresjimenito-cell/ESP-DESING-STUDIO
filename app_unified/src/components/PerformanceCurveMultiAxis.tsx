@@ -29,12 +29,12 @@ export const PerformanceCurveMultiAxis: React.FC<Props> = ({ data, currentFlow, 
   const { t } = useLanguage();
 
   // Theme Colors
-  const colorHead = 'rgb(var(--color-secondary))'; // Blue
-  const colorPower = 'rgb(var(--color-primary))';  // Orange
-  const colorEff = '#10b981';                     // Emerald
-  const colorSystem = '#a855f7';                  // Purple
+  const colorHead = 'rgb(var(--color-primary))';    // Main Orange
+  const colorPower = 'rgb(var(--color-secondary))'; // Technical Blue
+  const colorEff = '#14b8a6';                      // Muted Teal (Eff)
+  const colorSystem = '#a855f7';                   // Technical Purple (System)
   const colorTextMuted = 'rgb(var(--color-text-muted))';
-  const colorGrid = 'rgba(255, 255, 255, 0.05)';
+  const colorGrid = 'rgba(255, 255, 255, 0.03)';
 
   const safeData = useMemo(() => {
     if (!data) return [];
@@ -130,9 +130,9 @@ export const PerformanceCurveMultiAxis: React.FC<Props> = ({ data, currentFlow, 
           <span className="text-[10px] font-bold text-txt-muted uppercase mt-1 tracking-[0.2em] opacity-60">Full Analytical Diagnostic HUD</span>
         </div>
         <div className="hidden lg:flex gap-5 bg-white/5 px-4 py-2 rounded-2xl border border-white/5 select-none text-[9px] font-black tracking-widest uppercase">
-          <span className="flex items-center gap-2"><div className="w-2.5 h-2.5 rounded-full bg-secondary"></div> HEAD</span>
-          <span className="flex items-center gap-2 text-emerald-500"><div className="w-2.5 h-2.5 rounded-full bg-emerald-500"></div> EFF</span>
-          <span className="flex items-center gap-2 text-primary"><div className="w-2.5 h-2.5 rounded-full bg-primary"></div> POWER</span>
+          <span className="flex items-center gap-2" style={{ color: colorHead }}><div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: colorHead }}></div> HEAD</span>
+          <span className="flex items-center gap-2" style={{ color: colorEff }}><div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: colorEff }}></div> EFF</span>
+          <span className="flex items-center gap-2" style={{ color: colorPower }}><div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: colorPower }}></div> POWER</span>
         </div>
       </div>
 
@@ -143,6 +143,7 @@ export const PerformanceCurveMultiAxis: React.FC<Props> = ({ data, currentFlow, 
               <filter id="neon-h" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3" result="b" /><feComposite in="SourceGraphic" in2="b" operator="over" /></filter>
               <filter id="neon-p" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3" result="b" /><feComposite in="SourceGraphic" in2="b" operator="over" /></filter>
               <filter id="neon-e" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3" result="b" /><feComposite in="SourceGraphic" in2="b" operator="over" /></filter>
+              <filter id="neon-s" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="4" result="b" /><feComposite in="SourceGraphic" in2="b" operator="over" /></filter>
             </defs>
 
             <CartesianGrid strokeDasharray="3 3" stroke={colorGrid} vertical={false} />
@@ -165,22 +166,33 @@ export const PerformanceCurveMultiAxis: React.FC<Props> = ({ data, currentFlow, 
             <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'rgba(255,255,255,0.1)', strokeDasharray: '4 4' }} />
 
             {[70, 60, 50, 40, 30].map(hz => (
-              <Line key={hz} yAxisId="left" type="monotone" dataKey={`hz${hz}`} stroke={colorTextMuted} strokeWidth={1} dot={false} opacity={0.1} isAnimationActive={false} connectNulls={false} />
+              <Line key={hz} yAxisId="left" type="monotone" dataKey={`hz${hz}`} stroke={colorTextMuted} strokeWidth={1} dot={false} opacity={0.07} isAnimationActive={false} connectNulls={false} />
             ))}
 
-            <Line yAxisId="left" type="monotone" dataKey="systemCurve" stroke={colorSystem} strokeWidth={3} strokeDasharray="8 6" dot={false} name="Sistema Calibrado" opacity={0.7} connectNulls={false} />
+            <Line 
+              yAxisId="left" 
+              type="monotone" 
+              dataKey="systemCurve" 
+              stroke={colorSystem} 
+              strokeWidth={3} 
+              dot={false} 
+              name="Sistema Calibrado" 
+              opacity={0.9} 
+              connectNulls={false} 
+              filter="url(#neon-s)"
+            />
             <Line yAxisId="left" type="monotone" dataKey="idealSystemCurve" stroke={colorSystem} strokeWidth={2} strokeDasharray="3 3" dot={false} name="Sistema Ideal (Mismo IP)" opacity={0.4} connectNulls={false} />
 
-            <Line yAxisId="left" type="monotone" dataKey="headCurr" stroke={colorHead} strokeWidth={4} dot={false} name="Head (ft)" connectNulls={false} />
-            <Line yAxisId="right_eff" type="monotone" dataKey="effCurr" stroke={colorEff} strokeWidth={4} dot={false} name="Efficiency (%)" connectNulls={false} />
-            <Line yAxisId="right_pwr" type="monotone" dataKey="pwrCurr" stroke={colorPower} strokeWidth={4} dot={false} name="Power (HP)" connectNulls={false} />
+            <Line yAxisId="left" type="monotone" dataKey="headCurr" stroke={colorHead} strokeWidth={4} dot={false} name="Head (ft)" connectNulls={false} filter="url(#neon-p)" />
+            <Line yAxisId="right_eff" type="monotone" dataKey="effCurr" stroke={colorEff} strokeWidth={3} dot={false} name="Efficiency (%)" connectNulls={false} opacity={0.8} />
+            <Line yAxisId="right_pwr" type="monotone" dataKey="pwrCurr" stroke={colorPower} strokeWidth={3} dot={false} name="Power (HP)" connectNulls={false} opacity={0.8} />
 
             <Line yAxisId="left" type="monotone" dataKey="headNew" stroke={colorHead} strokeWidth={1} strokeDasharray="4 4" dot={false} name="Design Head" opacity={0.4} connectNulls={false} />
             <Line yAxisId="right_eff" type="monotone" dataKey="effNew" stroke={colorEff} strokeWidth={1} strokeDasharray="4 4" dot={false} name="Design Eff" opacity={0.4} connectNulls={false} />
             <Line yAxisId="right_pwr" type="monotone" dataKey="pwrNew" stroke={colorPower} strokeWidth={1} strokeDasharray="4 4" dot={false} name="Design Power" opacity={0.4} connectNulls={false} />
 
-            <Line yAxisId="left" type="monotone" dataKey="minLimit" stroke="#f59e0b" strokeWidth={1.5} strokeDasharray="3 3" dot={false} name="ROR Min" opacity={0.8} />
-            <Line yAxisId="left" type="monotone" dataKey="maxLimit" stroke="#f59e0b" strokeWidth={1.5} strokeDasharray="3 3" dot={false} name="ROR Max" opacity={0.8} />
+            <Line yAxisId="left" type="monotone" dataKey="minLimit" stroke="#64748b" strokeWidth={1.5} strokeDasharray="5 5" dot={false} name="ROR Min" opacity={0.6} />
+            <Line yAxisId="left" type="monotone" dataKey="maxLimit" stroke="#64748b" strokeWidth={1.5} strokeDasharray="5 5" dot={false} name="ROR Max" opacity={0.6} />
 
             {opPoint && (
               <>

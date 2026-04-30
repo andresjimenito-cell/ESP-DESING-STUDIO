@@ -83,7 +83,7 @@ const INITIAL_PARAMS: SystemParams = {
     surfaceTemp: 0, bottomholeTemp: 0,
     motorHp: 0,
     totalDepthMD: 0, survey: [],
-    simulation: { annualWearPercent: 0, simulationMonths: 36, costPerKwh: 0 }
+    simulation: { annualWearPercent: 0, simulationMonths: 36, costPerKwh: 0, ipType: 'fixed', ipTarget: 0 }
 };
 
 interface Props {
@@ -1975,69 +1975,69 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                 <div className="fixed top-[40%] left-[40%] w-[400px] h-[400px] bg-primary/5 blur-[100px] rounded-full pointer-events-none -z-10"></div>
 
                 {/* ── CONSOLIDATED EXECUTIVE HEADER ── */}
-                <header className="flex flex-col xl:flex-row items-center justify-between gap-4 bg-surface/50 backdrop-blur-xl p-5 rounded-[2.5rem] border border-surface-light shadow-[0_20px_50px_-15px_rgba(0,0,0,0.5)] relative overflow-hidden group mb-8">
+                <header className="flex flex-col xl:flex-row items-center justify-between gap-3 bg-surface/50 backdrop-blur-xl py-2 px-6 rounded-2xl border border-surface-light shadow-[0_15px_40px_-15px_rgba(0,0,0,0.5)] relative overflow-hidden group mb-4">
                     {/* Header Dynamic Edge Light */}
                     <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-primary/60 to-transparent"></div>
                     <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-secondary/20 to-transparent opacity-30"></div>
 
-                    <div className="flex items-center gap-6 relative z-10 pl-2">
+                    <div className="flex items-center gap-4 relative z-10 pl-2">
                         {/* Compact Back Button for Global Navigation */}
-                        <button onClick={onBack} className="p-3.5 bg-white/10 hover:bg-primary/20 rounded-2xl border border-white/10 text-txt-muted hover:text-primary transition-all group shadow-xl" title="Regresar al Inicio">
-                            <ChevronLeft className="w-6 h-6 group-hover:-translate-x-1" />
+                        <button onClick={onBack} className="p-2.5 bg-white/10 hover:bg-primary/20 rounded-xl border border-white/10 text-txt-muted hover:text-primary transition-all group shadow-lg" title="Regresar al Inicio">
+                            <ChevronLeft className="w-5 h-5 group-hover:-translate-x-1" />
                         </button>
                     </div>
 
-                    <div className="flex-1 max-w-2xl relative group px-6">
+                    <div className="flex-1 max-w-xl relative group px-2">
                         <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-secondary/10 blur-2xl group-focus-within:opacity-100 opacity-20 transition-opacity"></div>
-                        <Search className="absolute left-10 top-1/2 -translate-y-1/2 w-5 h-5 text-txt-muted/60 group-focus-within:text-primary transition-all z-10" />
+                        <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-txt-muted/60 group-focus-within:text-primary transition-all z-10" />
                         <input
                             type="text"
-                            placeholder="OPERATIONAL SEARCH / FILTER WELLS..."
+                            placeholder="SEARCH WELLS..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="relative w-full h-14 bg-canvas/60 border border-surface-light/50 rounded-[1.25rem] pl-16 pr-6 text-sm font-black text-txt-main focus:outline-none focus:border-primary/50 focus:ring-4 ring-primary/20 transition-all uppercase tracking-widest shadow-inner placeholder:text-txt-muted/30 backdrop-blur-md"
+                            className="relative w-full h-10 bg-canvas/60 border border-surface-light/50 rounded-xl pl-12 pr-4 text-[10px] font-black text-txt-main focus:outline-none focus:border-primary/50 focus:ring-4 ring-primary/20 transition-all uppercase tracking-widest shadow-inner placeholder:text-txt-muted/30 backdrop-blur-md"
                         />
                     </div>
 
-                    <div className="flex items-center gap-3 relative z-10">
-                        <div className="flex bg-canvas/40 p-1.5 rounded-2xl border border-surface-light shadow-inner backdrop-blur-md">
-                            <button onClick={() => setViewMode('grid')} className={`w-11 h-9 rounded-xl flex items-center justify-center transition-all ${viewMode === 'grid' ? 'bg-primary text-white shadow-glow-primary/40' : 'text-txt-muted hover:bg-surface-light'}`}><LayoutGrid className="w-5 h-5" /></button>
-                            <button onClick={() => setViewMode('list')} className={`w-11 h-9 rounded-xl flex items-center justify-center transition-all ${viewMode === 'list' ? 'bg-primary text-white shadow-glow-primary/40' : 'text-txt-muted hover:bg-surface-light'}`}><List className="w-5 h-5" /></button>
+                    <div className="flex items-center gap-2 relative z-10">
+                        <div className="flex bg-canvas/40 p-1 rounded-xl border border-surface-light shadow-inner backdrop-blur-md">
+                            <button onClick={() => setViewMode('grid')} className={`w-9 h-8 rounded-lg flex items-center justify-center transition-all ${viewMode === 'grid' ? 'bg-primary text-white shadow-glow-primary/40' : 'text-txt-muted hover:bg-surface-light'}`}><LayoutGrid className="w-4 h-4" /></button>
+                            <button onClick={() => setViewMode('list')} className={`w-9 h-8 rounded-lg flex items-center justify-center transition-all ${viewMode === 'list' ? 'bg-primary text-white shadow-glow-primary/40' : 'text-txt-muted hover:bg-surface-light'}`}><List className="w-4 h-4" /></button>
                         </div>
 
-                        <div className="flex items-center gap-2">
-                            <button onClick={() => importDesignRef.current?.click()} className="h-10 px-5 bg-primary text-white rounded-xl flex items-center gap-3 hover:bg-primary/80 transition-all font-black text-[9px] uppercase tracking-widest shadow-lg shadow-primary/20" title="Import Designs"><Download className="w-4 h-4" /> <span className="hidden xl:block">Diseños</span></button>
-                            <button onClick={() => importDbRef.current?.click()} className="h-10 px-5 bg-secondary text-white rounded-xl flex items-center gap-3 hover:bg-secondary/80 transition-all font-black text-[9px] uppercase tracking-widest shadow-lg shadow-secondary/20" title="Import SCADA"><Database className="w-4 h-4" /> <span className="hidden xl:block">SCADA</span></button>
+                        <div className="flex items-center gap-1.5">
+                            <button onClick={() => importDesignRef.current?.click()} className="h-9 px-4 bg-primary text-white rounded-xl flex items-center gap-2 hover:bg-primary/80 transition-all font-black text-[8px] uppercase tracking-widest shadow-lg shadow-primary/10" title="Import Designs"><Download className="w-3.5 h-3.5" /> <span className="hidden xl:block">Diseños</span></button>
+                            <button onClick={() => importDbRef.current?.click()} className="h-9 px-4 bg-secondary text-white rounded-xl flex items-center gap-2 hover:bg-secondary/80 transition-all font-black text-[8px] uppercase tracking-widest shadow-lg shadow-secondary/10" title="Import SCADA"><Database className="w-3.5 h-3.5" /> <span className="hidden xl:block">SCADA</span></button>
 
-                            <div className="w-px h-6 bg-surface-light mx-1 opacity-50"></div>
+                            <div className="w-px h-5 bg-surface-light mx-0.5 opacity-30"></div>
 
                             {/* Health Filter Control Panel */}
-                            <div className="flex items-center gap-1 bg-canvas/30 p-1.5 rounded-xl border border-surface-light backdrop-blur-md">
-                                <button onClick={() => setHealthFilter('all')} className={`h-8 px-4 rounded-lg flex items-center gap-1.5 transition-all text-[8px] font-black uppercase tracking-widest ${healthFilter === 'all' ? 'bg-surface text-txt-main shadow-md' : 'text-txt-muted hover:text-txt-main'}`}>All</button>
-                                <button onClick={() => setHealthFilter('healthy')} className={`h-8 px-4 rounded-lg flex items-center gap-1.5 transition-all text-[8px] font-black uppercase tracking-widest ${healthFilter === 'healthy' ? 'bg-success/20 text-success shadow-glow-success/30 border border-success/30' : 'text-txt-muted hover:text-success'}`}>
-                                    <div className={`w-1.5 h-1.5 rounded-full ${healthFilter === 'healthy' ? 'bg-success animate-pulse' : 'bg-success/50'}`}></div> <span className="hidden xl:block">Healthy</span>
+                            <div className="flex items-center gap-1 bg-canvas/30 p-1 rounded-xl border border-surface-light backdrop-blur-md">
+                                <button onClick={() => setHealthFilter('all')} className={`h-7 px-3 rounded-lg flex items-center gap-1.5 transition-all text-[8px] font-black uppercase tracking-widest ${healthFilter === 'all' ? 'bg-surface text-txt-main shadow-md' : 'text-txt-muted hover:text-txt-main'}`}>All</button>
+                                <button onClick={() => setHealthFilter('healthy')} className={`h-7 px-3 rounded-lg flex items-center gap-1.5 transition-all text-[8px] font-black uppercase tracking-widest ${healthFilter === 'healthy' ? 'bg-success/20 text-success shadow-glow-success/20 border border-success/30' : 'text-txt-muted hover:text-success'}`}>
+                                    <div className={`w-1 h-1 rounded-full ${healthFilter === 'healthy' ? 'bg-success animate-pulse' : 'bg-success/50'}`}></div> <span className="hidden xl:block">Healthy</span>
                                 </button>
-                                <button onClick={() => setHealthFilter('caution')} className={`h-8 px-4 rounded-lg flex items-center gap-1.5 transition-all text-[8px] font-black uppercase tracking-widest ${healthFilter === 'caution' ? 'bg-warning/20 text-warning shadow-glow-warning/30 border border-warning/30' : 'text-txt-muted hover:text-warning'}`}>
-                                    <div className={`w-1.5 h-1.5 rounded-full ${healthFilter === 'caution' ? 'bg-warning shadow-glow-warning' : 'bg-warning/50'}`}></div> <span className="hidden xl:block">Caution</span>
+                                <button onClick={() => setHealthFilter('caution')} className={`h-7 px-3 rounded-lg flex items-center gap-1.5 transition-all text-[8px] font-black uppercase tracking-widest ${healthFilter === 'caution' ? 'bg-warning/20 text-warning shadow-glow-warning/20 border border-warning/30' : 'text-txt-muted hover:text-warning'}`}>
+                                    <div className={`w-1 h-1 rounded-full ${healthFilter === 'caution' ? 'bg-warning shadow-glow-warning' : 'bg-warning/50'}`}></div> <span className="hidden xl:block">Caution</span>
                                 </button>
-                                <button onClick={() => setHealthFilter('critical')} className={`h-8 px-4 rounded-lg flex items-center gap-1.5 transition-all text-[8px] font-black uppercase tracking-widest ${healthFilter === 'critical' ? 'bg-danger/20 text-danger shadow-glow-danger/30 border border-danger/30' : 'text-txt-muted hover:text-danger'}`}>
-                                    <div className={`w-1.5 h-1.5 rounded-full ${healthFilter === 'critical' ? 'bg-danger animate-pulse shadow-glow-danger' : 'bg-danger/50'}`}></div> <span className="hidden xl:block">Critical</span>
-                                </button>
-                            </div>
-
-                            <div className="flex items-center gap-1 bg-canvas/30 p-1 rounded-xl border border-surface-light backdrop-blur-md ml-1">
-                                <button onClick={toggleLanguage} className="h-9 px-4 flex items-center gap-2 rounded-lg hover:bg-surface-light transition-all text-[9px] font-black font-mono text-txt-main tracking-widest uppercase" title="Cambiar Idioma">
-                                    <Globe className="w-4 h-4 text-primary" /> {language}
-                                </button>
-                                <div className="w-px h-6 bg-surface-light mx-1 opacity-30"></div>
-                                <button onClick={cycleTheme} className="h-9 px-4 flex items-center gap-2 rounded-lg hover:bg-surface-light transition-all group" title="Cycle Professional Themes">
-                                    <Palette className="w-4 h-4 text-primary transition-transform" />
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-txt-muted group-hover:text-txt-main hidden xl:block">{theme}</span>
+                                <button onClick={() => setHealthFilter('critical')} className={`h-7 px-3 rounded-lg flex items-center gap-1.5 transition-all text-[8px] font-black uppercase tracking-widest ${healthFilter === 'critical' ? 'bg-danger/20 text-danger shadow-glow-danger/20 border border-danger/30' : 'text-txt-muted hover:text-danger'}`}>
+                                    <div className={`w-1 h-1 rounded-full ${healthFilter === 'critical' ? 'bg-danger animate-pulse shadow-glow-danger' : 'bg-danger/50'}`}></div> <span className="hidden xl:block">Critical</span>
                                 </button>
                             </div>
 
-                            <button onClick={clearFleet} className="h-11 w-11 rounded-xl flex items-center justify-center transition-all bg-danger/10 text-danger border border-danger/20 hover:bg-danger hover:text-white hover:shadow-glow-danger/40" title="Clear Fleet">
-                                <Trash2 className="w-4 h-4" />
+                            <div className="flex items-center gap-1 bg-canvas/30 p-1 rounded-xl border border-surface-light backdrop-blur-md">
+                                <button onClick={toggleLanguage} className="h-7 px-3 flex items-center gap-1.5 rounded-lg hover:bg-surface-light transition-all text-[8px] font-black font-mono text-txt-main tracking-widest uppercase" title="Cambiar Idioma">
+                                    <Globe className="w-3.5 h-3.5 text-primary" /> {language}
+                                </button>
+                                <div className="w-px h-5 bg-surface-light mx-0.5 opacity-20"></div>
+                                <button onClick={cycleTheme} className="h-7 px-3 flex items-center gap-1.5 rounded-lg hover:bg-surface-light transition-all group" title="Cycle Professional Themes">
+                                    <Palette className="w-3.5 h-3.5 text-primary transition-transform" />
+                                    <span className="text-[8px] font-black uppercase tracking-widest text-txt-muted group-hover:text-txt-main hidden xl:block">{theme}</span>
+                                </button>
+                            </div>
+
+                            <button onClick={clearFleet} className="h-8 w-8 rounded-lg flex items-center justify-center transition-all bg-danger/10 text-danger border border-danger/20 hover:bg-danger hover:text-white" title="Clear Fleet">
+                                <Trash2 className="w-3.5 h-3.5" />
                             </button>
                         </div>
                     </div>
@@ -2472,23 +2472,23 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                     </div>
                 )}
                 {/* WELL HEADER WITH DROPDOWN SELECTOR */}
-                <div className="flex justify-between items-center bg-surface/40 backdrop-blur-xl p-8 rounded-[3rem] border border-white/5 shadow-2xl relative group z-20">
-                    <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-[3rem]"></div>
-                    <div className="flex items-center gap-8 relative z-10 w-full">
-                        <div className="flex items-center gap-6">
+                <div className="flex justify-between items-center bg-surface/40 backdrop-blur-xl py-3 px-6 rounded-2xl border border-white/5 shadow-2xl relative group z-20">
+                    <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl"></div>
+                    <div className="flex items-center gap-6 relative z-10 w-full">
+                        <div className="flex items-center gap-4">
                             {/* BACK BUTTON INTEGRATED */}
-                            <button onClick={onBack} className="p-4 bg-white/10 hover:bg-primary/20 rounded-[1.5rem] border border-white/10 text-txt-muted hover:text-primary transition-all group shadow-xl" title="Regresar al Inicio">
-                                <ChevronLeft className="w-8 h-8 group-hover:-translate-x-1" />
+                            <button onClick={onBack} className="p-2.5 bg-white/10 hover:bg-primary/20 rounded-xl border border-white/10 text-txt-muted hover:text-primary transition-all group shadow-lg" title="Regresar al Inicio">
+                                <ChevronLeft className="w-6 h-6 group-hover:-translate-x-1" />
                             </button>
 
                             {/* WELL DROPDOWN SELECTOR */}
                             <div className="relative" ref={wellDropdownRef}>
                                 <button
                                     onClick={() => setIsWellDropdownOpen(!isWellDropdownOpen)}
-                                    className="flex items-center gap-4 px-6 py-3 bg-white/10 hover:bg-white/15 rounded-2xl border border-white/10 transition-all shadow-xl cursor-pointer group/dd"
+                                    className="flex items-center gap-3 px-4 py-2 bg-white/10 hover:bg-white/15 rounded-xl border border-white/10 transition-all shadow-lg cursor-pointer group/dd"
                                 >
-                                    <h2 className="text-4xl font-black text-txt-main tracking-tighter uppercase leading-none group-hover/dd:text-primary transition-colors">{selectedWell.name}</h2>
-                                    <ChevronRight className={`w-6 h-6 text-txt-muted transition-transform duration-300 ${isWellDropdownOpen ? 'rotate-90' : ''}`} />
+                                    <h2 className="text-xl font-black text-txt-main tracking-tighter uppercase leading-none group-hover/dd:text-primary transition-colors">{selectedWell.name}</h2>
+                                    <ChevronRight className={`w-4 h-4 text-txt-muted transition-transform duration-300 ${isWellDropdownOpen ? 'rotate-90' : ''}`} />
                                 </button>
                                 {isWellDropdownOpen && (
                                     <div className="absolute top-full left-0 mt-3 w-[400px] max-h-[500px] overflow-y-auto bg-surface/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-[0_30px_80px_rgba(0,0,0,0.5)] z-[100] animate-fadeIn custom-scrollbar">
@@ -2537,42 +2537,16 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                     </div>
                                 )}
                             </div>
-                            <div>
-                                <div className="flex items-center gap-4 mb-2">
-                                    <div className={`flex items-center gap-2 px-4 py-1 rounded-full text-[10px] font-black border transition-all ${selectedWell.status === 'normal' ? 'bg-success/20 text-success border-success/20' : 'bg-danger/20 text-danger border-danger/20 shadow-glow-danger/20 animate-pulse'}`}>
-                                        <div className={`w-2 h-2 rounded-full ${selectedWell.status === 'normal' ? 'bg-success' : 'bg-danger animate-ping'}`}></div>
-                                        {selectedWell.status.toUpperCase()}
-                                    </div>
-                                    <div className={`flex items-center gap-2 px-4 py-1 rounded-full text-[10px] font-black border ${isSynced ? 'bg-primary/20 text-primary border-primary/20' : 'bg-white/5 text-txt-muted border-white/10'}`}>
-                                        <Layers className="w-4 h-4" /> {isSynced ? 'DIGITAL TWIN SYNC' : 'GENERIC PROFILE'}
-                                    </div>
-                                    <span className="text-[10px] font-black text-txt-muted uppercase tracking-widest opacity-50">{fleet.length} pozos</span>
-                                </div>
-                                <div className="flex items-center gap-6">
-                                    <div className="flex items-center gap-2 text-[10px] font-bold text-txt-muted uppercase tracking-[0.2em] bg-white/5 px-3 py-1 rounded-lg">
-                                        <Clock className="w-3.5 h-3.5 opacity-50" />
-                                        Ultima actualización: {new Date(selectedWell.lastUpdate).toLocaleTimeString()}
-                                    </div>
-                                    <div className="flex items-center gap-2 text-[10px] font-bold text-txt-muted uppercase tracking-[0.2em] bg-white/5 px-3 py-1 rounded-lg">
-                                        <Target className="w-3.5 h-3.5 opacity-50" />
-                                        Cotejo: {hasMatch ? 'Sincronizado' : 'Sin Datos'}
-                                    </div>
-                                    <div className="flex items-center gap-2 text-[10px] font-bold text-txt-muted uppercase tracking-[0.2em] bg-white/5 px-3 py-1 rounded-lg">
-                                        <Droplets className="w-3.5 h-3.5 opacity-50 text-secondary" />
-                                        {Math.round(selectedWell.currentRate)} BPD
-                                    </div>
-                                </div>
-                            </div>
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-6 mx-auto relative z-10 justify-center flex-1">
+                        <div className="flex items-center gap-3 flex-1 justify-center">
                             <button
                                 onClick={() => importDbRef.current?.click()}
-                                className="flex items-center gap-3 px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all border bg-secondary/10 text-secondary border-secondary/20 hover:bg-secondary/20 hover:shadow-glow-secondary/20"
+                                className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border bg-secondary/10 text-secondary border-secondary/20 hover:bg-secondary/20 hover:shadow-glow-secondary/20"
                                 title="Subir prueba de producción puntual (CSV/Excel)"
                             >
-                                <Database className="w-5 h-5" />
-                                Subir Prueba de Prod.
+                                <Database className="w-4 h-4" />
+                                Subir Prueba
                             </button>
 
                             {onNavigateToDesign && (
@@ -2581,11 +2555,11 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                         onClick={() => {
                                             onNavigateToDesign(wellMatchParams, pump);
                                         }}
-                                        className="flex items-center gap-3 px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all border bg-primary/10 text-primary border-primary/20 hover:bg-primary hover:text-white hover:shadow-glow-primary/40 relative"
+                                        className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border bg-primary/10 text-primary border-primary/20 hover:bg-primary hover:text-white hover:shadow-glow-primary/40 relative"
                                         title="Ir a Diseño (Phase 5)"
                                     >
-                                        <Settings className="w-5 h-5" />
-                                        Ir a Diseño
+                                        <Settings className="w-4 h-4" />
+                                        Diseño
                                     </button>
                                 </SecureWrapper>
                             )}
@@ -2593,28 +2567,28 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                             <SecureWrapper isLocked={true} tooltip="Módulo de Ajuste Histórico Restringido">
                                 <button
                                     onClick={() => setWellViewMode(wellViewMode === 'history' ? 'monitoring' : 'history')}
-                                    className={`flex items-center gap-3 px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all border ${wellViewMode === 'history' ? 'bg-primary text-white border-primary shadow-glow-primary/40' : 'bg-success/10 text-success border-success/20 hover:bg-success/20 hover:shadow-glow-success/20'}`}
+                                    className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border ${wellViewMode === 'history' ? 'bg-primary text-white border-primary shadow-glow-primary/40' : 'bg-success/10 text-success border-success/20 hover:bg-success/20 hover:shadow-glow-success/20'}`}
                                 >
-                                    {wellViewMode === 'history' ? <Activity className="w-5 h-5" /> : <TrendingUp className="w-5 h-5" />}
-                                    {wellViewMode === 'history' ? 'Volver a Monitoreo' : 'Subir Histórico (Match)'}
+                                    {wellViewMode === 'history' ? <Activity className="w-4 h-4" /> : <TrendingUp className="w-4 h-4" />}
+                                    {wellViewMode === 'history' ? 'Monitoreo' : 'Histórico (Match)'}
                                 </button>
                             </SecureWrapper>
                         </div>
 
                         {/* GLOBAL SETTINGS (LANGUAGE / THEME) */}
-                        <div className="flex items-center gap-2 bg-white/5 p-1.5 rounded-2xl border border-white/10 shadow-inner ml-auto">
+                        <div className="flex items-center gap-1.5 bg-white/5 p-1 rounded-xl border border-white/10 shadow-inner ml-auto">
                             <button
                                 onClick={toggleLanguage}
-                                className="flex items-center gap-2 px-4 py-2 hover:bg-white/10 rounded-xl transition-all text-[10px] font-black font-mono text-txt-main tracking-widest uppercase"
+                                className="flex items-center gap-2 px-3 py-1.5 hover:bg-white/10 rounded-lg transition-all text-[9px] font-black font-mono text-txt-main tracking-widest uppercase"
                             >
-                                <Globe className="w-4 h-4 text-primary" /> {language}
+                                <Globe className="w-3.5 h-3.5 text-primary" /> {language}
                             </button>
                             <button
                                 onClick={cycleTheme}
-                                className="p-2.5 bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/5 text-txt-muted hover:text-primary hover:border-primary/20 group/palette"
+                                className="p-2 bg-white/5 hover:bg-white/10 rounded-lg transition-all border border-white/5 text-txt-muted hover:text-primary hover:border-primary/20 group/palette"
                                 title="Cambiar Tema"
                             >
-                                <Palette className="w-5 h-5 text-secondary group-hover/palette:text-primary" />
+                                <Palette className="w-4 h-4 text-secondary group-hover/palette:text-primary" />
                             </button>
                         </div>
                     </div>

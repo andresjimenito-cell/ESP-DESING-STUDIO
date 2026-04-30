@@ -71,7 +71,7 @@ const INITIAL_PARAMS: SystemParams = {
     surfaceTemp: 0, bottomholeTemp: 0,
     motorHp: 0,
     totalDepthMD: 0, survey: INITIAL_SURVEY,
-    simulation: { annualWearPercent: 0, simulationMonths: 36, costPerKwh: 0 }
+    simulation: { annualWearPercent: 5, simulationMonths: 60, costPerKwh: 0.1, ipType: 'fixed', ipTarget: 0, qInitial: undefined, qGrowthRate: 0 }
 };
 
 // --- ADVANCED MARKDOWN RENDERER ---

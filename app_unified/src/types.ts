@@ -175,6 +175,10 @@ export interface SimulationSettings {
   annualWearPercent: number;
   simulationMonths: number;
   costPerKwh: number;
+  ipType: 'fixed' | 'variable';
+  ipTarget: number;
+  qInitial?: number;
+  qGrowthRate?: number;
 }
 
 // --- NODAL ANALYSIS TYPES ---

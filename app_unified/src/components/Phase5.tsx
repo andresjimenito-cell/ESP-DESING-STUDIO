@@ -1554,8 +1554,23 @@ export const Phase5: React.FC<Phase5Props> = ({ params, setParams, customPump, s
                                             const wc = params.fluids.waterCut / 100;
                                             const mixSG = (params.fluids.geWater * wc) + (141.5 / (131.5 + params.fluids.apiOil) * (1 - wc));
                                             const baseHz = effectivePump.nameplateFrequency || 60;
+                                            
+                                            // --- OPTIMIZATION: Limit ROR drawing range to prevent Y-axis scaling issues ---
+                                            const fMin = 30;
+                                            const fMax = Math.max(70, frequency);
+                                            const qMinStart = (effectivePump.minRate || 0) * (fMin / baseHz);
+                                            const qMinEnd = (effectivePump.minRate || 0) * (fMax / baseHz);
+                                            const qMaxStart = (effectivePump.maxRate || 0) * (fMin / baseHz);
+                                            const qMaxEnd = (effectivePump.maxRate || 0) * (fMax / baseHz);
+
+                                            // Add 5% margin to ensure the lines touch the curves
+                                            const isMinLimitVisible = d.flow >= qMinStart * 0.95 && d.flow <= qMinEnd * 1.05;
+                                            const isMaxLimitVisible = d.flow >= qMaxStart * 0.95 && d.flow <= qMaxEnd * 1.05;
+
                                             return {
                                                 ...d,
+                                                minLimit: isMinLimitVisible ? d.minLimit : null,
+                                                maxLimit: isMaxLimitVisible ? d.maxLimit : null,
                                                 headCurr: d.userHz,
                                                 effCurr: d.efficiency,
                                                 pwrCurr: calculateBhpAtPoint(d.flow, frequency, baseHz, effectivePump, mixSG),

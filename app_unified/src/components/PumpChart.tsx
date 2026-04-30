@@ -11,6 +11,7 @@ import {
   Legend,
   ResponsiveContainer,
   Label,
+  LabelList,
   ReferenceDot,
   ReferenceLine,
   ReferenceArea
@@ -193,8 +194,29 @@ export const PumpChart: React.FC<PumpChartProps> = ({ data, pump, currentFrequen
     return null;
   };
 
+  const FloatingFreqLabel = (props: any) => {
+    const { x, y, index, frequency, color } = props;
+    // Show label only at the beginning (flow 0) and if it has a valid Y position
+    if (index !== 0 || y === undefined || y === null) return null;
+    return (
+      <g className="pointer-events-none select-none">
+        <text
+          x={x + 10}
+          y={y + 3}
+          fill={color || colorTextMuted}
+          fontSize={8}
+          fontWeight="900"
+          opacity={0.5}
+          textAnchor="start"
+        >
+          {frequency} Hz
+        </text>
+      </g>
+    );
+  };
+
   return (
-    <div className={className} style={{ width: '100%', height: '100%', minHeight: minHeight !== undefined ? `${minHeight}px` : '200px', position: 'relative', display: 'flex', flexDirection: 'column', padding: '0.4rem', borderRadius: '32px', backgroundColor: 'rgb(var(--color-surface))' }}>
+    <div className={`flex flex-col h-full w-full relative p-6 bg-surface rounded-[32px] border border-white/5 shadow-xl ${className}`} style={{ minHeight: minHeight || 350 }}>
 
       {/* Chart Header - Standard Flow */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-2 px-2 gap-4">
@@ -236,7 +258,11 @@ export const PumpChart: React.FC<PumpChartProps> = ({ data, pump, currentFrequen
                 <feDropShadow dx="0" dy="0" stdDeviation="4" floodColor="#ef4444" floodOpacity="0.8" />
               </filter>
               <filter id="glow-success" height="300%" width="300%" x="-100%" y="-100%">
-                <feDropShadow dx="0" dy="0" stdDeviation="5" floodColor="#10b981" floodOpacity="0.9" />
+                <feDropShadow dx="0" dy="0" stdDeviation="5" floodColor="#00d134ff" floodOpacity="0.9" />
+              </filter>
+              <filter id="neon-s" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="3.5" result="b" />
+                <feComposite in="SourceGraphic" in2="b" operator="over" />
               </filter>
             </defs>
 
@@ -292,18 +318,18 @@ export const PumpChart: React.FC<PumpChartProps> = ({ data, pump, currentFrequen
             {/* Legend has been visually replaced by the custom top-left block */}
 
             {/* --- Standard Frequency Curves (Originals) --- */}
-            <Line yAxisId="left" type="monotone" dataKey="hz70" stroke={colorTextMuted} strokeWidth={1} dot={false} name="70 Hz" isAnimationActive={false} connectNulls={false} strokeOpacity={0.4} />
-            <Line yAxisId="left" type="monotone" dataKey="hz60" stroke={colorTextMuted} strokeWidth={1} dot={false} name="60 Hz" isAnimationActive={false} connectNulls={false} strokeOpacity={0.4} />
-            <Line yAxisId="left" type="monotone" dataKey="hz50" stroke={colorTextMuted} strokeWidth={1} dot={false} name="50 Hz" isAnimationActive={false} connectNulls={false} strokeOpacity={0.4} />
-            <Line yAxisId="left" type="monotone" dataKey="hz40" stroke={colorTextMuted} strokeWidth={1} dot={false} name="40 Hz" isAnimationActive={false} connectNulls={false} strokeOpacity={0.4} />
-            <Line yAxisId="left" type="monotone" dataKey="hz30" stroke={colorTextMuted} strokeWidth={1} dot={false} name="30 Hz" isAnimationActive={false} connectNulls={false} strokeOpacity={0.3} />
+            <Line yAxisId="left" type="monotone" dataKey="hz70" stroke={colorTextMuted} strokeWidth={1} dot={false} name="70 Hz" isAnimationActive={false} connectNulls={false} strokeOpacity={0.4}><LabelList content={<FloatingFreqLabel frequency={70} />} /></Line>
+            <Line yAxisId="left" type="monotone" dataKey="hz60" stroke={colorTextMuted} strokeWidth={1} dot={false} name="60 Hz" isAnimationActive={false} connectNulls={false} strokeOpacity={0.4}><LabelList content={<FloatingFreqLabel frequency={60} />} /></Line>
+            <Line yAxisId="left" type="monotone" dataKey="hz50" stroke={colorTextMuted} strokeWidth={1} dot={false} name="50 Hz" isAnimationActive={false} connectNulls={false} strokeOpacity={0.4}><LabelList content={<FloatingFreqLabel frequency={50} />} /></Line>
+            <Line yAxisId="left" type="monotone" dataKey="hz40" stroke={colorTextMuted} strokeWidth={1} dot={false} name="40 Hz" isAnimationActive={false} connectNulls={false} strokeOpacity={0.4}><LabelList content={<FloatingFreqLabel frequency={40} />} /></Line>
+            <Line yAxisId="left" type="monotone" dataKey="hz30" stroke={colorTextMuted} strokeWidth={1} dot={false} name="30 Hz" isAnimationActive={false} connectNulls={false} strokeOpacity={0.3}><LabelList content={<FloatingFreqLabel frequency={30} />} /></Line>
 
             {/* --- Adjusted Frequency Curves (Degraded Map) --- */}
-            <Line yAxisId="left" type="monotone" dataKey="hz70Adj" stroke={colorTextMuted} strokeDasharray="3 3" strokeWidth={1.5} dot={false} name="70 Hz (Adj)" isAnimationActive={false} connectNulls={false} strokeOpacity={0.4} />
-            <Line yAxisId="left" type="monotone" dataKey="hz60Adj" stroke={colorTextMuted} strokeDasharray="3 3" strokeWidth={1.5} dot={false} name="60 Hz (Adj)" isAnimationActive={false} connectNulls={false} strokeOpacity={0.4} />
-            <Line yAxisId="left" type="monotone" dataKey="hz50Adj" stroke={colorTextMuted} strokeDasharray="3 3" strokeWidth={1.5} dot={false} name="50 Hz (Adj)" isAnimationActive={false} connectNulls={false} strokeOpacity={0.4} />
-            <Line yAxisId="left" type="monotone" dataKey="hz40Adj" stroke={colorTextMuted} strokeDasharray="3 3" strokeWidth={1.5} dot={false} name="40 Hz (Adj)" isAnimationActive={false} connectNulls={false} strokeOpacity={0.4} />
-            <Line yAxisId="left" type="monotone" dataKey="hz30Adj" stroke={colorTextMuted} strokeDasharray="3 3" strokeWidth={1.5} dot={false} name="30 Hz (Adj)" isAnimationActive={false} connectNulls={false} strokeOpacity={0.3} />
+            <Line yAxisId="left" type="monotone" dataKey="hz70Adj" stroke={colorTextMuted} strokeDasharray="3 3" strokeWidth={1.5} dot={false} name="70 Hz (Adj)" isAnimationActive={false} connectNulls={false} strokeOpacity={0.4}><LabelList content={<FloatingFreqLabel frequency={70} />} /></Line>
+            <Line yAxisId="left" type="monotone" dataKey="hz60Adj" stroke={colorTextMuted} strokeDasharray="3 3" strokeWidth={1.5} dot={false} name="60 Hz (Adj)" isAnimationActive={false} connectNulls={false} strokeOpacity={0.4}><LabelList content={<FloatingFreqLabel frequency={60} />} /></Line>
+            <Line yAxisId="left" type="monotone" dataKey="hz50Adj" stroke={colorTextMuted} strokeDasharray="3 3" strokeWidth={1.5} dot={false} name="50 Hz (Adj)" isAnimationActive={false} connectNulls={false} strokeOpacity={0.4}><LabelList content={<FloatingFreqLabel frequency={50} />} /></Line>
+            <Line yAxisId="left" type="monotone" dataKey="hz40Adj" stroke={colorTextMuted} strokeDasharray="3 3" strokeWidth={1.5} dot={false} name="40 Hz (Adj)" isAnimationActive={false} connectNulls={false} strokeOpacity={0.4}><LabelList content={<FloatingFreqLabel frequency={40} />} /></Line>
+            <Line yAxisId="left" type="monotone" dataKey="hz30Adj" stroke={colorTextMuted} strokeDasharray="3 3" strokeWidth={1.5} dot={false} name="30 Hz (Adj)" isAnimationActive={false} connectNulls={false} strokeOpacity={0.3}><LabelList content={<FloatingFreqLabel frequency={30} />} /></Line>
 
             {/* --- SYSTEM CURVES --- */}
             <Line yAxisId="left" type="monotone" dataKey="sysMin" stroke={colorSecondary} strokeWidth={1} dot={false} name={t('chart.sysMin')} isAnimationActive={false} connectNulls={false} opacity={0.4} />
@@ -317,9 +343,9 @@ export const PumpChart: React.FC<PumpChartProps> = ({ data, pump, currentFrequen
               dot={false}
               name={t('chart.sysCurve')}
               isAnimationActive={false}
-              strokeDasharray="8 6"
               connectNulls
-              opacity={0.8}
+              opacity={0.9}
+              filter="url(#neon-s)"
             />
 
             {/* IDEAL SYSTEM CURVE (Catalog) */}
@@ -375,7 +401,9 @@ export const PumpChart: React.FC<PumpChartProps> = ({ data, pump, currentFrequen
               connectNulls={false}
               strokeLinecap="round"
               animationDuration={500}
-            />
+            >
+              <LabelList content={<FloatingFreqLabel frequency={currentFrequency} color={colorPrimary} />} />
+            </Line>
 
             {/* --- CATALOG PUMP CURVE (Diagnostic Only) --- */}
             {isDiagnosticMode && (

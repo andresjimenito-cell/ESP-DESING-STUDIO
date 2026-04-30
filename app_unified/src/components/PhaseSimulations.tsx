@@ -2,7 +2,7 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { Activity, Clock, Layers, Play, Pause, RotateCcw, AlertTriangle, Settings, Zap, Droplets, ArrowDown, Gauge, Cpu, TrendingDown, Printer, X, Download, FileText, PieChart, DollarSign } from 'lucide-react';
 import { EspPump, SystemParams } from '../types';
-import { calculateTDH, calculateBaseHead, calculateAffinityHead, findIntersection, calculateSystemResults, calculateBasePowerPerStage, calculateMotorPoly, generateMultiCurveData } from '../utils';
+import { calculateTDH, calculateBaseHead, calculateAffinityHead, findIntersection, calculateSystemResults, calculateBasePowerPerStage, calculateMotorPoly, generateMultiCurveData, interpolateTVD } from '../utils';
 import { PerformanceCurveMultiAxis } from './PerformanceCurveMultiAxis';
 import { MotorCurveMultiAxis } from './MotorCurveMultiAxis';
 import { ComposedChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Area, ReferenceLine, ReferenceDot, AreaChart, Label, Legend } from 'recharts';
@@ -213,38 +213,46 @@ const SimulationReport = ({ onClose, data, params, pump }: { onClose: () => void
                         </div>
                     </div>
 
-                    {/* NEW: ENERGY COST TABLE */}
+                    {/* NEW: ENERGY & PERFORMANCE TABLE */}
                     <div className="mb-10 break-inside-avoid">
-                        <h3 className="font-black text-xs uppercase tracking-widest text-white bg-emerald-600 px-6 py-3 rounded-t-2xl inline-block">{t('sim.energyCostProjTable')}</h3>
+                        <h3 className="font-black text-xs uppercase tracking-widest text-white bg-emerald-600 px-6 py-3 rounded-t-2xl inline-block">Lifecycle Performance Table</h3>
                         <div className="border-4 border-emerald-600 rounded-b-2xl rounded-tr-2xl overflow-hidden shadow-lg">
-                            <table className="w-full text-[10px] text-left">
+                            <table className="w-full text-[9px] text-left">
                                 <thead className="bg-emerald-50 text-emerald-800 uppercase font-black">
                                     <tr>
-                                        <th className="py-3 px-4 border-r border-emerald-100">{t('sim.monthLabel')}</th>
-                                        <th className="py-3 px-4 border-r border-emerald-100 text-right">{t('sim.degradationPctLabel')}</th>
-                                        <th className="py-3 px-4 border-r border-emerald-100 text-right">{t('sim.powerKwLabel')}</th>
-                                        <th className="py-3 px-4 border-r border-emerald-100 text-right">{t('sim.freqHzLabel')}</th>
-                                        <th className="py-3 px-4 border-r border-emerald-100 text-right">{t('sim.effPctLabel')}</th>
-                                        <th className="py-3 px-4 text-right">{t('sim.monthlyCostLabel')}</th>
+                                        <th className="py-3 px-2 border-r border-emerald-100">Mes</th>
+                                        <th className="py-3 px-2 border-r border-emerald-100 text-right">BFPD</th>
+                                        <th className="py-3 px-2 border-r border-emerald-100 text-right">BSW %</th>
+                                        <th className="py-3 px-2 border-r border-emerald-100 text-right">IP</th>
+                                        <th className="py-3 px-2 border-r border-emerald-100 text-right">PWF</th>
+                                        <th className="py-3 px-2 border-r border-emerald-100 text-right">Pwf Min</th>
+                                        <th className="py-3 px-2 border-r border-emerald-100 text-right">% Degr</th>
+                                        <th className="py-3 px-2 border-r border-emerald-100 text-right">kW (Sys)</th>
+                                        <th className="py-3 px-2 border-r border-emerald-100 text-right">kWh/mes</th>
+                                        <th className="py-3 px-2 border-r border-emerald-100 text-right">Frec Hz</th>
+                                        <th className="py-3 px-2 text-right">%Eff</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-emerald-100 font-bold">
                                     {data.timeData.map((row: any, i: number) => (
                                         <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-emerald-50/20"}>
-                                            <td className="py-2 px-4 text-slate-700 border-r border-emerald-100">{t('sim.monthPrefix')} {row.month}</td>
-                                            <td className="py-2 px-4 text-right font-mono border-r border-emerald-100 text-slate-500">{row.wearPct.toFixed(2)}%</td>
-                                            <td className="py-2 px-4 text-right font-mono border-r border-emerald-100 text-slate-600">{row.kw.toFixed(1)}</td>
-                                            <td className="py-2 px-4 text-right font-mono border-r border-emerald-100 text-slate-900">{row.freq.toFixed(1)}</td>
-                                            <td className="py-2 px-4 text-right font-mono border-r border-emerald-100 text-emerald-600">{row.efficiency.toFixed(1)}%</td>
-                                            <td className="py-2 px-4 text-right font-mono text-emerald-700 font-black">
-                                                $ {row.monthlyCost.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                                            </td>
+                                            <td className="py-2 px-2 text-slate-700 border-r border-emerald-100 font-black">{row.month}</td>
+                                            <td className="py-2 px-2 text-right font-mono border-r border-emerald-100">{row.flow.toFixed(0)}</td>
+                                            <td className="py-2 px-2 text-right font-mono border-r border-emerald-100 text-slate-500">{row.bsw.toFixed(1)}</td>
+                                            <td className="py-2 px-2 text-right font-mono border-r border-emerald-100 text-slate-500">{row.ip.toFixed(2)}</td>
+                                            <td className="py-2 px-2 text-right font-mono border-r border-emerald-100 text-slate-500">{row.pwf.toFixed(0)}</td>
+                                            <td className="py-2 px-2 text-right font-mono border-r border-emerald-100 text-slate-400 text-[10px]">{row.pwfMin.toFixed(0)}</td>
+                                            <td className="py-2 px-2 text-right font-mono border-r border-emerald-100 text-red-500">{row.wearPct.toFixed(2)}%</td>
+                                            <td className="py-2 px-2 text-right font-mono border-r border-emerald-100 text-slate-600">{row.kw.toFixed(1)}</td>
+                                            <td className="py-2 px-2 text-right font-mono border-r border-emerald-100 text-emerald-600">{row.monthlyKwh.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                                            <td className="py-2 px-2 text-right font-mono border-r border-emerald-100 text-slate-600">{row.freq.toFixed(1)}</td>
+                                            <td className="py-2 px-2 text-right font-mono text-emerald-700 font-black">{row.efficiency.toFixed(1)}%</td>
                                         </tr>
                                     ))}
                                 </tbody>
                             </table>
                         </div>
-                        <p className="text-[9px] text-slate-400 font-bold italic mt-2 px-2">{t('sim.vsdStrategyNotes', { flow: params.pressures.totalRate })}</p>
+                        <p className="text-[9px] text-slate-400 font-bold italic mt-2 px-2">* Estrategia VSD: Frecuencia ajustada para mantener Caudal Objetivo de {params.targets[params.activeScenario].rate} BPD.</p>
                     </div>
 
                     <div className="mb-0 break-inside-avoid flex-1">
@@ -319,101 +327,128 @@ export const PhaseSimulations: React.FC<Props> = ({ params, setParams, pump, fre
         setIsPlaying(false);
     };
 
+    useEffect(() => {
+        // Default to 'min' scenario for lifecycle analysis if not already set or first time
+        if (params.activeScenario === 'target') {
+            handleSwitchScenario('min');
+        }
+    }, []);
+
     const simulationData = useMemo(() => {
-        if (!pump) return { timeData: [], startFlow: 0, endFlow: 0, totalCost: 0, startOP: { flow: 0, head: 0 }, startLoad: 0, endLoad: 0 };
+        if (!pump) return { timeData: [], allScenarios: {}, totalCost: 0, startLoad: 0, endLoad: 0 };
 
-        const sim = params.simulation || { annualWearPercent: 0, simulationMonths: 36, costPerKwh: 0.1 };
-        const { annualWearPercent = 0, simulationMonths = 36, costPerKwh = 0.1 } = sim;
-        const timeData = [];
-        let totalCumulativeCost = 0;
-
+        const simParams = params.simulation || { annualWearPercent: 0, simulationMonths: 36, costPerKwh: 0.1 };
+        const { annualWearPercent = 0, simulationMonths = 36, costPerKwh = 0.1 } = simParams;
         const baseFreq = pump.nameplateFrequency || 60;
 
-        // 1. Encontrar el punto de diseño (Mes 0)
-        // Usamos la frecuencia de diseño directamente para el mes 0
-        let designFlow = 0;
-        let designHead = 0;
+        const scenariosKeys = ['min', 'target', 'max'] as const;
+        const allScenarios: Record<string, any[]> = { min: [], target: [], max: [] };
+        let grandTotalCost = 0;
 
-        for (let m = 0; m <= simulationMonths; m++) {
-            // Desgaste anual prorrateado mensualmente (12 meses)
-            const wearPct = (annualWearPercent / 12) * m;
-            const headWearFactor = Math.max(0.01, 1 - (wearPct / 100));
-            const effWearFactor = Math.max(0.01, 1 - ((wearPct * 1.2) / 100));
+        for (const sKey of scenariosKeys) {
+            const targetData = params.targets[sKey];
+            const sStartFreq = targetData.frequency || 60;
 
-            const degradedPump = {
-                ...pump,
-                h0: pump.h0 * headWearFactor, h1: pump.h1 * headWearFactor, h2: pump.h2 * headWearFactor,
-                h3: pump.h3 * headWearFactor, h4: pump.h4 * headWearFactor, h5: pump.h5 * headWearFactor,
+            // Create a local param set for this scenario
+            const sParams = {
+                ...params,
+                inflow: { ...params.inflow, ip: targetData.ip },
+                fluids: { ...params.fluids, waterCut: targetData.waterCut, gor: targetData.gor, glr: targetData.gor * (1 - targetData.waterCut / 100) },
+                pressures: { ...params.pressures, totalRate: targetData.rate }
             };
 
-            let requiredFreq = frequency; // Default para el inicio
+            const sTimeData = [];
+            let totalCumulativeCost = 0;
 
-            if (m === 0) {
-                // MES 0: Punto de operación exacto con frecuencia de diseño
-                let lowQ = 0, highQ = (pump.maxGraphRate || 5000) * (frequency / baseFreq) * 1.5;
-                for (let k = 0; k < 25; k++) {
-                    const midQ = (lowQ + highQ) / 2;
-                    if ((calculateAffinityHead(midQ, frequency, baseFreq, degradedPump) || 0) > calculateTDH(midQ, params)) lowQ = midQ; else highQ = midQ;
-                }
-                designFlow = (lowQ + highQ) / 2;
-                designHead = calculateTDH(designFlow, params);
-                requiredFreq = frequency;
-            } else {
-                // MESES > 0: Intentar mantener el caudal de diseño incrementando frecuencia (Estrategia VSD)
+            const designFlowBase = (params.simulation.qInitial !== undefined ? params.simulation.qInitial : targetData.rate) || 500;
+            const annualFlowGrowth = params.simulation.ipType === 'variable' ? (params.simulation.qGrowthRate || 0) : 0;
+            const monthlyFlowGrowthFactor = annualFlowGrowth / 100 / 12;
+
+            for (let m = 0; m <= simulationMonths; m++) {
+                const wearPct = (m * annualWearPercent) / Math.max(1, simulationMonths);
+                const headWearFactor = Math.max(0.01, 1 - (wearPct / 100));
+                const effWearFactorApplied = Math.max(0.01, 1 - ((wearPct * 1.2) / 100));
+
+                const targetFlow = designFlowBase * (1 + (m * monthlyFlowGrowthFactor));
+
+                const degradedPump = {
+                    ...pump,
+                    h0: pump.h0 * headWearFactor, h1: pump.h1 * headWearFactor, h2: pump.h2 * headWearFactor,
+                    h3: pump.h3 * headWearFactor, h4: pump.h4 * headWearFactor, h5: pump.h5 * headWearFactor,
+                };
+
+                // --- 1. CALCULATE PWF MIN & IP REQUISITES ---
+                const pStatic = sParams.inflow.pStatic || 1000;
+                const perfsTVD = interpolateTVD(sParams.wellbore.midPerfsMD || sParams.pressures.pumpDepthMD, params.survey);
+                const pumpTVD = interpolateTVD(sParams.pressures.pumpDepthMD, params.survey);
+                const dTVD_below = Math.max(0, perfsTVD - pumpTVD);
+                const waterSG = sParams.fluids.geWater || 1.0;
+                const oilSg = 141.5 / (131.5 + (sParams.fluids.apiOil || 35));
+                const wc = (sParams.fluids.waterCut || 0) / 100;
+                const mixSgLiq = (waterSG * wc) + (oilSg * (1 - wc));
+
+                // Pwf Min = 200 psi PIP min + Hydrostatic from perfs to pump
+                const pwfMin = 200 + (dTVD_below * 0.433 * mixSgLiq);
+
+                // --- 2. FIND FREQUENCY TO ACHIEVE targetFlow ---
+                // We must solve for frequency F such that PumpHead(F, targetFlow) = SystemHead(targetFlow)
+                // System head is constant for a fixed targetFlow (ignoring PVT changes due to Pwf)
+                const hSys = calculateTDH(targetFlow, sParams);
                 let lowF = 30, highF = 95;
                 for (let k = 0; k < 20; k++) {
                     const midF = (lowF + highF) / 2;
-                    const hPump = calculateAffinityHead(designFlow, midF, baseFreq, degradedPump) || 0;
-                    const hSys = calculateTDH(designFlow, params);
+                    const hPump = calculateAffinityHead(targetFlow, midF, baseFreq, degradedPump) || 0;
                     if (hPump > hSys) highF = midF; else lowF = midF;
                 }
-                requiredFreq = (lowF + highF) / 2;
+                const requiredFreq = (lowF + highF) / 2;
+
+                // --- 3. GET SYSTEM RESULTS ---
+                const res = calculateSystemResults(targetFlow, null, sParams, degradedPump, requiredFreq);
+
+                // Calculate Required IP based on Pstatic and PwfMin
+                const safeDrawdown = Math.max(1, pStatic - pwfMin);
+                const calculatedIp = targetFlow / safeDrawdown;
+
+                // wornBhp is the shaft power required accounting for additional internal wear
+                const wornBhp = (res.hpTotal || 0.1) / effWearFactorApplied;
+                const ratedHp = (params.selectedMotor?.hp || params.motorHp || 100);
+                const loadPct = (wornBhp / ratedHp) * 100;
+
+                // Recalculate motor performance for the worn BHP load
+                const mPerf = params.selectedMotor ? calculateMotorPoly(loadPct, params.selectedMotor) : { ampsPct: 30 + (loadPct * 0.7), pf: 85, rpm: 3500, eff: 90 };
+
+                // System KW is the power at the surface (VSD input), adjusted for wear
+                const wornSystemKw = (res.electrical.systemKw || 0) / effWearFactorApplied;
+                const monthlyKwh = wornSystemKw * 24 * 30;
+                const monthlyCost = isNaN(monthlyKwh) ? 0 : monthlyKwh * costPerKwh;
+                totalCumulativeCost += monthlyCost;
+
+                sTimeData.push({
+                    month: m, scenario: sKey, wearPct, freq: requiredFreq, cumulativeCost: totalCumulativeCost, monthlyCost,
+                    flow: Math.round(targetFlow), head: Math.round(res.tdh || 0),
+                    bsw: sParams.fluids.waterCut, ip: calculatedIp, pwf: res.pwf || 0,
+                    pwfMin,
+                    efficiency: (res.effEstimated || 0) * effWearFactorApplied,
+                    bhp: wornBhp, kw: wornSystemKw, monthlyKwh, motorLoad: loadPct,
+                    ampsPct: mPerf.ampsPct, pf: mPerf.pf, rpm: mPerf.rpm, motorEff: mPerf.eff,
+                    op: { flow: Math.round(targetFlow), head: Math.round(res.tdh || 0) }
+                });
             }
-
-            // Calcular el caudal real resultante bajo esta frecuencia (por si queda corto en limite 95Hz)
-            let currentFlow = designFlow;
-            if (requiredFreq > 94.9 || m === 0) {
-                let lowQ = 0, highQ = (pump.maxGraphRate || 5000) * (requiredFreq / baseFreq) * 1.5;
-                for (let k = 0; k < 25; k++) {
-                    const midQ = (lowQ + highQ) / 2;
-                    if ((calculateAffinityHead(midQ, requiredFreq, baseFreq, degradedPump) || 0) > calculateTDH(midQ, params)) lowQ = midQ; else highQ = midQ;
-                }
-                currentFlow = (lowQ + highQ) / 2;
-            }
-
-            const res = calculateSystemResults(currentFlow, null, params, degradedPump, requiredFreq);
-
-            // La potencia se ve afectada por la caída de eficiencia del desgaste
-            const wornBhp = (res.hpTotal || 0.1) / effWearFactor;
-
-            // Load factor relativo al motor seleccionado
-            const ratedHp = (params.selectedMotor?.hp || params.motorHp || 100);
-            const loadPct = (wornBhp / ratedHp) * 100;
-
-            const mPerf = params.selectedMotor ? calculateMotorPoly(loadPct, params.selectedMotor) : { ampsPct: 30 + (loadPct * 0.7), pf: 85, rpm: 3500, eff: 90 };
-            const wornKw = (wornBhp * 0.746) / (Math.max(1, mPerf.eff) / 100);
-
-            const monthlyCost = isNaN(wornKw) ? 0 : wornKw * 24 * 30 * costPerKwh;
-            totalCumulativeCost += monthlyCost;
-
-            timeData.push({
-                month: m, wearPct, freq: requiredFreq, cumulativeCost: totalCumulativeCost, monthlyCost,
-                flow: Math.round(currentFlow), head: Math.round(res.tdh || 0),
-                efficiency: (res.effEstimated || 0) * effWearFactor,
-                bhp: wornBhp, kw: wornKw, motorLoad: loadPct,
-                ampsPct: mPerf.ampsPct, pf: mPerf.pf, rpm: mPerf.rpm, motorEff: mPerf.eff,
-                op: { flow: Math.round(currentFlow), head: Math.round(res.tdh || 0) }
-            });
+            allScenarios[sKey] = sTimeData;
+            if (sKey === params.activeScenario) grandTotalCost = totalCumulativeCost;
         }
 
+        const activeData = allScenarios[params.activeScenario] || [];
+
         return {
-            timeData,
-            startFlow: timeData[0]?.flow || 0,
-            endFlow: timeData[timeData.length - 1]?.flow || 0,
-            totalCost: totalCumulativeCost,
-            startOP: timeData[0]?.op || { flow: 0, head: 0 },
-            startLoad: timeData[0]?.motorLoad || 0,
-            endLoad: timeData[timeData.length - 1]?.motorLoad || 0
+            timeData: activeData,
+            allScenarios,
+            totalCost: grandTotalCost,
+            startFlow: activeData[0]?.flow || 0,
+            endFlow: activeData[activeData.length - 1]?.flow || 0,
+            startOP: activeData[0]?.op || { flow: 0, head: 0 },
+            startLoad: activeData[0]?.motorLoad || 0,
+            endLoad: activeData[activeData.length - 1]?.motorLoad || 0
         };
     }, [pump, params, frequency]);
 
@@ -422,9 +457,9 @@ export const PhaseSimulations: React.FC<Props> = ({ params, setParams, pump, fre
         if (!pump) return [];
         const baseFreq = pump.nameplateFrequency || 60;
         const ratio = frequency / baseFreq;
-        const sim = params.simulation || { annualWearPercent: 0 };
-        const hWF = 1 - ((sim.annualWearPercent / 100) / 12 * currentMonth);
-        const eWF = 1 - (((sim.annualWearPercent * 1.2) / 100) / 12 * currentMonth);
+        const sim = params.simulation || { annualWearPercent: 0, simulationMonths: 36 };
+        const hWF = 1 - (((currentMonth * sim.annualWearPercent) / Math.max(1, sim.simulationMonths)) / 100);
+        const eWF = 1 - (((currentMonth * sim.annualWearPercent * 1.2) / Math.max(1, sim.simulationMonths)) / 100);
 
         const wc = params.fluids.waterCut / 100;
         const oilSg = 141.5 / (131.5 + params.fluids.apiOil);
@@ -470,182 +505,274 @@ export const PhaseSimulations: React.FC<Props> = ({ params, setParams, pump, fre
     }, [isPlaying, params.simulation?.simulationMonths, playbackSpeed]);
 
     const currentStats = simulationData.timeData[currentMonth];
-
     if (!pump) return <div className="p-20 text-center"><AlertTriangle className="w-16 h-16 mx-auto mb-6 text-txt-muted opacity-20" /><span className="text-xl font-black text-txt-muted uppercase tracking-[0.4em] opacity-40">System Core Offline: Pump Required</span></div>;
 
     return (
-        <div className="min-h-full flex flex-col gap-6 animate-fadeIn pb-12 px-1">
+        <div className="min-h-full flex flex-col gap-5 animate-fadeIn pb-8 px-2">
             {showReport && <SimulationReport onClose={() => setShowReport(false)} data={simulationData} params={params} pump={pump} />}
 
-            {/* HEADER */}
-            <div className="flex justify-between items-center px-4 shrink-0 h-16 glass-surface rounded-3xl border border-white/5 shadow-xl relative overflow-hidden group">
-                <div className="absolute left-0 top-0 w-2 h-full bg-primary shadow-glow-primary"></div>
-                <div className="flex items-center gap-5 relative z-10 pl-2">
-                    <div className="p-3 bg-primary/20 rounded-2xl border border-white/10 shadow-glow-primary">
-                        <Clock className="w-6 h-6 text-primary" />
+            {/* --- TOP BAR / COMMAND CENTER --- */}
+            <div className="flex justify-between items-center px-6 h-16 glass-surface rounded-[2rem] border border-white/10 shadow-2xl relative overflow-hidden shrink-0">
+                <div className="absolute left-0 top-0 w-1.5 h-full bg-gradient-to-b from-primary to-secondary shadow-glow-primary"></div>
+                <div className="flex items-center gap-4 relative z-10">
+                    <div className="p-2.5 bg-primary/10 rounded-xl border border-primary/20 shadow-glow-primary/20">
+                        <Clock className="w-5 h-5 text-primary" />
                     </div>
                     <div>
-                        <h2 className="text-xl font-black text-txt-main uppercase tracking-tighter leading-none">Lifecycle Command Center</h2>
-                        <p className="text-[10px] text-txt-muted font-black uppercase tracking-[0.2em] mt-1.5 opacity-60">System Degradation & OPEX Analytics</p>
+                        <h2 className="text-lg font-black text-txt-main uppercase tracking-tight leading-none">ESP Lifecycle Simulator</h2>
+                        <p className="text-[9px] text-txt-muted font-black uppercase tracking-widest mt-1 opacity-50">Operational Intelligence & Degradation Analysis</p>
                     </div>
                 </div>
-                <div className="flex items-center gap-4 relative z-10 pr-2">
-                    <div className="flex glass-surface p-1 rounded-2xl border border-white/5 shadow-inner shrink-0 relative overflow-hidden h-11 items-center px-1.5">
+
+                <div className="flex items-center gap-4 relative z-10">
+                    <div className="flex bg-surface/40 p-1 rounded-xl border border-white/5 shadow-inner">
                         {['min', 'target', 'max'].map(s => (
-                            <button key={s} onClick={() => handleSwitchScenario(s as any)} className={`px-5 py-2 text-[10px] font-black uppercase rounded-xl transition-all duration-500 relative z-10 ${params.activeScenario === s ? 'bg-primary/20 text-primary shadow-glow-primary/20 border border-primary/20' : 'text-txt-muted hover:text-txt-main'}`}>
-                                {s === 'min' ? 'IDLE' : s === 'target' ? 'OBJ' : 'LIMIT'}
+                            <button
+                                key={s}
+                                onClick={() => handleSwitchScenario(s as any)}
+                                className={`px-4 py-1.5 text-[9px] font-black uppercase rounded-lg transition-all duration-300 ${params.activeScenario === s ? 'bg-primary text-white shadow-glow-primary' : 'text-txt-muted hover:text-txt-main hover:bg-white/5'}`}
+                            >
+                                {s === 'min' ? 'Idle' : s === 'target' ? 'Design' : 'Limit'}
                             </button>
                         ))}
                     </div>
-                    <button onClick={() => setShowReport(true)} className="bg-secondary hover:bg-secondary/80 text-white px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase transition-all flex items-center gap-2.5 shadow-xl shadow-secondary/20 hover:shadow-secondary/40 active:scale-95 light-sweep h-11">
-                        <Printer className="w-4 h-4" /> Comprehensive Report
+                    <button onClick={() => setShowReport(true)} className="bg-secondary hover:bg-secondary/80 text-white px-5 py-2 rounded-xl text-[9px] font-black uppercase transition-all flex items-center gap-2 shadow-lg shadow-secondary/20 hover:shadow-secondary/40 active:scale-95 h-10">
+                        <Printer className="w-3.5 h-3.5" /> Full Report
                     </button>
                 </div>
             </div>
 
-            <div className="grid grid-cols-12 gap-6 flex-1">
+            <div className="grid grid-cols-12 gap-5 flex-1 min-h-0">
 
-                {/* TIMELINE & CONFIG (Left Side) */}
-                <div className="col-span-12 lg:col-span-4 flex flex-col gap-6 overflow-y-auto custom-scrollbar pr-2 min-h-0">
+                {/* --- LEFT SIDEBAR: CONTROL & CONFIG --- */}
+                <div className="col-span-12 lg:col-span-3 flex flex-col gap-5 overflow-y-auto custom-scrollbar pr-1">
 
-                    {/* PLAYER CONTROL CENTER */}
-                    <div className="glass-surface border border-white/5 rounded-[2.5rem] p-8 relative overflow-hidden group shadow-2xl flex flex-col justify-between h-[340px]">
-                        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000"></div>
+                    {/* TIMELINE COCKPIT */}
+                    <div className="glass-surface border border-white/10 rounded-[2.5rem] p-6 shadow-2xl relative overflow-hidden group flex flex-col gap-6">
+                        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5 opacity-50"></div>
                         <div className="relative z-10">
-                            <div className="flex justify-between items-start mb-10">
+                            <div className="flex justify-between items-center mb-6">
                                 <div>
-                                    <h3 className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-2">Simulated Lifecycle</h3>
-                                    <div className="flex items-baseline gap-3">
-                                        <span className="text-6xl font-black text-txt-main tracking-tighter leading-none">{currentMonth}</span>
-                                        <span className="text-sm font-black text-txt-muted uppercase tracking-[0.2em]">Months / {params.simulation.simulationMonths}</span>
+                                    <h3 className="text-[9px] font-black text-primary uppercase tracking-[0.2em] mb-1">Time Elapsed</h3>
+                                    <div className="flex items-baseline gap-2">
+                                        <span className="text-5xl font-black text-txt-main tracking-tighter">{currentMonth}</span>
+                                        <span className="text-[10px] font-black text-txt-muted uppercase opacity-50">MO / {params.simulation.simulationMonths}</span>
                                     </div>
                                 </div>
-                                <div className="flex gap-3">
-                                    <button onClick={() => setIsPlaying(!isPlaying)} className={`h-16 w-16 rounded-[2rem] flex items-center justify-center transition-all shadow-2xl ${isPlaying ? 'bg-surface-light text-secondary border border-secondary/20 animate-pulse' : 'bg-primary text-white hover:scale-110 shadow-glow-primary'}`}>
-                                        {isPlaying ? <Pause className="w-6 h-6 fill-current" /> : <Play className="w-6 h-6 fill-current ml-1" />}
+                                <div className="flex gap-2">
+                                    <button onClick={() => setIsPlaying(!isPlaying)} className={`h-12 w-12 rounded-2xl flex items-center justify-center transition-all shadow-xl ${isPlaying ? 'bg-surface-light text-secondary border border-secondary/20 shadow-glow-secondary/20' : 'bg-primary text-white hover:scale-105 shadow-glow-primary'}`}>
+                                        {isPlaying ? <Pause className="w-5 h-5 fill-current" /> : <Play className="w-5 h-5 fill-current ml-0.5" />}
                                     </button>
-                                    <button onClick={() => { setIsPlaying(false); setCurrentMonth(0); }} className="h-16 w-16 rounded-[2rem] bg-surface-light border border-white/5 text-txt-muted hover:text-txt-main flex items-center justify-center hover:bg-white/10 transition-all active:rotate-[-90deg]">
-                                        <RotateCcw className="w-6 h-6" />
+                                    <button onClick={() => { setIsPlaying(false); setCurrentMonth(0); }} className="h-12 w-12 rounded-2xl bg-surface-light border border-white/5 text-txt-muted hover:text-txt-main flex items-center justify-center hover:bg-white/10 transition-all">
+                                        <RotateCcw className="w-5 h-5" />
                                     </button>
                                 </div>
                             </div>
-                            <div className="space-y-6">
-                                <input type="range" min="0" max={params.simulation.simulationMonths} value={currentMonth} onChange={(e) => { setIsPlaying(false); setCurrentMonth(parseInt(e.target.value)); }} className="w-full h-3 bg-white/5 rounded-full appearance-none cursor-pointer accent-primary hover:accent-secondary focus:ring-4 focus:ring-primary/20 border-none shadow-inner" />
-                                <div className="flex justify-between text-[9px] font-black text-txt-muted uppercase tracking-widest opacity-40">
-                                    <span>T-ZERO: DEPLOYMENT</span>
-                                    <span>T-TERM: {params.simulation.simulationMonths} MO</span>
+
+                            <div className="space-y-4">
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max={params.simulation.simulationMonths}
+                                    value={currentMonth}
+                                    onChange={(e) => { setIsPlaying(false); setCurrentMonth(parseInt(e.target.value)); }}
+                                    className="w-full h-2 bg-white/5 rounded-full appearance-none cursor-pointer accent-primary hover:accent-secondary shadow-inner"
+                                />
+                                <div className="flex justify-between text-[8px] font-black text-txt-muted uppercase tracking-widest opacity-40">
+                                    <span>Deployment</span>
+                                    <span>End of Life</span>
                                 </div>
+                            </div>
+                        </div>
+
+                        {/* QUICK STATS IN SIDEBAR */}
+                        <div className="grid grid-cols-2 gap-3 relative z-10 pt-4 border-t border-white/5">
+                            <div className="flex flex-col">
+                                <span className="text-[8px] font-black text-txt-muted uppercase opacity-40 mb-1">Monthly OPEX</span>
+                                <span className="text-sm font-black text-emerald-500">${(currentStats?.monthlyCost || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                            </div>
+                            <div className="flex flex-col items-end">
+                                <span className="text-[8px] font-black text-txt-muted uppercase opacity-40 mb-1">Cumulative</span>
+                                <span className="text-sm font-black text-txt-main">${(currentStats?.cumulativeCost || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                             </div>
                         </div>
                     </div>
 
-                    {/* LIVE SIM METRICS GRID */}
-                    <div className="grid grid-cols-2 gap-4">
-                        <PremiumSimMetric label={t('tele.flow')} value={(currentStats?.flow || 0)} unit="BPD" icon={Droplets} color="primary" trend={currentStats ? ((currentStats.flow - simulationData.startFlow) / Math.max(1, simulationData.startFlow) * 100) : 0} />
-                        <PremiumSimMetric label={t('tele.head')} value={(currentStats?.head || 0)} unit="FT" icon={ArrowDown} color="secondary" trend={currentStats ? ((currentStats.head - simulationData.startOP.head) / Math.max(1, simulationData.startOP.head) * 100) : 0} />
-                        <PremiumSimMetric label={t('p5.efficiency')} value={(currentStats?.efficiency || 0).toFixed(1)} unit="%" icon={Zap} color="secondary" alert={(currentStats?.efficiency || 0) < 40} />
-                        <PremiumSimMetric label={t('p5.motorLoad')} value={(currentStats?.ampsPct || 0).toFixed(1)} unit="%" icon={Gauge} color="primary" alert={(currentStats?.ampsPct || 0) > 95} />
-                    </div>
-
-                    {/* CONFIG CARD */}
-                    <div className="glass-surface-light border border-white/5 rounded-[2rem] p-6 shadow-xl relative overflow-hidden group">
-                        <div className="flex items-center gap-3 mb-6">
-                            <Settings className="w-4 h-4 text-txt-muted" />
+                    {/* CONFIGURATION TOWER */}
+                    <div className="glass-surface-light border border-white/5 rounded-[2.5rem] p-6 shadow-xl flex flex-col gap-5">
+                        <div className="flex items-center gap-2 mb-1">
+                            <Settings className="w-3.5 h-3.5 text-primary" />
                             <h3 className="text-[10px] font-black text-txt-main uppercase tracking-[0.2em]">{t('sim.params')}</h3>
                         </div>
-                        <div className="grid grid-cols-1 gap-3">
-                            <PremiumParam label={t('sim.wear')} value={params.simulation.annualWearPercent} unit="%" onChange={(v) => setParams({ ...params, simulation: { ...params.simulation, annualWearPercent: v } })} />
-                            <PremiumParam label={t('sim.energy')} value={params.simulation.costPerKwh} unit="$/kWh" onChange={(v) => setParams({ ...params, simulation: { ...params.simulation, costPerKwh: v } })} />
-                            <PremiumParam label={t('sim.time')} value={params.simulation.simulationMonths} unit={t('sim.months')} onChange={(val) => setParams((prev: SystemParams) => ({ ...prev, simulation: { ...prev.simulation, simulationMonths: Number(val) } }))} />
+
+                        <div className="flex flex-col gap-3">
+                            <PremiumParam label={t('sim.wear')} value={params.simulation.annualWearPercent} unit="%" onChange={(v: any) => setParams({ ...params, simulation: { ...params.simulation, annualWearPercent: v } })} />
+                            <PremiumParam label={t('sim.energy')} value={params.simulation.costPerKwh} unit="$/kWh" onChange={(v: any) => setParams({ ...params, simulation: { ...params.simulation, costPerKwh: v } })} />
+                            <PremiumParam label={t('sim.time')} value={params.simulation.simulationMonths} unit={t('sim.months')} onChange={(val: any) => setParams((prev: SystemParams) => ({ ...prev, simulation: { ...prev.simulation, simulationMonths: Number(val) } }))} />
                         </div>
+
+                        <div className="pt-4 border-t border-white/5 flex flex-col gap-4">
+                            <div className="flex items-center justify-between">
+                                <span className="text-[9px] font-black text-txt-muted uppercase tracking-widest opacity-40">{t('sim.qType')}</span>
+                                <div className="flex bg-surface-light p-1 rounded-lg border border-white/5">
+                                    <button
+                                        onClick={() => setParams({ ...params, simulation: { ...params.simulation, ipType: 'fixed' } })}
+                                        className={`px-3 py-1 rounded-md text-[8px] font-black transition-all ${params.simulation.ipType === 'fixed' ? 'bg-primary text-white shadow-glow-primary' : 'text-txt-muted hover:text-txt-main'}`}
+                                    >
+                                        {t('sim.fixed')}
+                                    </button>
+                                    <button
+                                        onClick={() => setParams({ ...params, simulation: { ...params.simulation, ipType: 'variable' } })}
+                                        className={`px-3 py-1 rounded-md text-[8px] font-black transition-all ${params.simulation.ipType === 'variable' ? 'bg-secondary text-white shadow-glow-secondary' : 'text-txt-muted hover:text-txt-main'}`}
+                                    >
+                                        {t('sim.variable')}
+                                    </button>
+                                </div>
+                            </div>
+
+                            <PremiumParam
+                                label={params.simulation.ipType === 'variable' ? t('sim.qInitial') : t('sim.qTarget')}
+                                value={params.simulation.qInitial !== undefined ? params.simulation.qInitial : params.targets[params.activeScenario].rate}
+                                unit="BFPD"
+                                onChange={(v: any) => setParams({ ...params, simulation: { ...params.simulation, qInitial: v } })}
+                            />
+
+                            {params.simulation.ipType === 'variable' && (
+                                <PremiumParam
+                                    label={t('sim.qGrowth')}
+                                    value={params.simulation.qGrowthRate || 0}
+                                    unit="% / Yr"
+                                    onChange={(v: any) => setParams({ ...params, simulation: { ...params.simulation, qGrowthRate: v } })}
+                                />
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                        <PremiumSimMetric label={t('tele.flow')} value={(currentStats?.flow || 0)} unit="BPD" icon={Droplets} color="primary" trend={currentStats ? ((currentStats.flow - simulationData.startFlow) / Math.max(1, simulationData.startFlow) * 100) : 0} />
+                        <PremiumSimMetric label={t('tele.head')} value={(currentStats?.head || 0)} unit="FT" icon={ArrowDown} color="secondary" trend={currentStats ? ((currentStats.head - (simulationData.startOP?.head || 0)) / Math.max(1, simulationData.startOP?.head || 1) * 100) : 0} />
+                        <PremiumSimMetric label="Eff" value={(currentStats?.efficiency || 0).toFixed(1)} unit="%" icon={Zap} color="primary" alert={(currentStats?.efficiency || 0) < 40} />
+                        <PremiumSimMetric label="Load" value={(currentStats?.ampsPct || 0).toFixed(1)} unit="%" icon={Gauge} color="secondary" alert={(currentStats?.ampsPct || 0) > 95} />
                     </div>
                 </div>
 
-                {/* VISUAL ANALYTICS (Right Side) */}
-                <div className="col-span-12 lg:col-span-8 flex flex-col gap-6 overflow-y-auto custom-scrollbar pr-2 min-h-0">
+                {/* --- MAIN ANALYTICS DASHBOARD --- */}
+                <div className="col-span-12 lg:col-span-9 flex flex-col gap-5 overflow-y-auto custom-scrollbar">
 
-                    {/* PERFORMANCE CORE */}
-                    <div className="glass-surface-light rounded-[2.5rem] border border-white/5 shadow-2xl overflow-hidden p-3 relative flex flex-col shrink-0 group transition-all duration-700 min-h-[450px] lg:h-[480px]">
-                        <div className="absolute top-6 left-8 z-20 flex gap-6 text-[9px] font-black text-txt-muted uppercase tracking-[0.2em] opacity-60">
-                            <div className="flex items-center gap-2.5"><div className="w-3 h-1 bg-primary rounded-full"></div>{t('sim.newCore')}</div>
-                            <div className="flex items-center gap-2.5"><div className="w-3 h-1 bg-secondary rounded-full"></div>{t('sim.degradedState')} ({t('sim.monthLabel')} {currentMonth})</div>
+                    {/* PRIMARY VISUALIZATION GRID */}
+                    <div className="grid grid-cols-12 gap-5 min-h-[500px]">
+                        {/* THE PUMP MAP */}
+                        <div className="col-span-12 lg:col-span-8 relative">
+                            <div className="absolute top-10 left-10 z-20 flex gap-5 text-[9px] font-black text-txt-muted uppercase tracking-[0.2em] opacity-60 pointer-events-none">
+                                <div className="flex items-center gap-2"><div className="w-3 h-1 bg-primary rounded-full"></div> New</div>
+                                <div className="flex items-center gap-2"><div className="w-3 h-1 bg-secondary rounded-full"></div> Degraded (M{currentMonth})</div>
+                            </div>
+                            <PerformanceCurveMultiAxis data={multiAxisData} frequency={frequency} currentFlow={currentStats?.flow || 0} pump={pump} className="w-full h-full" />
                         </div>
-                        <div className="flex-1 bg-surface/50 rounded-[2rem] overflow-hidden mt-8 p-4">
-                            <PerformanceCurveMultiAxis data={multiAxisData} frequency={frequency} currentFlow={currentStats?.flow || 0} pump={pump} className="w-full h-full bg-transparent" />
+
+                        {/* SECONDARY INSIGHTS COLUMN */}
+                        <div className="col-span-12 lg:col-span-4 flex flex-col gap-5">
+                            {/* MOTOR PERFORMANCE / THERMAL MAP */}
+                            <div className="flex-1">
+                                <MotorCurveMultiAxis
+                                    motor={params.selectedMotor}
+                                    currentLoad={currentStats?.motorLoad || 0}
+                                    startLoad={simulationData.startLoad}
+                                    endLoad={simulationData.endLoad}
+                                    intakeTemp={params.bottomholeTemp}
+                                    className="w-full h-full"
+                                />
+                            </div>
+
+                            {/* COST EVOLUTION (Mini Chart) */}
+                            <div className="h-[220px] bg-surface rounded-[32px] border border-white/5 shadow-2xl p-6 flex flex-col relative overflow-hidden group">
+                                <div className="absolute -right-10 -bottom-10 w-32 h-32 bg-emerald-500/10 blur-[60px] rounded-full"></div>
+                                <div className="flex justify-between items-center mb-4 shrink-0 relative z-10">
+                                    <h3 className="text-[9px] font-black text-emerald-500 uppercase tracking-[0.2em]">{t('sim.monthlyEnergyChart')}</h3>
+                                    <DollarSign className="w-4 h-4 text-emerald-500 opacity-50" />
+                                </div>
+                                <div className="flex-1 min-h-0 relative z-10">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <AreaChart data={simulationData.timeData}>
+                                            <defs>
+                                                <linearGradient id="costGrad" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                                                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                                                </linearGradient>
+                                            </defs>
+                                            <Area type="monotone" dataKey="monthlyCost" stroke="#10b981" fill="url(#costGrad)" strokeWidth={3} isAnimationActive={false} />
+                                            <ReferenceLine x={currentMonth} stroke="#10b981" strokeDasharray="3 3" />
+                                        </AreaChart>
+                                    </ResponsiveContainer>
+                                </div>
+                                <div className="mt-2 text-right relative z-10">
+                                    <span className="text-xl font-black text-txt-main tracking-tighter">${(currentStats?.monthlyCost || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-6 min-h-[350px] lg:h-[380px]">
-                        {/* LOAD PROFILE SENSITIVITY */}
-                        <div className="glass-surface rounded-[2rem] border border-white/5 shadow-xl p-6 flex flex-col h-full bg-gradient-to-b from-secondary/5 to-transparent">
-                            <div className="flex justify-between items-center mb-6 shrink-0">
-                                <div>
-                                    <h3 className="text-[10px] font-black text-secondary uppercase tracking-[0.3em] mb-1">{t('sim.loadSensitivityChart')}</h3>
-                                    <div className="text-3xl font-black text-txt-main tracking-tighter">{(currentMonth === 0 ? simulationData.timeData[0]?.ampsPct : currentStats?.ampsPct || 0).toFixed(1)}% <small className="text-xs text-txt-muted uppercase">{t('p6.amps')}</small></div>
+                    {/* --- THE MASTER DATA LOG (TABLE) --- */}
+                    <div className="glass-surface-light rounded-[2.5rem] border border-white/10 shadow-2xl overflow-hidden flex flex-col shrink-0 group transition-all duration-700">
+                        <div className="flex items-center justify-between px-8 py-5 bg-surface/40 border-b border-white/5 shrink-0">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-primary/10 rounded-lg">
+                                    <Layers className="w-4 h-4 text-primary" />
                                 </div>
-                                <div className="p-3 bg-secondary/10 rounded-2xl border border-secondary/20"><Activity className="w-6 h-6 text-secondary" /></div>
+                                <div>
+                                    <h3 className="text-[11px] font-black text-txt-main uppercase tracking-[0.2em]">Lifecycle Intelligence Table</h3>
+                                    <p className="text-[8px] text-txt-muted uppercase tracking-widest font-bold opacity-50">High-Resolution Temporal Log</p>
+                                </div>
                             </div>
-                            <div className="flex-1 min-h-0 rounded-2xl overflow-hidden bg-black/10 p-2">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <ComposedChart data={simulationData.timeData} margin={{ top: 10, right: 30, left: 10, bottom: 20 }}>
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(var(--color-text-muted), 0.2)" />
-                                        <XAxis dataKey="month" stroke="rgb(var(--color-text-main))" fontSize={9} tickFormatter={(v) => `M${v}`} />
-                                        <YAxis domain={[0, 100]} stroke="rgb(var(--color-text-main))" fontSize={9} tickFormatter={(v) => `${v}%`} />
-                                        <RechartsTooltip
-                                            contentStyle={{ backgroundColor: 'rgb(var(--color-surface))', border: '1px solid rgba(var(--color-text-main), 0.1)', borderRadius: '12px', fontSize: '10px', fontWeight: 'bold', color: 'rgb(var(--color-text-main))' }}
-                                            itemStyle={{ padding: '2px 0' }}
-                                        />
-                                        <Line type="monotone" dataKey="ampsPct" stroke="#f59e0b" strokeWidth={4} dot={false} name="Amps Load" isAnimationActive={false} />
-                                        <Line type="monotone" dataKey="motorEff" stroke="#10b981" strokeWidth={2} dot={false} name="Motor Eff" isAnimationActive={false} />
-                                        <ReferenceLine x={currentMonth} stroke="#f59e0b" strokeDasharray="3 3" strokeWidth={2} />
-                                    </ComposedChart>
-                                </ResponsiveContainer>
+                            <div className="flex gap-4 items-center">
+                                <div className="flex items-center gap-2 px-3 py-1.5 bg-black/20 rounded-xl border border-white/5">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                                    <span className="text-[9px] font-black text-txt-muted uppercase">Active Scenario: {params.activeScenario}</span>
+                                </div>
                             </div>
                         </div>
-
-                        {/* MONTHLY ENERGY COST */}
-                        <div className="glass-surface rounded-[2rem] border border-white/5 shadow-xl p-6 flex flex-col h-full bg-gradient-to-b from-emerald-500/5 to-transparent">
-                            <div className="flex justify-between items-center mb-6 shrink-0">
-                                <div>
-                                    <h3 className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.3em] mb-1">{t('sim.monthlyEnergyChart')}</h3>
-                                    <div className="text-3xl font-black text-txt-main tracking-tighter">${(currentStats?.monthlyCost || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}</div>
-                                </div>
-                                <div className="p-3 bg-emerald-500/10 rounded-2xl border border-emerald-500/20"><DollarSign className="w-6 h-6 text-emerald-500" /></div>
-                            </div>
-                            <div className="flex-1 min-h-0 rounded-2xl overflow-hidden bg-black/10 p-2">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <AreaChart data={simulationData.timeData} margin={{ top: 10, right: 30, left: 10, bottom: 20 }}>
-                                        <defs>
-                                            <linearGradient id="mainCostGrad" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-                                                <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                                            </linearGradient>
-                                        </defs>
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(var(--color-text-muted), 0.2)" />
-                                        <XAxis dataKey="month" stroke="rgb(var(--color-text-main))" fontSize={9} tickFormatter={(v) => `M${v}`} />
-                                        <YAxis stroke="rgb(var(--color-text-main))" fontSize={9} tickFormatter={(v) => `$${v}`} />
-                                        <RechartsTooltip
-                                            contentStyle={{ backgroundColor: 'rgb(var(--color-surface))', border: '1px solid rgba(var(--color-text-main), 0.1)', borderRadius: '12px', fontSize: '10px', fontWeight: 'bold', color: 'rgb(var(--color-text-main))' }}
-                                            formatter={(v: any) => [`$${Number(v).toLocaleString()}`, 'Cost']}
-                                        />
-                                        <Area type="monotone" dataKey="monthlyCost" stroke="#10b981" fill="url(#mainCostGrad)" strokeWidth={4} isAnimationActive={false} />
-                                        <ReferenceLine x={currentMonth} stroke="#10b981" strokeDasharray="3 3" strokeWidth={2} />
-                                    </AreaChart>
-                                </ResponsiveContainer>
-                            </div>
+                        <div className="max-h-[500px] overflow-auto custom-scrollbar">
+                            <table className="w-full text-[10px] text-left border-collapse">
+                                <thead className="bg-surface/60 text-txt-muted uppercase font-black sticky top-0 z-20 backdrop-blur-md">
+                                    <tr>
+                                        <th className="py-4 px-6 border-b border-white/5">Month</th>
+                                        <th className="py-4 px-3 border-b border-white/5 text-right">BFPD</th>
+                                        <th className="py-4 px-3 border-b border-white/5 text-right">BSW</th>
+                                        <th className="py-4 px-3 border-b border-white/5 text-right">IP</th>
+                                        <th className="py-4 px-3 border-b border-white/5 text-right">PWF</th>
+                                        <th className="py-4 px-3 border-b border-white/5 text-right text-danger/60">PWF Min</th>
+                                        <th className="py-4 px-3 border-b border-white/5 text-right">% Degr</th>
+                                        <th className="py-4 px-3 border-b border-white/5 text-right">kW (Sys)</th>
+                                        <th className="py-4 px-3 border-b border-white/5 text-right text-emerald-500">kWh/mo</th>
+                                        <th className="py-4 px-3 border-b border-white/5 text-right">Freq Hz</th>
+                                        <th className="py-4 px-6 border-b border-white/5 text-right">%Eff</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-white/5 font-bold">
+                                    {simulationData.timeData.map((row: any, m: number) => {
+                                        const isActive = m === currentMonth;
+                                        return (
+                                            <tr key={m} className={`hover:bg-white/5 transition-colors group/row ${isActive ? 'bg-primary/10 text-white' : 'text-txt-muted'}`}>
+                                                <td className={`py-3 px-6 font-black ${isActive ? 'text-primary' : 'text-txt-main opacity-40'} transition-all`}>{m}</td>
+                                                <td className="py-3 px-3 text-right font-mono text-txt-main">{row.flow}</td>
+                                                <td className="py-3 px-3 text-right font-mono">{row.bsw.toFixed(1)}</td>
+                                                <td className="py-3 px-3 text-right font-mono text-primary font-black">{row.ip.toFixed(2)}</td>
+                                                <td className={`py-3 px-3 text-right font-mono ${row.pwf < row.pwfMin ? 'text-danger animate-pulse' : ''}`}>{row.pwf.toFixed(0)}</td>
+                                                <td className="py-3 px-3 text-right font-mono text-txt-muted/30 text-[9px] italic">{row.pwfMin.toFixed(0)}</td>
+                                                <td className="py-3 px-3 text-right font-mono text-danger/80">{row.wearPct.toFixed(2)}%</td>
+                                                <td className="py-3 px-3 text-right font-mono text-primary/80">{row.kw.toFixed(1)}</td>
+                                                <td className="py-3 px-3 text-right font-mono text-emerald-500/80">{row.monthlyKwh.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                                                <td className="py-3 px-3 text-right font-mono text-secondary/80">{row.freq.toFixed(1)}</td>
+                                                <td className="py-3 px-6 text-right font-mono text-success/80">{row.efficiency.toFixed(1)}%</td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
                         </div>
-
-                        {/* MOTOR BEHAVIOR */}
-                        <div className="glass-surface rounded-[2rem] border border-white/5 shadow-xl p-6 flex flex-col h-full bg-gradient-to-b from-secondary/5 to-transparent">
-                            <div className="flex justify-between items-center mb-6 shrink-0">
-                                <div>
-                                    <h3 className="text-[10px] font-black text-secondary uppercase tracking-[0.3em] mb-1">{t('sim.thermalTorque')}</h3>
-                                    <div className="text-3xl font-black text-txt-main tracking-tighter">{(currentStats?.motorLoad || 0).toFixed(1)}% <small className="text-xs text-txt-muted uppercase">{t('p5.motorLoad')}</small></div>
-                                </div>
-                                <div className="p-3 bg-secondary/10 rounded-2xl border border-secondary/20"><Zap className="w-6 h-6 text-secondary" /></div>
-                            </div>
-                            <div className="flex-1 min-h-0 rounded-2xl overflow-hidden bg-black/10">
-                                <MotorCurveMultiAxis motor={params.selectedMotor} currentLoad={currentStats?.motorLoad || 0} startLoad={simulationData.startLoad} endLoad={simulationData.endLoad} className="w-full h-full bg-transparent" />
+                        <div className="p-4 bg-surface/20 border-t border-white/5 flex justify-end shrink-0">
+                            <div className="text-[9px] font-black text-txt-muted uppercase tracking-widest opacity-40">
+                                Total OPEX Estimated: <span className="text-txt-main ml-2">${simulationData.totalCost.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                             </div>
                         </div>
                     </div>
@@ -654,6 +781,24 @@ export const PhaseSimulations: React.FC<Props> = ({ params, setParams, pump, fre
         </div>
     );
 };
+
+
+
+const PremiumParam = ({ label, value, unit, onChange }: any) => (
+    <div className="glass-surface-light border border-white/5 rounded-xl p-3 flex justify-between items-center group hover:bg-white/5 transition-all">
+        <span className="text-[9px] font-black text-txt-muted uppercase tracking-widest opacity-50">{label}</span>
+        <div className="flex items-center gap-2">
+            <input
+                type="number"
+                step="0.1"
+                value={value}
+                onChange={(e) => onChange(parseFloat(e.target.value))}
+                className="bg-transparent text-right text-xs font-black text-txt-main outline-none w-14 font-mono focus:text-primary transition-colors"
+            />
+            <span className="text-[9px] font-black text-txt-muted uppercase opacity-30">{unit}</span>
+        </div>
+    </div>
+);
 
 const PremiumSimMetric = ({ label, value, unit, icon: Icon, color, trend, alert }: any) => (
     <div className={`glass-surface rounded-2xl border ${alert ? 'border-danger shadow-glow-danger/20' : 'border-white/5'} p-5 flex flex-col justify-between group h-[130px] relative overflow-hidden transition-all hover:scale-[1.02] light-sweep`}>
@@ -674,16 +819,6 @@ const PremiumSimMetric = ({ label, value, unit, icon: Icon, color, trend, alert 
                     {trend >= 0 ? '↑' : '↓'} {Math.abs(trend).toFixed(1)}% vs Start
                 </div>
             )}
-        </div>
-    </div>
-);
-
-const PremiumParam = ({ label, value, unit, onChange }: any) => (
-    <div className="glass-surface-light border border-white/5 rounded-xl p-3 flex justify-between items-center group hover:bg-white/5 transition-all">
-        <span className="text-[9px] font-black text-txt-muted uppercase tracking-widest opacity-60">{label}</span>
-        <div className="flex items-center gap-2">
-            <input type="number" step="0.1" value={value} onChange={(e) => onChange(parseFloat(e.target.value))} className="bg-transparent text-right text-xs font-black text-txt-main outline-none w-12 font-mono" />
-            <span className="text-[9px] font-black text-txt-muted uppercase opacity-40">{unit}</span>
         </div>
     </div>
 );

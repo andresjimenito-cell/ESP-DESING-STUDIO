@@ -1337,8 +1337,15 @@ export const Phase6: React.FC<Props> = ({ params, setParams, pump, designFreq, t
                 if (validStatus[key]) {
                     const h = calcH(f);
                     if (h > 5) {
-                        point[key] = Number(h.toFixed(1)); // Original (100%)
-                        point[adjKey] = Number((h * activeKh).toFixed(1)); // Degraded
+                        if (chartMode === 'comparative') {
+                            point[key] = Number(h.toFixed(1)); // Original (100%)
+                            point[adjKey] = Number((h * activeKh).toFixed(1)); // Degraded
+                        } else {
+                            // Monitoring Mode: Show only the Adjusted ones as the main reference
+                            // Use the standard key so it looks "perfect" like Phase 5
+                            point[key] = Number((h * khFactor).toFixed(1));
+                            point[adjKey] = null;
+                        }
                     }
                     else { validStatus[key] = false; point[key] = null; point[adjKey] = null; }
                 }
@@ -1359,7 +1366,6 @@ export const Phase6: React.FC<Props> = ({ params, setParams, pump, designFreq, t
                 const h = calcH(targetFreq);
                 if (h >= 0) {
                     point.designPumpCurve = Number(h.toFixed(1));
-                    // ... (mapping preserved)
                     const perf = calcPerf(targetFreq, h);
                     point.headNew = Number(h.toFixed(1));
                     point.pwrNew = Number(perf.pwr.toFixed(1));
@@ -1381,11 +1387,13 @@ export const Phase6: React.FC<Props> = ({ params, setParams, pump, designFreq, t
                     point.adjustedPump = Number(hAdjusted.toFixed(2));
 
                     if (chartMode === 'comparative') {
+                        // In Comparative, userHz is the "Catalog" (Reference) and catalogPumpCurve is the "Adjusted"
                         point.userHz = point.unadjustedPump;
                         point.catalogPumpCurve = Number(hAdjustedComparative.toFixed(2));
                     } else {
-                        point.userHz = point.unadjustedPump;
-                        point.catalogPumpCurve = point.unadjustedPump;
+                        // In Monitoring, userHz is the "Adjusted" (Reality) 
+                        point.userHz = point.adjustedPump;
+                        point.catalogPumpCurve = point.unadjustedPump; // Keep for internal logic but PumpChart hides it
                     }
 
                     const { pwr, eff } = calcPerf(actualFreq, hCatalog);

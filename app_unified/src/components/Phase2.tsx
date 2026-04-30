@@ -54,6 +54,17 @@ export const Phase2: React.FC<Props> = ({ params, setParams }) => {
         return calculateSolutionGOR(params.fluids.pb, tAvg, params.fluids.apiOil, params.fluids.geGas, correlation);
     }, [params.fluids.pb, params.fluids.apiOil, params.fluids.geGas, params.surfaceTemp, params.bottomholeTemp, params.fluids.correlations?.pbRs]);
 
+    const mixtureMetrics = useMemo(() => {
+        const oilSg = params.fluids.apiOil > 0 ? 141.5 / (131.5 + params.fluids.apiOil) : 0;
+        const waterSg = params.fluids.geWater || 0;
+        const wc = (params.fluids.waterCut || 0) / 100;
+        const liqSg = (oilSg * (1 - wc)) + (waterSg * wc);
+        return {
+            liqSg,
+            gradient: liqSg * 0.433
+        };
+    }, [params.fluids.apiOil, params.fluids.geWater, params.fluids.waterCut]);
+
     const smartTips = useMemo(() => {
         const tips = [];
         if (params.fluids.apiOil < 15 && params.fluids.apiOil > 0) tips.push(t('tip.heavyOilVisc'));
@@ -288,6 +299,26 @@ export const Phase2: React.FC<Props> = ({ params, setParams }) => {
                             </div>
                         </div>
                         <input type="range" min="0" max="100" step="0.1" value={params.fluids.waterCut} onChange={e => handleWaterCutChange(parseFloat(e.target.value))} className="w-full h-1.5 bg-surface-light/50 rounded-full appearance-none cursor-pointer mt-5 accent-primary hover:accent-orange-500 transition-all" />
+                    </div>
+
+                    {/* Gradient Display */}
+                    <div className="bg-primary/5 rounded-2xl p-4 border border-primary/10 flex justify-between items-center mb-4 group/grad relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-2 opacity-5 group-hover/grad:opacity-10 transition-opacity">
+                            <Activity className="w-10 h-10 text-primary" />
+                        </div>
+                        <div className="flex flex-col relative z-10">
+                            <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">{t('p2.fluidGradient')}</span>
+                            <div className="flex items-center gap-2 mt-1">
+                                <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+                                <span className="text-[8px] font-black text-txt-muted uppercase tracking-widest">Liquid Mix SG: {mixtureMetrics.liqSg.toFixed(3)}</span>
+                            </div>
+                        </div>
+                        <div className="text-right relative z-10">
+                            <span className="text-2xl font-mono font-black text-txt-main tracking-tighter drop-shadow-sm">
+                                {mixtureMetrics.gradient.toFixed(4)}
+                            </span>
+                            <span className="ml-1 text-[10px] font-black text-primary uppercase">psi/ft</span>
+                        </div>
                     </div>
 
                     <div className="space-y-2 relative z-10">

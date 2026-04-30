@@ -46,25 +46,29 @@
    ============================================================ */
 :root,
 [data-theme='fusion'] {
-  --color-primary: 100 116 139;
-  /* Slate 500 - Azul Pizarra Mate */
-  --color-secondary: 51 65 85;
-  /* Slate 700 */
+  --color-primary: 170 185 205;
+  /* Light Industrial Grey - Gris Claro */
+  --color-secondary: 15 45 65;
+  /* Deep Petrol Blue - Azul Petróleo */
   --color-accent: 148 163 184;
+  /* Slate 400 - Silver Steel */
+  --color-tertiary: 59 130 246;
+  /* Electric Blue (Blue 500) */
+  --color-glow: 147 197 253;
+  /* Blue 300 - For lighting effects */
+  --color-canvas: 10 15 25;
+  /* Slate 950 - Deep Space */
+  --color-surface: 20 30 45;
+  /* Slate 800 */
+  --color-surface-light: 40 55 75;
+  --color-surface-raised: 50 70 95;
+  --color-text-main: 248 250 252;
+  /* Slate 50 - Off White */
+  --color-text-muted: 148 163 184;
   /* Slate 400 */
-  --color-tertiary: 71 85 105;
-  --color-canvas: 15 23 42;
-  /* Slate 950 - Fondo muy oscuro pero suave */
-  --color-surface: 30 41 59;
-  /* Slate 800 - Superficies */
-  --color-surface-light: 51 65 85;
-  --color-surface-raised: 71 85 105;
-  --color-text-main: 255 255 255;
-  /* Blanco Puro para máxima legibilidad */
-  --color-text-muted: 203 213 225;
-  /* Slate 200 - Mucho más claro que antes */
-  --color-text-faint: 148 163 184;
-  --color-success: 16 185 129;
+  --color-text-faint: 71 85 105;
+  /* Slate 600 */
+  --color-success: 34 197 94;
   --color-warning: 245 158 11;
   --color-danger: 239 68 68;
   --font-display: 'Inter', sans-serif;
@@ -77,26 +81,21 @@
    ============================================================ */
 [data-theme='cyber'] {
   --color-primary: 34 197 94;
-  /* Esmeralda Neón (Emerald 500) */
-  --color-secondary: 16 185 129;
-  /* Verde Eléctrico */
-  --color-accent: 5 150 105;
-  --color-tertiary: 22 163 74;
-  --color-canvas: 5 5 5;
-  /* Negro Puro */
-  --color-surface: 10 15 10;
-  /* Negro con matiz verde */
-  --color-surface-light: 20 30 20;
-  --color-surface-raised: 30 45 30;
-  --color-text-main: 52 211 153;
-  /* Verde claro brillante */
-  --color-text-muted: 16 185 129;
-  --color-text-faint: 6 78 59;
+  --color-secondary: 6 182 212;
+  --color-accent: 8 145 178;
+  --color-tertiary: 2 132 199;
+  --color-glow: 52 211 153;
+  --color-canvas: 2 6 10;
+  --color-surface: 8 15 25;
+  --color-surface-light: 15 25 40;
+  --color-surface-raised: 20 35 55;
+  --color-text-main: 165 243 252;
+  --color-text-muted: 34 211 238;
+  --color-text-faint: 21 94 117;
   --color-success: 34 197 94;
-  --color-warning: 234 179 8;
-  --color-danger: 239 68 68;
+  --color-warning: 250 204 21;
+  --color-danger: 244 63 94;
   --font-display: 'JetBrains Mono', monospace;
-  /* Fuente técnica por defecto */
 }
 
 /* ============================================================
@@ -105,18 +104,15 @@
    ============================================================ */
 [data-theme='executive'] {
   --color-primary: 4 33 102;
-  /* Azul Petróleo Profundo (#042166) */
   --color-secondary: 88 28 28;
-  /* Vinotinto Seco y Serio */
   --color-accent: 15 45 120;
-  --color-tertiary: 71 85 105;
+  --color-tertiary: 59 130 246;
+  --color-glow: 96 165 250;
   --color-canvas: 248 250 252;
-  /* Blanco Hielo Limpio */
   --color-surface: 255 255 255;
   --color-surface-light: 235 240 250;
   --color-surface-raised: 220 230 245;
   --color-text-main: 15 23 42;
-  /* Slate 950 */
   --color-text-muted: 71 85 105;
   --color-text-faint: 148 163 184;
   --color-success: 22 163 74;
@@ -131,30 +127,20 @@
    ============================================================ */
 [data-theme='heritage'] {
   --color-primary: 13 148 136;
-  /* Teal 600 - Sofisticado y fresco */
   --color-secondary: 217 119 6;
-  /* Amber 600 - Cálido y potente */
   --color-accent: 20 184 166;
-  /* Teal 500 */
+  --color-tertiary: 13 148 136;
+  --color-glow: 45 212 191;
   --color-canvas: 255 253 250;
-  /* Blanco cálido marfil */
   --color-surface: 255 255 255;
-  /* Blanco puro */
   --color-surface-light: 240 253 250;
-  /* Tinte teal ultra sutil */
   --color-surface-raised: 204 251 241;
   --color-text-main: 17 24 39;
-  /* Gray 900 - Negro cálido */
   --color-text-muted: 75 85 99;
-  /* Gray 600 */
   --color-text-faint: 156 163 175;
-  /* Gray 400 */
   --color-success: 5 150 105;
-  /* Emerald 600 */
   --color-warning: 217 119 6;
-  /* Amber 600 */
   --color-danger: 220 38 38;
-  /* Red 600 */
   --font-display: 'Inter', sans-serif;
 }
 
@@ -297,14 +283,21 @@
 
 /* CYBER — Matrix-style green grid */
 [data-theme='cyber'] .aurora-bg::before {
-  background-image: radial-gradient(circle, rgb(var(--color-primary) / 0.15) 1px, transparent 1px);
+  background-image: radial-gradient(circle, rgb(var(--color-primary) / 0.25) 1.2px, transparent 1.2px);
   background-size: 20px 20px;
 }
 
-/* EXECUTIVE & HERITAGE — Clean white background (no grid) */
+/* FUSION — subtle deep indigo dot grid */
+[data-theme='fusion'] .aurora-bg::before {
+  background-image: radial-gradient(circle, rgb(var(--color-glow) / 0.2) 1.2px, transparent 1.2px);
+  background-size: 20px 20px;
+}
+
+/* EXECUTIVE & HERITAGE — Blueprint style dots */
 [data-theme='executive'] .aurora-bg::before,
 [data-theme='heritage'] .aurora-bg::before {
-  display: none;
+  background-image: radial-gradient(circle, rgb(0 0 0 / 0.05) 1px, transparent 1px);
+  background-size: 20px 20px;
 }
 
 /* Aurora blobs */
@@ -640,18 +633,11 @@
 }
 
 .text-glow {
-  text-shadow: 0 0 18px rgb(var(--color-primary) / 0.65), 0 0 40px rgb(var(--color-primary) / 0.22);
+  text-shadow: 0 0 12px rgb(var(--color-glow) / 0.7), 0 0 25px rgb(var(--color-glow) / 0.3);
 }
 
 .text-glow-sm {
-  text-shadow: 0 0 10px rgb(var(--color-primary) / 0.48);
-}
-
-[data-theme='chalk'] .text-glow,
-[data-theme='chalk'] .text-glow-sm,
-[data-theme='sage'] .text-glow,
-[data-theme='sage'] .text-glow-sm {
-  text-shadow: none !important;
+  text-shadow: 0 0 8px rgb(var(--color-glow) / 0.6);
 }
 
 [data-theme='chalk'] .shadow-glow-primary,

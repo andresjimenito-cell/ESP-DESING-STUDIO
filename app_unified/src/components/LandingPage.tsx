@@ -91,7 +91,7 @@ const _rowToParams = (row: Record<string, any>, surveys: Record<string, SurveyPo
         pressures: { totalRate: rate(ip), pht: _r2(pht || 50), phc: _r2(phc || 50), pumpDepthMD: _r2(intMD || totMD * 0.85) },
         targets: { min: { rate: rate(ipMn || ip * 0.7), ip: _r2(ipMn || ip * 0.7), waterCut: _r2(bswMn || bsw), gor: _r2(gorMn || gor), frequency: 50 }, target: { rate: rate(ip), ip: _r2(ip), waterCut: _r2(bsw), gor: _r2(gor), frequency: 60 }, max: { rate: rate(ipMx || ip * 1.3), ip: _r2(ipMx || ip * 1.3), waterCut: _r2(bswMx || bsw), gor: _r2(gorMx || gor * 1.2), frequency: 70 } },
         activeScenario: 'target', surfaceTemp: _r2(tht || 80), bottomholeTemp: _r2(bht || 200), totalDepthMD: _r2(totMD),
-        survey: _findSurvey(well, surveys), motorHp: 0, simulation: { annualWearPercent: 0, simulationMonths: 36, costPerKwh: 0.12 },
+        survey: _findSurvey(well, surveys), motorHp: 0, simulation: { annualWearPercent: 0, simulationMonths: 36, costPerKwh: 0.12, ipType: 'fixed', ipTarget: ip },
         // Equipment Auto-Filling
         initialPumpName: _s(g(['BOMBA'])),
         initialStages: _n(g(['ETAPAS'])),
@@ -793,6 +793,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 {/* Animated Tech Grid */}
                 <div className="absolute inset-0 bg-[linear-gradient(rgba(var(--color-text-main),0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(var(--color-text-main),0.03)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_at_center,black_20%,transparent_80%)]"></div>
 
+                {/* Dot Grid Overlay (Cyber Style) */}
+                <div className="absolute inset-0 opacity-40 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, rgba(var(--color-primary), 0.15) 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
+
                 {/* Perspective Floor Grid */}
                 <div className="absolute bottom-[-20%] left-[-20%] right-[-20%] h-[50vh] bg-[linear-gradient(rgba(var(--color-primary),0.15)_1px,transparent_1px),linear-gradient(90deg,rgba(var(--color-primary),0.15)_1px,transparent_1px)] bg-[size:60px_60px] [transform:perspective(1000px)_rotateX(70deg)] opacity-50 animate-scan [mask-image:linear-gradient(to_top,black_10%,transparent_100%)]"></div>
 
@@ -882,8 +885,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                                 {t('lp.engineering')}
                             </div>
                         </div>
-                        <h1 className="text-7xl md:text-8xl xl:text-[8.5rem] font-black text-txt-main leading-[0.85] tracking-tighter select-none drop-shadow-2xl">
-                            ESP DESIGN <br /> STUDIO<span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-secondary to-accent animate-gradient-x bg-[length:200%_auto]">IA</span>
+                        <h1 
+                            className="text-7xl md:text-8xl xl:text-[8.5rem] font-black text-txt-main leading-[0.85] tracking-tighter select-none"
+                            style={{ 
+                                textShadow: '0 0 15px rgb(var(--color-primary) / 0.3), 0 0 30px rgb(var(--color-primary) / 0.1)',
+                                filter: 'drop-shadow(0 0 8px rgb(var(--color-primary) / 0.2))'
+                            }}
+                        >
+                            ESP DESIGN <br /> STUDIO<span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-secondary to-accent animate-gradient-x bg-[length:200%_auto]" style={{ textShadow: 'none', filter: 'none' }}>IA</span>
                         </h1>
                     </div>
 
