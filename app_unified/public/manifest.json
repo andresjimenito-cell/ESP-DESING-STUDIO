@@ -3,9 +3,9 @@
   "name": "ESP DESIGN STUDIO Professional",
   "icons": [
     {
-      "src": "/app-logo.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "/app-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
       "purpose": "any maskable"
     }
   ],

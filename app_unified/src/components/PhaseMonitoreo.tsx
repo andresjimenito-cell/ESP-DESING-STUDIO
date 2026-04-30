@@ -2948,7 +2948,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
 
                         <div className="relative">
                             {/* ENLARGED VIDEO CONTAINER FOR LOADING */}
-                            <div className="relative w-[400px] h-[300px] flex items-center justify-center">
+                            <div className="relative w-[480px] h-[270px] flex items-center justify-center max-w-full">
                                 <div className="absolute inset-0 bg-primary/10 rounded-full blur-[100px] animate-pulse"></div>
                                 
                                 <div className="relative z-10 w-full h-full overflow-hidden rounded-[2rem] border border-white/10 shadow-[0_0_50px_rgba(var(--color-primary),0.2)] bg-canvas/40 backdrop-blur-md">
@@ -2958,7 +2958,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                         loop 
                                         muted 
                                         playsInline 
-                                        className="w-full h-full object-contain p-2"
+                                        className="w-full h-full object-cover"
                                     />
                                 </div>
                             </div>

@@ -304,8 +304,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     // ─────────────────────────────────────────────────────────────────────────
     if (isBooting) {
         const progress = (bootStep + 1) * 20;
-        const logoW = 560;
-        const logoH = 315;
+        const logoW = 627;
+        const logoH = 360;
         const cx = logoW / 2;
 
         // Burst particles — deterministas (sin Math.random)
@@ -472,8 +472,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                         100% { transform: scale(1); filter: brightness(1) blur(0px); }
                     }
                     @keyframes eks-pulse-glow {
-                        0% { filter: blur(25px) brightness(1) drop-shadow(0 0 10px rgba(var(--color-primary), 0.3)); transform: scale(0.98); opacity: 0.5; }
-                        100% { filter: blur(15px) brightness(1.4) drop-shadow(0 0 40px rgba(var(--color-primary), 0.7)); transform: scale(1.02); opacity: 0.9; }
+                        0% { filter: blur(20px); transform: scale(1); opacity: 0.4; }
+                        100% { filter: blur(10px); transform: scale(1.05); opacity: 0.6; }
                     }
                     @keyframes eks-scanline {
                         0% { transform: translateY(-100%); }
@@ -530,14 +530,22 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     }}
                 >
                     {/* Contenedor del logo ACAPLADO A 16:9 */}
-                    <div style={{ position: 'relative', width: `${logoW}px`, height: `${logoH}px` }}>
+                    <div style={{ 
+                        position: 'relative', 
+                        width: '90vw', 
+                        maxWidth: `${logoW}px`, 
+                        aspectRatio: `${logoW} / ${logoH}`,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                    }}>
 
                         {/* Marcos Rectangulares Potentes */}
                         {[1.1, 1.25, 1.4].map((s, i) => (
                             <div key={i} style={{
                                 position: 'absolute', inset: 0,
-                                border: '2px solid rgb(var(--color-primary))',
-                                borderRadius: '16px',
+                                border: '1px solid rgb(var(--color-primary))',
+                                borderRadius: '24px',
                                 opacity: 0,
                                 transform: `scale(${s})`,
                                 boxShadow: '0 0 15px rgba(var(--color-primary), 0.1)',
@@ -565,21 +573,31 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                         <div style={{
                             position: 'absolute', inset: 0,
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            zIndex: 5,
+                            zIndex: 15, // Higher than video to hide it initially
                             opacity: videoReady ? 0 : 1,
-                            transition: 'opacity 1s ease-in-out',
-                            animation: !videoReady ? 'eks-pulse-glow 2s infinite alternate ease-in-out' : 'none'
+                            transition: 'opacity 2s ease-in-out',
+                            animation: !videoReady ? 'eks-pulse-glow 4s infinite alternate ease-in-out' : 'none'
                         }}>
                             <img
                                 src="/LOGO.png"
                                 alt="Loading..."
                                 style={{
-                                    width: '80%', height: '80%', objectFit: 'contain',
-                                    filter: 'blur(10px) brightness(1.1)',
+                                    width: '100%', height: '100%', objectFit: 'cover', // Match video
+                                    filter: 'brightness(1.1) contrast(1.1)',
                                 }}
                             />
-                            {/* Overlay Destello */}
-                            {!videoReady && <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -skew-x-12 translate-x-[-200%] animate-[eks-shimmer-x_3s_infinite_1s]" />}
+                            {/* Scanning effect while loading */}
+                            {!videoReady && (
+                                <div style={{
+                                    position: 'absolute',
+                                    top: 0, left: 0, right: 0,
+                                    height: '4px',
+                                    background: 'rgba(var(--color-primary), 0.8)',
+                                    boxShadow: '0 0 20px rgba(var(--color-primary), 1)',
+                                    zIndex: 6,
+                                    animation: 'eks-sweep 2s infinite linear'
+                                }} />
+                            )}
                         </div>
 
                         {/* VIDEO LOGO PURO CON MASCARA RECTANGULAR */}
@@ -592,14 +610,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                             onPlaying={() => setVideoReady(true)}
                             style={{
                                 position: 'absolute', inset: 0,
-                                width: '100%', height: '100%', objectFit: 'contain',
+                                width: '100%', height: '100%', objectFit: 'cover',
                                 zIndex: 10,
                                 pointerEvents: 'none',
                                 opacity: videoReady ? 1 : 0,
+                                transform: 'scale(1)', // No scale jump
                                 // Máscara rectangular con bordes suavizados
-                                maskImage: 'inset(0% round 20px)',
-                                WebkitMaskImage: 'inset(0% round 20px)',
-                                transition: 'opacity 1s ease-in-out'
+                                maskImage: 'inset(0% round 24px)',
+                                WebkitMaskImage: 'inset(0% round 24px)',
+                                transition: 'opacity 2s ease-in-out'
                             }}
                         />
                     </div>

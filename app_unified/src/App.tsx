@@ -686,7 +686,7 @@ const App: React.FC = () => {
                 <div className="p-8 pb-6 bg-gradient-to-b from-surface/40 to-transparent shrink-0 relative z-10">
                     <div className="flex items-center gap-4 mb-3">
                         <div className="w-14 h-14 flex items-center justify-center group/logo transition-all duration-500">
-                            <img src="/app-logo.svg" alt="Icono" className="w-full h-full object-contain filter drop-shadow-xl brightness-110 group-hover/logo:scale-110 transition-transform duration-500" />
+                            <img src="/LOGO.png" alt="Icono" className="w-full h-full object-contain filter drop-shadow-xl brightness-110 group-hover/logo:scale-110 transition-transform duration-500" />
                         </div>
                         <div className="flex-1 flex justify-between items-center">
                             <div>

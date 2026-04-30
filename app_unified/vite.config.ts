@@ -33,13 +33,13 @@ export default defineConfig(({ mode }) => {
                 }
               });
             } else if (req.url === '/api/ai-memory' && req.method === 'GET') {
-               const p = path.resolve('./ai_memory.json');
-               if (fs.existsSync(p)) {
-                 res.setHeader('Content-Type', 'application/json');
-                 res.end(fs.readFileSync(p));
-               } else {
-                 res.end('[]');
-               }
+              const p = path.resolve('./ai_memory.json');
+              if (fs.existsSync(p)) {
+                res.setHeader('Content-Type', 'application/json');
+                res.end(fs.readFileSync(p));
+              } else {
+                res.end('[]');
+              }
             } else {
               next();
             }
@@ -48,7 +48,7 @@ export default defineConfig(({ mode }) => {
       },
       VitePWA({
         registerType: 'autoUpdate',
-        includeAssets: ['favicon.ico', 'icono.png', 'robots.txt', 'apple-touch-icon.png'],
+        includeAssets: ['favicon.ico', 'app-logo.png', 'robots.txt', 'apple-touch-icon.png'],
         manifest: {
           name: 'ESP DESIGN PRO',
           short_name: 'ESP PRO',
@@ -58,14 +58,10 @@ export default defineConfig(({ mode }) => {
           display: 'standalone',
           icons: [
             {
-              src: 'icono.png',
-              sizes: '192x192',
-              type: 'image/png'
-            },
-            {
-              src: 'icono.png',
+              src: 'app-logo.png',
               sizes: '512x512',
-              type: 'image/png'
+              type: 'image/png',
+              purpose: 'any maskable'
             }
           ]
         }
