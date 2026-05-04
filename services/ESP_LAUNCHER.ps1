@@ -366,7 +366,7 @@ if (-not $nodeFound) {
         $nodeFound = $true
         Add-Log "Node.js Portable detectado" "ok"
     } else {
-        Add-Log "Instalando Node.js Portable..." "warn"
+        Add-Log "Configurando Node.js Portable..." "info"
         try {
             $zipPath = Join-Path $rootPath "node.zip"
             $nodeUrl = "https://nodejs.org/dist/v20.12.2/node-v20.12.2-win-x64.zip"
@@ -378,7 +378,7 @@ if (-not $nodeFound) {
                 $nodeBinPath = Join-Path $nodePortablePath "node-v20.12.2-win-x64"
                 $env:PATH = "$nodeBinPath;$env:PATH"
                 $nodeFound = $true
-                Add-Log "Node.js Portable instalado OK" "ok"
+                Add-Log "Node.js Portable listo" "ok"
             }
         } catch {
             Add-Log "Error instalando Node.js Portable" "err"
