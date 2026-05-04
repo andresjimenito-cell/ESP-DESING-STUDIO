@@ -7,27 +7,18 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-<<<<<<< HEAD
 # Dependencies
 node_modules
 app_unified/node_modules
 
 # Build
-dist
 dist-ssr
-app_unified/dist
 
 # Environment
 .env
 .env.local
 app_unified/.env
 app_unified/.env.local
-=======
-node_modules
-dist
-dist-ssr
-*.local
->>>>>>> acafd30180d03227cbd1b44760d0395bc7c7e074
 
 # Editor directories and files
 .vscode/*
