@@ -339,80 +339,82 @@ export const MatchHistorico: React.FC<Props> = ({ wellName, pump, designParams, 
     return (
         <div className="flex flex-col gap-8 animate-fadeIn pb-20">
             {/* PLAYBACK HEADER */}
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 shrink-0">
-                <div className="glass-surface-light rounded-[2.5rem] border border-white/5 p-8 shadow-2xl relative overflow-hidden bg-gradient-to-r from-canvas to-surface/40">
-                    <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none"><History className="w-32 h-32 text-primary" /></div>
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 shrink-0">
+                <div className="glass-surface-light rounded-[1.75rem] border border-white/5 p-4 shadow-2xl relative overflow-hidden bg-gradient-to-r from-canvas to-surface/40 flex flex-col justify-between">
+                    <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none"><History className="w-20 h-20 text-primary" /></div>
 
                     {onClose && (
                         <button
                             onClick={onClose}
-                            className="absolute top-6 right-6 p-3 glass-surface border border-white/10 rounded-2xl text-txt-muted hover:text-danger hover:scale-110 transition-all z-30 shadow-2xl"
+                            className="absolute top-4 right-4 p-2 glass-surface border border-white/10 rounded-xl text-txt-muted hover:text-danger hover:scale-105 transition-all z-30 shadow-2xl"
                         >
-                            <X className="w-5 h-5" />
+                            <X className="w-4 h-4" />
                         </button>
                     )}
-                    <div className="flex flex-col md:flex-row justify-between items-center gap-8 relative z-10">
-                        <div className="flex items-center gap-6">
-                            <div className={`p-4 rounded-3xl bg-gradient-to-br shadow-glow-lg ${currentRecord.healthScore > 85 ? 'from-success/20 shadow-success/10' : 'from-danger/20 shadow-danger/10'}`}>
-                                <Activity className={`w-8 h-8 ${currentRecord.healthScore > 85 ? 'text-success' : 'text-danger'}`} />
+                    <div className="flex flex-col md:flex-row justify-between items-center gap-4 relative z-10">
+                        <div className="flex items-center gap-3">
+                            <div className={`p-2.5 rounded-2xl bg-gradient-to-br shadow-glow-sm ${currentRecord.healthScore > 85 ? 'from-success/20 shadow-success/10' : 'from-danger/20 shadow-danger/10'}`}>
+                                <Activity className={`w-5 h-5 ${currentRecord.healthScore > 85 ? 'text-success' : 'text-danger'}`} />
                             </div>
                             <div>
-                                <h2 className="text-3xl font-black text-txt-main tracking-tighter uppercase">{wellName} — HISTORIAL MATCH</h2>
-                                <div className="flex items-center gap-3 mt-1">
-                                    <span className="text-[10px] font-black text-primary uppercase tracking-widest bg-primary/10 px-3 py-1 rounded-full border border-primary/20">{currentRecord.date}</span>
-                                    <span className="text-[10px] font-black text-txt-muted uppercase tracking-widest opacity-60">REGISTRO {currentIndex + 1} / {history.length}</span>
+                                <h2 className="text-lg font-black text-txt-main tracking-tighter uppercase leading-tight">{wellName}</h2>
+                                <div className="flex items-center gap-2 mt-0.5">
+                                    <span className="text-[8px] font-black text-primary uppercase tracking-widest bg-primary/10 px-2 py-0.5 rounded-full border border-primary/20">{currentRecord.date}</span>
+                                    <span className="text-[8px] font-black text-txt-muted uppercase tracking-widest opacity-60">REGISTRO {currentIndex + 1} / {history.length}</span>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-4">
-                            {onImport && (
-                                <button
-                                    onClick={onImport}
-                                    className="flex items-center gap-2.5 px-6 py-3.5 bg-secondary/10 hover:bg-secondary text-secondary hover:text-white border border-secondary/20 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all hover:shadow-glow-secondary/20 active:scale-95 group"
-                                >
-                                    <Download className="w-4 h-4 group-hover:-translate-y-0.5 transition-transform" />
-                                    Cargar Datos Pozo
-                                </button>
-                            )}
+                        {onImport && (
+                            <button
+                                onClick={onImport}
+                                className="flex items-center gap-2 px-3 py-2 bg-secondary/10 hover:bg-secondary text-secondary hover:text-white border border-secondary/20 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all hover:shadow-glow-secondary/20 active:scale-95 group"
+                            >
+                                <Download className="w-3.5 h-3.5 group-hover:-translate-y-0.5 transition-transform" />
+                                Cargar Datos
+                            </button>
+                        )}
+                    </div>
 
-                            <div className="flex items-center gap-4 bg-canvas/40 p-3 rounded-[2.5rem] border border-white/10 backdrop-blur-xl shadow-inner">
-                                <button
-                                    onClick={() => {
-                                        if (currentIndex > 0) setCurrentIndex(currentIndex - 1);
-                                        setIsPlaying(false);
-                                    }}
-                                    className="p-3 bg-white/5 hover:bg-white/10 rounded-full border border-white/10 transition-all active:scale-90"
-                                >
-                                    <ChevronLeft className="w-5 h-5" />
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        if (currentIndex <= 0) {
-                                            setCurrentIndex(history.length - 1);
-                                        }
-                                        setIsPlaying(!isPlaying);
-                                    }}
-                                    className={`p-6 rounded-full shadow-2xl transform transition-all active:scale-95 ${isPlaying ? 'bg-danger text-white hover:bg-danger/80' : 'bg-primary text-white hover:bg-primary/80 ring-8 ring-primary/10'}`}
-                                >
-                                    {isPlaying ? <Pause className="w-8 h-8 fill-current" /> : <Play className="w-8 h-8 fill-current ml-1" />}
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        if (currentIndex < history.length - 1) setCurrentIndex(currentIndex + 1);
-                                        setIsPlaying(false);
-                                    }}
-                                    className="p-3 bg-white/5 hover:bg-white/10 rounded-full border border-white/10 transition-all active:scale-90"
-                                >
-                                    <ChevronRight className="w-5 h-5" />
-                                </button>
-                            </div>
+                    {/* CENTRED PLAYBACK CONTROLS */}
+                    <div className="flex justify-center items-center mt-2 relative z-10">
+                        <div className={`flex items-center gap-4 bg-canvas/40 p-2 rounded-2xl border backdrop-blur-xl shadow-inner transition-all ${isPlaying ? 'border-success/30 ring-4 ring-success/10 bg-success/5' : 'border-white/10 ring-0 bg-canvas/40'}`}>
+                            <button
+                                onClick={() => {
+                                    if (currentIndex > 0) setCurrentIndex(currentIndex - 1);
+                                    setIsPlaying(false);
+                                }}
+                                className="p-3 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 transition-all active:scale-90 text-txt-main hover:text-[rgb(var(--color-secondary))]"
+                            >
+                                <ChevronLeft className="w-5 h-5" />
+                            </button>
+                            <button
+                                onClick={() => {
+                                    if (currentIndex <= 0) {
+                                        setCurrentIndex(history.length - 1);
+                                    }
+                                    setIsPlaying(!isPlaying);
+                                }}
+                                className={`p-4.5 rounded-xl shadow-lg transform transition-all hover:scale-105 active:scale-95 text-white ${isPlaying ? 'bg-gradient-to-r from-danger to-danger-light shadow-glow-danger/20' : 'shadow-glow-secondary/20 ring-4 ring-secondary/10'}`}
+                                style={!isPlaying ? { background: 'linear-gradient(135deg, rgb(var(--color-secondary)), rgb(var(--color-secondary) / 0.75))' } : {}}
+                            >
+                                {isPlaying ? <Pause className="w-6 h-6 fill-current animate-pulse" /> : <Play className="w-6 h-6 fill-current ml-0.5 animate-pulse" />}
+                            </button>
+                            <button
+                                onClick={() => {
+                                    if (currentIndex < history.length - 1) setCurrentIndex(currentIndex + 1);
+                                    setIsPlaying(false);
+                                }}
+                                className="p-3 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 transition-all active:scale-90 text-txt-main hover:text-[rgb(var(--color-secondary))]"
+                            >
+                                <ChevronRight className="w-5 h-5" />
+                            </button>
                         </div>
                     </div>
 
                     {/* TIMELINE */}
-                    <div className="mt-10 relative">
-                        <div className="h-3 w-full bg-canvas/60 rounded-full border border-white/5 shadow-inner overflow-hidden cursor-pointer group">
+                    <div className="mt-3 relative">
+                        <div className="h-3 w-full bg-canvas/80 rounded-full border border-white/10 shadow-inner overflow-hidden cursor-pointer group relative">
                             <input
                                 type="range"
                                 min="0"
@@ -425,32 +427,35 @@ export const MatchHistorico: React.FC<Props> = ({ wellName, pump, designParams, 
                                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
                             />
                             <div
-                                className="h-full bg-gradient-to-r from-primary to-primary-light relative z-10 transition-all"
-                                style={{ width: `${((currentIndex + 1) / history.length) * 100}%` }}
+                                className="h-full relative z-10 transition-all duration-200"
+                                style={{
+                                    width: `${((currentIndex + 1) / history.length) * 100}%`,
+                                    background: 'linear-gradient(90deg, rgb(var(--color-secondary)) 0%, rgb(var(--color-secondary) / 0.5) 100%)'
+                                }}
                             >
-                                <div className="absolute right-0 top-0 w-4 h-full bg-white/20 animate-pulse"></div>
+                                <div className="absolute right-0 top-0 w-2 h-full bg-white shadow-[0_0_10px_2px_#ffffff] animate-pulse"></div>
                             </div>
                         </div>
-                        <div className="flex justify-between mt-2">
-                            <span className="text-[8px] font-bold text-txt-muted opacity-40 uppercase">{history[0]?.date}</span>
-                            <span className="text-[8px] font-bold text-txt-muted opacity-40 uppercase">{history[history.length - 1]?.date}</span>
+                        <div className="flex justify-between mt-1">
+                            <span className="text-[7px] font-bold text-txt-muted opacity-40 uppercase tracking-widest">{history[0]?.date}</span>
+                            <span className="text-[7px] font-bold text-txt-muted opacity-40 uppercase tracking-widest">{history[history.length - 1]?.date}</span>
                         </div>
                     </div>
                 </div>
 
                 {/* AI ANALYSIS CARD */}
-                <div className="glass-surface-light rounded-[2.5rem] border border-primary/20 p-8 shadow-2xl relative overflow-hidden bg-gradient-to-br from-primary/5 to-transparent flex flex-col gap-4">
-                    <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none"><Cpu className="w-24 h-24 text-primary animate-pulse" /></div>
-                    <div className="flex items-center gap-4 relative z-10">
-                        <div className="p-2.5 bg-primary/20 rounded-xl text-primary border border-primary/30"><Cpu className="w-5 h-5" /></div>
-                        <h3 className="text-sm font-black text-txt-main tracking-widest uppercase">Diagnostic Engine AI</h3>
+                <div className="glass-surface-light rounded-[1.75rem] border border-primary/20 p-4 shadow-2xl relative overflow-hidden bg-gradient-to-br from-primary/5 to-transparent flex flex-col gap-2 justify-between">
+                    <div className="absolute top-0 right-0 p-6 opacity-10 pointer-events-none"><Cpu className="w-14 h-14 text-primary animate-pulse" /></div>
+                    <div className="flex items-center gap-3 relative z-10">
+                        <div className="p-1.5 bg-primary/20 rounded-xl text-primary border border-primary/30"><Cpu className="w-4 h-4" /></div>
+                        <h3 className="text-xs font-black text-txt-main tracking-widest uppercase leading-tight">Diagnostic Engine AI</h3>
                     </div>
-                    <div className="flex-1 bg-canvas/30 rounded-3xl p-5 border border-white/5 shadow-inner relative z-10 h-[100px] overflow-y-auto custom-scrollbar">
-                        <div className="text-[11px] font-bold text-txt-main leading-relaxed space-y-2 whitespace-pre-wrap opacity-90 italic">
+                    <div className="flex-1 bg-canvas/30 rounded-xl p-3 border border-white/5 shadow-inner relative z-10 h-[70px] overflow-y-auto custom-scrollbar">
+                        <div className="text-[10px] font-bold text-txt-main leading-normal space-y-1 whitespace-pre-wrap opacity-90 italic">
                             {aiAnalysis}
                         </div>
                     </div>
-                    <div className="flex items-center gap-2 relative z-10 mt-auto">
+                    <div className="flex items-center gap-2 relative z-10 mt-1">
                         <div className="w-1.5 h-1.5 rounded-full bg-success animate-pulse shadow-glow-success"></div>
                         <span className="text-[8px] font-black text-txt-muted uppercase tracking-widest opacity-50">Análisis basado en tendencia de {currentIndex + 1} puntos</span>
                     </div>
