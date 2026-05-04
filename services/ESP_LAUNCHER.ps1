@@ -285,8 +285,9 @@ if ($gitCheck) {
     }
 }
 else {
-    Add-Log "Git no encontrado (Instalar de git-scm.com)" "warn"
+    Add-Log "Abriendo descarga de Git..." "warn"
     $M.GIT.Val = "NONE"; $M.GIT.Color = $WR
+    Start-Process "https://git-scm.com/download/win"
 }
 $gitOk = ($LASTEXITCODE -eq 0) -and $gitCheck
 Start-MetricAnimation -Key GIT -TargetPct 100 -Phase "SYNC · Finalizado" -GlobalStart 16 -GlobalEnd 22 -M $M
