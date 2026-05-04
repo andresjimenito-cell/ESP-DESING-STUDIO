@@ -261,7 +261,36 @@ Write-Panel -Phase "SISTEMA · Inicio" -GlobalPct 0 -M $M
 $M.GIT.Val = "WAIT"; $M.GIT.Color = $SC
 Start-MetricAnimation -Key GIT -TargetPct 30 -Phase "SYNC · Git Check" -GlobalStart 0 -GlobalEnd 8 -M $M
 
+$gitExe = "git"
 $gitCheck = $null -ne (Get-Command git -ErrorAction SilentlyContinue)
+
+if (-not $gitCheck) {
+    $portablePath = Join-Path $PSScriptRoot "..\.git_portable\cmd\git.exe"
+    if (Test-Path $portablePath) {
+        $gitExe = $portablePath
+        $gitCheck = $true
+        Add-Log "Git Portable detectado" "ok"
+    } else {
+        Add-Log "Instalando Git Portable..." "warn"
+        try {
+            $zipPath = Join-Path $PSScriptRoot "..\git.zip"
+            $destPath = Join-Path $PSScriptRoot "..\.git_portable"
+            $minGitUrl = "https://github.com/git-for-windows/git/releases/download/v2.44.0.windows.1/MinGit-2.44.0-64-bit.zip"
+            Invoke-WebRequest -Uri $minGitUrl -OutFile $zipPath -ErrorAction Stop
+            Add-Type -AssemblyName System.IO.Compression.FileSystem
+            [System.IO.Compression.ZipFile]::ExtractToDirectory($zipPath, $destPath)
+            Remove-Item $zipPath -Force
+            if (Test-Path $portablePath) {
+                $gitExe = $portablePath
+                $gitCheck = $true
+                Add-Log "Git Portable instalado OK" "ok"
+            }
+        } catch {
+            Add-Log "Error instalando Git Portable" "err"
+        }
+    }
+}
+
 if ($gitCheck) {
     $M.GIT.Val = "PULL"; $M.GIT.Color = $PR
     Start-MetricAnimation -Key GIT -TargetPct 60 -Phase "SYNC · GitHub" -GlobalStart 8 -GlobalEnd 16 -M $M
@@ -269,10 +298,10 @@ if ($gitCheck) {
     # Detección inteligente para la máquina de desarrollo vs la practicante
     $isDev = $env:USERPROFILE -like "*andre*"
     if ($isDev) {
-        git pull origin main --quiet 2>&1 | Out-Null
+        & $gitExe pull origin main --quiet 2>&1 | Out-Null
     } else {
-        git fetch origin --quiet 2>&1 | Out-Null
-        git reset --hard origin/main --quiet 2>&1 | Out-Null
+        & $gitExe fetch origin --quiet 2>&1 | Out-Null
+        & $gitExe reset --hard origin/main --quiet 2>&1 | Out-Null
     }
 
     if ($LASTEXITCODE -eq 0) {
