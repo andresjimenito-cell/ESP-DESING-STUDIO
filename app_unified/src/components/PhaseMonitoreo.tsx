@@ -2690,11 +2690,17 @@ const FloatingAiPanel = ({ fleet, selectedWell, language, t }: { fleet: WellFlee
             }
 
             const model = genAI.getGenerativeModel({
-                model: 'gemini-1.5-flash',
+                model: 'gemini-1.5-flash-latest',
+                generationConfig: {
+                    temperature: 0.7,
+                    topP: 0.8,
+                    topK: 40,
+                },
+                wait_for_model: true,
                 systemInstruction: `You are "Antigravity AI Co-Pilot", a Senior ESP Reliability Engineer.
                 Provide diagnostics in ${language === 'es' ? 'SPANISH' : 'ENGLISH'}.
                 CONTEXT:\n${contextData}`
-            });
+            } as any);
 
             const s = model.startChat({ history: [] });
             setSession(s);
