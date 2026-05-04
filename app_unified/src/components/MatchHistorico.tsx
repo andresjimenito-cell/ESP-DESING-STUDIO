@@ -118,7 +118,42 @@ export const MatchHistorico: React.FC<Props> = ({ wellName, pump, designParams, 
             } as HistoricalRecord;
         });
 
-        processed.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        const parseToTimestamp = (val: any): number => {
+            if (!val) return 0;
+            if (typeof val === 'number') return val > 100000 ? val : new Date((val - 25569) * 86400 * 1000).getTime();
+            if (typeof val !== 'string') return 0;
+
+            const dateStr = val.trim();
+            if (dateStr.includes('-')) {
+                const parts = dateStr.split('-');
+                if (parts[0].length === 4) return new Date(dateStr).getTime() || 0;
+                if (parts[2] && parts[2].substring(0, 4).length === 4) {
+                    const d = parseInt(parts[0]);
+                    const m = parseInt(parts[1]) - 1;
+                    const y = parseInt(parts[2].substring(0, 4));
+                    return new Date(y, m, d).getTime() || 0;
+                }
+            }
+            if (dateStr.includes('/')) {
+                const parts = dateStr.split('/');
+                if (parts[2] && parts[2].substring(0, 4).length === 4) {
+                    const d = parseInt(parts[0]);
+                    const m = parseInt(parts[1]) - 1;
+                    const y = parseInt(parts[2].substring(0, 4));
+                    return new Date(y, m, d).getTime() || 0;
+                }
+                if (parts[0].length === 4) {
+                    const y = parseInt(parts[0]);
+                    const m = parseInt(parts[1]) - 1;
+                    const d = parseInt(parts[2]);
+                    return new Date(y, m, d).getTime() || 0;
+                }
+            }
+            const parsed = new Date(dateStr).getTime();
+            return isNaN(parsed) ? 0 : parsed;
+        };
+
+        processed.sort((a, b) => parseToTimestamp(a.date) - parseToTimestamp(b.date));
         setHistory(processed);
         setCurrentIndex(0);
     };
