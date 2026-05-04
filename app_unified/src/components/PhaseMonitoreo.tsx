@@ -30,13 +30,8 @@ import { MatchHistorico } from './MatchHistorico';
 import { AiMemoryService } from '../services/AiMemoryService';
 
 const getApiKey = () => {
-    try {
-        const env = (import.meta as any).env;
-        const proc = (process as any);
-        return proc.env?.API_KEY || proc.env?.GEMINI_API_KEY || env?.VITE_API_KEY || env?.VITE_GEMINI_API_KEY || "";
-    } catch {
-        return "";
-    }
+    // Nueva clave nivel gratuito proporcionada por el usuario
+    return "AIzaSyALOKJDFF6JHthsRq_25lcoZJXGAZYebWM";
 };
 
 const genAI = new GoogleGenerativeAI(getApiKey());
@@ -2681,44 +2676,39 @@ const FloatingAiPanel = ({ fleet, selectedWell, language, t }: { fleet: WellFlee
         }
 
         try {
-            // Build context based on whether looking at fleet or specific well
-            let contextData = "";
+            const apiKey = getApiKey();
+            if (!apiKey) throw new Error("API Key missing");
 
+            let contextData = "";
             if (selectedWell) {
                 const healthScore = getWellHealthScore(selectedWell);
                 contextData = `ANALYSIS FOR SPECIFIC WELL: ${selectedWell.name}
-                - Overall Status: ${selectedWell.status.toUpperCase()} (Score: ${healthScore.toFixed(0)}/100)
-                - Production: Test=${selectedWell.productionTest.rate?.toFixed(0) || 0} BPD, Target=${selectedWell.targetRate?.toFixed(0) || 0} BPD
-                - Pressures: PIP=${selectedWell.productionTest.pip?.toFixed(0) || 0} psi, THP=${selectedWell.productionTest.thp?.toFixed(0) || 0} psi
-                - Component Health: Pump=${selectedWell.health.pump.toUpperCase()}, Motor=${selectedWell.health.motor.toUpperCase()}
-                - Diagnostics: VSD Status=${selectedWell.predictive.vsdStatus.toUpperCase()}`;
+                - Status: ${selectedWell.status.toUpperCase()} (${healthScore.toFixed(0)}/100)
+                - Data: PIP=${selectedWell.productionTest.pip || 0} psi, Rate=${selectedWell.productionTest.rate || 0} BPD`;
             } else {
-                const alarms = fleet.filter(w => w.status !== 'normal');
-                contextData = `FLEET OVERVIEW: ${fleet.length} total wells monitored.
-                - Wells with issues (${alarms.length}):
-                ${alarms.map(w => `   * ${w.name}: ${w.status.toUpperCase()} (Score ${getWellHealthScore(w).toFixed(0)}/100)`).join('\n')}`;
+                contextData = `FLEET OVERVIEW: ${fleet.length} wells. Issues: ${fleet.filter(w => w.status !== 'normal').length}`;
             }
 
             const model = genAI.getGenerativeModel({
                 model: 'gemini-1.5-flash',
                 systemInstruction: `You are "Antigravity AI Co-Pilot", a Senior ESP Reliability Engineer.
-                Mission: Provide diagnostics and recommendations based on real-time data.
-                Respond in ${language === 'es' ? 'SPANISH' : 'ENGLISH'}. 
-                SYSTEM DATA:\n${contextData}`
+                Provide diagnostics in ${language === 'es' ? 'SPANISH' : 'ENGLISH'}.
+                CONTEXT:\n${contextData}`
             });
+
             const s = model.startChat({ history: [] });
             setSession(s);
 
-            const initialGreet = selectedWell
-                ? (language === 'es' ? `Hola. Monoreando pozo **${selectedWell.name}**. Salud: ${getWellHealthScore(selectedWell).toFixed(0)}%. ¿En qué diagnóstico te ayudo?` : `Hello. Monitoring well **${selectedWell.name}**. Health: ${getWellHealthScore(selectedWell).toFixed(0)}%. How can I help?`)
-                : (language === 'es' ? `Hola. Monitoreando **${fleet.length}** pozos. Tengo ${fleet.filter(w => w.status !== 'normal').length} alertas activas. ¿Revisamos la flota?` : `Hello. Monitoring **${fleet.length}** wells. I have ${fleet.filter(w => w.status !== 'normal').length} active alerts. Shall we review?`);
+            const greet = selectedWell 
+                ? (language === 'es' ? `Listo. Analizando **${selectedWell.name}**. ¿Qué revisamos?` : `Ready. Analyzing **${selectedWell.name}**. What's next?`)
+                : (language === 'es' ? `Hola. Monitoreando **${fleet.length}** pozos. ¿Cómo puedo ayudarte hoy?` : `Hello. Monitoring **${fleet.length}** wells. How can I help?`);
 
-            setMsgs([{ role: 'model', text: initialGreet }]);
-        } catch (err) {
-            console.error("Antigravity AI Init Error:", err);
-            setMsgs([{ role: 'model', text: "❌ Error inicializando sesión de IA." }]);
+            setMsgs([{ role: 'model', text: greet }]);
+        } catch (err: any) {
+            console.error("AI Init Error:", err);
+            setMsgs([{ role: 'model', text: "⚠️ Antigravity en modo offline o error de conexión. (Revisa tu API Key)" }]);
         }
-    }, [selectedWell, language]); // Removed fleet from deps to avoid constant resets, only reset if well changes
+    }, [selectedWell?.id, language]);
 
     useEffect(() => { if (isOpen) endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [msgs, isOpen]);
 
