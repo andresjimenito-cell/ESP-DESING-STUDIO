@@ -400,8 +400,8 @@ if ($nodeFound) {
 }
 else {
     # ── FALLBACK ──────────────────────────────────────────
-    Add-Log "Fallback mode activo" "warn"
-    $M.NODE.Val = "NONE"; $M.NODE.Color = $WR
+    Add-Log "Modo sin Node.js (Servidor Local)" "info"
+    $M.NODE.Val = "SERV"; $M.NODE.Color = $PR
     Start-MetricAnimation -Key NODE -TargetPct 100 -Phase "FALLBACK · HTTP" -GlobalStart 50 -GlobalEnd 65 -M $M
 
     $M.DATA.Val = "N/A"; $M.DATA.Color = $GY
