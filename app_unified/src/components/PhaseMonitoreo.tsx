@@ -2937,14 +2937,14 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                             {/* ENLARGED VIDEO CONTAINER FOR LOADING */}
                             <div className="relative w-[480px] h-[270px] flex items-center justify-center max-w-full">
                                 <div className="absolute inset-0 bg-primary/10 rounded-full blur-[100px] animate-pulse"></div>
-                                
+
                                 <div className="relative z-10 w-full h-full overflow-hidden rounded-[2rem] border border-white/10 shadow-[0_0_50px_rgba(var(--color-primary),0.2)] bg-canvas/40 backdrop-blur-md">
-                                    <video 
-                                        src="/loading_mini.mp4" 
-                                        autoPlay 
-                                        loop 
-                                        muted 
-                                        playsInline 
+                                    <video
+                                        src="/loading_mini.mp4"
+                                        autoPlay
+                                        loop
+                                        muted
+                                        playsInline
                                         className="w-full h-full object-cover"
                                     />
                                 </div>
@@ -3147,23 +3147,23 @@ const FloatingAiPanel = ({ fleet, selectedWell, language, t }: { fleet: WellFlee
 
         // --- NEW: SAVE TO AI MEMORY ---
         if (session && input && msgs.length > 0) {
-             const signature = AiMemoryService.generateSignature(selectedWell ? {
-                 rate: selectedWell.currentRate,
-                 pip: selectedWell.productionTest.pip,
-                 frequency: selectedWell.productionTest.freq,
-                 model: selectedWell.status
-             } : { fleetCount: fleet.length });
+            const signature = AiMemoryService.generateSignature(selectedWell ? {
+                rate: selectedWell.currentRate,
+                pip: selectedWell.productionTest.pip,
+                frequency: selectedWell.productionTest.freq,
+                model: selectedWell.status
+            } : { fleetCount: fleet.length });
 
-             const lastMsg = msgs[msgs.length - 1];
-             if (lastMsg.role === 'model') {
-                 AiMemoryService.saveCase({
-                     category: 'diagnosis',
-                     wellName: selectedWell?.name,
-                     technicalSignature: signature,
-                     context: selectedWell || { fleetCount: fleet.length },
-                     recommendation: lastMsg.text
-                 });
-             }
+            const lastMsg = msgs[msgs.length - 1];
+            if (lastMsg.role === 'model') {
+                AiMemoryService.saveCase({
+                    category: 'diagnosis',
+                    wellName: selectedWell?.name,
+                    technicalSignature: signature,
+                    context: selectedWell || { fleetCount: fleet.length },
+                    recommendation: lastMsg.text
+                });
+            }
         }
     };
 
@@ -3190,8 +3190,8 @@ const FloatingAiPanel = ({ fleet, selectedWell, language, t }: { fleet: WellFlee
                             </div>
                         </div>
                         <div className="flex items-center gap-1">
-                            <button 
-                                onClick={() => AiMemoryService.exportMemory()} 
+                            <button
+                                onClick={() => AiMemoryService.exportMemory()}
                                 className="p-2 hover:bg-white/10 rounded-xl transition-all group"
                                 title={language === 'es' ? 'Exportar Memoria IA (Archivo .json)' : 'Export AI Memory (.json)'}
                             >

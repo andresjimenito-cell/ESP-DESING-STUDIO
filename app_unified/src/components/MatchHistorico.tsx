@@ -155,7 +155,7 @@ export const MatchHistorico: React.FC<Props> = ({ wellName, pump, designParams, 
 
         processed.sort((a, b) => parseToTimestamp(a.date) - parseToTimestamp(b.date));
         setHistory(processed);
-        setCurrentIndex(0);
+        setCurrentIndex(processed.length > 0 ? processed.length - 1 : 0);
     };
 
     useEffect(() => {
@@ -184,11 +184,11 @@ export const MatchHistorico: React.FC<Props> = ({ wellName, pump, designParams, 
         if (isPlaying) {
             playTimerRef.current = setInterval(() => {
                 setCurrentIndex(prev => {
-                    if (prev >= history.length - 1) {
+                    if (prev <= 0) {
                         setIsPlaying(false);
                         return prev;
                     }
-                    return prev + 1;
+                    return prev - 1;
                 });
             }, 800); // Improved playback speed
         } else if (playTimerRef.current) {
@@ -203,10 +203,7 @@ export const MatchHistorico: React.FC<Props> = ({ wellName, pump, designParams, 
         if (!currentRecord) return [];
         const baseFreq = pump?.nameplateFrequency || 60;
 
-        return history.slice(0, currentIndex + 1).map(h => {
-            // Se dibuja el punto fantasma en las coordenadas reales de su propio día.
-            // Para que no brinque "más arriba" cuando se convierte en estela, la altura Y (Head)
-            // se calcula usando la curva propia de la bomba en la frecuencia exacta de ese día.
+        return history.slice(currentIndex, history.length).map(h => {
             const hFreq = h.frequency || 60;
             const ratio = hFreq / baseFreq;
 
@@ -218,7 +215,7 @@ export const MatchHistorico: React.FC<Props> = ({ wellName, pump, designParams, 
 
             return {
                 flow: flow,
-                head: purePumpHead > 0 ? purePumpHead : h.actualHead, // Exactamente igual a actualPumpTDH en Phase6
+                head: purePumpHead > 0 ? purePumpHead : h.actualHead,
                 color: h.healthScore > 85 ? '#10b981' : h.healthScore > 60 ? '#f59e0b' : '#ef4444',
                 label: ''
             };
@@ -235,11 +232,11 @@ export const MatchHistorico: React.FC<Props> = ({ wellName, pump, designParams, 
 
     const aiAnalysis = useMemo(() => {
         if (history.length < 2) return t('p6.noData');
-        const currentBatch = history.slice(0, currentIndex + 1);
+        const currentBatch = history.slice(currentIndex, history.length);
         if (currentBatch.length < 2) return "RECOPILANDO PUNTOS PARA ANÁLISIS...";
 
         const start = currentBatch[0];
-        const prev = currentBatch[currentBatch.length - 2];
+        const prev = currentBatch[1];
         const end = currentBatch[currentBatch.length - 1];
 
         // Long term
@@ -346,8 +343,8 @@ export const MatchHistorico: React.FC<Props> = ({ wellName, pump, designParams, 
                                 </button>
                                 <button
                                     onClick={() => {
-                                        if (currentIndex >= history.length - 1) {
-                                            setCurrentIndex(0);
+                                        if (currentIndex <= 0) {
+                                            setCurrentIndex(history.length - 1);
                                         }
                                         setIsPlaying(!isPlaying);
                                     }}
