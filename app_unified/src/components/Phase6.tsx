@@ -1425,29 +1425,30 @@ export const Phase6: React.FC<Props> = ({ params, setParams, pump, designFreq, t
             // --- 3. System Curves (Truncated at AOF) ---
             const checkAOF = (p: SystemParams) => {
                 if (p.inflow.ip > 0 && p.inflow.pStatic > 0) {
-                    return calculatePwf(flow, p) > 0;
+                    // Stricter check: the well must have positive intake pressure at the pump
+                    return calculatePIP(flow, p) > 0;
                 }
                 return true;
             };
 
             if (checkAOF(minP)) {
                 const h = calculateTDH(flow, minP);
-                if (h > 5 && !isNaN(h)) point.sysMin = Number(h.toFixed(1));
+                if (!isNaN(h) && h > 0) point.sysMin = Number(h.toFixed(1));
             }
             if (checkAOF(maxP)) {
                 const h = calculateTDH(flow, maxP);
-                if (h > 5 && !isNaN(h)) point.sysMax = Number(h.toFixed(1));
+                if (!isNaN(h) && h > 0) point.sysMax = Number(h.toFixed(1));
             }
             if (checkAOF(targetP)) {
                 const h = calculateTDH(flow, targetP);
-                if (h > 5 && !isNaN(h)) {
+                if (!isNaN(h) && h > 0) {
                     point.designSystemCurve = Number(h.toFixed(1));
                     point.pipDesign = Number(Math.max(0, calculatePIP(flow, targetP)).toFixed(1));
                 }
             }
             if (checkAOF(actualParams)) {
                 const h = calculateTDH(flow, actualParams);
-                if (h > 5 && !isNaN(h)) {
+                if (!isNaN(h) && h > 0) {
                     const hStatMatch = calculateTDH(0.1, actualParams);
                     const fricH = h - hStatMatch;
                     const correctedH = hStatMatch + fricH * sysCurveFrictionMultiplier;
@@ -1478,7 +1479,7 @@ export const Phase6: React.FC<Props> = ({ params, setParams, pump, designFreq, t
                     const hStatS = calculateTDH(0.1, scenarioP);
                     // Application of friction multiplier calibrated on field test
                     const corrHSens = hStatS + (hSens - hStatS) * actualResSummary.sysCurveFrictionMultiplier;
-                    if (corrHSens > 5 && !isNaN(corrHSens)) {
+                    if (!isNaN(corrHSens) && corrHSens > 0) {
                         point.manualSystemCurve = Number(corrHSens.toFixed(1));
                     }
                 }

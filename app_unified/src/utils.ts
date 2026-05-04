@@ -254,10 +254,8 @@ export const calculateBaseHead = (flow: number, pump: EspPump): number => {
 
     // Safety: Head curves should never increase at the far right
     let result = Math.max(0, headPerStage);
-    if (pump.maxRate > 0 && flowVal > pump.maxRate) {
-        const hMax = (h0 || 0) + (h1 || 0) * pump.maxRate + (h2 || 0) * Math.pow(pump.maxRate, 2) + (h3 || 0) * Math.pow(pump.maxRate, 3) + (h4 || 0) * Math.pow(pump.maxRate, 4) + (h5 || 0) * Math.pow(pump.maxRate, 5) + (h6 || 0) * Math.pow(pump.maxRate, 6);
-        result = Math.min(result, hMax);
-    }
+    // REMOVED: Flatline at maxRate to avoid "angle and constant" behavior
+    // If polynomial extrapolates weirdly, users prefer a break or natural drop
     return (isNaN(result) ? 0 : result) * (stages || 1);
 };
 
@@ -540,7 +538,13 @@ export const calculateSystemTDH = (flow: number, sys: SystemParams): number => {
     const pwf = calculatePwf(q, sys);
     const midPerfsTVD = interpolateTVD(sys.wellbore.midPerfsMD || pumpMD, sys.survey);
     const dTVD_below = Math.max(0, midPerfsTVD - pumpTVD);
-    const pip = Math.max(1, pwf - dTVD_below * gradLiq);
+    const pipRaw = pwf - dTVD_below * gradLiq;
+
+    // PHYSICAL LIMIT: If intake pressure is exhausted, the well cannot deliver flow to the pump.
+    // Returning NaN ensures the chart curve terminates naturally instead of flatlining.
+    if (pipRaw <= 0) return NaN;
+    
+    const pip = Math.max(1, pipRaw);
 
     // 4. Static head case (zero/very low flow) — no friction
     if (q < 0.1) {
@@ -608,8 +612,9 @@ export const calculateSystemTDH = (flow: number, sys: SystemParams): number => {
     //    TDH = THP/grad + pumpTVD + friction_ft - PIP/grad
     const tdh = thp / gradLiq + pumpTVD + frictionHead_ft_liq - pip / gradLiq;
 
-    if (isNaN(tdh) || !isFinite(tdh)) return Math.max(1, thp / gradLiq + pumpTVD - pip / gradLiq);
-    return Math.max(1, tdh);
+    // If physics fails (NaN), return NaN so the chart stops drawing instead of flatlining
+    if (isNaN(tdh) || !isFinite(tdh)) return NaN;
+    return tdh;
 };
 
 export const calculatePIP = (q: number, sys: SystemParams): number => {
@@ -624,7 +629,9 @@ export const calculatePIP = (q: number, sys: SystemParams): number => {
 
     const deltaTVD = Math.max(0, perfsTVD - pumpTVD);
     const fluidProps = calculateFluidProperties(pwf, sys.bottomholeTemp, sys);
-    return Math.max(1, pwf - (deltaTVD * 0.433 * fluidProps.mixSG));
+    
+    // Return raw PIP (can be negative) to allow callers to detect physical exhaustion
+    return pwf - (deltaTVD * 0.433 * fluidProps.mixSG);
 };
 
 export const calculatePDP = (q: number, sys: SystemParams): { pdp: number } => {

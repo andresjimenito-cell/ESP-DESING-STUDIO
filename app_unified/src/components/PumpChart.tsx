@@ -68,14 +68,37 @@ export const PumpChart: React.FC<PumpChartProps> = ({ data, pump, currentFrequen
 
     return data.map(d => {
       const flow = d.flow ?? 0;
+      // Sanitize values: nullify zero or negative values for curves (except Q=0)
+      const s = (v: any) => (v === null || v === undefined || isNaN(v) || (v <= 0 && flow > 0)) ? null : v;
+
       return {
         ...d,
         flow,
+        systemCurve: s(d.systemCurve),
+        idealSystemCurve: s(d.idealSystemCurve),
+        designSystemCurve: s(d.designSystemCurve),
+        manualSystemCurve: s(d.manualSystemCurve),
+        sysMin: s(d.sysMin),
+        sysMax: s(d.sysMax),
+        userHz: s(d.userHz),
+        catalogPumpCurve: s(d.catalogPumpCurve),
+        hz30: s(d.hz30), hz40: s(d.hz40), hz50: s(d.hz50), hz60: s(d.hz60), hz70: s(d.hz70),
         coneMaskMin: kMin > 0 ? Number((kMin * Math.pow(flow, 2)).toFixed(1)) : 0,
         coneMaskMax: kMax > 0 ? Number((kMax * Math.pow(flow, 2)).toFixed(1)) : 0,
       };
     });
   }, [data, pump]);
+
+  const xDomain = useMemo<[number, number | "auto"]>(() => {
+    if (safeData.length === 0) return [0, 'auto'];
+    // Filter points that have at least one valid primary curve value
+    const valid = safeData.filter(d =>
+      d.systemCurve || d.userHz || d.designSystemCurve || d.manualSystemCurve || d.hz60
+    );
+    if (valid.length === 0) return [0, 'auto'];
+    const maxF = Math.max(...valid.map(v => v.flow));
+    return [0, Math.ceil(maxF / 100) * 100];
+  }, [safeData]);
 
   // Calculate intersection dots for limits (Red Dots)
   const limitDots = useMemo(() => {
@@ -271,11 +294,11 @@ export const PumpChart: React.FC<PumpChartProps> = ({ data, pump, currentFrequen
             <XAxis
               dataKey="flow"
               type="number"
-              domain={[0, 'auto']}
+              domain={xDomain}
               tick={{ fontSize: 10, fill: colorTextMuted, fontWeight: 800, fontFamily: 'Inter, system-ui, sans-serif' }}
               tickLine={false}
               axisLine={{ stroke: colorGrid, strokeWidth: 1.5 }}
-              allowDataOverflow={false}
+              allowDataOverflow={true}
               height={25}
               tickMargin={4}
             >
@@ -336,14 +359,14 @@ export const PumpChart: React.FC<PumpChartProps> = ({ data, pump, currentFrequen
             <Line yAxisId="left" type="monotone" dataKey="sysMax" stroke={colorSecondary} strokeWidth={1} dot={false} name={t('chart.sysMax')} isAnimationActive={false} connectNulls={false} opacity={0.4} />
             <Line
               yAxisId="left"
-              type="linear"
+              type="monotone"
               dataKey="systemCurve"
               stroke={colorSecondary}
               strokeWidth={3}
               dot={false}
               name={t('chart.sysCurve')}
               isAnimationActive={false}
-              connectNulls
+              connectNulls={false}
               opacity={0.9}
               filter="url(#neon-s)"
             />
@@ -352,7 +375,7 @@ export const PumpChart: React.FC<PumpChartProps> = ({ data, pump, currentFrequen
             {isDiagnosticMode && (
               <Line
                 yAxisId="left"
-                type="linear"
+                type="monotone"
                 dataKey="idealSystemCurve"
                 stroke={colorSecondary}
                 strokeWidth={2}
@@ -360,15 +383,29 @@ export const PumpChart: React.FC<PumpChartProps> = ({ data, pump, currentFrequen
                 name="Sistema Catálogo"
                 isAnimationActive={false}
                 strokeDasharray="3 3"
-                connectNulls
+                connectNulls={false}
                 opacity={0.4}
               />
             )}
 
+            {/* DESIGN SYSTEM CURVE (OBJ) - Stylized as MIN/MAX per user request */}
+            <Line
+              yAxisId="left"
+              type="monotone"
+              dataKey="designSystemCurve"
+              stroke={colorSecondary}
+              strokeWidth={1}
+              dot={false}
+              name="OBJ (Target)"
+              isAnimationActive={false}
+              connectNulls={false}
+              opacity={0.4}
+            />
+
             {/* PREDICTED / MANUAL SYSTEM CURVE (Sensitivity) */}
             <Line
               yAxisId="left"
-              type="linear"
+              type="monotone"
               dataKey="manualSystemCurve"
               stroke={colorPrimary}
               strokeWidth={2.5}
@@ -376,7 +413,7 @@ export const PumpChart: React.FC<PumpChartProps> = ({ data, pump, currentFrequen
               name="Predicción Escenario"
               isAnimationActive={false}
               strokeDasharray="4 3"
-              connectNulls
+              connectNulls={false}
               opacity={1}
             />
 

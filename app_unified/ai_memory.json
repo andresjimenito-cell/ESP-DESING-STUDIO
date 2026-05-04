@@ -1,1 +1,50 @@
-[]
+[
+  {
+    "category": "diagnosis",
+    "wellName": "QF-1062H#1",
+    "technicalSignature": "normal|Q:2490|PIP:520|F:44",
+    "context": {
+      "id": "EXCEL-QF-1062H#1-1777910617831-0",
+      "name": "QF-1062H#1",
+      "status": "normal",
+      "health": {
+        "pump": "normal",
+        "motor": "normal",
+        "seal": "normal",
+        "sensor": "active",
+        "cable": "normal"
+      },
+      "predictive": {
+        "ttf": 365,
+        "vsdStatus": "optimal",
+        "vsdAnalysis": "Excel Import",
+        "transformerStatus": "optimal",
+        "transformerAnalysis": "Normal",
+        "ventBoxStatus": "optimal",
+        "ventBoxAnalysis": "Normal"
+      },
+      "lastUpdate": "2026-04-27",
+      "currentRate": 2490,
+      "targetRate": 4719.6,
+      "consumptionReal": 0,
+      "consumptionTheo": 0,
+      "depthMD": 2840,
+      "productionTest": {
+        "date": "2026-04-27",
+        "rate": 2490,
+        "freq": 44,
+        "pip": 528,
+        "thp": 135,
+        "tht": 144,
+        "waterCut": 93.28,
+        "gor": 0,
+        "hp": 0,
+        "pdp": 0,
+        "hasMatchData": true
+      }
+    },
+    "recommendation": "Hola. Monoreando pozo **QF-1062H#1**. Salud: 91%. ¿En qué diagnóstico te ayudo?",
+    "id": "de24c09c-fb7c-402e-8d5b-507e74dea320",
+    "timestamp": "2026-05-04T16:06:52.237Z"
+  }
+]
