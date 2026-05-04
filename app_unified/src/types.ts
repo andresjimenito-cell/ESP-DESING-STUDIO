@@ -265,6 +265,7 @@ export interface SystemParams {
   initialMotorHp?: number;
   initialCableName?: string;
   initialVSDName?: string;
+  isMechVerified?: boolean;
 }
 
 export interface MonitoringEvent {

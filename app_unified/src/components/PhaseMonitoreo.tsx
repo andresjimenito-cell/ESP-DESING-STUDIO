@@ -1143,6 +1143,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                         inflow: { ...INITIAL_PARAMS.inflow, pStatic, ip },
                         pressures: { ...INITIAL_PARAMS.pressures, totalRate: rate(ip), pumpDepthMD: intakeMD, pht: 80 },
                         survey: surveyDataByWell[wellName] || surveyDataByWell['UNKNOWN'] || [],
+                        isMechVerified: !!mechRow,
                         targets: {
                             min: { rate: rate(ipMin || ip * 0.8), ip: cleanIp(ipMin || ip * 0.8), waterCut: bsw, gor, frequency: 50 },
                             target: { rate: rate(ip), ip: cleanIp(ip), waterCut: bsw, gor, frequency: 60 },
@@ -2199,7 +2200,12 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                                     >
                                                         <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${health >= 85 ? 'bg-success shadow-glow-success' : health >= 60 ? 'bg-warning' : 'bg-danger shadow-glow-danger'}`}></div>
                                                         <div className="flex-1 min-w-0">
-                                                            <span className={`text-sm font-black uppercase tracking-tight block truncate ${isActive ? 'text-primary' : 'text-txt-main'}`}>{well.name}</span>
+                                                            <div className="flex items-center gap-2">
+                                                                <span className={`text-sm font-black uppercase tracking-tight truncate ${isActive ? 'text-primary' : 'text-txt-main'}`}>{well.name}</span>
+                                                                {customDesigns[norm_ext(well.name)]?.isMechVerified && (
+                                                                    <span className="bg-cyan-500/10 text-cyan-500 border border-cyan-500/30 px-1.5 py-0.5 rounded text-[7px] font-black uppercase tracking-widest">MECH</span>
+                                                                )}
+                                                            </div>
                                                             <span className="text-[9px] font-bold text-txt-muted uppercase tracking-widest">
                                                                 {Math.round(well.currentRate)} BPD • {well.productionTest.freq || 0} Hz
                                                             </span>

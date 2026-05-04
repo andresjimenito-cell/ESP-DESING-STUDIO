@@ -1811,11 +1811,16 @@ export const Phase6: React.FC<Props> = ({ params, setParams, pump, designFreq, t
                         <h2 className="text-2xl font-black text-txt-main uppercase tracking-[0.1em] leading-none drop-shadow-md">
                             {isMaxCapActive ? "CAPACITY " : (sensScenario.active ? "SENSITIVITY (IP/THP)" : "MATCH")}
                         </h2>
-                        <div className="flex items-center gap-2 mt-1.5">
+                        <div className="flex items-center gap-3 mt-1.5">
                             <div className={`h-[1px] w-8 ${isMaxCapActive ? 'bg-success' : (sensScenario.active ? 'bg-primary' : 'bg-secondary')}`}></div>
                             <p className="text-[10px] text-txt-muted font-black uppercase tracking-[0.3em] opacity-40">
                                 {isMaxCapActive ? "PREDICCIÓN BASADA EN MUESTRA CALIBRADA" : (sensScenario.active ? "ANÁLISIS DE SENSIBILIDAD PRODUCTIVA" : t('p6.fieldSync'))}
                             </p>
+                            <div className="w-1 h-1 rounded-full bg-txt-muted opacity-30 mx-1"></div>
+                            <span className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest flex items-center gap-1.5 ${params.isMechVerified ? 'bg-cyan-500/10 text-cyan-500 border border-cyan-500/30' : 'bg-white/5 text-txt-muted border border-white/10'}`}>
+                                <Database className="w-2.5 h-2.5" />
+                                {params.isMechVerified ? "ESTADOS MECÁNICOS" : "DISEÑO ORIGINAL"}
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -1898,7 +1903,12 @@ export const Phase6: React.FC<Props> = ({ params, setParams, pump, designFreq, t
                                     <div className="text-[10px] font-black text-primary mt-0.5 uppercase tracking-tighter opacity-80">{compareScenario.toUpperCase()} — {t('p5.preview')}</div>
                                 </div>
                             </div>
-                            <span className="bg-primary text-white px-3 py-1 rounded-lg text-[10px] font-black">TARGET</span>
+                            <div className="flex items-center gap-2">
+                                {params.isMechVerified && (
+                                    <span className="bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 px-2.5 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest">VERIFICADO</span>
+                                )}
+                                <span className="bg-primary text-white px-3 py-1 rounded-lg text-[10px] font-black">TARGET</span>
+                            </div>
                         </div>
 
                         {!isDesignCollapsed && (
@@ -1913,6 +1923,13 @@ export const Phase6: React.FC<Props> = ({ params, setParams, pump, designFreq, t
                                 <DesignMetric label="PMP (TVD)" value={`${interpolateTVD(designParams.wellbore.midPerfsMD, designParams.survey).toFixed(0)} ft`} />
                             </div>
                         )}
+                        
+                        <div className="mt-4 pt-4 border-t border-white/5 flex items-center gap-2 opacity-50 group-hover:opacity-100 transition-opacity">
+                            <Info className="w-3 h-3 text-txt-muted" />
+                            <span className="text-[7px] font-black uppercase tracking-[0.2em] text-txt-muted">
+                                Fuente: {params.isMechVerified ? 'ESTADOS MECÁNICOS (VERIFICADO)' : 'DISEÑO ORIGINAL (AUTO)'}
+                            </span>
+                        </div>
                     </div>
 
                     <div className={`card-solid rounded-[2rem] border p-6 shadow-2xl flex-1 relative overflow-hidden flex flex-col gap-6 min-h-0 min-h-[400px] transition-all duration-700 ${isMaxCapActive ? 'border-success/40 ring-1 ring-success/20 bg-success/[0.04]' : 'border-white/10'}`}>
