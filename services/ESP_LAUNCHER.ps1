@@ -285,7 +285,7 @@ if ($gitCheck) {
     }
 }
 else {
-    Add-Log "Git no encontrado" "warn"
+    Add-Log "Git no encontrado (Instalar de git-scm.com)" "warn"
     $M.GIT.Val = "NONE"; $M.GIT.Color = $WR
 }
 $gitOk = ($LASTEXITCODE -eq 0) -and $gitCheck
