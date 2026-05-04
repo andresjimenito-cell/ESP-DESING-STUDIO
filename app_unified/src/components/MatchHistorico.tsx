@@ -233,57 +233,89 @@ export const MatchHistorico: React.FC<Props> = ({ wellName, pump, designParams, 
     const aiAnalysis = useMemo(() => {
         if (history.length < 2) return t('p6.noData');
         const currentBatch = history.slice(currentIndex, history.length);
-        if (currentBatch.length < 2) return "RECOPILANDO PUNTOS PARA ANÁLISIS...";
+        if (currentBatch.length < 1) return "RECOPILANDO PUNTOS PARA ANÁLISIS...";
 
-        const start = currentBatch[0];
-        const prev = currentBatch[1];
-        const end = currentBatch[currentBatch.length - 1];
+        let minIP = Infinity, maxIP = -Infinity;
+        let minFreq = Infinity, maxFreq = -Infinity;
+        let minRate = Infinity, maxRate = -Infinity;
+        let minBSW = Infinity, maxBSW = -Infinity;
+        let sumHealth = 0;
 
-        // Long term
-        const totalHealthChange = end.healthScore - start.healthScore;
-        // Short term
-        const deltaHealth = end.healthScore - prev.healthScore;
-        const rateChange = ((end.rate - start.rate) / Math.max(1, start.rate)) * 100;
-        const ipChange = ((end.calculatedIP - start.calculatedIP) / Math.max(0.1, start.calculatedIP)) * 100;
-        const pipChange = end.pip - prev.pip;
+        currentBatch.forEach(h => {
+            const ip = h.calculatedIP || 0;
+            const freq = h.frequency || 0;
+            const r = h.rate || 0;
+            const bsw = h.waterCut || 0;
 
-        const lines = [];
+            if (ip < minIP) minIP = ip;
+            if (ip > maxIP) maxIP = ip;
 
-        // 1. Mechanical State & Health Trend
-        if (end.healthScore < 65) {
-            lines.push("🔴 ESTADO CRÍTICO: El equipo presenta una degradación severa (" + (100 - end.healthScore).toFixed(1) + "%).");
-            lines.push("   - DIAGNÓSTICO: Posible falla inminente por desgaste de etapas o rotura parcial.");
-        } else if (deltaHealth < -5) {
-            lines.push("🟠 ALERTA DE TENDENCIA: Caída súbita de salud en el último registro (" + deltaHealth.toFixed(1) + "%).");
-            lines.push("   - ACCIÓN: Verificar eventos eléctricos o cambios bruscos en frecuencia.");
-        } else if (totalHealthChange < -15) {
-            lines.push("🟡 DESGASTE PROGRESIVO: Pérdida acumulada del " + Math.abs(totalHealthChange).toFixed(1) + "% desde el inicio.");
-            lines.push("   - CONSEJO: Planificar intervención a mediano plazo.");
+            if (freq < minFreq) minFreq = freq;
+            if (freq > maxFreq) maxFreq = freq;
+
+            if (r < minRate) minRate = r;
+            if (r > maxRate) maxRate = r;
+
+            if (bsw < minBSW) minBSW = bsw;
+            if (bsw > maxBSW) maxBSW = bsw;
+
+            sumHealth += (h.healthScore || 0);
+        });
+
+        const avgHealth = sumHealth / currentBatch.length;
+
+        // Oldest and newest records in the current batch of the regression
+        const oldest = currentBatch[currentBatch.length - 1];
+        const newest = currentBatch[0];
+
+        // Trends
+        const freqDelta = newest.frequency - oldest.frequency;
+        const rateDelta = newest.rate - oldest.rate;
+        const bswDelta = (newest.waterCut || 0) - (oldest.waterCut || 0);
+
+        const lines: string[] = [];
+
+        // Header Summary
+        lines.push(`📊 ANÁLISIS GLOBAL IA (${currentBatch.length} PUNTOS ANALIZADOS EN REGRESIÓN)`);
+
+        // 1. IP Summary
+        lines.push(`• ÍNDICE DE PRODUCTIVIDAD (IP): Varía en un rango entre ${minIP.toFixed(2)} y ${maxIP.toFixed(2)} STB/d/psi.`);
+
+        // 2. Frequency
+        let freqText = `• FRECUENCIA (Hz): Se ha mantenido estable entre ${minFreq.toFixed(1)} y ${maxFreq.toFixed(1)} Hz.`;
+        if (freqDelta > 0.5) {
+            freqText = `• FRECUENCIA (Hz): Ha aumentado un total de +${freqDelta.toFixed(1)} Hz a lo largo del tiempo (Rango: ${minFreq.toFixed(1)} - ${maxFreq.toFixed(1)} Hz).`;
+        } else if (freqDelta < -0.5) {
+            freqText = `• FRECUENCIA (Hz): Ha disminuido un total de ${freqDelta.toFixed(1)} Hz a lo largo del tiempo (Rango: ${minFreq.toFixed(1)} - ${maxFreq.toFixed(1)} Hz).`;
+        }
+        lines.push(freqText);
+
+        // 3. Production Rate
+        let rateText = `• PRODUCCIÓN (BFPD): Se encuentra entre ${minRate.toFixed(0)} y ${maxRate.toFixed(0)} BFPD.`;
+        if (rateDelta > 10) {
+            rateText = `• PRODUCCIÓN (BFPD): Ha incrementado en +${rateDelta.toFixed(0)} BFPD (Rango: ${minRate.toFixed(0)} - ${maxRate.toFixed(0)} BFPD).`;
+        } else if (rateDelta < -10) {
+            rateText = `• PRODUCCIÓN (BFPD): Ha caído en ${rateDelta.toFixed(0)} BFPD (Rango: ${minRate.toFixed(0)} - ${maxRate.toFixed(0)} BFPD).`;
+        }
+        lines.push(rateText);
+
+        // 4. BSW
+        let bswText = `• CORTE DE AGUA (BSW): Oscila en un rango del ${minBSW.toFixed(1)}% al ${maxBSW.toFixed(1)}%.`;
+        if (bswDelta > 1) {
+            bswText = `• CORTE DE AGUA (BSW): Ha aumentado un +${bswDelta.toFixed(1)}% a lo largo del tiempo (Rango: ${minBSW.toFixed(1)}% - ${maxBSW.toFixed(1)}%).`;
+        } else if (bswDelta < -1) {
+            bswText = `• CORTE DE AGUA (BSW): Ha bajado un ${bswDelta.toFixed(1)}% a lo largo del tiempo (Rango: ${minBSW.toFixed(1)}% - ${maxBSW.toFixed(1)}%).`;
+        }
+        lines.push(bswText);
+
+        // 5. Overall evaluation
+        lines.push("\n🔍 EVALUACIÓN GENERAL DE DESEMPEÑO:");
+        if (avgHealth > 85) {
+            lines.push("🟢 LA BOMBA HA TENIDO UN EXCELENTE DESEMPEÑO: Mantiene una salud promedio óptima del " + avgHealth.toFixed(1) + "%, operando dentro de los límites seguros y sin signos de degradación severa.");
+        } else if (avgHealth >= 65) {
+            lines.push("🟡 DESEMPEÑO REGULAR: Se detecta una salud promedio moderada del " + avgHealth.toFixed(1) + "%. Se evidencia un desgaste progresivo típico que requiere monitoreo continuo.");
         } else {
-            lines.push("✅ ESTABILIDAD MECÁNICA: La bomba mantiene una salud óptima del " + end.healthScore.toFixed(1) + "%.");
-        }
-
-        // 2. Reservoir & Inflow Analysis
-        if (ipChange < -20) {
-            lines.push("⚠️ DAÑO DE FORMACIÓN: El IP ha caído un " + Math.abs(ipChange).toFixed(0) + "% .");
-            lines.push("   - CONSEJO: Evaluar limpieza mecánica o estimulación química.");
-        } else if (pipChange > 50 && end.rate < prev.rate * 0.9) {
-            lines.push("🔍 POSIBLE OBSTRUCCIÓN: Sube la presión de entrada (PIP) pero cae el caudal.");
-            lines.push("   - DIAGNÓSTICO: Restricción en el intake o falla en el manejo de gas.");
-        } else if (end.pip < 150) {
-            lines.push("🌊 BAJA SUMERGENCIA: PIP crítico detectado (" + end.pip.toFixed(0) + " psi).");
-            lines.push("   - ACCIÓN: Reducir Hz para proteger el enfriamiento del motor.");
-        }
-
-        // 3. Operating Range Analysis (BEP)
-        const bepAtFreq = (pump?.bepRate || 1000) * (end.frequency / (pump?.nameplateFrequency || 60));
-        const flowRatio = end.rate / Math.max(1, bepAtFreq);
-        if (flowRatio > 1.20) {
-            lines.push("🚀 ALTO CAUDAL (UPTHRUST): Operando 20% por encima del BEP teórico.");
-            lines.push("   - RIESGO: Desgaste prematuro de arandelas de empuje superior.");
-        } else if (flowRatio < 0.65) {
-            lines.push("📉 BAJO CAUDAL (DOWNTHRUST): Flujo insuficiente detectado.");
-            lines.push("   - RIESGO: Pobre enfriamiento y empuje descendente excesivo.");
+            lines.push("🔴 DESEMPEÑO DEFICIENTE O CRÍTICO: La bomba está operando con una salud promedio baja del " + avgHealth.toFixed(1) + "%. Presenta indicios de desgaste severo y posible degradación mecánica acelerada.");
         }
 
         return lines.join("\n");
