@@ -748,6 +748,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
     const [wellViewMode, setWellViewMode] = useState<'monitoring' | 'history'>('monitoring');
     const [wellsHistoricalData, setWellsHistoricalData] = useState<Record<string, ProductionTest[]>>(_cachedHistoricalData);
     const [importProgress, setImportProgress] = useState<{ current: number, total: number, label: string } | null>(null);
+    const [zoomLevel, setZoomLevel] = useState<number>(1);
 
     // ── Sync module cache whenever state changes ──────────────────
     useEffect(() => { _cachedFleet = fleet; }, [fleet]);
@@ -1968,7 +1969,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
         ];
 
         return (
-            <div className="px-8 py-4 animate-fadeIn min-h-full space-y-1 relative">
+            <div style={{ zoom: zoomLevel }} className="px-8 py-4 animate-fadeIn min-h-full space-y-1 relative">
                 {/* Enhanced Ambient Overall Background Light */}
                 <div className="fixed top-[10%] left-[10%] w-[600px] h-[600px] bg-primary/10 blur-[150px] rounded-full pointer-events-none -z-10 animate-pulse transition-all duration-1000"></div>
                 <div className="fixed bottom-[10%] right-[10%] w-[500px] h-[500px] bg-secondary/8 blur-[120px] rounded-full pointer-events-none -z-10 transition-all duration-1000"></div>
@@ -2033,6 +2034,11 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                 <button onClick={cycleTheme} className="h-7 px-3 flex items-center gap-1.5 rounded-lg hover:bg-surface-light transition-all group" title="Cycle Professional Themes">
                                     <Palette className="w-3.5 h-3.5 text-primary transition-transform" />
                                     <span className="text-[8px] font-black uppercase tracking-widest text-txt-muted group-hover:text-txt-main hidden xl:block">{theme}</span>
+                                </button>
+                                <div className="w-px h-5 bg-surface-light mx-0.5 opacity-20"></div>
+                                <button onClick={() => setZoomLevel(zoomLevel === 1 ? 0.8 : 1)} className="h-7 px-3 flex items-center gap-1.5 rounded-lg hover:bg-surface-light transition-all group" title={zoomLevel === 1 ? "Reducir Escala (80%)" : "Aumentar Escala (100%)"}>
+                                    {zoomLevel === 1 ? <Minimize2 className="w-3.5 h-3.5 text-primary transition-transform" /> : <Maximize2 className="w-3.5 h-3.5 text-primary transition-transform" />}
+                                    <span className="text-[8px] font-black uppercase tracking-widest text-txt-muted group-hover:text-txt-main hidden xl:block">{zoomLevel === 1 ? "100%" : "80%"}</span>
                                 </button>
                             </div>
 
@@ -2590,6 +2596,13 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                             >
                                 <Palette className="w-4 h-4 text-secondary group-hover/palette:text-primary" />
                             </button>
+                            <button
+                                onClick={() => setZoomLevel(zoomLevel === 1 ? 0.8 : 1)}
+                                className="p-2 bg-white/5 hover:bg-white/10 rounded-lg transition-all border border-white/5 text-txt-muted hover:text-primary hover:border-primary/20 group/palette"
+                                title={zoomLevel === 1 ? "Reducir Escala (80%)" : "Aumentar Escala (100%)"}
+                            >
+                                {zoomLevel === 1 ? <Minimize2 className="w-4 h-4 text-primary" /> : <Maximize2 className="w-4 h-4 text-primary" />}
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -2786,7 +2799,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
     };
 
     return (
-        <div className="min-h-full pb-20 px-6 py-0 transition-all duration-700">
+        <div style={{ zoom: zoomLevel }} className="min-h-full pb-20 px-6 py-0 transition-all duration-700">
             {/* Header Globally Removed - Controls moved to contextual bars */}
 
             <div className="flex gap-6 mt-6 pb-20">
