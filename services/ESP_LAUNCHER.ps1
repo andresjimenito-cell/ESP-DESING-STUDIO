@@ -265,7 +265,8 @@ $gitExe = "git"
 $gitCheck = $null -ne (Get-Command git -ErrorAction SilentlyContinue)
 
 if (-not $gitCheck) {
-    $portablePath = Join-Path $PSScriptRoot "..\.git_portable\cmd\git.exe"
+    $rootPath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath(".")
+    $portablePath = Join-Path $rootPath ".git_portable\cmd\git.exe"
     if (Test-Path $portablePath) {
         $gitExe = $portablePath
         $gitCheck = $true
@@ -273,8 +274,8 @@ if (-not $gitCheck) {
     } else {
         Add-Log "Instalando Git Portable..." "warn"
         try {
-            $zipPath = Join-Path $PSScriptRoot "..\git.zip"
-            $destPath = Join-Path $PSScriptRoot "..\.git_portable"
+            $zipPath = Join-Path $rootPath "git.zip"
+            $destPath = Join-Path $rootPath ".git_portable"
             $minGitUrl = "https://github.com/git-for-windows/git/releases/download/v2.44.0.windows.1/MinGit-2.44.0-64-bit.zip"
             Invoke-WebRequest -Uri $minGitUrl -OutFile $zipPath -ErrorAction Stop
             Add-Type -AssemblyName System.IO.Compression.FileSystem
