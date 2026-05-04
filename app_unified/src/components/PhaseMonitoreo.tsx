@@ -1991,7 +1991,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                 <div className="fixed top-[40%] left-[40%] w-[400px] h-[400px] bg-primary/5 blur-[100px] rounded-full pointer-events-none -z-10"></div>
 
                 {/* ── CONSOLIDATED EXECUTIVE HEADER ── */}
-                <header className="flex flex-col xl:flex-row items-center justify-between gap-3 bg-surface/50 backdrop-blur-xl py-2 px-6 rounded-2xl border border-surface-light shadow-[0_15px_40px_-15px_rgba(0,0,0,0.5)] relative overflow-hidden group mb-4">
+                <header className="flex flex-col xl:flex-row items-center justify-between gap-3 bg-surface/50 backdrop-blur-xl py-2 px-6 rounded-2xl border border-surface-light shadow-[0_15px_40px_-15px_rgba(0,0,0,0.5)] relative overflow-hidden group mb-4 w-full">
                     {/* Header Dynamic Edge Light */}
                     <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-primary/60 to-transparent"></div>
                     <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-secondary/20 to-transparent opacity-30"></div>
@@ -2003,16 +2003,48 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                         </button>
                     </div>
 
-                    <div className="flex-1 max-w-xl relative group px-2">
-                        <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-secondary/10 blur-2xl group-focus-within:opacity-100 opacity-20 transition-opacity"></div>
-                        <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-txt-muted/60 group-focus-within:text-primary transition-all z-10" />
-                        <input
-                            type="text"
-                            placeholder="SEARCH WELLS..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="relative w-full h-10 bg-canvas/60 border border-surface-light/50 rounded-xl pl-12 pr-4 text-[10px] font-black text-txt-main focus:outline-none focus:border-primary/50 focus:ring-4 ring-primary/20 transition-all uppercase tracking-widest shadow-inner placeholder:text-txt-muted/30 backdrop-blur-md"
-                        />
+                    {/* Search & Filtering Control Center Group */}
+                    <div className="flex flex-col md:flex-row items-center gap-2 flex-1 w-full xl:max-w-4xl px-2">
+                        {/* Search Input */}
+                        <div className="flex-1 relative group w-full">
+                            <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-secondary/10 blur-2xl group-focus-within:opacity-100 opacity-20 transition-opacity"></div>
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-txt-muted/60 group-focus-within:text-primary transition-all z-10" />
+                            <input
+                                type="text"
+                                placeholder="SEARCH WELLS..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="relative w-full h-10 bg-canvas/60 border border-surface-light/50 rounded-xl pl-12 pr-4 text-[10px] font-black text-txt-main focus:outline-none focus:border-primary/50 focus:ring-4 ring-primary/20 transition-all uppercase tracking-widest shadow-inner placeholder:text-txt-muted/30 backdrop-blur-md"
+                            />
+                        </div>
+
+                        {/* Data Filter Control Panel */}
+                        <div className="flex items-center gap-1 bg-canvas/30 p-1 rounded-xl border border-surface-light backdrop-blur-md flex-shrink-0">
+                            <button onClick={() => setDataFilter('all')} className={`h-8 px-3 rounded-lg flex items-center gap-1 transition-all text-[8px] font-black uppercase tracking-widest ${dataFilter === 'all' ? 'bg-surface text-txt-main shadow-md border border-white/5' : 'text-txt-muted hover:text-txt-main hover:bg-surface-light/30'}`}>Datos</button>
+                            <button onClick={() => setDataFilter('complete')} className={`h-8 px-3 rounded-lg flex items-center gap-1.5 transition-all text-[8px] font-black uppercase tracking-widest ${dataFilter === 'complete' ? 'bg-success/20 text-success border border-success/30' : 'text-txt-muted hover:text-success'}`}>
+                                <div className={`w-1 h-1 rounded-full ${dataFilter === 'complete' ? 'bg-success animate-pulse' : 'bg-success/50'}`}></div> <span className="hidden xl:inline">Completos</span>
+                            </button>
+                            <button onClick={() => setDataFilter('missing')} className={`h-8 px-3 rounded-lg flex items-center gap-1.5 transition-all text-[8px] font-black uppercase tracking-widest ${dataFilter === 'missing' ? 'bg-warning/20 text-warning border border-warning/30' : 'text-txt-muted hover:text-warning'}`}>
+                                <div className={`w-1 h-1 rounded-full ${dataFilter === 'missing' ? 'bg-warning shadow-glow-warning' : 'bg-warning/50'}`}></div> <span className="hidden xl:inline">Faltan Datos</span>
+                            </button>
+                            <button onClick={() => setDataFilter('no-tests')} className={`h-8 px-3 rounded-lg flex items-center gap-1.5 transition-all text-[8px] font-black uppercase tracking-widest ${dataFilter === 'no-tests' ? 'bg-danger/20 text-danger border border-danger/30' : 'text-txt-muted hover:text-danger'}`}>
+                                <div className={`w-1 h-1 rounded-full ${dataFilter === 'no-tests' ? 'bg-danger animate-pulse' : 'bg-danger/50'}`}></div> <span className="hidden xl:inline">Sin Prueba</span>
+                            </button>
+                        </div>
+
+                        {/* Health Filter Control Panel */}
+                        <div className="flex items-center gap-1 bg-canvas/30 p-1 rounded-xl border border-surface-light backdrop-blur-md flex-shrink-0">
+                            <button onClick={() => setHealthFilter('all')} className={`h-8 px-3 rounded-lg flex items-center gap-1 transition-all text-[8px] font-black uppercase tracking-widest ${healthFilter === 'all' ? 'bg-surface text-txt-main shadow-md border border-white/5' : 'text-txt-muted hover:text-txt-main hover:bg-surface-light/30'}`}>Salud</button>
+                            <button onClick={() => setHealthFilter('healthy')} className={`h-8 px-3 rounded-lg flex items-center gap-1.5 transition-all text-[8px] font-black uppercase tracking-widest ${healthFilter === 'healthy' ? 'bg-success/20 text-success shadow-glow-success/20 border border-success/30' : 'text-txt-muted hover:text-success'}`}>
+                                <div className={`w-1 h-1 rounded-full ${healthFilter === 'healthy' ? 'bg-success animate-pulse' : 'bg-success/50'}`}></div> <span className="hidden xl:inline">Healthy</span>
+                            </button>
+                            <button onClick={() => setHealthFilter('caution')} className={`h-8 px-3 rounded-lg flex items-center gap-1.5 transition-all text-[8px] font-black uppercase tracking-widest ${healthFilter === 'caution' ? 'bg-warning/20 text-warning shadow-glow-warning/20 border border-warning/30' : 'text-txt-muted hover:text-warning'}`}>
+                                <div className={`w-1 h-1 rounded-full ${healthFilter === 'caution' ? 'bg-warning shadow-glow-warning' : 'bg-warning/50'}`}></div> <span className="hidden xl:inline">Caution</span>
+                            </button>
+                            <button onClick={() => setHealthFilter('critical')} className={`h-8 px-3 rounded-lg flex items-center gap-1.5 transition-all text-[8px] font-black uppercase tracking-widest ${healthFilter === 'critical' ? 'bg-danger/20 text-danger shadow-glow-danger/20 border border-danger/30' : 'text-txt-muted hover:text-danger'}`}>
+                                <div className={`w-1 h-1 rounded-full ${healthFilter === 'critical' ? 'bg-danger animate-pulse shadow-glow-danger' : 'bg-danger/50'}`}></div> <span className="hidden xl:inline">Critical</span>
+                            </button>
+                        </div>
                     </div>
 
                     <div className="flex items-center gap-2 relative z-10">
@@ -2026,34 +2058,6 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                             <button onClick={() => importDbRef.current?.click()} className="h-9 px-4 bg-secondary text-white rounded-xl flex items-center gap-2 hover:bg-secondary/80 transition-all font-black text-[8px] uppercase tracking-widest shadow-lg shadow-secondary/10" title="Import SCADA"><Database className="w-3.5 h-3.5" /> <span className="hidden xl:block">SCADA</span></button>
 
                             <div className="w-px h-5 bg-surface-light mx-0.5 opacity-30"></div>
-
-                            {/* Health Filter Control Panel */}
-                            <div className="flex items-center gap-1 bg-canvas/30 p-1 rounded-xl border border-surface-light backdrop-blur-md">
-                                <button onClick={() => setHealthFilter('all')} className={`h-7 px-3 rounded-lg flex items-center gap-1.5 transition-all text-[8px] font-black uppercase tracking-widest ${healthFilter === 'all' ? 'bg-surface text-txt-main shadow-md' : 'text-txt-muted hover:text-txt-main'}`}>Salud</button>
-                                <button onClick={() => setHealthFilter('healthy')} className={`h-7 px-3 rounded-lg flex items-center gap-1.5 transition-all text-[8px] font-black uppercase tracking-widest ${healthFilter === 'healthy' ? 'bg-success/20 text-success shadow-glow-success/20 border border-success/30' : 'text-txt-muted hover:text-success'}`}>
-                                    <div className={`w-1 h-1 rounded-full ${healthFilter === 'healthy' ? 'bg-success animate-pulse' : 'bg-success/50'}`}></div> <span className="hidden xl:block">Healthy</span>
-                                </button>
-                                <button onClick={() => setHealthFilter('caution')} className={`h-7 px-3 rounded-lg flex items-center gap-1.5 transition-all text-[8px] font-black uppercase tracking-widest ${healthFilter === 'caution' ? 'bg-warning/20 text-warning shadow-glow-warning/20 border border-warning/30' : 'text-txt-muted hover:text-warning'}`}>
-                                    <div className={`w-1 h-1 rounded-full ${healthFilter === 'caution' ? 'bg-warning shadow-glow-warning' : 'bg-warning/50'}`}></div> <span className="hidden xl:block">Caution</span>
-                                </button>
-                                <button onClick={() => setHealthFilter('critical')} className={`h-7 px-3 rounded-lg flex items-center gap-1.5 transition-all text-[8px] font-black uppercase tracking-widest ${healthFilter === 'critical' ? 'bg-danger/20 text-danger shadow-glow-danger/20 border border-danger/30' : 'text-txt-muted hover:text-danger'}`}>
-                                    <div className={`w-1 h-1 rounded-full ${healthFilter === 'critical' ? 'bg-danger animate-pulse shadow-glow-danger' : 'bg-danger/50'}`}></div> <span className="hidden xl:block">Critical</span>
-                                </button>
-                            </div>
-
-                            {/* Data Filter Control Panel */}
-                            <div className="flex items-center gap-1 bg-canvas/30 p-1 rounded-xl border border-surface-light backdrop-blur-md">
-                                <button onClick={() => setDataFilter('all')} className={`h-7 px-3 rounded-lg flex items-center gap-1.5 transition-all text-[8px] font-black uppercase tracking-widest ${dataFilter === 'all' ? 'bg-surface text-txt-main shadow-md' : 'text-txt-muted hover:text-txt-main'}`}>Datos</button>
-                                <button onClick={() => setDataFilter('complete')} className={`h-7 px-3 rounded-lg flex items-center gap-1.5 transition-all text-[8px] font-black uppercase tracking-widest ${dataFilter === 'complete' ? 'bg-primary/20 text-primary border border-primary/30' : 'text-txt-muted hover:text-primary'}`}>
-                                    <div className={`w-1 h-1 rounded-full ${dataFilter === 'complete' ? 'bg-primary animate-pulse' : 'bg-primary/50'}`}></div> <span className="hidden xl:block">Completos</span>
-                                </button>
-                                <button onClick={() => setDataFilter('missing')} className={`h-7 px-3 rounded-lg flex items-center gap-1.5 transition-all text-[8px] font-black uppercase tracking-widest ${dataFilter === 'missing' ? 'bg-warning/20 text-warning border border-warning/30' : 'text-txt-muted hover:text-warning'}`}>
-                                    <div className={`w-1 h-1 rounded-full ${dataFilter === 'missing' ? 'bg-warning animate-pulse' : 'bg-warning/50'}`}></div> <span className="hidden xl:block">Faltan Datos</span>
-                                </button>
-                                <button onClick={() => setDataFilter('no-tests')} className={`h-7 px-3 rounded-lg flex items-center gap-1.5 transition-all text-[8px] font-black uppercase tracking-widest ${dataFilter === 'no-tests' ? 'bg-danger/20 text-danger border border-danger/30' : 'text-txt-muted hover:text-danger'}`}>
-                                    <div className={`w-1 h-1 rounded-full ${dataFilter === 'no-tests' ? 'bg-danger animate-pulse' : 'bg-danger/50'}`}></div> <span className="hidden xl:block">Sin Prueba</span>
-                                </button>
-                            </div>
 
                             <div className="flex items-center gap-1 bg-canvas/30 p-1 rounded-xl border border-surface-light backdrop-blur-md">
                                 <button onClick={toggleLanguage} className="h-7 px-3 flex items-center gap-1.5 rounded-lg hover:bg-surface-light transition-all text-[8px] font-black font-mono text-txt-main tracking-widest uppercase" title="Cambiar Idioma">
@@ -2078,9 +2082,47 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                     </div>
                 </header>
 
+                {/* ── HIGH VISIBILITY FILTERING BAR ── */}
+                <div className="flex flex-col xl:flex-row items-center justify-between gap-4 bg-surface/40 backdrop-blur-md p-3 rounded-2xl border border-surface-light/50 shadow-xl mb-6 w-full">
+                    <div className="flex flex-col sm:flex-row items-center gap-3 w-full xl:w-auto">
+                        <span className="text-[10px] font-black text-txt-muted uppercase tracking-[0.3em] pl-2 select-none flex items-center gap-2 flex-shrink-0">
+                            <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+                            Filtrar por Completitud de Datos:
+                        </span>
+                        {/* Data Filter Control Panel */}
+                        <div className="flex flex-wrap items-center gap-1 bg-canvas/30 p-1 rounded-xl border border-surface-light/40 backdrop-blur-md w-full sm:w-auto">
+                            <button onClick={() => setDataFilter('all')} className={`h-8 px-4 rounded-lg flex items-center gap-1.5 transition-all text-[9px] font-black uppercase tracking-widest flex-1 sm:flex-initial justify-center ${dataFilter === 'all' ? 'bg-primary text-white shadow-glow-primary/40 border border-primary/40' : 'text-txt-muted hover:text-txt-main hover:bg-surface-light/30'}`}>Todos</button>
+                            <button onClick={() => setDataFilter('complete')} className={`h-8 px-4 rounded-lg flex items-center gap-1.5 transition-all text-[9px] font-black uppercase tracking-widest flex-1 sm:flex-initial justify-center ${dataFilter === 'complete' ? 'bg-success/20 text-success border border-success/30 shadow-glow-success/20' : 'text-txt-muted hover:text-success hover:bg-surface-light/20'}`}>
+                                <div className={`w-1.5 h-1.5 rounded-full ${dataFilter === 'complete' ? 'bg-success animate-pulse' : 'bg-success/50'}`}></div> <span className="whitespace-nowrap">Completos</span>
+                            </button>
+                            <button onClick={() => setDataFilter('missing')} className={`h-8 px-4 rounded-lg flex items-center gap-1.5 transition-all text-[9px] font-black uppercase tracking-widest flex-1 sm:flex-initial justify-center ${dataFilter === 'missing' ? 'bg-warning/20 text-warning border border-warning/30 shadow-glow-warning/20' : 'text-txt-muted hover:text-warning hover:bg-surface-light/20'}`}>
+                                <div className={`w-1.5 h-1.5 rounded-full ${dataFilter === 'missing' ? 'bg-warning animate-pulse' : 'bg-warning/50'}`}></div> <span className="whitespace-nowrap">Faltan Datos</span>
+                            </button>
+                            <button onClick={() => setDataFilter('no-tests')} className={`h-8 px-4 rounded-lg flex items-center gap-1.5 transition-all text-[9px] font-black uppercase tracking-widest flex-1 sm:flex-initial justify-center ${dataFilter === 'no-tests' ? 'bg-danger/20 text-danger border border-danger/30 shadow-glow-danger/20' : 'text-txt-muted hover:text-danger hover:bg-surface-light/20'}`}>
+                                <div className={`w-1.5 h-1.5 rounded-full ${dataFilter === 'no-tests' ? 'bg-danger animate-pulse' : 'bg-danger/50'}`}></div> <span className="whitespace-nowrap">Sin Prueba</span>
+                            </button>
+                        </div>
+                    </div>
 
-
-
+                    <div className="flex flex-col sm:flex-row items-center gap-3 w-full xl:w-auto">
+                        <span className="text-[10px] font-black text-txt-muted uppercase tracking-[0.3em] select-none flex-shrink-0">
+                            Filtrar por Salud:
+                        </span>
+                        {/* Health Filter Control Panel */}
+                        <div className="flex flex-wrap items-center gap-1 bg-canvas/30 p-1 rounded-xl border border-surface-light/40 backdrop-blur-md w-full sm:w-auto">
+                            <button onClick={() => setHealthFilter('all')} className={`h-8 px-4 rounded-lg flex items-center gap-1.5 transition-all text-[9px] font-black uppercase tracking-widest flex-1 sm:flex-initial justify-center ${healthFilter === 'all' ? 'bg-primary text-white shadow-glow-primary/40 border border-primary/40' : 'text-txt-muted hover:text-txt-main hover:bg-surface-light/30'}`}>Todos</button>
+                            <button onClick={() => setHealthFilter('healthy')} className={`h-8 px-4 rounded-lg flex items-center gap-1.5 transition-all text-[9px] font-black uppercase tracking-widest flex-1 sm:flex-initial justify-center ${healthFilter === 'healthy' ? 'bg-success/20 text-success shadow-glow-success/20 border border-success/30' : 'text-txt-muted hover:text-success hover:bg-surface-light/20'}`}>
+                                <div className={`w-1.5 h-1.5 rounded-full ${healthFilter === 'healthy' ? 'bg-success animate-pulse' : 'bg-success/50'}`}></div> <span className="whitespace-nowrap">Healthy</span>
+                            </button>
+                            <button onClick={() => setHealthFilter('caution')} className={`h-8 px-4 rounded-lg flex items-center gap-1.5 transition-all text-[9px] font-black uppercase tracking-widest flex-1 sm:flex-initial justify-center ${healthFilter === 'caution' ? 'bg-warning/20 text-warning shadow-glow-warning/20 border border-warning/30' : 'text-txt-muted hover:text-warning hover:bg-surface-light/20'}`}>
+                                <div className={`w-1.5 h-1.5 rounded-full ${healthFilter === 'caution' ? 'bg-warning shadow-glow-warning' : 'bg-warning/50'}`}></div> <span className="whitespace-nowrap">Caution</span>
+                            </button>
+                            <button onClick={() => setHealthFilter('critical')} className={`h-8 px-4 rounded-lg flex items-center gap-1.5 transition-all text-[9px] font-black uppercase tracking-widest flex-1 sm:flex-initial justify-center ${healthFilter === 'critical' ? 'bg-danger/20 text-danger shadow-glow-danger/20 border border-danger/30' : 'text-txt-muted hover:text-danger hover:bg-surface-light/20'}`}>
+                                <div className={`w-1.5 h-1.5 rounded-full ${healthFilter === 'critical' ? 'bg-danger animate-pulse shadow-glow-danger' : 'bg-danger/50'}`}></div> <span className="whitespace-nowrap">Critical</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
 
                 {/* ── FLEET LOGIC: GRID vs LIST ── */}
                 {viewMode === 'grid' ? (
@@ -2526,8 +2568,8 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                     <ChevronRight className={`w-4 h-4 text-txt-muted transition-transform duration-300 ${isWellDropdownOpen ? 'rotate-90' : ''}`} />
                                 </button>
                                 {isWellDropdownOpen && (
-                                    <div className="absolute top-full left-0 mt-3 w-[400px] max-h-[500px] overflow-y-auto bg-surface/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-[0_30px_80px_rgba(0,0,0,0.5)] z-[100] animate-fadeIn custom-scrollbar">
-                                        <div className="p-3 border-b border-white/5">
+                                    <div className="absolute top-full left-0 mt-3 w-[450px] max-h-[500px] overflow-y-auto bg-surface/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-[0_30px_80px_rgba(0,0,0,0.5)] z-[100] animate-fadeIn custom-scrollbar">
+                                        <div className="p-3 border-b border-white/5 space-y-2">
                                             <div className="relative">
                                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-txt-muted/50" />
                                                 <input
@@ -2537,6 +2579,22 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                                     onChange={(e) => setSearchTerm(e.target.value)}
                                                     className="w-full bg-canvas/60 border border-surface-light rounded-xl pl-10 pr-4 py-2.5 text-xs font-bold text-txt-main focus:outline-none focus:border-primary/50 uppercase tracking-wider placeholder:text-txt-muted/30"
                                                 />
+                                            </div>
+                                            
+                                            {/* Data filter controls inside dropdown */}
+                                            <div className="flex items-center gap-1 bg-canvas/40 p-1 rounded-xl border border-white/5">
+                                                <button onClick={(e) => { e.stopPropagation(); setDataFilter('all'); }} className={`h-7 px-2.5 rounded-lg flex items-center justify-center transition-all text-[8px] font-black uppercase tracking-widest flex-1 ${dataFilter === 'all' ? 'bg-primary text-white shadow-sm' : 'text-txt-muted hover:bg-white/5'}`}>Datos: Todos</button>
+                                                <button onClick={(e) => { e.stopPropagation(); setDataFilter('complete'); }} className={`h-7 px-2.5 rounded-lg flex items-center justify-center transition-all text-[8px] font-black uppercase tracking-widest flex-1 ${dataFilter === 'complete' ? 'bg-success/20 text-success' : 'text-txt-muted hover:bg-white/5'}`}>Completos</button>
+                                                <button onClick={(e) => { e.stopPropagation(); setDataFilter('missing'); }} className={`h-7 px-2.5 rounded-lg flex items-center justify-center transition-all text-[8px] font-black uppercase tracking-widest flex-1 ${dataFilter === 'missing' ? 'bg-warning/20 text-warning' : 'text-txt-muted hover:bg-white/5'}`}>Faltan</button>
+                                                <button onClick={(e) => { e.stopPropagation(); setDataFilter('no-tests'); }} className={`h-7 px-2.5 rounded-lg flex items-center justify-center transition-all text-[8px] font-black uppercase tracking-widest flex-1 ${dataFilter === 'no-tests' ? 'bg-danger/20 text-danger' : 'text-txt-muted hover:bg-white/5'}`}>Sin Prueba</button>
+                                            </div>
+
+                                            {/* Health filter controls inside dropdown */}
+                                            <div className="flex items-center gap-1 bg-canvas/40 p-1 rounded-xl border border-white/5">
+                                                <button onClick={(e) => { e.stopPropagation(); setHealthFilter('all'); }} className={`h-7 px-2.5 rounded-lg flex items-center justify-center transition-all text-[8px] font-black uppercase tracking-widest flex-1 ${healthFilter === 'all' ? 'bg-primary text-white shadow-sm' : 'text-txt-muted hover:bg-white/5'}`}>Salud: Todos</button>
+                                                <button onClick={(e) => { e.stopPropagation(); setHealthFilter('healthy'); }} className={`h-7 px-2.5 rounded-lg flex items-center justify-center transition-all text-[8px] font-black uppercase tracking-widest flex-1 ${healthFilter === 'healthy' ? 'bg-success/20 text-success' : 'text-txt-muted hover:bg-white/5'}`}>Healthy</button>
+                                                <button onClick={(e) => { e.stopPropagation(); setHealthFilter('caution'); }} className={`h-7 px-2.5 rounded-lg flex items-center justify-center transition-all text-[8px] font-black uppercase tracking-widest flex-1 ${healthFilter === 'caution' ? 'bg-warning/20 text-warning' : 'text-txt-muted hover:bg-white/5'}`}>Caution</button>
+                                                <button onClick={(e) => { e.stopPropagation(); setHealthFilter('critical'); }} className={`h-7 px-2.5 rounded-lg flex items-center justify-center transition-all text-[8px] font-black uppercase tracking-widest flex-1 ${healthFilter === 'critical' ? 'bg-danger/20 text-danger' : 'text-txt-muted hover:bg-white/5'}`}>Critical</button>
                                             </div>
                                         </div>
                                         <div className="p-2">
@@ -2850,11 +2908,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                 </div>
                             </div>
                         ) : (
-                            <div className="flex items-center justify-center min-h-[400px]">
-                                <div className="p-8 bg-primary/10 rounded-[2.5rem] border border-primary/20">
-                                    <RefreshCw className="w-16 h-16 text-primary animate-spin" />
-                                </div>
-                            </div>
+                            renderFleetView()
                         )
                     )}
                 </div>
