@@ -265,13 +265,22 @@ $gitCheck = $null -ne (Get-Command git -ErrorAction SilentlyContinue)
 if ($gitCheck) {
     $M.GIT.Val = "PULL"; $M.GIT.Color = $PR
     Start-MetricAnimation -Key GIT -TargetPct 60 -Phase "SYNC · GitHub" -GlobalStart 8 -GlobalEnd 16 -M $M
-    git pull origin main --quiet 2>&1 | Out-Null
+    
+    # Detección inteligente para la máquina de desarrollo vs la practicante
+    $isDev = $env:USERPROFILE -like "*andre*"
+    if ($isDev) {
+        git pull origin main --quiet 2>&1 | Out-Null
+    } else {
+        git fetch origin --quiet 2>&1 | Out-Null
+        git reset --hard origin/main --quiet 2>&1 | Out-Null
+    }
+
     if ($LASTEXITCODE -eq 0) {
         Add-Log "Sincronizacion Git OK" "ok"
         $M.GIT.Val = "READY"; $M.GIT.Color = $OK
     }
     else {
-        Add-Log "GitHub offline" "warn"
+        Add-Log "Error o GitHub offline" "warn"
         $M.GIT.Val = "LOCAL"; $M.GIT.Color = $WR
     }
 }
