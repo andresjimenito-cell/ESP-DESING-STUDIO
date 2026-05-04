@@ -214,7 +214,7 @@ function Show-SummaryPanel {
     $lines = @(
         " ${SL}CREADOR      :${R} ${WH}Andrés Jiménez  (Ingeniero Jr)${R}",
         " ${SL}MENTE MAESTRA:${R} ${WH}Lenin Peña  (Especialista ALS)${R}",
-        " ${SL}APOYO        :${R} ${WH}Jaime Ochoa  ·  Wilmer Arcos${R}",
+        " ${SL}APOYO        :${R} ${WH}Jaime Ochoa · Wilmer Arcos · Luna M${R}",
         " ${GY}AGRADECIMIENTOS: Equipo ALS Frontera Energy${R}"
     )
     foreach ($l in $lines) {
