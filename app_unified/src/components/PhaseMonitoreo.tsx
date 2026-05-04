@@ -777,9 +777,9 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
         if (dataFilter !== 'all') {
             result = result.filter(well => {
                 const hasMatch = !!well.productionTest?.hasMatchData && (well.currentRate > 0 || well.productionTest.rate > 0);
-                const isComplete = hasMatch && 
+                const isComplete = hasMatch &&
                     (well.productionTest.rate > 0 && well.productionTest.pip > 0 && well.productionTest.thp > 0);
-                
+
                 if (dataFilter === 'complete') return isComplete;
                 if (dataFilter === 'missing') return hasMatch && !isComplete;
                 if (dataFilter === 'no-tests') return !hasMatch;
@@ -914,10 +914,17 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
             let json: any[] = [];
             let jsonSurvey: any[] = [];
             const surveyDataByWell: Record<string, SurveyPoint[]> = {};
+            const mechDataMap: Record<string, any> = {};
 
             if (isPrecalcJson) {
                 json = data.data || [];
                 jsonSurvey = data.survey || [];
+                // Support mechanical data in JSON
+                const mechData = data.mech || [];
+                (mechData as any[]).forEach(row => {
+                    const n = norm_ext(String(get_ext(row, ['NICK', 'POZO', 'WELL']) || ''));
+                    if (n) mechDataMap[n] = row;
+                });
             } else {
                 const workbook = XLSX.read(data, {
                     type: 'array',
@@ -928,8 +935,36 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                 });
                 await new Promise(r => setTimeout(r, 200));
 
-                const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                const mainSheetName = workbook.SheetNames[0];
+                const sheet = workbook.Sheets[mainSheetName];
                 json = XLSX.utils.sheet_to_json(sheet) as any[];
+
+                // --- NEW: Process Mechanical Status Sheet (ESTADOS MECANICOS) ---
+                const mechSheetName = workbook.SheetNames.find(s => norm_ext(s) === 'ESTADOSMECANICOS');
+                if (mechSheetName) {
+                    const mechSheet = workbook.Sheets[mechSheetName];
+                    
+                    // Robust header detection for mechanical sheet
+                    const rows = XLSX.utils.sheet_to_json(mechSheet, { header: 1 }) as any[][];
+                    let headerRowIdx = -1;
+                    for (let r = 0; r < Math.min(20, rows.length); r++) {
+                        const rowArr = (rows[r] || []).map(c => norm_ext(String(c || '')));
+                        if (rowArr.includes('NICK') || rowArr.includes('INTAKEMD') || rowArr.includes('PEST') || rowArr.includes('INTAKE')) {
+                            headerRowIdx = r;
+                            break;
+                        }
+                    }
+                    
+                    const mechJson = (headerRowIdx !== -1) 
+                        ? (XLSX.utils.sheet_to_json(mechSheet, { range: headerRowIdx }) as any[])
+                        : (XLSX.utils.sheet_to_json(mechSheet) as any[]);
+
+                    mechJson.forEach(row => {
+                        const n = norm_ext(String(get_ext(row, ['NICK', 'POZO', 'WELL']) || ''));
+                        if (n) mechDataMap[n] = row;
+                    });
+                    console.log("[Mechanical Status] Pozos indexados:", Object.keys(mechDataMap));
+                }
 
                 const surveySheetName = workbook.SheetNames.find(s => {
                     const sn = String(s).toUpperCase();
@@ -974,6 +1009,8 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
 
             const newDesigns: Record<string, SystemParams> = {};
             const wellsToAdd: WellFleetItem[] = [];
+            let mechFoundCount = 0;
+            let mechMissingCount = 0;
 
             setImportProgress({ current: 0, total: json.length, label: 'Iniciando análisis de flota...' });
 
@@ -1006,7 +1043,40 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                         runNumber = 1;
                     }
 
-                    const pStatic = n_ext(get_ext(row, ['P ESTATICA (PSI)', 'P ESTATICA', 'STATIC PRESSURE', 'PESTATICA']));
+                    const mechRow = mechDataMap[norm_ext(nickName)];
+                    if (mechRow) {
+                        mechFoundCount++;
+                        console.log(`%c[Mechanical Status] ¡MATCH EXITOSO! "${nickName}"`, "color: #22d3ee; font-weight: bold; border-left: 4px solid #22d3ee; padding-left: 8px;");
+                    } else {
+                        mechMissingCount++;
+                        if (nickName.includes('AVISPA')) {
+                            console.warn(`[Mechanical Status] No se encontró información para "${nickName}" en ESTADOS MECANICOS. Disponibles:`, Object.keys(mechDataMap).slice(0, 5));
+                        }
+                    }
+
+                    // --- VALORES BASE DE LA HOJA DE DISEÑO ---
+                    let pStatic = n_ext(get_ext(row, ['P ESTATICA (PSI)', 'P ESTATICA', 'STATIC PRESSURE', 'PESTATICA']));
+                    let intakeMD = n_ext(get_ext(row, ['PROFUNDIDAD DE INTAKE MD (FT)', 'INTAKE MD', 'INTAKEMD']));
+                    let fondoMD = n_ext(get_ext(row, ['PROFUNDIDAD TOTAL MD (FT)', 'PROFUNDIDAD TOTAL MD', 'FONDO MD', 'TOTAL DEPTH', 'PROFUNDIDADTOTALMD', 'PROFUNDIDAD TOTAL', 'PROFUNDIDAD TOTAL (FT)'])) || (intakeMD + 1000);
+                    let topPerfs = n_ext(get_ext(row, ['TOPE DE PERFORADOS MD (FT)', 'TOPE DE PERFORADOS MD', 'TOPEDEPERFORADOS', 'TOPE DE PERFORADOS']));
+                    let basePerfs = 0;
+
+                    // --- PRIORIZAR ESTADOS MECÁNICOS SI EL VALOR ES VÁLIDO (> 0) ---
+                    if (mechRow) {
+                        const mPest = n_ext(get_ext(mechRow, ['PEST', 'Pest', 'P ESTATICA']));
+                        if (mPest > 0) pStatic = mPest;
+
+                        const mIntake = n_ext(get_ext(mechRow, ['INTAKE (MD)', 'Intake (MD)', 'INTAKEMD']));
+                        if (mIntake > 0) intakeMD = mIntake;
+
+                        const mFondo = n_ext(get_ext(mechRow, ['FONDO POZO (MD)', 'Fondo pozo (MD)', 'FONDOMD']));
+                        if (mFondo > 0) fondoMD = mFondo;
+
+                        const mTop = n_ext(get_ext(mechRow, ['TOPE PERF (MD)', 'Tope Perf (MD)']));
+                        const mBase = n_ext(get_ext(mechRow, ['BASE PERF (MD)', 'Base Perf (MD)']));
+                        if (mTop > 0) topPerfs = mTop;
+                        if (mBase > 0) basePerfs = mBase;
+                    }
                     const pipMin = n_ext(get_ext(row, ['PIP MINIMA (PSI)', 'PIP MINIMA', 'PIPMINIMA', 'MIN PIP']));
                     const ip = n_ext(get_ext(row, ['IP (BFPD/PSI)', 'IP (BFP/PSI)', 'PRODUCTIVITY INDEX', 'PI (BFPD/PSI)']));
                     const ipMin = n_ext(get_ext(row, ['IP MÍN (BFPD/PSI)', 'IP MIN (BFPD/PSI)', 'IP MIN', 'IP MÍN', 'MIN IP']));
@@ -1015,21 +1085,23 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                     // Normalización: Si el dato viene como decimal (0.98) lo convertimos a porcentaje (98)
                     if (bsw > 0 && bsw <= 1.0) bsw = bsw * 100;
                     const gor = n_ext(get_ext(row, ['GOR (SCF/STB)', 'GOR (SCFSTB)', 'GOR']));
-                    const intakeMD = n_ext(get_ext(row, ['PROFUNDIDAD DE INTAKE MD (FT)', 'INTAKE MD', 'INTAKEMD']));
-                    const fondoMD = n_ext(get_ext(row, ['PROFUNDIDAD TOTAL MD (FT)', 'PROFUNDIDAD TOTAL MD', 'FONDO MD', 'TOTAL DEPTH', 'PROFUNDIDADTOTALMD', 'PROFUNDIDAD TOTAL', 'PROFUNDIDAD TOTAL (FT)'])) || (intakeMD + 1000);
+                    
                     const bht = n_ext(get_ext(row, ['BHT (°F)', 'BHT']));
                     const tht = n_ext(get_ext(row, ['THT (°F)', 'THT']));
                     const api = n_ext(get_ext(row, ['°API', 'API']));
-                    const topPerfs = n_ext(get_ext(row, ['TOPE DE PERFORADOS MD (FT)', 'TOPE DE PERFORADOS MD', 'TOPEDEPERFORADOS', 'TOPE DE PERFORADOS']));
+                    
+                    // --- PUNTO MEDIO DE PERFORADOS ---
+                    const midPerfsMD = (topPerfs > 0 && basePerfs > 0) ? (topPerfs + basePerfs) / 2 : (topPerfs || (intakeMD + 200));
+                    
                     const pbValue = n_ext(get_ext(row, ['P BURBUJA (PSI)', 'PBURBUJA', 'P BURBUJA', 'PB']));
 
                     const rate = (ipv: number) => Number((Math.max(0, ipv * Math.max(0, pStatic - pipMin) * 0.60)).toFixed(1));
                     const cleanIp = (v: number) => Number((v).toFixed(1));
 
-                    const mapPipe = (catalog: any[], descLabels: string[], odLabels: string[], defaultOD: number): PipeData => {
-                        let odVal = n_ext(get_ext(row, odLabels));
+                    const mapPipe = (r: any, catalog: any[], descLabels: string[], odLabels: string[], defaultOD: number): PipeData => {
+                        let odVal = n_ext(get_ext(r, odLabels));
                         if (odVal === 0) odVal = defaultOD;
-                        const rawDesc = String(get_ext(row, descLabels) || '').toUpperCase();
+                        const rawDesc = String(get_ext(r, descLabels) || '').toUpperCase();
 
                         const options = catalog.filter(p => Math.abs(p.od - odVal) < 0.05);
                         let selected = options.length > 0 ? options[0] : catalog.find(c => Math.abs(c.od - defaultOD) < 0.05) || catalog[0];
@@ -1055,8 +1127,8 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                         return selected;
                     };
 
-                    const casing = mapPipe(CASING_CATALOG, ['DESCRIPCION CSG', 'CSG DESC'], ['CSG OD', 'CSG OD (IN)'], 7);
-                    const tubing = mapPipe(TUBING_CATALOG, ['DESCRIPCION TBG', 'TBG DESC'], ['TBG OD', 'TBG OD (IN)'], 3.5);
+                    const casing = mapPipe(mechRow || row, CASING_CATALOG, ['DESCRIPCION CSG', 'CSG DESC', 'ID CSG'], ['CSG OD', 'CSG OD (IN)', 'ID CSG'], 7);
+                    const tubing = mapPipe(mechRow || row, TUBING_CATALOG, ['DESCRIPCION TBG', 'TBG DESC', 'ID TBG'], ['TBG OD', 'TBG OD (IN)', 'ID TBG'], 3.5);
 
                     const design: SystemParams = {
                         ...INITIAL_PARAMS,
@@ -1064,7 +1136,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                         wellbore: {
                             ...INITIAL_PARAMS.wellbore,
                             tubingBottom: intakeMD, casingBottom: fondoMD,
-                            midPerfsMD: topPerfs || (intakeMD + 200),
+                            midPerfsMD,
                             casing, tubing
                         },
                         fluids: { ...INITIAL_PARAMS.fluids, apiOil: api || 30, waterCut: bsw, gor, pb: pbValue, isDeadOil: pbValue <= 0 },
@@ -1137,7 +1209,13 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
             });
 
             setImportProgress(null);
-            if (!isAutoLoad) alert(`Éxito: Se procesaron ${json.length} pozos correctamente.`);
+            setImportProgress(null);
+            if (!isAutoLoad) {
+                const summaryMsg = `Éxito: Se procesaron ${json.length} pozos correctamente.\n\n` +
+                    `- ${mechFoundCount} con Estado Mecánico preciso.\n` +
+                    `- ${mechMissingCount} usando datos de diseño original.`;
+                alert(summaryMsg);
+            }
 
         } catch (err) {
             console.error("Error importing designs from Excel:", err);
@@ -2084,7 +2162,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                                     className="w-full bg-canvas/60 border border-surface-light rounded-xl pl-10 pr-4 py-2.5 text-xs font-bold text-txt-main focus:outline-none focus:border-primary/50 uppercase tracking-wider placeholder:text-txt-muted/30"
                                                 />
                                             </div>
-                                            
+
                                             {/* Data filter controls inside dropdown */}
                                             <div className="flex items-center gap-1 bg-canvas/40 p-1 rounded-xl border border-white/5">
                                                 <button onClick={(e) => { e.stopPropagation(); setDataFilter('all'); }} className={`h-7 px-2.5 rounded-lg flex items-center justify-center transition-all text-[8px] font-black uppercase tracking-widest flex-1 ${dataFilter === 'all' ? 'bg-primary text-white shadow-sm' : 'text-txt-muted hover:bg-white/5'}`}>Datos: Todos</button>
@@ -2396,20 +2474,20 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
             <div className="flex gap-6 mt-6 pb-20">
                 <div className="flex-1 min-w-0 transition-all duration-500">
                     {fleet.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center p-20 glass-surface rounded-[3.5rem] border border-white/5 border-dashed min-h-[550px] animate-fadeIn mx-4 shadow-3xl">
-                                <div className="p-8 bg-primary/10 rounded-[2.5rem] mb-10 relative border border-primary/20 shadow-glow-primary/10">
-                                    <Activity className="w-20 h-20 text-primary animate-pulse" />
-                                    <div className="absolute -top-3 -right-3 w-10 h-10 bg-primary rounded-full animate-ping opacity-20"></div>
-                                </div>
-                                <h3 className="text-4xl font-black text-txt-main uppercase tracking-tighter mb-4 text-center">Centro de Control ALS</h3>
-                                <p className="text-txt-muted text-center max-w-xl font-medium leading-relaxed text-lg opacity-70">
-                                    La flota se encuentra vacía o está inicializando. Utilice los controles en la parte superior derecha para cargar sus diseños técnicos y pruebas de producción.
-                                </p>
-                                <div className="flex items-center gap-4 mt-8">
-                                    <button onClick={() => importDesignRef.current?.click()} className="h-12 px-8 bg-primary text-white rounded-xl flex items-center gap-3 hover:bg-primary/80 transition-all font-black text-[10px] uppercase tracking-widest shadow-lg shadow-primary/20"><Download className="w-5 h-5" /> Cargar Diseños</button>
-                                    <button onClick={() => importDbRef.current?.click()} className="h-12 px-8 bg-secondary text-white rounded-xl flex items-center gap-3 hover:bg-secondary/80 transition-all font-black text-[10px] uppercase tracking-widest shadow-lg shadow-secondary/20"><Database className="w-5 h-5" /> Cargar SCADA</button>
-                                </div>
+                        <div className="flex flex-col items-center justify-center p-20 glass-surface rounded-[3.5rem] border border-white/5 border-dashed min-h-[550px] animate-fadeIn mx-4 shadow-3xl">
+                            <div className="p-8 bg-primary/10 rounded-[2.5rem] mb-10 relative border border-primary/20 shadow-glow-primary/10">
+                                <Activity className="w-20 h-20 text-primary animate-pulse" />
+                                <div className="absolute -top-3 -right-3 w-10 h-10 bg-primary rounded-full animate-ping opacity-20"></div>
                             </div>
+                            <h3 className="text-4xl font-black text-txt-main uppercase tracking-tighter mb-4 text-center">Centro de Control ALS</h3>
+                            <p className="text-txt-muted text-center max-w-xl font-medium leading-relaxed text-lg opacity-70">
+                                La flota se encuentra vacía o está inicializando. Utilice los controles en la parte superior derecha para cargar sus diseños técnicos y pruebas de producción.
+                            </p>
+                            <div className="flex items-center gap-4 mt-8">
+                                <button onClick={() => importDesignRef.current?.click()} className="h-12 px-8 bg-primary text-white rounded-xl flex items-center gap-3 hover:bg-primary/80 transition-all font-black text-[10px] uppercase tracking-widest shadow-lg shadow-primary/20"><Download className="w-5 h-5" /> Cargar Diseños</button>
+                                <button onClick={() => importDbRef.current?.click()} className="h-12 px-8 bg-secondary text-white rounded-xl flex items-center gap-3 hover:bg-secondary/80 transition-all font-black text-[10px] uppercase tracking-widest shadow-lg shadow-secondary/20"><Database className="w-5 h-5" /> Cargar SCADA</button>
+                            </div>
+                        </div>
                     ) : (
                         renderDetailedWellView()
                     )}
@@ -2705,7 +2783,7 @@ const FloatingAiPanel = ({ fleet, selectedWell, language, t }: { fleet: WellFlee
             const s = model.startChat({ history: [] });
             setSession(s);
 
-            const greet = selectedWell 
+            const greet = selectedWell
                 ? (language === 'es' ? `Listo. Analizando **${selectedWell.name}**. ¿Qué revisamos?` : `Ready. Analyzing **${selectedWell.name}**. What's next?`)
                 : (language === 'es' ? `Hola. Monitoreando **${fleet.length}** pozos. ¿Cómo puedo ayudarte hoy?` : `Hello. Monitoring **${fleet.length}** wells. How can I help?`);
 
