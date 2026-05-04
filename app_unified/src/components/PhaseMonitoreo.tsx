@@ -2700,7 +2700,7 @@ const FloatingAiPanel = ({ fleet, selectedWell, language, t }: { fleet: WellFlee
             }
 
             const model = genAI.getGenerativeModel({
-                model: 'gemini-2.0-flash',
+                model: 'gemini-1.5-flash',
                 systemInstruction: `You are "Antigravity AI Co-Pilot", a Senior ESP Reliability Engineer.
                 Mission: Provide diagnostics and recommendations based on real-time data.
                 Respond in ${language === 'es' ? 'SPANISH' : 'ENGLISH'}. 

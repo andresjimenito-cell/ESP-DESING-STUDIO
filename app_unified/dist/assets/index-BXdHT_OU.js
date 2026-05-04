@@ -1282,7 +1282,7 @@ In order to be iterable, non-array objects must have a [Symbol.iterator]() metho
                 - Diagnostics: VSD Status=${t.predictive.vsdStatus.toUpperCase()}`}else{const R=e.filter(D=>D.status!=="normal");T=`FLEET OVERVIEW: ${e.length} total wells monitored.
                 - Wells with issues (${R.length}):
                 ${R.map(D=>`   * ${D.name}: ${D.status.toUpperCase()} (Score ${jc(D).toFixed(0)}/100)`).join(`
-`)}`}const M=gye.getGenerativeModel({model:"gemini-2.0-flash",systemInstruction:`You are "Antigravity AI Co-Pilot", a Senior ESP Reliability Engineer.
+`)}`}const M=gye.getGenerativeModel({model:"gemini-1.5-flash",systemInstruction:`You are "Antigravity AI Co-Pilot", a Senior ESP Reliability Engineer.
                 Mission: Provide diagnostics and recommendations based on real-time data.
                 Respond in ${r==="es"?"SPANISH":"ENGLISH"}. 
                 SYSTEM DATA:
