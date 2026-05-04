@@ -161,22 +161,6 @@ export const MatchHistorico: React.FC<Props> = ({ wellName, pump, designParams, 
     useEffect(() => {
         if (productionHistory && productionHistory.length > 0) {
             processRecords(productionHistory);
-        } else if (history.length === 0) {
-            const mockHistory: any[] = Array.from({ length: 15 }).map((_, i) => {
-                const date = new Date();
-                date.setDate(date.getDate() - (15 - i) * 15);
-                return {
-                    date: date.toISOString().split('T')[0],
-                    rate: 1200 - (i * 20) + (Math.random() * 50),
-                    freq: 60 - (i * 0.2),
-                    pip: 400 - (i * 10) + (Math.random() * 20),
-                    waterCut: 40 + (i * 1.5),
-                    thp: 180 + (Math.random() * 10),
-                    tht: 120,
-                    hasMatchData: true
-                };
-            });
-            processRecords(mockHistory);
         }
     }, [productionHistory]);
 
@@ -320,6 +304,35 @@ export const MatchHistorico: React.FC<Props> = ({ wellName, pump, designParams, 
 
         return lines.join("\n");
     }, [history, currentIndex, pump, t]);
+
+    if (history.length === 0) {
+        return (
+            <div className="flex flex-col gap-6 animate-fadeIn pb-20 items-center justify-center min-h-[400px] glass-surface-light rounded-[2.5rem] border border-white/5 p-12 text-center relative">
+                <div className="p-6 rounded-full bg-primary/10 border border-primary/20 text-primary animate-pulse mb-4">
+                    <History className="w-12 h-12" />
+                </div>
+                <h3 className="text-xl font-black text-txt-main tracking-tight uppercase">Sin Histórico de Pruebas</h3>
+                <p className="text-sm text-txt-muted max-w-md">No hay datos históricos disponibles para este pozo. Por favor, suba el archivo SCADA con las pruebas de producción.</p>
+                {onImport && (
+                    <button
+                        onClick={onImport}
+                        className="mt-6 flex items-center gap-2.5 px-6 py-3.5 bg-secondary hover:bg-secondary/80 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all hover:shadow-glow-secondary/20 active:scale-95 group shadow-2xl"
+                    >
+                        <Download className="w-4 h-4 group-hover:-translate-y-0.5 transition-transform" />
+                        Cargar Datos Pozo
+                    </button>
+                )}
+                {onClose && (
+                    <button
+                        onClick={onClose}
+                        className="absolute top-6 right-6 p-3 glass-surface border border-white/10 rounded-2xl text-txt-muted hover:text-danger hover:scale-110 transition-all z-30 shadow-2xl"
+                    >
+                        <X className="w-5 h-5" />
+                    </button>
+                )}
+            </div>
+        );
+    }
 
     if (!currentRecord) return null;
 
