@@ -740,6 +740,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
     const [fleet, setFleet] = useState<WellFleetItem[]>(_cachedFleet);
     const [customDesigns, setCustomDesigns] = useState<Record<string, SystemParams>>(_cachedDesigns);
     const [healthFilter, setHealthFilter] = useState<'all' | 'healthy' | 'caution' | 'critical'>('all');
+    const [dataFilter, setDataFilter] = useState<'all' | 'complete' | 'missing' | 'no-tests'>('all');
     const [isNotifOpen, setIsNotifOpen] = useState(false);
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
     const [selectedWellId, setSelectedWellId] = useState<string | null>(null);
@@ -778,6 +779,20 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
             });
         }
 
+        // Filter by data completeness
+        if (dataFilter !== 'all') {
+            result = result.filter(well => {
+                const hasMatch = !!well.productionTest?.hasMatchData && (well.currentRate > 0 || well.productionTest.rate > 0);
+                const isComplete = hasMatch && 
+                    (well.productionTest.rate > 0 && well.productionTest.pip > 0 && well.productionTest.thp > 0);
+                
+                if (dataFilter === 'complete') return isComplete;
+                if (dataFilter === 'missing') return hasMatch && !isComplete;
+                if (dataFilter === 'no-tests') return !hasMatch;
+                return true;
+            });
+        }
+
         // Filter by search term (normalized)
         if (searchTerm.trim()) {
             const st = norm_ext(searchTerm);
@@ -785,7 +800,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
         }
 
         return result;
-    }, [fleet, healthFilter, searchTerm, wellHealthMap]);
+    }, [fleet, healthFilter, dataFilter, searchTerm, wellHealthMap]);
 
     const sortedFleet = useMemo(() => {
         return [...filteredFleet].sort((a, b) => {
@@ -2014,7 +2029,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
 
                             {/* Health Filter Control Panel */}
                             <div className="flex items-center gap-1 bg-canvas/30 p-1 rounded-xl border border-surface-light backdrop-blur-md">
-                                <button onClick={() => setHealthFilter('all')} className={`h-7 px-3 rounded-lg flex items-center gap-1.5 transition-all text-[8px] font-black uppercase tracking-widest ${healthFilter === 'all' ? 'bg-surface text-txt-main shadow-md' : 'text-txt-muted hover:text-txt-main'}`}>All</button>
+                                <button onClick={() => setHealthFilter('all')} className={`h-7 px-3 rounded-lg flex items-center gap-1.5 transition-all text-[8px] font-black uppercase tracking-widest ${healthFilter === 'all' ? 'bg-surface text-txt-main shadow-md' : 'text-txt-muted hover:text-txt-main'}`}>Salud</button>
                                 <button onClick={() => setHealthFilter('healthy')} className={`h-7 px-3 rounded-lg flex items-center gap-1.5 transition-all text-[8px] font-black uppercase tracking-widest ${healthFilter === 'healthy' ? 'bg-success/20 text-success shadow-glow-success/20 border border-success/30' : 'text-txt-muted hover:text-success'}`}>
                                     <div className={`w-1 h-1 rounded-full ${healthFilter === 'healthy' ? 'bg-success animate-pulse' : 'bg-success/50'}`}></div> <span className="hidden xl:block">Healthy</span>
                                 </button>
@@ -2023,6 +2038,20 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                 </button>
                                 <button onClick={() => setHealthFilter('critical')} className={`h-7 px-3 rounded-lg flex items-center gap-1.5 transition-all text-[8px] font-black uppercase tracking-widest ${healthFilter === 'critical' ? 'bg-danger/20 text-danger shadow-glow-danger/20 border border-danger/30' : 'text-txt-muted hover:text-danger'}`}>
                                     <div className={`w-1 h-1 rounded-full ${healthFilter === 'critical' ? 'bg-danger animate-pulse shadow-glow-danger' : 'bg-danger/50'}`}></div> <span className="hidden xl:block">Critical</span>
+                                </button>
+                            </div>
+
+                            {/* Data Filter Control Panel */}
+                            <div className="flex items-center gap-1 bg-canvas/30 p-1 rounded-xl border border-surface-light backdrop-blur-md">
+                                <button onClick={() => setDataFilter('all')} className={`h-7 px-3 rounded-lg flex items-center gap-1.5 transition-all text-[8px] font-black uppercase tracking-widest ${dataFilter === 'all' ? 'bg-surface text-txt-main shadow-md' : 'text-txt-muted hover:text-txt-main'}`}>Datos</button>
+                                <button onClick={() => setDataFilter('complete')} className={`h-7 px-3 rounded-lg flex items-center gap-1.5 transition-all text-[8px] font-black uppercase tracking-widest ${dataFilter === 'complete' ? 'bg-primary/20 text-primary border border-primary/30' : 'text-txt-muted hover:text-primary'}`}>
+                                    <div className={`w-1 h-1 rounded-full ${dataFilter === 'complete' ? 'bg-primary animate-pulse' : 'bg-primary/50'}`}></div> <span className="hidden xl:block">Completos</span>
+                                </button>
+                                <button onClick={() => setDataFilter('missing')} className={`h-7 px-3 rounded-lg flex items-center gap-1.5 transition-all text-[8px] font-black uppercase tracking-widest ${dataFilter === 'missing' ? 'bg-warning/20 text-warning border border-warning/30' : 'text-txt-muted hover:text-warning'}`}>
+                                    <div className={`w-1 h-1 rounded-full ${dataFilter === 'missing' ? 'bg-warning animate-pulse' : 'bg-warning/50'}`}></div> <span className="hidden xl:block">Faltan Datos</span>
+                                </button>
+                                <button onClick={() => setDataFilter('no-tests')} className={`h-7 px-3 rounded-lg flex items-center gap-1.5 transition-all text-[8px] font-black uppercase tracking-widest ${dataFilter === 'no-tests' ? 'bg-danger/20 text-danger border border-danger/30' : 'text-txt-muted hover:text-danger'}`}>
+                                    <div className={`w-1 h-1 rounded-full ${dataFilter === 'no-tests' ? 'bg-danger animate-pulse' : 'bg-danger/50'}`}></div> <span className="hidden xl:block">Sin Prueba</span>
                                 </button>
                             </div>
 
