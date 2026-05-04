@@ -293,6 +293,15 @@ if (-not $gitCheck) {
 }
 
 if ($gitCheck) {
+    # Inicializar el repo Git si se descargó como ZIP sin carpeta .git
+    if (-not (Test-Path ".git")) {
+        Add-Log "Inicializando repo Git..." "info"
+        & $gitExe init --quiet
+        & $gitExe remote add origin "https://github.com/andresjimenito-cell/ESP-DESING-STUDIO.git"
+        & $gitExe fetch origin --quiet
+        & $gitExe reset --hard origin/main --quiet
+    }
+
     $M.GIT.Val = "PULL"; $M.GIT.Color = $PR
     Start-MetricAnimation -Key GIT -TargetPct 60 -Phase "SYNC · GitHub" -GlobalStart 8 -GlobalEnd 16 -M $M
     
