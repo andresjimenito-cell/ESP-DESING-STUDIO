@@ -1607,9 +1607,13 @@ export const Phase6: React.FC<Props> = ({ params, setParams, pump, designFreq, t
             refPoints.push({ flow: scenarioResult.rate, head: scenarioResult.head, label: 'OP PROYECTADO', color: '#3b82f6' });
         }
 
+        if (trail && trail.length > 0) {
+            refPoints.push(...trail);
+        }
+
         return { chartData: data, referencePoints: refPoints, theoreticalMatch: designMatch, khComparative, khFactor };
 
-    }, [pump, params, actualResSummary, sensScenario, scenarioResult, fieldData.frequency, fieldData.rate, actualPumpTDH, isMaxCapActive, simResult, compareScenario, viewMode, chartMode]);
+    }, [pump, params, actualResSummary, sensScenario, scenarioResult, fieldData.frequency, fieldData.rate, actualPumpTDH, isMaxCapActive, simResult, compareScenario, viewMode, chartMode, trail]);
 
     // --- AI ANALYSIS GENERATION (ADVANCED) ---
     const aiAnalysisText = useMemo(() => {

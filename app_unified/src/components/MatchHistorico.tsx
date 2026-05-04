@@ -120,7 +120,7 @@ export const MatchHistorico: React.FC<Props> = ({ wellName, pump, designParams, 
 
         processed.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
         setHistory(processed);
-        setCurrentIndex(processed.length > 0 ? processed.length - 1 : 0);
+        setCurrentIndex(0);
     };
 
     useEffect(() => {
@@ -310,7 +310,12 @@ export const MatchHistorico: React.FC<Props> = ({ wellName, pump, designParams, 
                                     <ChevronLeft className="w-5 h-5" />
                                 </button>
                                 <button
-                                    onClick={() => setIsPlaying(!isPlaying)}
+                                    onClick={() => {
+                                        if (currentIndex >= history.length - 1) {
+                                            setCurrentIndex(0);
+                                        }
+                                        setIsPlaying(!isPlaying);
+                                    }}
                                     className={`p-6 rounded-full shadow-2xl transform transition-all active:scale-95 ${isPlaying ? 'bg-danger text-white hover:bg-danger/80' : 'bg-primary text-white hover:bg-primary/80 ring-8 ring-primary/10'}`}
                                 >
                                     {isPlaying ? <Pause className="w-8 h-8 fill-current" /> : <Play className="w-8 h-8 fill-current ml-1" />}
