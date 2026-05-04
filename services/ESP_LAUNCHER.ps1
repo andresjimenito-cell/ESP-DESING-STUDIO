@@ -354,6 +354,38 @@ $M.NODE.Val = "WAIT"; $M.NODE.Color = $SC
 Start-MetricAnimation -Key NODE -TargetPct 25 -Phase "CORE · Runtime" -GlobalStart 42 -GlobalEnd 50 -M $M
 
 $nodeFound = $null -ne (Get-Command node -ErrorAction SilentlyContinue)
+
+if (-not $nodeFound) {
+    $rootPath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath(".")
+    $nodePortablePath = Join-Path $rootPath ".node_portable"
+    $nodeExePath = Join-Path $nodePortablePath "node-v20.12.2-win-x64\node.exe"
+    
+    if (Test-Path $nodeExePath) {
+        $nodeBinPath = Join-Path $nodePortablePath "node-v20.12.2-win-x64"
+        $env:PATH = "$nodeBinPath;$env:PATH"
+        $nodeFound = $true
+        Add-Log "Node.js Portable detectado" "ok"
+    } else {
+        Add-Log "Instalando Node.js Portable..." "warn"
+        try {
+            $zipPath = Join-Path $rootPath "node.zip"
+            $nodeUrl = "https://nodejs.org/dist/v20.12.2/node-v20.12.2-win-x64.zip"
+            Invoke-WebRequest -Uri $nodeUrl -OutFile $zipPath -ErrorAction Stop
+            Add-Type -AssemblyName System.IO.Compression.FileSystem
+            [System.IO.Compression.ZipFile]::ExtractToDirectory($zipPath, $nodePortablePath)
+            Remove-Item $zipPath -Force
+            if (Test-Path $nodeExePath) {
+                $nodeBinPath = Join-Path $nodePortablePath "node-v20.12.2-win-x64"
+                $env:PATH = "$nodeBinPath;$env:PATH"
+                $nodeFound = $true
+                Add-Log "Node.js Portable instalado OK" "ok"
+            }
+        } catch {
+            Add-Log "Error instalando Node.js Portable" "err"
+        }
+    }
+}
+
 if ($nodeFound) {
     $M.NODE.Val = "V8"; $M.NODE.Color = $PR
     Start-MetricAnimation -Key NODE -TargetPct 60 -Phase "CORE · Modules" -GlobalStart 50 -GlobalEnd 56 -M $M
