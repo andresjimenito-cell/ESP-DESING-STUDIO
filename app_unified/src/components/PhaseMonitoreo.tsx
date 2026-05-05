@@ -438,9 +438,8 @@ const getWellHealthScore = (well: WellFleetItem, customDesigns?: Record<string, 
 
     // VERY STRICT INTELLIGENCE: Evaluate Downthrust/Upthrust based on active pump
     if (customDesigns && defaultPump) {
-        const nrm = (s: string) => String(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-        const wellNorm = nrm(well.name);
-        const design = Object.entries(customDesigns).find(([k]) => nrm(k) === wellNorm)?.[1];
+        const wellNorm = fuzzyWellName(well.name);
+        const design = Object.entries(customDesigns).find(([k]) => fuzzyWellName(k) === wellNorm)?.[1];
         let pump = defaultPump;
         let motor: any = null;
 
@@ -622,6 +621,12 @@ const n_ext = (v: any): number => {
 };
 const norm_ext = (str: string) =>
     String(str).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/[^A-Z0-9_]/g, '');
+
+const fuzzyWellName = (str: string) => {
+    if (!str) return '';
+    const n = String(str).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    return n.replace(/0+(\d+)/g, '$1');
+};
 
 const get_ext = (row: Record<string, any>, keys: string[]): any => {
     const rowKeys = Object.keys(row);
@@ -987,7 +992,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
             // Loop extract unified
             jsonSurvey.forEach((row: any) => {
                 const wellColRaw = row['POZO'] || row['WELL'] || row['Pozo'];
-                const wName = String(wellColRaw || 'UNKNOWN').toUpperCase().trim();
+                const wName = fuzzyWellName(wellColRaw || 'UNKNOWN');
 
                 const md = row['Measured Depth (ft)'] || row['MD (ft)'] || row['Measured Depth'] || row['MD'];
                 const tvd = row['Vertical Depth (ft)'] || row['TVD (ft)'] || row['Vertical Depth'] || row['TVD'];
@@ -1142,7 +1147,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                         fluids: { ...INITIAL_PARAMS.fluids, apiOil: api || 30, waterCut: bsw, gor, pb: pbValue, isDeadOil: pbValue <= 0 },
                         inflow: { ...INITIAL_PARAMS.inflow, pStatic, ip },
                         pressures: { ...INITIAL_PARAMS.pressures, totalRate: rate(ip), pumpDepthMD: intakeMD, pht: 80 },
-                        survey: surveyDataByWell[wellName] || surveyDataByWell['UNKNOWN'] || [],
+                        survey: surveyDataByWell[fuzzyWellName(wellName)] || surveyDataByWell['UNKNOWN'] || [],
                         isMechVerified: !!mechRow,
                         targets: {
                             min: { rate: rate(ipMin || ip * 0.8), ip: cleanIp(ipMin || ip * 0.8), waterCut: bsw, gor, frequency: 50 },
@@ -1345,12 +1350,11 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                     if (processed === fileList.length) {
                         setCustomDesigns(prev => ({ ...prev, ...newDesigns }));
                         setFleet(prev => {
-                            const normalizeWellName = (s: string) => s.toUpperCase().replace(/[-_\s]/g, '').trim();
                             const merged = [...prev];
 
                             wellsToAdd.forEach(nw => {
-                                const normalizedNw = normalizeWellName(nw.name);
-                                const idx = merged.findIndex(w => normalizeWellName(w.name) === normalizedNw);
+                                const normalizedNw = fuzzyWellName(nw.name);
+                                const idx = merged.findIndex(w => fuzzyWellName(w.name) === normalizedNw);
                                 if (idx !== -1) {
                                     // Update existing design
                                     merged[idx] = { ...merged[idx], ...nw };
@@ -1482,7 +1486,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                 chunk.forEach((row) => {
                     const name = String(get_ext(row, ['POZO', 'WELL', 'NAME', 'ID']) || '').trim();
                     if (!name) return;
-                    const normName = name.toUpperCase().trim();
+                    const normName = fuzzyWellName(name);
 
                     const date = d_ext(get_ext(row, ['FECHA', 'DATE', 'DATE OF TEST', 'TIMESTAMP']));
                     const rate = n_ext(get_ext(row, ['BFPD', 'GROSS RATE', 'RATE', 'CAUDAL', 'TASA DE PRUEBA', 'TASAPRUEBA', 'BFPD TEST']));
@@ -1533,13 +1537,13 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                 const merged = [...prev];
                 Object.entries(newProductionData).forEach(([wellName, tests]) => {
                     const latest = tests[tests.length - 1];
-                    const normKey = norm_ext(wellName);
+                    const normKey = fuzzyWellName(wellName);
 
                     // --- LÓGICA DE RUTEO INTELIGENTE (RUN ACTUAL) ---
                     // Buscamos todos los candidatos que compartan el nombre base del pozo
                     const candidates = merged.filter(w => {
                         const baseName = w.name.split('#')[0].trim();
-                        return norm_ext(baseName) === normKey;
+                        return fuzzyWellName(baseName) === normKey;
                     });
 
                     if (candidates.length > 0) {
@@ -1576,11 +1580,11 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                 const updated = { ...prev };
                 Object.entries(newProductionData).forEach(([wellName, tests]) => {
                     const latest = tests[tests.length - 1];
-                    const normKey = norm_ext(wellName);
+                    const normKey = fuzzyWellName(wellName);
 
                     // Identificar el Run Actual en el diccionario de diseños
                     const allDesignKeys = Object.keys(updated);
-                    const candidates = allDesignKeys.filter(k => norm_ext(k.split('#')[0].trim()) === normKey);
+                    const candidates = allDesignKeys.filter(k => fuzzyWellName(k.split('#')[0].trim()) === normKey);
 
                     if (candidates.length > 0) {
                         let targetKey = candidates[0];
@@ -1618,7 +1622,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
             setWellsHistoricalData(prev => {
                 const updated = { ...prev };
                 Object.entries(newProductionData).forEach(([wellName, tests]) => {
-                    updated[norm_ext(wellName)] = tests;
+                    updated[fuzzyWellName(wellName)] = tests;
                 });
                 return updated;
             });
@@ -2037,12 +2041,12 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
 
     const renderDetailedWellView = () => {
         if (!selectedWell) return null;
-        const isSynced = !!customDesigns[selectedWell.name.toUpperCase().trim()];
+        const isSynced = !!customDesigns[selectedWell.name.toUpperCase().trim()] || !!Object.keys(customDesigns).find(k => fuzzyWellName(k) === fuzzyWellName(selectedWell.name));
         const hasMatch = selectedWell.productionTest.hasMatchData || selectedWell.currentRate > 0;
 
         // Derive physical health for BHA coloring
-        const wellNorm = norm_ext(selectedWell.name);
-        const customDesign = Object.entries(customDesigns).find(([k]) => norm_ext(k) === wellNorm)?.[1];
+        const wellNorm = fuzzyWellName(selectedWell.name);
+        const customDesign = Object.entries(customDesigns).find(([k]) => fuzzyWellName(k) === wellNorm)?.[1];
 
         // Resolve pump
         let pump = providedPump;
@@ -2131,6 +2135,19 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                         </div>
                     </div>
                 )}
+
+                {/* NO SURVEY DATA WARNING */}
+                {wellMatchParams.survey.length === 0 && (
+                    <div className="mb-4 bg-warning/10 border border-warning/30 p-8 rounded-[2.5rem] flex items-center justify-between shadow-glow-warning/5 animate-fadeIn">
+                        <div className="flex items-center gap-6">
+                            <div className="p-4 bg-warning/20 rounded-2xl border border-warning/20 text-warning"><Globe className="w-8 h-8" /></div>
+                            <div>
+                                <h3 className="text-xl font-black text-warning uppercase mb-1 tracking-tighter">Trayectoria (Survey) No Encontrada</h3>
+                                <p className="text-[10px] font-bold text-warning/70 uppercase tracking-widest leading-relaxed max-w-xl">No se pudo vincular automáticamente una trayectoria direccional para el pozo "{selectedWell.name}". Los cálculos de TVD y presiones de fondo utilizarán aproximaciones verticales hasta que se cargue el survey correspondiente.</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
                 {/* WELL HEADER WITH DROPDOWN SELECTOR */}
                 <div className="flex justify-between items-center bg-surface/40 backdrop-blur-xl py-3 px-6 rounded-2xl border border-white/5 shadow-2xl relative group z-20">
                     <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl"></div>
@@ -2202,7 +2219,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                                         <div className="flex-1 min-w-0">
                                                             <div className="flex items-center gap-2">
                                                                 <span className={`text-sm font-black uppercase tracking-tight truncate ${isActive ? 'text-primary' : 'text-txt-main'}`}>{well.name}</span>
-                                                                {customDesigns[norm_ext(well.name)]?.isMechVerified && (
+                                                                {customDesigns[fuzzyWellName(well.name)]?.isMechVerified && (
                                                                     <span className="bg-cyan-500/10 text-cyan-500 border border-cyan-500/30 px-1.5 py-0.5 rounded text-[7px] font-black uppercase tracking-widest">MECH</span>
                                                                 )}
                                                             </div>
@@ -2287,7 +2304,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                         wellName={selectedWell.name}
                         pump={pump}
                         designParams={wellMatchParams}
-                        productionHistory={wellsHistoricalData[norm_ext(selectedWell.name)]}
+                        productionHistory={wellsHistoricalData[fuzzyWellName(selectedWell.name)]}
                         onImport={() => importWellHistoryRef.current?.click()}
                         onClose={() => setWellViewMode('monitoring')}
                     />
