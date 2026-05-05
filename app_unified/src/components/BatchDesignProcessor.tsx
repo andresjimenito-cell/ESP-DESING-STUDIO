@@ -94,56 +94,62 @@ const get = (row: Record<string, any>, keys: string[]): any => {
 
 const findPipeData = (catalog: any[], od: number, fallback: number): PipeData => {
     const opts = catalog.filter(c => Math.abs(c.od - od) < 0.05);
-    const sel = opts[0] || catalog.find(c => Math.abs(c.od - fallback) < 0.05) || catalog[0];
+    let sel = opts[0];
+    // Tie-breaker: Prefer N-80 or L-80 if multiple options exist for same OD
+    if (opts.length > 1) {
+        const preferred = opts.find(o => o.description.includes('N-80') || o.description.includes('L-80'));
+        if (preferred) sel = preferred;
+    }
+    if (!sel) sel = catalog.find(c => Math.abs(c.od - fallback) < 0.05) || catalog[0];
     return { description: sel?.description || '', od: sel?.od || fallback, id: sel?.id || fallback * 0.8, weight: sel?.weight || 30, roughness: sel?.roughness || 0.0006 };
 };
 
 const rowToParams = (row: Record<string, any>, surveys: Record<string, SurveyPoint[]>): SystemParams => {
-    const wellName  = s(get(row, ['POZO', 'WELL']));
-    const testDate  = d(get(row, ['FECHA', 'DATE', 'FECHA DE PRUEBA', 'TIMESTAMP']));
-    const pStatic   = n(get(row, ['P ESTATICA (PSI)', 'P ESTATICA', 'STATIC PRESSURE', 'PESTATICA']));
-    const pipMin    = n(get(row, ['PIP MINIMA (PSI)', 'PIP MINIMA', 'PIPMINIMA', 'MIN PIP']));
-    const ip        = n(get(row, ['IP (BFPD/PSI)', 'IP (BFP/PSI)', 'PRODUCTIVITY INDEX', 'PI (BFPD/PSI)']));
-    const ipMin     = n(get(row, ['IP MÍN (BFPD/PSI)', 'IP MIN (BFPD/PSI)', 'IP MIN', 'IP MÍN', 'MIN IP']));
-    const ipMax     = n(get(row, ['IP MÁX (BFPD/PSI)', 'IP MAX (BFPD/PSI)', 'IP MAX', 'IP MÁX', 'MAX IP']));
-    const targetQ   = n(get(row, ['CAUDAL OBJETIVO (BFPD)', 'CAUDAL OBJETIVO', 'TARGET RATE (BFPD)', 'TARGET RATE', 'CAUDAL']));
-    const bsw_raw   = n(get(row, ['BSW PRUEBA', 'BSW_PRUEBA', 'BSW (%)', 'WATER CUT (%)', 'BSW', 'CORTE DE AGUA', 'CORTE AGUA', 'CORTE_AGUA']));
-    const bsw       = (bsw_raw > 0 && bsw_raw <= 1.0) ? bsw_raw * 100 : bsw_raw;
+    const wellName = s(get(row, ['POZO', 'WELL']));
+    const testDate = d(get(row, ['FECHA', 'DATE', 'FECHA DE PRUEBA', 'TIMESTAMP']));
+    const pStatic = n(get(row, ['P ESTATICA (PSI)', 'P ESTATICA', 'STATIC PRESSURE', 'PESTATICA']));
+    const pipMin = n(get(row, ['PIP MINIMA (PSI)', 'PIP MINIMA', 'PIPMINIMA', 'MIN PIP']));
+    const ip = n(get(row, ['IP (BFPD/PSI)', 'IP (BFP/PSI)', 'PRODUCTIVITY INDEX', 'PI (BFPD/PSI)']));
+    const ipMin = n(get(row, ['IP MÍN (BFPD/PSI)', 'IP MIN (BFPD/PSI)', 'IP MIN', 'IP MÍN', 'MIN IP']));
+    const ipMax = n(get(row, ['IP MÁX (BFPD/PSI)', 'IP MAX (BFPD/PSI)', 'IP MAX', 'IP MÁX', 'MAX IP']));
+    const targetQ = n(get(row, ['CAUDAL OBJETIVO (BFPD)', 'CAUDAL OBJETIVO', 'TARGET RATE (BFPD)', 'TARGET RATE', 'CAUDAL']));
+    const bsw_raw = n(get(row, ['BSW PRUEBA', 'BSW_PRUEBA', 'BSW (%)', 'WATER CUT (%)', 'BSW', 'CORTE DE AGUA', 'CORTE AGUA', 'CORTE_AGUA']));
+    const bsw = (bsw_raw > 0 && bsw_raw <= 1.0) ? bsw_raw * 100 : bsw_raw;
     const bswMinRaw = n(get(row, ['BSW MIN (%)', 'BSW MIN', 'BSW_MIN']));
-    const bswMin    = (bswMinRaw > 0 && bswMinRaw <= 1.0) ? bswMinRaw * 100 : bswMinRaw;
+    const bswMin = (bswMinRaw > 0 && bswMinRaw <= 1.0) ? bswMinRaw * 100 : bswMinRaw;
     const bswMaxRaw = n(get(row, ['BSW MAX (%)', 'BSW MAX', 'BSW_MAX']));
-    const bswMax    = (bswMaxRaw > 0 && bswMaxRaw <= 1.0) ? bswMaxRaw * 100 : bswMaxRaw;
+    const bswMax = (bswMaxRaw > 0 && bswMaxRaw <= 1.0) ? bswMaxRaw * 100 : bswMaxRaw;
     const gorTarget = n(get(row, ['GOR (SCF/STB)', 'GOR (SCFSTB)', 'GOR']));
-    const gorMin    = n(get(row, ['GOR MIN']));
-    const gorMax    = n(get(row, ['GOR MAX']));
-    const intakeMD  = n(get(row, ['PROFUNDIDAD DE INTAKE MD (FT)', 'INTAKE MD', 'INTAKEMD']));
-    const topePerf  = n(get(row, ['TOPE DE PERFORADOS MD (FT)', 'TOPE DE PERFORADOS']));
-    const basePerf  = n(get(row, ['BASE DE PERFORADOS MD (FT)', 'BASE DE PERFORADOS']));
-    const totalMD   = n(get(row, ['PROFUNDIDAD TOTAL MD (FT)', 'PROFUNDIDAD TOTAL MD']));
-    const tht       = n(get(row, ['THT (°F)', 'THT']));
-    const bht       = n(get(row, ['BHT (°F)', 'BHT']));
-    const csgOd     = n(get(row, ['CSG OD (IN)', 'CSG OD']));
-    const tbgOd     = n(get(row, ['TBG OD (IN)', 'TBG OD']));
-    const tbgId     = n(get(row, ['TBG ID (IN)', 'TBG ID']));
-    const pht       = n(get(row, ['THP (PSI)', 'THP']));
-    const phc       = n(get(row, ['CHP (PSI)', 'CHP']));
-    const api       = n(get(row, ['°API', 'API']));
-    const geWater   = n(get(row, ['GE DEL AGUA', 'GE AGUA'])) || 1.05;
-    const geGas     = n(get(row, ['GE DEL GAS', 'GE GAS'])) || 0.7;
-    const sal       = n(get(row, ['SALINIDAD (PPM)', 'SALINIDAD']));
-    const pb        = n(get(row, ['P BURBUJA (PSI)', 'PBURBUJA']));
-    const campo     = s(get(row, ['CAMPO']));
-    const resp      = s(get(row, ['RESPONSABLE DISENO PROVEEDOR', 'RESPONSABLE DISEÑO PROVEEDOR']));
+    const gorMin = n(get(row, ['GOR MIN']));
+    const gorMax = n(get(row, ['GOR MAX']));
+    const intakeMD = n(get(row, ['PROFUNDIDAD DE INTAKE MD (FT)', 'INTAKE MD', 'INTAKEMD']));
+    const topePerf = n(get(row, ['TOPE DE PERFORADOS MD (FT)', 'TOPE DE PERFORADOS']));
+    const basePerf = n(get(row, ['BASE DE PERFORADOS MD (FT)', 'BASE DE PERFORADOS']));
+    const totalMD = n(get(row, ['PROFUNDIDAD TOTAL MD (FT)', 'PROFUNDIDAD TOTAL MD']));
+    const tht = n(get(row, ['THT (°F)', 'THT']));
+    const bht = n(get(row, ['BHT (°F)', 'BHT']));
+    const csgOd = n(get(row, ['CSG OD (IN)', 'CSG OD']));
+    const tbgOd = n(get(row, ['TBG OD (IN)', 'TBG OD']));
+    const tbgId = n(get(row, ['TBG ID (IN)', 'TBG ID']));
+    const pht = n(get(row, ['THP (PSI)', 'THP']));
+    const phc = n(get(row, ['CHP (PSI)', 'CHP']));
+    const api = n(get(row, ['°API', 'API']));
+    const geWater = n(get(row, ['GE DEL AGUA', 'GE AGUA'])) || 1.05;
+    const geGas = n(get(row, ['GE DEL GAS', 'GE GAS'])) || 0.7;
+    const sal = n(get(row, ['SALINIDAD (PPM)', 'SALINIDAD']));
+    const pb = n(get(row, ['P BURBUJA (PSI)', 'PBURBUJA']));
+    const campo = s(get(row, ['CAMPO']));
+    const resp = s(get(row, ['RESPONSABLE DISENO PROVEEDOR', 'RESPONSABLE DISEÑO PROVEEDOR']));
     const formacion = s(get(row, ['FORMACION PRODUCTORA', 'FORMACION']));
 
-    const midPerfs  = (topePerf + basePerf) / 2 || intakeMD + 200;
-    const survey    = surveys[wellName] || [];
+    const midPerfs = (topePerf + basePerf) / 2 || intakeMD + 200;
+    const survey = surveys[wellName] || [];
     // If no targetQ is provided, use 65% of potential drawdown for a more realistic "center" design
-    const aof       = ip * pStatic;
-    const rate      = (ipv: number) => {
+    const aof = ip * pStatic;
+    const rate = (ipv: number) => {
         // PRIORITY A: Target Flow from Excel if exists
         if (targetQ > 0) return Number(Math.min(targetQ, aof * 0.90).toFixed(2)); // Cap at 90%
-        
+
         // PRIORITY B: Geometric drawdown (User specified 65% for balance)
         const availableLift = Math.max(0, pStatic - pipMin);
         const calcVal = ipv * availableLift * 0.65;
@@ -189,14 +195,14 @@ const rowToParams = (row: Record<string, any>, surveys: Record<string, SurveyPoi
         inflow: { model: 'Productivity Index', staticSource: 'BHP', pStatic, ip: ip || 1.0, staticLevel: 0 },
         pressures: { totalRate: rate(ip), pht: pht || 50, phc: phc || 50, pumpDepthMD: intakeMD || totalMD * 0.85 },
         targets: {
-            min:    { rate: rate(ipMin  || ip * 0.8), ip: ipMin  || ip * 0.8, waterCut: bswMin || bsw,  gor: gorMin  || gorTarget, frequency: 50 },
-            target: { rate: rate(ip),                 ip,                      waterCut: bsw,            gor: gorTarget,            frequency: 60 },
-            max:    { rate: rate(ipMax  || ip * 1.25), ip: ipMax  || ip * 1.25, waterCut: bswMax || bsw,  gor: gorMax  || gorTarget * 1.2, frequency: 70 }
+            min: { rate: rate(ipMin || ip * 0.8), ip: ipMin || ip * 0.8, waterCut: bswMin || bsw, gor: gorMin || gorTarget, frequency: 50 },
+            target: { rate: rate(ip), ip, waterCut: bsw, gor: gorTarget, frequency: 60 },
+            max: { rate: rate(ipMax || ip * 1.25), ip: ipMax || ip * 1.25, waterCut: bswMax || bsw, gor: gorMax || gorTarget * 1.2, frequency: 70 }
         },
         activeScenario: 'target',
         surfaceTemp: tht || 80, bottomholeTemp: bht || 200, totalDepthMD: totalMD,
         survey, motorHp: 0,
-        simulation: { annualWearPercent: 0, simulationMonths: 36, costPerKwh: 0.12 },
+        simulation: { annualWearPercent: 0, simulationMonths: 36, costPerKwh: 0.12, ipType: 'fixed', ipTarget: ip || 1.0 },
         initialPumpName: s(get(row, ['BOMBA', 'PUMP', 'EQUIPO DE BOMBEO'])),
         initialStages: n(get(row, ['ETAPAS', 'ETAPAS DE LA BOMBA', '# ETAPAS', 'NUMERO DE ETAPAS'])),
         initialMotorName: s(get(row, ['MOTOR', 'MOTOR MODEL', 'EQUIPO DE MOTOR'])),
@@ -211,12 +217,12 @@ const rowToParams = (row: Record<string, any>, surveys: Record<string, SurveyPoi
 export const BatchDesignProcessor: React.FC<BatchDesignProcessorProps> = ({
     isOpen, onClose, onImported, initialDesigns, initialSurveys, initialFile
 }) => {
-    const [status, setStatus]           = useState<'idle' | 'loading' | 'list'>('idle');
-    const [designs, setDesigns]         = useState<Record<string, any>[]>([]);
-    const [surveys, setSurveys]         = useState<Record<string, SurveyPoint[]>>({});
-    const [searchQ, setSearchQ]         = useState('');
-    const [fileName, setFileName]       = useState('');
-    const [selected, setSelected]       = useState<string | null>(null);
+    const [status, setStatus] = useState<'idle' | 'loading' | 'list'>('idle');
+    const [designs, setDesigns] = useState<Record<string, any>[]>([]);
+    const [surveys, setSurveys] = useState<Record<string, SurveyPoint[]>>({});
+    const [searchQ, setSearchQ] = useState('');
+    const [fileName, setFileName] = useState('');
+    const [selected, setSelected] = useState<string | null>(null);
 
     React.useEffect(() => {
         if (isOpen && initialDesigns && initialDesigns.length > 0) {
@@ -243,7 +249,7 @@ export const BatchDesignProcessor: React.FC<BatchDesignProcessorProps> = ({
         setFileName(file.name);
 
         const buf = await file.arrayBuffer();
-        const wb  = read(new Uint8Array(buf), { type: 'array' });
+        const wb = read(new Uint8Array(buf), { type: 'array' });
 
         // ── 1. Parse surveys ──────────────────────────────────────────────
         const surveyMap: Record<string, SurveyPoint[]> = {};
@@ -252,8 +258,8 @@ export const BatchDesignProcessor: React.FC<BatchDesignProcessorProps> = ({
             const rows: any[] = xlsxUtils.sheet_to_json(wb.Sheets[surveySheet], { defval: '' });
             rows.forEach(row => {
                 const well = s(get(row, ['POZO', 'WELL']));
-                const md   = n(get(row, ['MEASURED DEPTH (FT)', 'MEASURED DEPTH', 'MD (FT)', 'MD']));
-                const tvd  = n(get(row, ['VERTICAL DEPTH (FT)', 'VERTICAL DEPTH', 'TVD (FT)', 'TVD']));
+                const md = n(get(row, ['MEASURED DEPTH (FT)', 'MEASURED DEPTH', 'MD (FT)', 'MD']));
+                const tvd = n(get(row, ['VERTICAL DEPTH (FT)', 'VERTICAL DEPTH', 'TVD (FT)', 'TVD']));
                 if (well && md > 0) {
                     if (!surveyMap[well]) surveyMap[well] = [];
                     surveyMap[well].push({ md, tvd });
@@ -294,7 +300,7 @@ export const BatchDesignProcessor: React.FC<BatchDesignProcessorProps> = ({
             })
             .filter(obj => {
                 // Must have at least a well name or a Design #
-                const hasWell    = s(get(obj, ['POZO'])) !== '';
+                const hasWell = s(get(obj, ['POZO'])) !== '';
                 const hasDesignN = s(get(obj, ['DISEÑO #', 'DISENO #', 'DISEÑO', 'DISENO'])) !== '';
                 return hasWell || hasDesignN;
             });
@@ -325,10 +331,10 @@ export const BatchDesignProcessor: React.FC<BatchDesignProcessorProps> = ({
     const filtered = designs.filter(row => {
         if (!searchQ) return true;
         const q = searchQ.toLowerCase();
-        const well   = s(get(row, ['POZO'])).toLowerCase();
-        const campo  = s(get(row, ['CAMPO'])).toLowerCase();
-        const id     = s(get(row, ['ID POZO-FECHA', 'DISENO #', 'DISEÑO #'])).toLowerCase();
-        const dNum   = s(get(row, ['DISEÑO #', 'DISENO #'])).toLowerCase();
+        const well = s(get(row, ['POZO'])).toLowerCase();
+        const campo = s(get(row, ['CAMPO'])).toLowerCase();
+        const id = s(get(row, ['ID POZO-FECHA', 'DISENO #', 'DISEÑO #'])).toLowerCase();
+        const dNum = s(get(row, ['DISEÑO #', 'DISENO #'])).toLowerCase();
         return well.includes(q) || campo.includes(q) || id.includes(q) || dNum.includes(q);
     });
 
@@ -350,13 +356,13 @@ export const BatchDesignProcessor: React.FC<BatchDesignProcessorProps> = ({
                         <div>
                             <h2 className="text-base font-black text-txt-main uppercase tracking-tighter">
                                 {status === 'idle' ? 'Cargar Base de Diseños' :
-                                 status === 'loading' ? 'Leyendo archivo...' :
-                                 'Seleccionar Diseño'}
+                                    status === 'loading' ? 'Leyendo archivo...' :
+                                        'Seleccionar Diseño'}
                             </h2>
                             <p className="text-[9px] text-txt-muted font-black uppercase tracking-[0.2em] opacity-60 mt-0.5">
-                                {status === 'idle'   ? 'Excel con hojas "Data Diseño" y "Survey"' :
-                                 status === 'loading' ? fileName :
-                                 `${designs.length} diseños en "${fileName}" · Haz clic en uno para cargarlo`}
+                                {status === 'idle' ? 'Excel con hojas "Data Diseño" y "Survey"' :
+                                    status === 'loading' ? fileName :
+                                        `${designs.length} diseños en "${fileName}" · Haz clic en uno para cargarlo`}
                             </p>
                         </div>
                     </div>
@@ -429,28 +435,27 @@ export const BatchDesignProcessor: React.FC<BatchDesignProcessorProps> = ({
                                     </div>
                                 )}
                                 {filtered.map((row, i) => {
-                                    const wellName  = s(get(row, ['POZO']));
-                                    const campo     = s(get(row, ['CAMPO']));
+                                    const wellName = s(get(row, ['POZO']));
+                                    const campo = s(get(row, ['CAMPO']));
                                     const designNum = s(get(row, ['DISEÑO #', 'DISENO #']));
-                                    const idPozo    = s(get(row, ['ID POZO-FECHA']));
-                                    const pStat     = n(get(row, ['P ESTATICA (PSI)', 'P ESTATICA']));
-                                    const pipMin    = n(get(row, ['PIP MINIMA (PSI)', 'PIP MINIMA']));
-                                    const ip        = n(get(row, ['IP (BFPD/PSI)']));
-                                    const rate      = Math.max(0, ip * Math.max(0, pStat - pipMin));
-                                    const hasSvy    = !!surveys[wellName];
-                                    const rowKey    = `${designNum}-${wellName}-${i}`;
-                                    const isChosen  = selected === rowKey;
+                                    const idPozo = s(get(row, ['ID POZO-FECHA']));
+                                    const pStat = n(get(row, ['P ESTATICA (PSI)', 'P ESTATICA']));
+                                    const pipMin = n(get(row, ['PIP MINIMA (PSI)', 'PIP MINIMA']));
+                                    const ip = n(get(row, ['IP (BFPD/PSI)']));
+                                    const rate = Math.max(0, ip * Math.max(0, pStat - pipMin));
+                                    const hasSvy = !!surveys[wellName];
+                                    const rowKey = `${designNum}-${wellName}-${i}`;
+                                    const isChosen = selected === rowKey;
 
                                     return (
                                         <button
                                             key={rowKey}
                                             onClick={() => handleSelect(row, rowKey)}
                                             disabled={!!selected}
-                                            className={`w-full grid px-4 py-3 rounded-2xl text-left transition-all duration-300 border ${
-                                                isChosen
+                                            className={`w-full grid px-4 py-3 rounded-2xl text-left transition-all duration-300 border ${isChosen
                                                     ? 'bg-primary/20 border-primary scale-[1.01] shadow-glow-primary/20'
                                                     : 'glass-surface-light border-white/5 hover:border-primary/30 hover:bg-white/5'
-                                            }`}
+                                                }`}
                                             style={{ gridTemplateColumns: '56px 1fr 130px 80px 80px 85px 28px' }}
                                         >
                                             {/* Diseño # */}

@@ -948,7 +948,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                 const mechSheetName = workbook.SheetNames.find(s => norm_ext(s) === 'ESTADOSMECANICOS');
                 if (mechSheetName) {
                     const mechSheet = workbook.Sheets[mechSheetName];
-                    
+
                     // Robust header detection for mechanical sheet
                     const rows = XLSX.utils.sheet_to_json(mechSheet, { header: 1 }) as any[][];
                     let headerRowIdx = -1;
@@ -959,8 +959,8 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                             break;
                         }
                     }
-                    
-                    const mechJson = (headerRowIdx !== -1) 
+
+                    const mechJson = (headerRowIdx !== -1)
                         ? (XLSX.utils.sheet_to_json(mechSheet, { range: headerRowIdx }) as any[])
                         : (XLSX.utils.sheet_to_json(mechSheet) as any[]);
 
@@ -1090,14 +1090,14 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                     // Normalización: Si el dato viene como decimal (0.98) lo convertimos a porcentaje (98)
                     if (bsw > 0 && bsw <= 1.0) bsw = bsw * 100;
                     const gor = n_ext(get_ext(row, ['GOR (SCF/STB)', 'GOR (SCFSTB)', 'GOR']));
-                    
+
                     const bht = n_ext(get_ext(row, ['BHT (°F)', 'BHT']));
                     const tht = n_ext(get_ext(row, ['THT (°F)', 'THT']));
                     const api = n_ext(get_ext(row, ['°API', 'API']));
-                    
+
                     // --- PUNTO MEDIO DE PERFORADOS ---
                     const midPerfsMD = (topPerfs > 0 && basePerfs > 0) ? (topPerfs + basePerfs) / 2 : (topPerfs || (intakeMD + 200));
-                    
+
                     const pbValue = n_ext(get_ext(row, ['P BURBUJA (PSI)', 'PBURBUJA', 'P BURBUJA', 'PB']));
 
                     const rate = (ipv: number) => Number((Math.max(0, ipv * Math.max(0, pStatic - pipMin) * 0.60)).toFixed(1));

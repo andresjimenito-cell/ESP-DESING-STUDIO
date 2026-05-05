@@ -5,12 +5,12 @@ import { PipeData, EspPump, EspMotor, EspCable, EspVSD } from './types';
 const DEFAULT_ROUGHNESS = 0.00065;
 
 export const TUBING_CATALOG: PipeData[] = [
-    { description: '2-3/8" 4.60# J-55', od: 2.375, id: 1.995, weight: 4.60, roughness: DEFAULT_ROUGHNESS },
     { description: '2-3/8" 4.70# N-80', od: 2.375, id: 1.995, weight: 4.70, roughness: DEFAULT_ROUGHNESS },
-    { description: '2-7/8" 6.40# J-55', od: 2.875, id: 2.441, weight: 6.40, roughness: DEFAULT_ROUGHNESS },
+    { description: '2-3/8" 4.60# J-55', od: 2.375, id: 1.995, weight: 4.60, roughness: DEFAULT_ROUGHNESS },
     { description: '2-7/8" 6.50# N-80', od: 2.875, id: 2.441, weight: 6.50, roughness: DEFAULT_ROUGHNESS },
-    { description: '3-1/2" 9.20# J-55', od: 3.500, id: 2.992, weight: 9.20, roughness: DEFAULT_ROUGHNESS },
+    { description: '2-7/8" 6.40# J-55', od: 2.875, id: 2.441, weight: 6.40, roughness: DEFAULT_ROUGHNESS },
     { description: '3-1/2" 9.30# N-80', od: 3.500, id: 2.992, weight: 9.30, roughness: DEFAULT_ROUGHNESS },
+    { description: '3-1/2" 9.20# J-55', od: 3.500, id: 2.992, weight: 9.20, roughness: DEFAULT_ROUGHNESS },
     { description: '4-1/2" 12.60# J-55', od: 4.500, id: 3.958, weight: 12.60, roughness: DEFAULT_ROUGHNESS },
 ];
 

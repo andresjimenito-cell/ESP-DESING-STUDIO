@@ -70,7 +70,7 @@ export const DesignDataImport: React.FC<DesignDataImportProps> = ({ onImported, 
                     if (val == null || val === '') return 0;
                     if (typeof val === 'number') return isNaN(val) ? 0 : val;
                     let s = String(val).trim().replace(/\s+/g, ' ');
-                    
+
                     // Handle fractions like 3 1/2 or 3-1/2
                     if (s.includes('/')) {
                         const match = s.match(/(\d+)?[\s-]?(\d+)\/(\d+)/);
@@ -184,10 +184,19 @@ export const DesignDataImport: React.FC<DesignDataImportProps> = ({ onImported, 
                         for (const opt of options) {
                             let score = 0;
                             // Weight match (High priority)
-                            if (extractedWeight > 0 && Math.abs(opt.weight - extractedWeight) < 0.2) score += 500;
-                            
+                            if (extractedWeight > 0) {
+                                const diff = Math.abs(opt.weight - extractedWeight);
+                                if (diff < 0.05) score += 600; // Perfect match
+                                else if (diff < 0.2) score += 500; // Close match
+                            }
+
                             // Grade match
-                            if (foundGrade && opt.description.replace(/[-\s]/g, '').includes(foundGrade.replace(/[-\s]/g, ''))) score += 300;
+                            if (foundGrade) {
+                                if (opt.description.replace(/[-\s]/g, '').includes(foundGrade.replace(/[-\s]/g, ''))) score += 300;
+                            } else {
+                                // Default preference for N80 if no grade specified
+                                if (opt.description.includes('N-80') || opt.description.includes('L-80')) score += 50;
+                            }
 
                             // ID match
                             if (idVal > 0 && Math.abs((opt.id_in || opt.id) - idVal) < 0.01) score += 200;
@@ -235,6 +244,8 @@ export const DesignDataImport: React.FC<DesignDataImportProps> = ({ onImported, 
                 const testThp = n(getVal(['PRESION CABEZAL THP', 'PRESION CABEZAL (THP)', 'PRESION CABEZAL', 'THP (PSI)', 'THP', 'FTHP']));
                 const testPip = n(getVal(['PIP (PSI)', 'PIP', 'INTAKE PRESSURE', 'PRESION SUCCION']));
                 const testPdp = n(getVal(['PDP', 'PDESC', 'DISCHARGE PRESSURE', 'P-DISCHARGE']));
+
+                const importedIp = n(getVal(['IPBFPDPSI', 'IP(BFPD/PSI)'])) || 1.0;
 
                 const importedParams: SystemParams = {
                     metadata: {
@@ -293,7 +304,7 @@ export const DesignDataImport: React.FC<DesignDataImportProps> = ({ onImported, 
                     inflow: {
                         model: 'Productivity Index', staticSource: 'BHP',
                         pStatic: pStatic,
-                        ip: n(getVal(['IPBFPDPSI', 'IP(BFPD/PSI)'])) || 1.0, staticLevel: 0
+                        ip: importedIp, staticLevel: 0
                     },
                     pressures: {
                         totalRate: bfpdObj,
@@ -314,7 +325,7 @@ export const DesignDataImport: React.FC<DesignDataImportProps> = ({ onImported, 
                         },
                         target: {
                             rate: bfpdObj,
-                            ip: n(getVal(['IPBFPDPSI', 'IP(BFPD/PSI)'])) || 1.0,
+                            ip: importedIp,
                             waterCut: (() => {
                                 const raw = n(getVal(['BSW (%)', 'BSW', 'WATER CUT (%)', 'CORTE DE AGUA', 'BSW PRUEBA', 'BSW_PRUEBA']));
                                 return (raw > 0 && raw <= 1.0) ? raw * 100 : raw;
@@ -336,7 +347,8 @@ export const DesignDataImport: React.FC<DesignDataImportProps> = ({ onImported, 
                     activeScenario: 'target',
                     surfaceTemp: n(getVal(['THT'])), bottomholeTemp: n(getVal(['BHT'])),
                     totalDepthMD: n(getVal(['PROFUNDIDADTOTAL'])),
-                    survey: surveyPoints, motorHp: 0, simulation: { annualWearPercent: 0, simulationMonths: 36, costPerKwh: 0.12 }
+                    survey: surveyPoints, motorHp: 0,
+                    simulation: { annualWearPercent: 0, simulationMonths: 36, costPerKwh: 0.12, ipType: 'fixed', ipTarget: importedIp }
                 };
 
                 setStatus('success');

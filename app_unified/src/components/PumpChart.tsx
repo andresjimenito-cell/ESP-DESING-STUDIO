@@ -442,13 +442,13 @@ export const PumpChart: React.FC<PumpChartProps> = ({ data, pump, currentFrequen
               type="monotone"
               dataKey="manualSystemCurve"
               stroke={colorPrimary}
-              strokeWidth={2.5}
+              strokeWidth={3}
               dot={false}
               name="Predicción Escenario"
               isAnimationActive={false}
-              strokeDasharray="4 3"
               connectNulls={false}
               opacity={1}
+              filter="url(#neon-s)"
             />
 
             {/* --- PUMP OPERATING LIMITS --- */}

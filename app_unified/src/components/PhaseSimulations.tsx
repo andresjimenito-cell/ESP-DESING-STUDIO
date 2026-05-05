@@ -160,7 +160,7 @@ const SimulationReport = ({ onClose, data, params, pump }: { onClose: () => void
                     <div className="grid grid-cols-3 gap-6 mb-10 break-inside-avoid">
                         <div className="p-1 border-2 border-slate-100 rounded-[2rem] overflow-hidden bg-white shadow-sm">
                             <h3 className="text-[9px] font-black text-slate-500 uppercase tracking-widest p-3 pb-1 text-center bg-slate-50 border-b border-slate-100">{t('sim.loadSensitivityChart')}</h3>
-                            <div className="h-56 p-2">
+                            <div className="p-2" style={{ height: '224px' }}>
                                 <ResponsiveContainer width="100%" height="100%">
                                     <ComposedChart data={data.timeData}>
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -176,7 +176,7 @@ const SimulationReport = ({ onClose, data, params, pump }: { onClose: () => void
                         </div>
                         <div className="p-1 border-2 border-slate-100 rounded-[2rem] overflow-hidden bg-white shadow-sm">
                             <h3 className="text-[9px] font-black text-slate-500 uppercase tracking-widest p-3 pb-1 text-center bg-slate-50 border-b border-slate-100">{t('sim.freqPowerChart')}</h3>
-                            <div className="h-56 p-2">
+                            <div className="p-2" style={{ height: '224px' }}>
                                 <ResponsiveContainer width="100%" height="100%">
                                     <ComposedChart data={data.timeData}>
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -193,7 +193,7 @@ const SimulationReport = ({ onClose, data, params, pump }: { onClose: () => void
                         </div>
                         <div className="p-1 border-2 border-slate-100 rounded-[2rem] overflow-hidden bg-white shadow-sm border-emerald-100">
                             <h3 className="text-[9px] font-black text-emerald-600 uppercase tracking-widest p-3 pb-1 text-center bg-emerald-50 border-b border-emerald-100">{t('sim.monthlyEnergyChart')}</h3>
-                            <div className="h-56 p-2">
+                            <div className="p-2" style={{ height: '224px' }}>
                                 <ResponsiveContainer width="100%" height="100%">
                                     <AreaChart data={data.timeData}>
                                         <defs>
@@ -660,9 +660,9 @@ export const PhaseSimulations: React.FC<Props> = ({ params, setParams, pump, fre
                 <div className="col-span-12 lg:col-span-9 flex flex-col gap-5 overflow-y-auto custom-scrollbar">
 
                     {/* PRIMARY VISUALIZATION GRID */}
-                    <div className="grid grid-cols-12 gap-5 min-h-[500px]">
+                    <div className="grid grid-cols-12 gap-5 shrink-0" style={{ height: '600px' }}>
                         {/* THE PUMP MAP */}
-                        <div className="col-span-12 lg:col-span-8 relative">
+                        <div className="col-span-12 lg:col-span-8 relative" style={{ height: '600px' }}>
                             <div className="absolute top-10 left-10 z-20 flex gap-5 text-[9px] font-black text-txt-muted uppercase tracking-[0.2em] opacity-60 pointer-events-none">
                                 <div className="flex items-center gap-2"><div className="w-3 h-1 bg-primary rounded-full"></div> New</div>
                                 <div className="flex items-center gap-2"><div className="w-3 h-1 bg-secondary rounded-full"></div> Degraded (M{currentMonth})</div>
@@ -671,9 +671,9 @@ export const PhaseSimulations: React.FC<Props> = ({ params, setParams, pump, fre
                         </div>
 
                         {/* SECONDARY INSIGHTS COLUMN */}
-                        <div className="col-span-12 lg:col-span-4 flex flex-col gap-5">
+                        <div className="col-span-12 lg:col-span-4 flex flex-col gap-5" style={{ height: '600px' }}>
                             {/* MOTOR PERFORMANCE / THERMAL MAP */}
-                            <div className="flex-1">
+                            <div className="flex-1 min-h-0 relative">
                                 <MotorCurveMultiAxis
                                     motor={params.selectedMotor}
                                     currentLoad={currentStats?.motorLoad || 0}
@@ -685,7 +685,7 @@ export const PhaseSimulations: React.FC<Props> = ({ params, setParams, pump, fre
                             </div>
 
                             {/* COST EVOLUTION (Mini Chart) */}
-                            <div className="h-[220px] bg-surface rounded-[32px] border border-white/5 shadow-2xl p-6 flex flex-col relative overflow-hidden group">
+                            <div className="bg-surface rounded-[32px] border border-white/5 shadow-2xl p-6 flex flex-col relative overflow-hidden group shrink-0" style={{ height: '250px' }}>
                                 <div className="absolute -right-10 -bottom-10 w-32 h-32 bg-emerald-500/10 blur-[60px] rounded-full"></div>
                                 <div className="flex justify-between items-center mb-4 shrink-0 relative z-10">
                                     <h3 className="text-[9px] font-black text-emerald-500 uppercase tracking-[0.2em]">{t('sim.monthlyEnergyChart')}</h3>
@@ -713,7 +713,7 @@ export const PhaseSimulations: React.FC<Props> = ({ params, setParams, pump, fre
                     </div>
 
                     {/* --- THE MASTER DATA LOG (TABLE) --- */}
-                    <div className="glass-surface-light rounded-[2.5rem] border border-white/10 shadow-2xl overflow-hidden flex flex-col shrink-0 group transition-all duration-700">
+                    <div className="glass-surface-light rounded-[2.5rem] border border-white/10 shadow-2xl overflow-hidden flex flex-col shrink-0 group transition-all duration-700 h-[500px]">
                         <div className="flex items-center justify-between px-8 py-5 bg-surface/40 border-b border-white/5 shrink-0">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 bg-primary/10 rounded-lg">
