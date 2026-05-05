@@ -169,16 +169,16 @@ export const PerformanceCurveMultiAxis: React.FC<Props> = ({ data, currentFlow, 
               <Line key={hz} yAxisId="left" type="monotone" dataKey={`hz${hz}`} stroke={colorTextMuted} strokeWidth={1} dot={false} opacity={0.07} isAnimationActive={false} connectNulls={false} />
             ))}
 
-            <Line 
-              yAxisId="left" 
-              type="monotone" 
-              dataKey="systemCurve" 
-              stroke={colorSystem} 
-              strokeWidth={3} 
-              dot={false} 
-              name="Sistema Calibrado" 
-              opacity={0.9} 
-              connectNulls={false} 
+            <Line
+              yAxisId="left"
+              type="monotone"
+              dataKey="systemCurve"
+              stroke={colorSystem}
+              strokeWidth={3}
+              dot={false}
+              name="Sistema Calibrado"
+              opacity={0.9}
+              connectNulls={false}
               filter="url(#neon-s)"
             />
             <Line yAxisId="left" type="monotone" dataKey="idealSystemCurve" stroke={colorSystem} strokeWidth={2} strokeDasharray="3 3" dot={false} name="Sistema Ideal (Mismo IP)" opacity={0.4} connectNulls={false} />

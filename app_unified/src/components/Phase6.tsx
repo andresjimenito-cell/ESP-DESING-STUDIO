@@ -1560,7 +1560,7 @@ export const Phase6: React.FC<Props> = ({ params, setParams, pump, designFreq, t
                 flow: designMatch.flow,
                 head: designMatch.head,
                 label: 'TEÓRICO',
-                color: '#007d13ff'
+                color: '#009a17ff'
             });
         }
 
@@ -1569,7 +1569,7 @@ export const Phase6: React.FC<Props> = ({ params, setParams, pump, designFreq, t
                 flow: targetMatch.flow,
                 head: targetMatch.head,
                 label: 'OBJ',
-                color: '#0b002eff'
+                color: 'rgb(var(--color-primary))'
             });
         }
 
@@ -1578,7 +1578,7 @@ export const Phase6: React.FC<Props> = ({ params, setParams, pump, designFreq, t
                 flow: minMatch.flow,
                 head: minMatch.head,
                 label: 'MIN',
-                color: '#0b002eff'
+                color: 'rgb(var(--color-secondary))'
             });
         }
 
@@ -1587,7 +1587,7 @@ export const Phase6: React.FC<Props> = ({ params, setParams, pump, designFreq, t
                 flow: maxMatch.flow,
                 head: maxMatch.head,
                 label: 'MAX',
-                color: '#0b002eff'
+                color: 'rgb(var(--color-text-muted))'
             });
         }
 
@@ -1923,7 +1923,7 @@ export const Phase6: React.FC<Props> = ({ params, setParams, pump, designFreq, t
                                 <DesignMetric label="PMP (TVD)" value={`${interpolateTVD(designParams.wellbore.midPerfsMD, designParams.survey).toFixed(0)} ft`} />
                             </div>
                         )}
-                        
+
                         <div className="mt-4 pt-4 border-t border-white/5 flex items-center gap-2 opacity-50 group-hover:opacity-100 transition-opacity">
                             <Info className="w-3 h-3 text-txt-muted" />
                             <span className="text-[7px] font-black uppercase tracking-[0.2em] text-txt-muted">

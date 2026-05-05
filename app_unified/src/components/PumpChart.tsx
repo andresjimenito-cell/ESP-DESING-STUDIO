@@ -40,6 +40,7 @@ export const PumpChart: React.FC<PumpChartProps> = ({ data, pump, currentFrequen
   // Theme Colors linked to CSS Variables
   const colorPrimary = 'rgb(var(--color-primary))';
   const colorSecondary = 'rgb(var(--color-secondary))';
+  const colorTextMain = 'rgb(var(--color-text-main))';
   const colorTextMuted = 'rgb(var(--color-text-muted))';
   const colorGrid = 'rgb(var(--color-surface-light))';
   const colorSurface = 'rgb(var(--color-surface))';
@@ -219,21 +220,52 @@ export const PumpChart: React.FC<PumpChartProps> = ({ data, pump, currentFrequen
 
   const FloatingFreqLabel = (props: any) => {
     const { x, y, index, frequency, color } = props;
-    // Show label only at the beginning (flow 0) and if it has a valid Y position
     if (index !== 0 || y === undefined || y === null) return null;
     return (
       <g className="pointer-events-none select-none">
+        <rect
+          x={x + 6}
+          y={y - 7}
+          width={32}
+          height={12}
+          rx={3}
+          fill="rgb(var(--color-surface))"
+          fillOpacity={0.8}
+          stroke={color || colorTextMain}
+          strokeOpacity={0.3}
+          strokeWidth={0.5}
+        />
         <text
-          x={x + 10}
-          y={y + 3}
-          fill={color || colorTextMuted}
-          fontSize={8}
+          x={x + 22}
+          y={y + 2}
+          fill={color || colorTextMain}
+          fontSize={7}
           fontWeight="900"
-          opacity={0.5}
-          textAnchor="start"
+          textAnchor="middle"
+          className="uppercase tracking-tighter"
         >
-          {frequency} Hz
+          {frequency}Hz
         </text>
+      </g>
+    );
+  };
+
+  const CustomChartDot = (props: any) => {
+    const { cx, cy, fill, r } = props;
+    if (!cx || !cy) return null;
+    return (
+      <g className="animate-fadeIn">
+        <circle cx={cx} cy={cy} r={r + 2} fill={fill} opacity={0.15} />
+        <circle
+          cx={cx}
+          cy={cy}
+          r={r}
+          fill={fill}
+          stroke="#fff"
+          strokeWidth={1}
+          style={{ filter: 'drop-shadow(0 1px 2px rgba(255, 255, 255, 1))' }}
+        />
+        <circle cx={cx - r / 3} cy={cy - r / 3} r={r / 4} fill="#fff" opacity={0.4} />
       </g>
     );
   };
@@ -278,10 +310,10 @@ export const PumpChart: React.FC<PumpChartProps> = ({ data, pump, currentFrequen
                 <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor={colorSecondary} floodOpacity="0.4" />
               </filter>
               <filter id="glow-danger" height="300%" width="300%" x="-100%" y="-100%">
-                <feDropShadow dx="0" dy="0" stdDeviation="4" floodColor="#ef4444" floodOpacity="0.8" />
+                <feDropShadow dx="0" dy="0" stdDeviation="4" floodColor="#ff0000ff" floodOpacity="0.8" />
               </filter>
               <filter id="glow-success" height="300%" width="300%" x="-100%" y="-100%">
-                <feDropShadow dx="0" dy="0" stdDeviation="5" floodColor="#00d134ff" floodOpacity="0.9" />
+                <feDropShadow dx="0" dy="0" stdDeviation="5" floodColor="#00d335ff" floodOpacity="0.9" />
               </filter>
               <filter id="neon-s" x="-20%" y="-20%" width="140%" height="140%">
                 <feGaussianBlur stdDeviation="3.5" result="b" />
@@ -295,47 +327,49 @@ export const PumpChart: React.FC<PumpChartProps> = ({ data, pump, currentFrequen
               dataKey="flow"
               type="number"
               domain={xDomain}
-              tick={{ fontSize: 10, fill: colorTextMuted, fontWeight: 800, fontFamily: 'Inter, system-ui, sans-serif' }}
-              tickLine={false}
-              axisLine={{ stroke: colorGrid, strokeWidth: 1.5 }}
+              tick={{ fontSize: 10, fill: colorTextMain, fontWeight: 800, fontFamily: 'Inter, system-ui, sans-serif' }}
+              tickLine={{ stroke: colorGrid, strokeWidth: 2, length: 12 } as any}
+              axisLine={{ stroke: colorGrid, strokeWidth: 2 }}
+              tickCount={10}
               allowDataOverflow={true}
               height={25}
               tickMargin={4}
             >
-              <Label value={`${t('chart.flow')} (BPD)`} offset={-2} position="insideBottom" style={{ fontSize: 8, fill: colorTextMuted, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.15em', fontFamily: 'Inter, system-ui, sans-serif' }} />
+              <Label value={`${t('chart.flow')} (BPD)`} offset={-2} position="insideBottom" style={{ fontSize: 8, fill: colorTextMain, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.15em', fontFamily: 'Inter, system-ui, sans-serif' }} />
             </XAxis>
 
             <YAxis
               yAxisId="left"
               domain={yDomain}
               allowDataOverflow={true}
-              tick={{ fontSize: 10, fill: colorTextMuted, fontWeight: 800, fontFamily: 'Inter, system-ui, sans-serif' }}
-              tickLine={false}
-              axisLine={{ stroke: colorGrid, strokeWidth: 1.5 }}
+              tick={{ fontSize: 10, fill: colorTextMain, fontWeight: 800, fontFamily: 'Inter, system-ui, sans-serif' }}
+              tickLine={{ stroke: colorGrid, strokeWidth: 2, length: 12 } as any}
+              axisLine={{ stroke: colorGrid, strokeWidth: 2 }}
+              tickCount={6}
               tickFormatter={formatNumber}
               width={65}
               tickMargin={8}
             >
-              <Label value={`${t('chart.head')} (ft)`} angle={-90} position="insideLeft" offset={15} dx={-10} style={{ fontSize: 8, fill: colorTextMuted, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.15em', fontFamily: 'Inter, system-ui, sans-serif' }} />
+              <Label value={`${t('chart.head')} (ft)`} angle={-90} position="insideLeft" offset={15} dx={-10} style={{ fontSize: 8, fill: colorTextMain, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.15em', fontFamily: 'Inter, system-ui, sans-serif' }} />
             </YAxis>
 
             <Tooltip content={<CustomTooltip />} cursor={{ stroke: colorTextMuted, strokeWidth: 2, strokeDasharray: '4 4' }} />
 
             {/* --- ZONE SHADING (MASTERY LAYERING) --- */}
             {/* 1. Entire Chart painted Red 0.04 (This handles the Downthrust zone above minLimit) */}
-            <ReferenceArea yAxisId="left" y1={0} fill="#ef4444" fillOpacity={0.04} />
+            <ReferenceArea yAxisId="left" y1={0} fill="#ff0000ff" fillOpacity={0.04} />
 
             {/* 2. Erase everything below minLimit up to x-axis, returning to surface color */}
             <Area yAxisId="left" type="monotone" dataKey="coneMaskMin" stroke="none" fill="rgb(var(--color-surface))" fillOpacity={1} isAnimationActive={false} connectNulls activeDot={false} />
 
             {/* 3. Paint the Cone zone Green 0.05 (from minLimit up to x-axis) */}
-            <Area yAxisId="left" type="monotone" dataKey="coneMaskMin" stroke="none" fill="#10b981" fillOpacity={0.06} isAnimationActive={false} connectNulls activeDot={false} />
+            <Area yAxisId="left" type="monotone" dataKey="coneMaskMin" stroke="none" fill="#00ff40ff" fillOpacity={0.06} isAnimationActive={false} connectNulls activeDot={false} />
 
             {/* 4. Erase everything below maxLimit up to x-axis, returning to surface color */}
             <Area yAxisId="left" type="monotone" dataKey="coneMaskMax" stroke="none" fill="rgb(var(--color-surface))" fillOpacity={1} isAnimationActive={false} connectNulls activeDot={false} />
 
             {/* 5. Paint the Upthrust zone Red 0.04 (from maxLimit up to x-axis) */}
-            <Area yAxisId="left" type="monotone" dataKey="coneMaskMax" stroke="none" fill="#ef4444" fillOpacity={0.04} isAnimationActive={false} connectNulls activeDot={false} />
+            <Area yAxisId="left" type="monotone" dataKey="coneMaskMax" stroke="none" fill="#ff0000ff" fillOpacity={0.04} isAnimationActive={false} connectNulls activeDot={false} />
             {/* -------------------------------------- */}
 
             {/* Legend has been visually replaced by the custom top-left block */}
@@ -421,8 +455,8 @@ export const PumpChart: React.FC<PumpChartProps> = ({ data, pump, currentFrequen
             <Line yAxisId="left" type="monotone" dataKey="pumpMin" stroke={colorTextMuted} strokeWidth={1.5} dot={false} name={t('chart.rangeMin')} isAnimationActive={false} connectNulls={false} strokeDasharray="5 5" opacity={0.4} />
             <Line yAxisId="left" type="monotone" dataKey="pumpMax" stroke={colorTextMuted} strokeWidth={1.5} dot={false} name={t('chart.rangeMax')} isAnimationActive={false} connectNulls={false} strokeDasharray="5 5" opacity={0.4} />
 
-            <Line yAxisId="left" type="monotone" dataKey="minLimit" stroke="#950000ff" strokeDasharray="4 4" strokeWidth={2} dot={false} name={t('chart.limitMin')} isAnimationActive={false} connectNulls={false} opacity={0.9} />
-            <Line yAxisId="left" type="monotone" dataKey="maxLimit" stroke="#950000ff" strokeDasharray="4 4" strokeWidth={2} dot={false} name={t('chart.limitMax')} isAnimationActive={false} connectNulls={false} opacity={0.9} />
+            <Line yAxisId="left" type="monotone" dataKey="minLimit" stroke="#b10000ff" strokeDasharray="4 4" strokeWidth={2} dot={false} name={t('chart.limitMin')} isAnimationActive={false} connectNulls={false} opacity={0.9} />
+            <Line yAxisId="left" type="monotone" dataKey="maxLimit" stroke="#b10000ff" strokeDasharray="4 4" strokeWidth={2} dot={false} name={t('chart.limitMax')} isAnimationActive={false} connectNulls={false} opacity={0.9} />
 
             {/* --- MAIN PUMP CURVE (User Hz) - DOTTED & THINNER --- */}
             <Line
@@ -449,7 +483,7 @@ export const PumpChart: React.FC<PumpChartProps> = ({ data, pump, currentFrequen
                   yAxisId="left"
                   type="monotone"
                   dataKey="catalogPumpCurve"
-                  stroke="#94a3b8"
+                  stroke="#00eb1bff"
                   strokeWidth={2}
                   dot={false}
                   name="Bomba Catálogo"
@@ -480,9 +514,8 @@ export const PumpChart: React.FC<PumpChartProps> = ({ data, pump, currentFrequen
                 x={dot.x}
                 y={dot.y}
                 r={3}
-                fill="#ef4444"
-                stroke="#fff"
-                strokeWidth={1}
+                fill="#ff0000"
+                shape={<CustomChartDot />}
               />
             ))}
 
@@ -508,9 +541,8 @@ export const PumpChart: React.FC<PumpChartProps> = ({ data, pump, currentFrequen
                 x={intersectionPoint.flow}
                 y={intersectionPoint.head}
                 r={5}
-                fill="#10b981"
-                stroke="#333"
-                strokeWidth={1.5}
+                fill={colorPrimary}
+                shape={<CustomChartDot />}
               />
             )}
 
@@ -521,12 +553,19 @@ export const PumpChart: React.FC<PumpChartProps> = ({ data, pump, currentFrequen
                 yAxisId="left"
                 x={pt.flow}
                 y={pt.head}
-                r={5}
+                r={4}
                 fill={pt.color || '#f59e0b'}
-                stroke="#fff"
-                strokeWidth={1.5}
+                shape={<CustomChartDot />}
               >
-                <Label value={pt.label} position="top" fill={pt.color || '#f59e0b'} fontSize={9} fontWeight="bold" />
+                <Label
+                  value={pt.label}
+                  position="top"
+                  fill={pt.color || '#f59e0b'}
+                  fontSize={7}
+                  fontWeight="900"
+                  offset={8}
+                  style={{ textTransform: 'uppercase', letterSpacing: '0.05em', opacity: 0.8 }}
+                />
               </ReferenceDot>
             ))}
 
