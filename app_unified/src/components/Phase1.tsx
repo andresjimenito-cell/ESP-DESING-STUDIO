@@ -150,12 +150,12 @@ export const Phase1: React.FC<Props> = ({ params, setParams, rawSurvey, setRawSu
                         </div>
                         <div className="flex-1 grid grid-cols-2 divide-x divide-white/5 min-h-0 relative z-10">
                             <div className="flex flex-col h-full relative group">
-                                <div className="absolute top-0 left-0 w-full px-5 py-2.5 bg-canvas/60 backdrop-blur-md border-b border-white/5 text-xs font-black text-secondary uppercase tracking-widest z-10 shadow-sm">{t('p1.md')}</div>
-                                <textarea value={mdInput} onChange={e => setMdInput(e.target.value)} className="w-full h-full bg-transparent text-secondary font-mono text-sm p-5 pt-12 outline-none resize-none leading-relaxed custom-scrollbar selection:bg-secondary/30" placeholder={t('p1.paste_md')} />
+                                <div className="absolute top-0 left-0 w-full px-5 py-2.5 bg-canvas/60 backdrop-blur-md border-b border-white/5 text-xs font-black text-txt-main uppercase tracking-widest z-10 shadow-sm">{t('p1.md')}</div>
+                                <textarea value={mdInput} onChange={e => setMdInput(e.target.value)} className="w-full h-full bg-transparent text-txt-main font-mono text-sm p-5 pt-12 outline-none resize-none leading-relaxed custom-scrollbar selection:bg-secondary/30" placeholder={t('p1.paste_md')} />
                             </div>
                             <div className="flex flex-col h-full relative group">
-                                <div className="absolute top-0 left-0 w-full px-5 py-2.5 bg-canvas/60 backdrop-blur-md border-b border-white/5 text-xs font-black text-primary uppercase tracking-widest z-10 shadow-sm">{t('p1.tvd')}</div>
-                                <textarea value={tvdInput} onChange={e => setTvdInput(e.target.value)} className="w-full h-full bg-transparent text-primary font-mono text-sm p-5 pt-12 outline-none resize-none leading-relaxed custom-scrollbar selection:bg-primary/30" placeholder={t('p1.paste_tvd')} />
+                                <div className="absolute top-0 left-0 w-full px-5 py-2.5 bg-canvas/60 backdrop-blur-md border-b border-white/5 text-xs font-black text-txt-main uppercase tracking-widest z-10 shadow-sm">{t('p1.tvd')}</div>
+                                <textarea value={tvdInput} onChange={e => setTvdInput(e.target.value)} className="w-full h-full bg-transparent text-txt-main font-mono text-sm p-5 pt-12 outline-none resize-none leading-relaxed custom-scrollbar selection:bg-primary/30" placeholder={t('p1.paste_tvd')} />
                             </div>
                         </div>
                         <div className="p-6 glass-surface border-t border-white/5 relative z-20 shrink-0">

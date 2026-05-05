@@ -103,8 +103,36 @@ if (needsUpdate(designFile.excel, designFile.json)) {
             }
             jsonSurvey = xlsx.utils.sheet_to_json(surveySheet, { range: headerRow });
         }
-        fs.writeFileSync(designFile.json, JSON.stringify({ data: jsonDesigns, survey: jsonSurvey }));
-        console.log(`✅ ${designFile.name} Sincronizado.`);
+
+        let jsonMech = [];
+        const mechSheetName = workbookDesigns.SheetNames.find(s => {
+            const sn = String(s).normalize('NFD').replace(/[\u0300-\u036f]/g, "").toUpperCase().replace(/[^A-Z]/g, '');
+            return sn === 'ESTADOSMECANICOS';
+        });
+        
+        if (mechSheetName) {
+            const mechSheet = workbookDesigns.Sheets[mechSheetName];
+            const previewRows = xlsx.utils.sheet_to_json(mechSheet, { header: 1, range: 0 });
+            let headerRow = -1;
+            for (let i = 0; i < Math.min(30, previewRows.length); i++) {
+                const row = (previewRows[i] || []).map(c => String(c || '').toUpperCase());
+                if (row.includes('NICK') || row.includes('INTAKE') || row.includes('PEST')) {
+                    headerRow = i; break;
+                }
+            }
+            if (headerRow !== -1) {
+                jsonMech = xlsx.utils.sheet_to_json(mechSheet, { range: headerRow });
+            } else {
+                jsonMech = xlsx.utils.sheet_to_json(mechSheet);
+            }
+        }
+
+        fs.writeFileSync(designFile.json, JSON.stringify({ 
+            data: jsonDesigns, 
+            survey: jsonSurvey,
+            mech: jsonMech 
+        }));
+        console.log(`✅ ${designFile.name} Sincronizado (incluye ${jsonMech.length} estados mecánicos).`);
     } catch(e) {
         console.error(`Error en ${designFile.name}:`, e.message);
     }

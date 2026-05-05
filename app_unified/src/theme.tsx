@@ -62,13 +62,13 @@ export const THEME_META: Record<
     icon: '🏢',
   },
   heritage: {
-    label: 'Ivory',
-    description: 'Teal Luxury — Amber Warmth & Silk',
-    accent: '#0D9488',
-    surface: '#FFFDFB',
-    text: '#111827',
+    label: 'Obsidian',
+    description: 'Industrial — Intense Orange & Steel Gray',
+    accent: '#FF5500',
+    surface: '#F5F5F5',
+    text: '#19191C',
     badge: 'Light',
-    icon: '🍃',
+    icon: '🔥',
   },
 };
 

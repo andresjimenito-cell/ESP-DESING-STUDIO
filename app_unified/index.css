@@ -70,21 +70,19 @@
    CYBER — Arctic Blue + Bright Celeste (Lighter Canvas)
    ============================================================ */
 [data-theme='cyber'] {
-  --color-primary: 56 189 248;
-  --color-secondary: 253 224 71;
-  --color-accent: 239 68 68;
-  --color-canvas: 28 36 60;
-  /* Lightened from 15 23 42 */
-  --color-surface: 42 54 85;
-  /* Lightened from 30 41 59 */
-  --color-surface-light: 55 70 110;
-  --color-surface-raised: 70 90 140;
-  --color-text-main: 224 242 254;
-  --color-text-muted: 125 211 252;
-  --color-text-faint: 51 65 85;
-  --color-success: 34 211 238;
-  --color-warning: 253 224 71;
-  --color-danger: 244 63 94;
+  --color-primary: 30 255 0; /* Vibrant Matrix Green */
+  --color-secondary: 0 255 120;
+  --color-accent: 0 180 255;
+  --color-canvas: 5 10 5;
+  --color-surface: 12 20 12;
+  --color-surface-light: 20 30 20;
+  --color-surface-raised: 30 40 30;
+  --color-text-main: 200 255 210;
+  --color-text-muted: 40 255 80;
+  --color-text-faint: 15 40 15;
+  --color-success: 30 255 0;
+  --color-warning: 255 210 0;
+  --color-danger: 255 60 60;
   --font-display: 'Inter', sans-serif;
 }
 
@@ -96,9 +94,7 @@
   --color-secondary: 220 38 38;
   --color-accent: 59 130 246;
   --color-canvas: 247 250 252;
-  /* Light off-white for background contrast */
   --color-surface: 255 255 255;
-  /* Pure white for cards to pop */
   --color-surface-light: 235 242 248;
   --color-surface-raised: 220 230 242;
   --color-text-main: 15 23 42;
@@ -111,24 +107,22 @@
 }
 
 /* ============================================================
-   HERITAGE — Studio White + Deep Crimson (Warm Contrast) [LIGHT]
+   HERITAGE (Obsidian) — Industrial Light: Orange + Charcoal [LIGHT]
    ============================================================ */
 [data-theme='heritage'] {
-  --color-primary: 153 27 27;
-  --color-secondary: 22 101 52;
-  --color-accent: 127 29 29;
-  --color-canvas: 250 249 246;
-  /* Warm parchment-like background */
+  --color-primary: 255 85 0; /* Industrial Orange */
+  --color-secondary: 100 100 100; /* Medium Charcoal (Lighter for visibility) */
+  --color-accent: 255 60 0;
+  --color-canvas: 245 245 245; /* Light Gray Canvas */
   --color-surface: 255 255 255;
-  /* Neutral white cards */
-  --color-surface-light: 240 238 232;
-  --color-surface-raised: 228 225 215;
-  --color-text-main: 28 25 23;
-  --color-text-muted: 87 83 78;
-  --color-text-faint: 168 162 158;
-  --color-success: 21 128 61;
-  --color-warning: 180 83 9;
-  --color-danger: 153 27 27;
+  --color-surface-light: 235 235 235;
+  --color-surface-raised: 220 220 220;
+  --color-text-main: 26 26 26;
+  --color-text-muted: 80 80 80;
+  --color-text-faint: 160 160 160;
+  --color-success: 25 150 60;
+  --color-warning: 255 120 0;
+  --color-danger: 220 40 20;
   --font-display: 'Inter', sans-serif;
 }
 

@@ -80,11 +80,11 @@
    CYBER — Arctic Blue + Bright Celeste (Lighter Canvas)
    ============================================================ */
 [data-theme='cyber'] {
-  --color-primary: 34 197 94;
+  --color-primary: 0 220 60;     /* Vivid Pure Green */
   --color-secondary: 6 182 212;
   --color-accent: 8 145 178;
   --color-tertiary: 2 132 199;
-  --color-glow: 52 211 153;
+  --color-glow: 0 255 65;         /* Bright Green Glow */
   --color-canvas: 2 6 10;
   --color-surface: 8 15 25;
   --color-surface-light: 15 25 40;
@@ -126,21 +126,21 @@
    Lujo minimalista: como una app de arquitectura suiza
    ============================================================ */
 [data-theme='heritage'] {
-  --color-primary: 13 148 136;
-  --color-secondary: 217 119 6;
-  --color-accent: 20 184 166;
-  --color-tertiary: 13 148 136;
-  --color-glow: 45 212 191;
-  --color-canvas: 255 253 250;
-  --color-surface: 255 255 255;
-  --color-surface-light: 240 253 250;
-  --color-surface-raised: 204 251 241;
-  --color-text-main: 17 24 39;
-  --color-text-muted: 75 85 99;
-  --color-text-faint: 156 163 175;
-  --color-success: 5 150 105;
+  --color-primary: 255 85 0;      /* Intense Industrial Orange */
+  --color-secondary: 50 50 50;    /* Charcoal Gray */
+  --color-accent: 255 110 0;      /* Vivid Orange */
+  --color-tertiary: 255 85 0;
+  --color-glow: 255 140 0;        /* Orange Glow */
+  --color-canvas: 245 245 245;    /* Light Warm Gray */
+  --color-surface: 255 255 255;   /* Pure White */
+  --color-surface-light: 232 232 235;  /* Soft Gray */
+  --color-surface-raised: 218 218 222; /* Raised Gray */
+  --color-text-main: 25 25 28;    /* Near Black */
+  --color-text-muted: 85 85 95;   /* Dark Gray Text */
+  --color-text-faint: 150 150 160;/* Faint Gray Text */
+  --color-success: 22 163 74;
   --color-warning: 217 119 6;
-  --color-danger: 220 38 38;
+  --color-danger: 200 30 30;
   --font-display: 'Inter', sans-serif;
 }
 
