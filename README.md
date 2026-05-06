@@ -61,27 +61,32 @@ graph TD
         P3[F3: Inflow]:::ui
         P5[F5: Equipment]:::ui
         P6[F6: Simulations]:::ui
+        P7[F7: Monitoring]:::ui
     end
 
     subgraph Core [Motores de Cálculo]
         PVT[Motor PVT]:::engine
         Hyd[Hidráulica & Nodal]:::engine
         AI[AI Selection Engine]:::engine
+        Reliability[Reliability Engine]:::engine
     end
 
     App[App State Management]:::state
     
     User --> L
     L --> App
-    App --> P1 & P2 & P3 & P5 & P6
+    App --> P1 & P2 & P3 & P5 & P6 & P7
     
     P2 -.-> PVT
     P3 -.-> Hyd
     P5 -.-> AI
+    P7 -.-> Reliability
+    P7 -.-> AI
     
     PVT --> Hyd
     Hyd --> P5
     Hyd --> P6
+    P6 --> P7
 ```
 
 ---
@@ -104,16 +109,23 @@ graph TD
 *   **Matching:** Cruce de curva de bomba vs. curva de sistema.
 *   **Electromecánica:** Cálculo de BHP, etapas, leyes de afinidad y caídas de voltaje en cable.
 
+### 📡 Fase 7: Monitoring (Confiabilidad)
+*   **Gestión de Flotas:** Visualización masiva de pozos y semaforización de salud (Health Scoring).
+*   **Predictivo:** Motor de diagnóstico de empujes (Upthrust/Downthrust) y degradación de bomba.
+*   **Integración:** Importación masiva de datos SCADA y pruebas de producción vía Excel.
+
 ---
 
 ## 📦 4. Análisis de Componentes
 
 | Módulo | Función Técnica | Impacto en Diseño |
 | :--- | :--- | :--- |
-| `App.tsx` | Orquestador Global | Sincronización de datos entre fases. |
-| `VisualESPStack.tsx` | Renderizado 2D/3D | Visualización mecánica del pozo. |
+| `PhaseMonitoreo.tsx` | Orquestador de Flota | Centralización de monitoreo y análisis masivo. |
+| `useAnalysisEngine.ts` | Motor de Diagnóstico | Cálculos de degradación y eficiencia en tiempo real. |
+| `FloatingAiPanel.tsx` | Co-Piloto de IA | Asistente experto basado en Gemini 1.5 Flash. |
+| `VisualESPStack.tsx` | Renderizado 2D/3D | Visualización mecánica y estado de salud por componente. |
 | `PumpChart.tsx` | Gráficos Dinámicos | Intersección de curvas en tiempo real. |
-| `BatchProcessor.tsx` | Procesamiento Masivo | Análisis de flotas completas de pozos. |
+| `AiMemoryService.ts` | Memoria Técnica | Almacenamiento y exportación de casos de éxito y fallas. |
 
 ---
 
@@ -135,7 +147,16 @@ $$ \frac{1}{\sqrt{f}} = -1.8 \log_{10} \left[ \left( \frac{\epsilon / D}{3.7} \r
 
 ---
 
-## 🛠️ 6. Guía de Uso Paso a Paso
+## 🤖 6. Antigravity AI Co-Pilot
+El sistema integra una capa de Inteligencia Artificial avanzada diseñada para actuar como un ingeniero experto de guardia.
+
+- **Memoria Técnica Dinámica:** El sistema aprende de las interacciones y guarda firmas técnicas de fallas para futuras referencias.
+- **Análisis Multi-Pozo:** Capacidad de analizar tendencias en toda la flota simultáneamente.
+- **Exportación de Casos:** Los diagnósticos de la IA pueden exportarse como archivos JSON para auditorías de confiabilidad.
+
+---
+
+## 🛠️ 7. Guía de Uso Paso a Paso
 
 1.  **🚀 Inicio:** Ejecuta `🛢️_INICIAR_ESP_STUDIO.bat`.
 2.  **📝 Datos:** Completa las fases secuencialmente (1 → 6).
