@@ -1,0 +1,1221 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pump Curve Analyzer Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --ink: #1a2332;
+            --ink-mid: #000000;
+            --accent: #0d5c8f;
+            --accent2: #e05a2b;
+            --accent3: #1a8c5e;
+            --accent4: #7b3fa0;
+            --accent5: #c0392b;
+            --bg-page: #eef0f4;
+            --bg-surface: #f5f6f8;
+            --bg-card: #ffffff;
+            --bg-header: #f8f9fb;
+            --border-main: rgba(26, 35, 50, 0.12);
+            --border-acc: rgba(13, 92, 143, 0.25);
+            --text-primary: #000000;
+            --text-secondary: #1a2332;
+            --text-muted: #2e4057;
+            --accent-light: rgba(13, 92, 143, 0.08);
+            --accent2-light: rgba(224, 90, 43, 0.08);
+            --status-bg: var(--bg-surface);
+            --status-text: var(--text-secondary);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body {
+            height: 100%;
+            overflow: hidden;
+            background: var(--bg-page);
+            color: var(--text-primary);
+            font-family: 'Outfit', sans-serif;
+        }
+
+        /* Subtle dot-grid background */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: radial-gradient(circle, rgba(13, 92, 143, 0.12) 1px, transparent 1px);
+            background-size: 28px 28px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .z1 {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header */
+        .hdr {
+            height: 64px;
+            background: var(--bg-header);
+            border-bottom: 1px solid var(--border-main);
+            display: flex;
+            align-items: center;
+            padding: 0 28px;
+            gap: 20px;
+            position: relative;
+            box-shadow: 0 1px 0 rgba(13, 92, 143, 0.06), 0 2px 12px rgba(26, 35, 50, 0.04);
+        }
+
+        /* Thin accent bar at bottom of header */
+        .hdr::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--accent), var(--accent2), var(--accent3), var(--accent));
+            background-size: 300% 100%;
+            animation: barFlow 6s linear infinite;
+            opacity: 0.7;
+        }
+
+        @keyframes barFlow {
+            0% {
+                background-position: 0% 0;
+            }
+
+            100% {
+                background-position: 300% 0;
+            }
+        }
+
+        .logo-mark {
+            width: 38px;
+            height: 38px;
+            border: 1.5px solid var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+            background: var(--accent-light);
+            animation: logoGlow 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes logoGlow {
+            from {
+                filter: drop-shadow(0 0 4px rgba(13, 92, 143, 0.2));
+            }
+
+            to {
+                filter: drop-shadow(0 0 12px rgba(13, 92, 143, 0.5));
+            }
+        }
+
+        .logo-mark svg {
+            width: 18px;
+            height: 18px;
+            color: var(--accent);
+        }
+
+        .logo-text {
+            font-family: 'Outfit', sans-serif;
+            font-size: 13px;
+            font-weight: 900;
+            letter-spacing: 0.15em;
+            color: var(--accent);
+            line-height: 1;
+        }
+
+        .logo-sub {
+            font-family: 'Outfit', sans-serif;
+            font-size: 9px;
+            font-weight: 600;
+            color: var(--text-muted);
+            letter-spacing: 0.2em;
+            margin-top: 3px;
+        }
+
+        .corner-dec {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border-color: var(--accent);
+            border-style: solid;
+            opacity: 0.4;
+        }
+
+        .corner-dec.tl {
+            top: 6px;
+            left: 6px;
+            border-width: 1px 0 0 1px;
+        }
+
+        .corner-dec.tr {
+            top: 6px;
+            right: 6px;
+            border-width: 1px 1px 0 0;
+        }
+
+        .corner-dec.bl {
+            bottom: 6px;
+            left: 6px;
+            border-width: 0 0 1px 1px;
+        }
+
+        .corner-dec.br {
+            bottom: 6px;
+            right: 6px;
+            border-width: 0 1px 1px 0;
+        }
+
+        /* Sheet tabs */
+        #sheet-selector {
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            padding: 4px 0;
+            scrollbar-width: none;
+        }
+
+        #sheet-selector::-webkit-scrollbar {
+            display: none;
+        }
+
+        .sheet-tab {
+            font-family: 'Outfit', sans-serif;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            padding: 6px 14px;
+            border: 1px solid var(--border-main);
+            background: transparent;
+            color: var(--text-muted);
+            cursor: pointer;
+            white-space: nowrap;
+            clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+            transition: all 0.25s;
+        }
+
+        .sheet-tab:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: var(--accent-light);
+        }
+
+        .sheet-tab.active {
+            border-color: var(--accent);
+            color: #fff;
+            background: var(--accent);
+            font-weight: 700;
+        }
+
+        /* Main layout */
+        .main-wrap {
+            height: calc(100vh - 64px);
+            display: flex;
+            flex-direction: column;
+            padding: 16px 20px;
+            gap: 12px;
+        }
+
+        /* Upload section */
+        #upload-section {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .upload-card {
+            max-width: 560px;
+            width: 100%;
+            border: 1px solid var(--border-acc);
+            background: var(--bg-card);
+            padding: 52px 48px;
+            text-align: center;
+            position: relative;
+            animation: cardIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 4px 24px rgba(13, 92, 143, 0.07), 0 1px 4px rgba(26, 35, 50, 0.06);
+        }
+
+        @keyframes cardIn {
+            from {
+                opacity: 0;
+                transform: translateY(24px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .upload-card .corner-dec {
+            opacity: 0.6;
+        }
+
+        .upload-icon-wrap {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 80px;
+            height: 80px;
+            border: 1.5px solid var(--accent);
+            margin: 0 auto 28px;
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+            background: var(--accent-light);
+            animation: iconPulse 2.5s ease-in-out infinite alternate;
+        }
+
+        @keyframes iconPulse {
+            from {
+                filter: drop-shadow(0 0 6px rgba(13, 92, 143, 0.15));
+            }
+
+            to {
+                filter: drop-shadow(0 0 20px rgba(13, 92, 143, 0.4));
+            }
+        }
+
+        .upload-icon-wrap svg {
+            width: 32px;
+            height: 32px;
+            color: var(--accent);
+        }
+
+        .upload-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 20px;
+            font-weight: 900;
+            letter-spacing: 0.05em;
+            color: var(--ink);
+            margin-bottom: 10px;
+        }
+
+        .upload-sub {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 0.22em;
+            color: var(--text-muted);
+            margin-bottom: 36px;
+        }
+
+        .btn-upload {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 36px;
+            border: 1.5px solid var(--accent);
+            background: var(--accent-light);
+            color: var(--accent);
+            font-family: 'Outfit', sans-serif;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.1em;
+            cursor: pointer;
+            clip-path: polygon(12px 0%, 100% 0%, calc(100% - 12px) 100%, 0% 100%);
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-upload::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: var(--accent);
+            transform: translateX(-110%);
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 0;
+        }
+
+        .btn-upload:hover::before {
+            transform: translateX(0);
+        }
+
+        .btn-upload:hover {
+            color: #fff;
+            box-shadow: 0 6px 20px rgba(13, 92, 143, 0.25);
+        }
+
+        .btn-upload span {
+            position: relative;
+            z-index: 1;
+        }
+
+        #file-info {
+            margin-top: 16px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 0.2em;
+            color: var(--accent2);
+            height: 16px;
+            animation: blink 1.4s step-end infinite;
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1
+            }
+
+            50% {
+                opacity: 0.3
+            }
+        }
+
+        #drop-zone.dragover {
+            border-color: var(--accent);
+            background: var(--accent-light);
+        }
+
+        /* Result container */
+        #resultContainer {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            animation: fadeIn 0.7s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0
+            }
+
+            to {
+                opacity: 1
+            }
+        }
+
+        .chart-card {
+            flex: 1;
+            border: 1px solid var(--border-main);
+            background: var(--bg-card);
+            padding: 24px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 24px rgba(26, 35, 50, 0.08);
+            border-radius: 16px;
+        }
+
+        /* Subtle ambient color in corners of chart card */
+        .chart-card::before {
+            content: '';
+            position: absolute;
+            top: -40px;
+            left: -40px;
+            width: 160px;
+            height: 160px;
+            background: radial-gradient(circle, rgba(13, 92, 143, 0.06) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .chart-card::after {
+            content: '';
+            position: absolute;
+            bottom: -40px;
+            right: -40px;
+            width: 160px;
+            height: 160px;
+            background: radial-gradient(circle, rgba(224, 90, 43, 0.05) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .chart-container {
+            position: relative;
+            height: calc(100% - 10px);
+            width: 100%;
+        }
+
+        .status-bar {
+            height: 40px;
+            border: 1px solid var(--border-main);
+            background: var(--status-bg);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 18px;
+            flex-shrink: 0;
+            box-shadow: 0 1px 4px rgba(26, 35, 50, 0.04);
+            color: var(--status-text);
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--accent3);
+            box-shadow: 0 0 6px rgba(26, 140, 94, 0.5);
+            animation: dotPulse 2s ease-in-out infinite;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--accent3);
+            box-shadow: 0 0 6px rgba(26, 140, 94, 0.5);
+            animation: dotPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes dotPulse {
+
+            0%,
+            100% {
+                opacity: 1;
+                box-shadow: 0 0 6px rgba(26, 140, 94, 0.5)
+            }
+
+            50% {
+                opacity: 0.6;
+                box-shadow: 0 0 2px rgba(26, 140, 94, 0.2)
+            }
+        }
+
+        .status-label {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 9px;
+            letter-spacing: 0.15em;
+            color: var(--text-muted);
+        }
+
+        .status-value {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800;
+            font-size: 10px;
+            letter-spacing: 0.05em;
+            color: var(--accent);
+        }
+
+        .btn-reset {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800;
+            font-size: 9px;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            background: none;
+            border: 1px solid var(--border-main);
+            padding: 4px 14px;
+            cursor: pointer;
+            clip-path: polygon(6px 0%, 100% 0%, calc(100% - 6px) 100%, 0% 100%);
+            transition: all 0.2s;
+        }
+
+        .btn-reset:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: var(--accent-light);
+        }
+
+        /* Ticker */
+        .ticker {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            flex-shrink: 0;
+        }
+
+        .ticker-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800;
+            font-size: 9px;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+        }
+
+        .ticker-item .val {
+            color: var(--accent);
+            font-weight: 900;
+        }
+
+        .ticker-item .val.amber {
+            color: var(--accent2);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        canvas {
+            image-rendering: auto;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="z1" style="display:flex;flex-direction:column;height:100vh;">
+
+        <!-- HEADER -->
+        <header class="hdr">
+            <div class="logo-mark">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                        d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                </svg>
+            </div>
+            <div>
+                <div class="logo-text">CURVE INTENSITY</div>
+                <div class="logo-sub">ADVANCED ESP ENGINEERING VIEW</div>
+            </div>
+
+            <div id="sheet-selector"></div>
+
+            <div class="ticker">
+                <!-- Ticker removed for cleanup as it was static -->
+            </div>
+        </header>
+
+        <!-- MAIN -->
+        <main class="main-wrap">
+
+            <!-- UPLOAD SECTION -->
+            <section id="upload-section">
+                <div id="drop-zone" class="upload-card">
+                    <div class="corner-dec tl"></div>
+                    <div class="corner-dec tr"></div>
+                    <div class="corner-dec bl"></div>
+                    <div class="corner-dec br"></div>
+
+                    <div class="upload-icon-wrap">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                        </svg>
+                    </div>
+
+                    <div class="upload-title">ANALIZADOR DE CURVAS</div>
+                    <div class="upload-sub">CARGA TU DISEÑO PARA VISUALIZACIÓN DE ALTA INTENSIDAD</div>
+
+                    <input class="hidden" id="file_input" type="file" accept=".xlsx, .xls, .csv, .xlsm">
+                    <button onclick="document.getElementById('file_input').click()" class="btn-upload">
+                        <span>▶ SELECCIONAR ARCHIVO</span>
+                    </button>
+                    <div id="file-info"></div>
+                </div>
+            </section>
+
+            <!-- CHART AREA -->
+            <section id="resultContainer" class="hidden" style="flex:1;display:flex;flex-direction:column;gap:10px;">
+                <div class="chart-card">
+                    <div class="corner-dec tl"></div>
+                    <div class="corner-dec tr"></div>
+                    <div class="corner-dec bl"></div>
+                    <div class="corner-dec br"></div>
+                    <div class="chart-container">
+                        <canvas id="pumpChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="status-bar">
+                    <div class="status-item">
+                        <div class="status-dot"></div>
+                        <span class="status-label">SISTEMA</span>
+                        <span class="status-value">ONLINE</span>
+                    </div>
+                    <div class="status-item" style="gap:24px;">
+                        <div class="status-item">
+                            <span class="status-label">MODE</span>
+                            <span class="status-value">VIBRANT</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">RENDERER</span>
+                            <span class="status-value">CHART.JS</span>
+                        </div>
+                    </div>
+                    <button onclick="window.location.reload()" class="btn-reset">↺ REINICIAR</button>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script>
+        let myChart = null;
+        let currentWorkbook = null;
+
+        // PLUGIN PARA ILUMINACION Y SOMBRA EN LAS LINEAS
+        const intensityPlugin = {
+            id: 'intensityPlugin',
+            beforeDraw: (chart) => {
+                const { ctx } = chart;
+                ctx.save();
+                ctx.shadowBlur = 15;
+                ctx.shadowOffsetX = 0;
+                ctx.shadowOffsetY = 8;
+            },
+            afterDraw: (chart) => {
+                chart.ctx.restore();
+            }
+        };
+
+        window.addEventListener('message', (event) => {
+            const { type, data, title, designColors, designLabels, theme } = event.data;
+            if (type === 'UPDATE_CHART') {
+                processAutoData(data, title, designColors, designLabels, theme);
+            }
+        });
+
+        function processAutoData(data, title, designColors, designLabels, theme = 'light') {
+            if (!data || data.length === 0) return;
+            applyTheme(theme);
+            document.getElementById('upload-section').classList.add('hidden');
+            const rc = document.getElementById('resultContainer');
+            rc.classList.remove('hidden');
+            rc.style.display = 'flex';
+            const headers = Object.keys(data[0]);
+            const labels = data.map(row => row.flow);
+            const datasets = buildDatasets(headers, data, true, designColors, designLabels);
+            renderChart(labels, datasets, title, theme);
+        }
+
+        function applyTheme(theme) {
+            const root = document.documentElement;
+            if (theme === 'dark') {
+                root.style.setProperty('--bg-page', '#070d14');
+                root.style.setProperty('--bg-card', '#0a1520');
+                root.style.setProperty('--text-primary', '#ffffff');
+                root.style.setProperty('--text-secondary', '#eef0f4');
+                root.style.setProperty('--text-muted', '#8fa3b4');
+                root.style.setProperty('--border-main', 'rgba(255,255,255,0.1)');
+                root.style.setProperty('--bg-header', '#0a1520');
+                root.style.setProperty('--ink', '#ffffff');
+                root.style.setProperty('--ink-mid', '#ffffff');
+                root.style.setProperty('--status-bg', '#0d1117');
+                root.style.setProperty('--status-text', '#ffffff');
+            } else {
+                root.style.setProperty('--bg-page', '#eef0f4');
+                root.style.setProperty('--bg-card', '#ffffff');
+                root.style.setProperty('--text-primary', '#000000');
+                root.style.setProperty('--text-secondary', '#1a2332');
+                root.style.setProperty('--text-muted', '#2e4057');
+                root.style.setProperty('--border-main', 'rgba(26,35,50,0.12)');
+                root.style.setProperty('--bg-header', '#f8f9fb');
+                root.style.setProperty('--ink', '#1a2332');
+                root.style.setProperty('--ink-mid', '#000000');
+                root.style.setProperty('--status-bg', '#f5f6f8');
+                root.style.setProperty('--status-text', '#1a2332');
+            }
+        }
+
+        const fileInput = document.getElementById('file_input');
+        fileInput.addEventListener('change', (e) => { if (e.target.files.length) loadWorkbook(e.target.files[0]); });
+
+        const dropZone = document.getElementById('drop-zone');
+        dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+        dropZone.addEventListener('drop', e => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            const f = e.dataTransfer.files[0];
+            if (f) { document.getElementById('file-info').textContent = '>> ' + f.name; loadWorkbook(f); }
+        });
+
+        function loadWorkbook(file) {
+            document.getElementById('file-info').textContent = '>> PROCESANDO: ' + file.name;
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const data = new Uint8Array(e.target.result);
+                currentWorkbook = XLSX.read(data, { type: 'array' });
+                const selector = document.getElementById('sheet-selector');
+                selector.innerHTML = '';
+                currentWorkbook.SheetNames.forEach((name, index) => {
+                    const btn = document.createElement('button');
+                    btn.innerText = name.toUpperCase();
+                    btn.className = 'sheet-tab';
+                    btn.onclick = () => {
+                        document.querySelectorAll('.sheet-tab').forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                        processSheet(name);
+                    };
+                    selector.appendChild(btn);
+                    if (index === 0) btn.click();
+                });
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function buildDatasets(headers, rows, isAuto = false, designColors = [], designLabels = []) {
+            const datasets = [];
+            const vibrantColors = designColors.length ? designColors : ['#0d5c8f', '#e05a2b', '#1a8c5e', '#7b3fa0', '#c0392b'];
+
+            for (let j = 0; j < headers.length; j++) {
+                const headName = headers[j];
+                if (headName.toLowerCase() === 'flow') continue;
+                const h = headName.toLowerCase();
+                const isEff = h.includes('efficiency') || h.includes('%') || h.includes('eff');
+                const isSystem = h.includes('system');
+                const isPoint = h.includes('target') || h.includes('point');
+
+                if (isSystem || isPoint) continue;
+
+                let baseColor = vibrantColors[j % vibrantColors.length];
+                let pumpSuffix = "";
+                if (h.includes('_0')) { baseColor = vibrantColors[0]; pumpSuffix = designLabels[0] ? ` (${designLabels[0]})` : ""; }
+                else if (h.includes('_1')) { baseColor = vibrantColors[1]; pumpSuffix = designLabels[1] ? ` (${designLabels[1]})` : ""; }
+                else if (h.includes('_2')) { baseColor = vibrantColors[2]; pumpSuffix = designLabels[2] ? ` (${designLabels[2]})` : ""; }
+                else if (h.includes('_3')) { baseColor = vibrantColors[3]; pumpSuffix = designLabels[3] ? ` (${designLabels[3]})` : ""; }
+
+                datasets.push({
+                    label: headName.replace(/(_0|_1|_2|_3)/g, '').toUpperCase() + pumpSuffix,
+                    data: [],
+                    borderColor: baseColor,
+                    backgroundColor: 'transparent',
+                    borderWidth: 3,
+                    borderDash: isEff ? [12, 6] : [8, 4],
+                    pointRadius: 0,
+                    tension: 0.1,
+                    yAxisID: isEff ? 'y1' : 'y',
+                    shadowColor: baseColor
+                });
+
+                const isHead = h.includes('pump head');
+                const isLimit = (h.includes('min') || h.includes('max')) && h.includes('limit');
+                const dIdxMatch = h.match(/_([0-3])/);
+                const dIdx = dIdxMatch ? parseInt(dIdxMatch[1]) : -1;
+                const skMatch = h.match(/_(min|target|max)$/);
+                const sk = skMatch ? skMatch[1] : "target";
+
+                if ((isHead || isLimit) && dIdx !== -1) {
+                    const headKey = `Pump Head (ft) _${dIdx}_${sk}`;
+                    const minKey = `Min Range Limit (ft) _${dIdx}_${sk}`;
+                    const maxKey = `Max Range Limit (ft) _${dIdx}_${sk}`;
+                    const targetKey = `Target Point _${dIdx}_${sk}`;
+
+                    let newXYData = [];
+                    let targetPoint = null;
+                    let hasEnteredRange = false;
+
+                    for (let ri = 0; ri < rows.length; ri++) {
+                        const r = rows[ri];
+                        const x = isAuto ? r.flow : labels[ri];
+                        const val = isAuto ? r[headName] : r[j];
+                        const headL = isAuto ? r[headKey] : null;
+                        const minL = isAuto ? r[minKey] : null;
+                        const maxL = isAuto ? r[maxKey] : null;
+
+                        if (isAuto && r[targetKey] !== null && r[targetKey] !== undefined) {
+                            targetPoint = { x: r.flow, y: r[targetKey] };
+                        }
+
+                        if (isHead) {
+                            const inRange = (minL == null || val <= minL) && (maxL == null || val >= maxL);
+                            const isRightOfMax = maxL != null && val < maxL;
+
+                            if (inRange) {
+                                if (!hasEnteredRange && ri > 0) {
+                                    const rPrev = rows[ri - 1];
+                                    const xPrev = isAuto ? rPrev.flow : labels[ri - 1];
+                                    const valPrev = isAuto ? rPrev[headName] : rows[ri - 1][j];
+                                    const minPrev = isAuto ? rPrev[minKey] : null;
+                                    if (minPrev !== null && valPrev > minPrev) {
+                                        const t = (valPrev - minPrev) / ((valPrev - minPrev) + (minL - val));
+                                        newXYData.push({ x: xPrev + t * (x - xPrev), y: valPrev + t * (val - valPrev) });
+                                    }
+                                    hasEnteredRange = true;
+                                }
+                                newXYData.push({ x, y: val });
+                            } else if (isRightOfMax && newXYData.length > 0) {
+                                const rPrev = rows[ri - 1];
+                                if (rPrev) {
+                                    const xPrev = isAuto ? rPrev.flow : labels[ri - 1];
+                                    const valPrev = isAuto ? rPrev[headName] : rows[ri - 1][j];
+                                    const maxPrev = isAuto ? rPrev[maxKey] : null;
+                                    if (maxPrev !== null && valPrev >= maxPrev) {
+                                        const t = (valPrev - maxPrev) / ((valPrev - maxPrev) + (maxL - val));
+                                        newXYData.push({ x: xPrev + t * (x - xPrev), y: valPrev + t * (val - valPrev) });
+                                    }
+                                }
+                                break;
+                            }
+                        }
+
+                        if (isLimit) {
+                            const headForLimit = isAuto ? r[headKey] : null;
+                            if (headForLimit === null || headForLimit <= 1) continue;
+                            const isBelow = val <= headForLimit;
+                            if (isBelow) {
+                                newXYData.push({ x, y: val });
+                            } else {
+                                const rPrev = rows[ri - 1];
+                                if (rPrev) {
+                                    const xPrev = isAuto ? rPrev.flow : labels[ri - 1];
+                                    const valPrev = isAuto ? rPrev[headName] : rows[ri - 1][j];
+                                    const headPrev = isAuto ? rPrev[headKey] : null;
+                                    if (headPrev !== null && valPrev <= headPrev) {
+                                        const t = (headPrev - valPrev) / ((val - headForLimit) + (headPrev - valPrev));
+                                        newXYData.push({ x: xPrev + t * (x - xPrev), y: valPrev + t * (val - valPrev) });
+                                    }
+                                }
+                                break;
+                            }
+                        }
+                    }
+
+                    const activeDS = datasets[datasets.length - 1];
+                    activeDS.data = newXYData;
+
+                    const scenarioTag = ` [${sk.toUpperCase()}]`;
+                    const pumpName = designLabels[dIdx] || `BOMBA ${dIdx + 1}`;
+
+                    activeDS.pumpName = pumpName;
+                    activeDS.scenario = sk;
+
+                    if (isHead) {
+                        const isPrimary = (sk === 'target' || sk === 'obj');
+                        activeDS.label = isPrimary ? pumpName : `${pumpName} [${sk.toUpperCase()}]`;
+                        activeDS.isPrimary = isPrimary; // Bandera para la leyenda
+                    } else if (isLimit) {
+                        activeDS.label = `LÍMITES ${pumpName} [${sk.toUpperCase()}]`;
+                    }
+
+                    if (sk === 'min') {
+                        activeDS.borderColor = baseColor + '55';
+                        activeDS.borderDash = [4, 4];
+                        activeDS.borderWidth = 1.5;
+                    } else if (sk === 'max') {
+                        activeDS.borderColor = baseColor;
+                        activeDS.borderWidth = 4;
+                    }
+
+                    if (isHead && targetPoint) {
+                        datasets.push({
+                            label: `DESIGN HEAD MARKER _${dIdx}_${sk}`,
+                            data: [{ x: 0, y: targetPoint.y }, { x: targetPoint.x, y: targetPoint.y }],
+                            borderColor: baseColor, borderWidth: 1, borderDash: [2, 2],
+                            pointRadius: 0, tension: 0, yAxisID: 'y', display: false
+                        });
+                        datasets.push({
+                            label: `DESIGN FLOW MARKER _${dIdx}_${sk}`,
+                            data: [{ x: targetPoint.x, y: 0 }, { x: targetPoint.x, y: targetPoint.y }],
+                            borderColor: baseColor, borderWidth: 1, borderDash: [2, 2],
+                            pointRadius: 0, tension: 0, yAxisID: 'y', display: false
+                        });
+                    }
+                } else {
+                    datasets[datasets.length - 1].data = rows.map((r, ri) => ({
+                        x: isAuto ? r.flow : labels[ri],
+                        y: isAuto ? r[headName] : r[j]
+                    }));
+                }
+            }
+            return datasets;
+        }
+
+        function processSheet(sheetName) {
+            const sheet = currentWorkbook.Sheets[sheetName];
+            const matrix = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+            const headers = matrix[0];
+            const sortedDataRows = matrix.slice(1).filter(row => row[0] != null).sort((a, b) => a[0] - b[0]);
+            renderChart(sortedDataRows.map(r => r[0]), buildDatasets(headers, sortedDataRows, false), sheetName);
+        }
+
+        function renderChart(labels, datasets, title, theme = 'light') {
+            document.getElementById('upload-section').classList.add('hidden');
+            const rc = document.getElementById('resultContainer');
+            rc.classList.remove('hidden');
+            rc.style.display = 'flex';
+
+            const ctx = document.getElementById('pumpChart').getContext('2d');
+            if (myChart) myChart.destroy();
+
+            const isDark = theme === 'dark';
+            const textColor = isDark ? '#ffffff' : '#000000';
+            const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
+
+            // Custom chart background
+            const bgPlugin = {
+                id: 'bgPlugin',
+                beforeDraw(chart) {
+                    const { ctx, chartArea } = chart;
+                    if (!chartArea) return;
+                    ctx.save();
+                    ctx.fillStyle = 'transparent';
+                    ctx.fillRect(chartArea.left, chartArea.top, chartArea.width, chartArea.height);
+                    ctx.restore();
+                }
+            };
+
+            // Glow plugin
+            const glowPlugin = {
+                id: 'glowPlugin',
+                afterDatasetsDraw(chart) {
+                    const { ctx } = chart;
+                    chart.data.datasets.forEach((ds, i) => {
+                        const meta = chart.getDatasetMeta(i);
+                        if (!meta.visible || meta.hidden) return;
+                        if (!ds.borderColor || ds.borderColor === 'transparent') return;
+                        const col = ds.borderColor;
+                        if (col.length > 7) return;
+                        const line = meta.dataset;
+                        if (!line) return;
+                        ctx.save();
+                        ctx.shadowColor = col;
+                        ctx.shadowBlur = 18;
+                        ctx.globalAlpha = isDark ? 0.8 : 0.6;
+                        line.draw(ctx);
+                        ctx.globalAlpha = isDark ? 0.5 : 0.35;
+                        ctx.shadowBlur = 36;
+                        line.draw(ctx);
+                        ctx.restore();
+                    });
+                }
+            };
+
+            // Plugin Leyenda Flotante Interna (Para ver BH Verde, NOV Azul, etc.)
+            const internalLegendPlugin = {
+                id: 'internalLegendPlugin',
+                afterDraw(chart) {
+                    const { ctx, chartArea: { right, top } } = chart;
+                    const items = [];
+                    const seen = new Set();
+                    chart.data.datasets.forEach(ds => {
+                        // Incluimos cualquier dataset que parezca una curva de bomba y no sea un marcador
+                        const isMarker = ds.label && ds.label.includes('MARKER');
+                        const hasData = ds.data && ds.data.length > 0;
+                        const name = ds.pumpName || ds.label;
+                        if (name && hasData && !isMarker && !seen.has(name)) {
+                            // Solo mostrar curvas de Head o Primarias para no saturar con eficiencia
+                            const isHead = ds.label && (ds.label.toLowerCase().includes('head') || !ds.label.toLowerCase().includes('eff'));
+                            if (isHead || ds.isPrimary) {
+                                seen.add(name);
+                                items.push({ name: name.replace(/_([0-3])_(target|min|max)/g, ''), color: ds.borderColor });
+                            }
+                        }
+                    });
+                    if (items.length === 0) return;
+
+                    ctx.save();
+                    const w = 160;
+                    const h = items.length * 24 + 20;
+                    const x = right - w - 10;
+                    const y = top + 10;
+
+                    // Fondo con fallback para roundRect
+                    ctx.fillStyle = isDark ? 'rgba(7, 13, 20, 0.9)' : 'rgba(255, 255, 255, 0.9)';
+                    ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.2)' : 'rgba(13, 92, 143, 0.2)';
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    if (ctx.roundRect) ctx.roundRect(x, y, w, h, 8);
+                    else ctx.rect(x, y, w, h);
+                    ctx.fill();
+                    ctx.stroke();
+
+                    // Título de la leyenda interna
+                    ctx.font = '900 8px Outfit';
+                    ctx.fillStyle = isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)';
+                    ctx.textAlign = 'left';
+                    ctx.fillText('ESTADO DE BOMBAS', x + 12, y + 12);
+
+                    items.forEach((it, i) => {
+                        const iy = y + 26 + (i * 24);
+                        ctx.fillStyle = it.color;
+                        ctx.beginPath();
+                        ctx.arc(x + 18, iy, 6, 0, Math.PI * 2);
+                        ctx.fill();
+                        
+                        ctx.shadowColor = it.color;
+                        ctx.shadowBlur = 8;
+                        ctx.fill();
+                        ctx.shadowBlur = 0;
+
+                        ctx.font = '900 10px Outfit';
+                        ctx.fillStyle = isDark ? '#ffffff' : '#1a2332';
+                        ctx.textAlign = 'left';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(it.name.toUpperCase(), x + 34, iy);
+                    });
+                    ctx.restore();
+                }
+            };
+
+            // Plugin Etiquetas en el Inicio de Curvas
+            const curveLabelsPlugin = {
+                id: 'curveLabelsPlugin',
+                afterDatasetsDraw(chart) {
+                    const { ctx } = chart;
+                    chart.data.datasets.forEach((ds, i) => {
+                        const meta = chart.getDatasetMeta(i);
+                        if (!meta.visible || ds.label?.includes('MARKER')) return;
+                        
+                        // Solo etiquetamos curvas principales o las que tengan nombre de bomba explícito
+                        if (!ds.isPrimary && !ds.pumpName && !ds.label?.toLowerCase().includes('head')) return;
+
+                        const points = meta.data;
+                        if (!points || points.length === 0) return;
+                        const p = points[0];
+
+                        ctx.save();
+                        ctx.font = '900 10px Outfit';
+                        const text = (ds.pumpName || ds.label).replace(/_([0-3])_(target|min|max)/g, '').toUpperCase();
+                        ctx.fillStyle = ds.borderColor;
+                        ctx.textAlign = 'left';
+                        ctx.textBaseline = 'bottom';
+                        ctx.shadowColor = isDark ? 'black' : 'white';
+                        ctx.shadowBlur = 5;
+                        ctx.fillText(text, p.x + 8, p.y - 4);
+                        ctx.restore();
+                    });
+                }
+            };
+
+            myChart = new Chart(ctx, {
+                type: 'line',
+                data: { labels, datasets },
+                plugins: [intensityPlugin, bgPlugin, glowPlugin, internalLegendPlugin, curveLabelsPlugin],
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: { duration: 1800, easing: 'easeOutQuart' },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: title.toUpperCase(),
+                            color: isDark ? '#a8c8e0' : '#0d5c8f',
+                            font: { size: 14, weight: '900', family: 'Outfit' },
+                            padding: { bottom: 18 }
+                        },
+                        legend: {
+                            display: true,
+                            position: 'bottom',
+                            onClick: (e) => e.stopPropagation(), // Desactivar funcionalidad
+                            labels: {
+                                font: { family: 'Outfit', size: 13, weight: '900' },
+                                usePointStyle: true,
+                                pointStyle: 'rectRounded',
+                                pointStyleWidth: 18,
+                                padding: 25,
+                                color: textColor,
+                                generateLabels: function (chart) {
+                                    const seen = new Set();
+                                    const labels = [];
+                                    chart.data.datasets.forEach((ds, i) => {
+                                        // Whitelist: datasets marcados como primarios o que tengan un pumpName único
+                                        const isCandidate = ds.isPrimary === true || (ds.pumpName && !ds.label.includes('['));
+                                        if (isCandidate && ds.pumpName && !seen.has(ds.pumpName)) {
+                                            seen.add(ds.pumpName);
+                                            labels.push({
+                                                text: ds.pumpName.toUpperCase(),
+                                                fillStyle: ds.borderColor,
+                                                strokeStyle: ds.borderColor,
+                                                lineWidth: 2,
+                                                pointStyle: 'rectRounded',
+                                                fontColor: textColor,
+                                                datasetIndex: i
+                                            });
+                                        }
+                                    });
+                                    return labels;
+                                }
+                            }
+                        },
+                        tooltip: {
+                            enabled: true,
+                            backgroundColor: isDark ? 'rgba(10,21,32,0.98)' : 'rgba(26,35,50,0.98)',
+                            padding: 16,
+                            cornerRadius: 8,
+                            titleFont: { family: 'Outfit', size: 12, weight: '900' },
+                            titleColor: '#ffffff',
+                            bodyFont: { family: 'Outfit', size: 12, weight: '600' },
+                            bodyColor: '#eef0f4',
+                            usePointStyle: true,
+                            boxPadding: 8,
+                            borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+                            borderWidth: 1,
+                            callbacks: {
+                                label: function (context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) label += ': ';
+                                    if (context.parsed.y !== null) label += context.parsed.y.toFixed(1);
+                                    return '  ' + label;
+                                }
+                            }
+                        }
+                    },
+                    interaction: { mode: 'index', intersect: false },
+                    hover: { mode: 'index', intersect: false },
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            grid: { color: gridColor, lineWidth: 1 },
+                            border: { color: textColor, width: 1.5 },
+                            ticks: {
+                                font: { size: 11, family: 'Outfit', weight: '800' },
+                                color: textColor,
+                                padding: 12,
+                                maxTicksLimit: 12
+                            },
+                            title: {
+                                display: true,
+                                text: 'FLOW (BPD)',
+                                font: { weight: '900', family: 'Outfit', size: 12 },
+                                color: textColor,
+                                padding: { top: 10 }
+                            }
+                        },
+                        y: {
+                            grid: { color: gridColor, lineWidth: 1 },
+                            border: { color: textColor, width: 1.5 },
+                            ticks: {
+                                font: { size: 11, family: 'Outfit', weight: '800' },
+                                color: textColor,
+                                padding: 12
+                            },
+                            title: {
+                                display: true,
+                                text: 'HEAD (FT)',
+                                font: { weight: '900', family: 'Outfit', size: 12 },
+                                color: textColor
+                            }
+                        },
+                        y1: {
+                            position: 'right',
+                            min: 0, max: 100,
+                            grid: { display: false },
+                            border: { color: '#1a8c5e', width: 1.5 },
+                            ticks: {
+                                color: '#1a8c5e',
+                                font: { family: 'Outfit', size: 11, weight: '800' },
+                                callback: v => v + '%'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+
+</html>
