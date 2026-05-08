@@ -20,6 +20,7 @@ The application follows a high-density, professional "HUD" (Head-Up Display) aes
 ## 📂 Key Directory Structure
 - `/app_unified/src/components/`: Core UI components (PhaseWellbore, PhaseFluids, PhaseMonitoreo, etc.)
 - `/app_unified/src/engines/`: Mathematical engines for PVT, Nodal Analysis, and AI Matching.
+- `/skills/`: Technical guides and AI skills for specific engineering tasks.
 - `/services/`: Helper scripts and background services.
 - `/public/`: Static assets and precalculated data files.
 
