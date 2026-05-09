@@ -31,7 +31,7 @@ const getScenarioParams = (baseParams: SystemParams, scenario: ScenarioData): Sy
 };
 
 const DesignMetric = ({ label, value }: any) => (
-    <div className="bg-surface border border-primary/20 rounded-xl p-3 flex flex-col justify-between transition-all hover:bg-white/5 shadow-sm">
+        <div className={`bg-surface border border-primary/20 rounded-none p-3 flex flex-col justify-between transition-all hover:bg-white/5 shadow-sm`}>
         <span className="text-[10px] text-txt-muted font-black uppercase tracking-[0.1em] mb-1">{label}</span>
         <span className="text-sm font-mono font-black text-txt-main tracking-tighter">{value}</span>
     </div>
@@ -45,7 +45,7 @@ const PremiumField = ({ label, value, unit, icon: Icon, onChange, color = 'prima
     }[color] || { border: 'border-primary/30', line: 'bg-primary', icon: 'text-primary', unit: 'text-primary' };
 
     return (
-        <div className={`bg-surface border ${colorClasses.border} rounded-xl p-3 flex flex-col justify-between group h-20 transition-all shadow-sm relative overflow-hidden focus-within:border-white/40`}>
+        <div className={`bg-surface border ${colorClasses.border} rounded-none p-3 flex flex-col justify-between group h-20 transition-all shadow-sm relative overflow-hidden focus-within:border-white/40`}>
             <div className={`absolute top-0 left-0 w-1 h-full ${colorClasses.line}`}></div>
             <div className="flex justify-between items-center mb-0.5 relative z-10">
                 <label className="text-[10px] font-black text-txt-muted uppercase tracking-[0.1em]">{label}</label>
@@ -65,7 +65,7 @@ const PremiumField = ({ label, value, unit, icon: Icon, onChange, color = 'prima
 };
 
 const PremiumDate = ({ label, value, icon: Icon, onChange }: any) => (
-    <div className="bg-surface border border-primary/20 rounded-xl p-3 flex flex-col justify-between group h-20 transition-all shadow-inner relative overflow-hidden focus-within:border-white/40">
+    <div className="bg-surface border border-primary/20 rounded-none p-3 flex flex-col justify-between group h-20 transition-all shadow-inner relative overflow-hidden focus-within:border-white/40">
         <div className="flex justify-between items-center mb-0.5 relative z-10">
             <label className="text-[10px] font-black text-txt-muted uppercase tracking-[0.1em]">{label}</label>
             <Icon className="w-3 h-3 text-primary opacity-80" />
@@ -81,14 +81,14 @@ const PremiumDate = ({ label, value, icon: Icon, onChange }: any) => (
     </div>
 );
 
-const PremiumMetricCard = ({ label, value, subValue, icon: Icon, color, alert }: any) => {
+const PremiumMetricCardComponent = ({ label, value, subValue, icon: Icon, color, alert }: any) => {
     const IconComponent = Icon || Activity;
     return (
-        <div className={`card-solid rounded-2xl border ${alert ? 'border-danger shadow-glow-danger/20' : 'border-white/10 shadow-2xl'} p-5 flex flex-col justify-between relative overflow-hidden group hover:scale-[1.02] transition-all h-[130px] light-sweep`}>
-            <div className={`absolute -right-6 -top-6 w-20 h-20 ${color === 'secondary' ? 'bg-secondary/10' : color === 'primary' ? 'bg-primary/10' : 'bg-danger/10'} blur-3xl rounded-full`}></div>
+        <div className={`card-solid rounded-none border ${alert ? 'border-danger' : 'border-white/10'} p-5 flex flex-col justify-between relative overflow-hidden h-[130px]`}>
+            <div className={`absolute -right-6 -top-6 w-20 h-20 ${color === 'secondary' ? 'bg-secondary/10' : color === 'primary' ? 'bg-primary/10' : 'bg-danger/10'} blur-3xl rounded-none`}></div>
             <div className="flex justify-between items-start relative z-10">
                 <span className="text-[9px] font-black text-txt-muted uppercase tracking-[0.2em] opacity-80">{label}</span>
-                <IconComponent className={`w-5 h-5 ${color === 'secondary' ? 'text-secondary' : color === 'primary' ? 'text-primary' : 'text-danger'} ${alert ? 'animate-pulse' : ''}`} />
+                <IconComponent className={`w-5 h-5 ${color === 'secondary' ? 'text-secondary' : color === 'primary' ? 'text-primary' : 'text-danger'}`} />
             </div>
             <div className="mt-auto relative z-10">
                 <div className={`text-2xl font-black ${alert ? 'text-danger' : 'text-txt-main'} tracking-tighter leading-none`}>{value}</div>
@@ -98,15 +98,17 @@ const PremiumMetricCard = ({ label, value, subValue, icon: Icon, color, alert }:
     );
 };
 
+const PremiumMetricCard = React.memo(PremiumMetricCardComponent);
+
 const CompPremium = ({ label, design, actual, unit, color }: any) => {
     const diff = design > 0 ? ((actual - design) / design) * 100 : 0;
     const isOver = diff > 0;
     return (
-        <div className="card-solid rounded-2xl border border-white/10 shadow-2xl p-5 flex flex-col justify-between relative overflow-hidden group hover:scale-[1.02] transition-all h-[130px] light-sweep">
-            <div className={`absolute -right-6 -top-6 w-20 h-20 shadow-glow-${color}/10 blur-3xl rounded-full`}></div>
+        <div className="card-solid rounded-none border border-white/10 shadow-2xl p-5 flex flex-col justify-between relative overflow-hidden group hover:scale-[1.02] transition-all h-[130px] light-sweep">
+            <div className={`absolute -right-6 -top-6 w-20 h-20 shadow-glow-${color}/10 blur-3xl rounded-none`}></div>
             <div className="flex justify-between items-start relative z-10">
                 <span className="text-[9px] font-black text-txt-muted uppercase tracking-widest opacity-80">{label}</span>
-                <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-[8px] font-black border ${Math.abs(diff) < 5 ? 'bg-success/20 text-success border-success/20' : 'bg-danger/20 text-danger border-danger/20'}`}>
+                <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-none text-[8px] font-black border ${Math.abs(diff) < 5 ? 'bg-success/20 text-success border-success/20' : 'bg-danger/20 text-danger border-danger/20'}`}>
                     {Math.abs(diff).toFixed(1)}% {isOver ? 'UP' : 'DN'}
                 </div>
             </div>
@@ -388,17 +390,17 @@ const HistoryMatchReport = ({ onClose, designParams, actualParams, pump, designR
             {/* TOP BAR */}
             <div className="h-16 bg-surface border-b border-surface-light flex items-center justify-between px-8 shrink-0 no-print z-50">
                 <div className="flex items-center gap-4">
-                    <div className="bg-primary p-2 rounded-lg text-white"><ClipboardCheck className="w-5 h-5" /></div>
+                    <div className="bg-primary p-2 rounded-none text-white"><ClipboardCheck className="w-5 h-5" /></div>
                     <div>
                         <h3 className="text-sm font-black text-txt-main uppercase tracking-wider">HISTORY MATCH REPORT — Diagn\u00f3stico Integral</h3>
                         <p className="text-xs text-txt-muted font-bold uppercase opacity-60">Escenario: {compareScenario.toUpperCase()} | Pozo: {designParams?.metadata?.wellName || designParams?.wellName || '-'} | {new Date().toLocaleDateString()}</p>
                     </div>
                 </div>
                 <div className="flex gap-4">
-                    <button onClick={handlePrint} className="flex items-center gap-2 bg-primary hover:bg-primary/80 text-white px-5 py-2 rounded-xl font-bold text-xs uppercase shadow-lg active:scale-95 transition-all">
+                    <button onClick={handlePrint} className="flex items-center gap-2 bg-primary hover:bg-primary/80 text-white px-5 py-2 rounded-none font-bold text-xs uppercase shadow-lg active:scale-95 transition-all">
                         <Printer className="w-4 h-4" /> Imprimir / PDF
                     </button>
-                    <button onClick={onClose} className="p-2 bg-surface-light hover:bg-red-500/20 text-txt-muted hover:text-danger rounded-xl transition-all"><X className="w-5 h-5" /></button>
+                    <button onClick={onClose} className="p-2 bg-surface-light hover:bg-red-500/20 text-txt-muted hover:text-danger rounded-none transition-all"><X className="w-5 h-5" /></button>
                 </div>
             </div>
 
@@ -471,13 +473,13 @@ const HistoryMatchReport = ({ onClose, designParams, actualParams, pump, designR
                     }
                 `}</style>
 
-                <div id="hmrp" className="bg-white p-12 shadow-[0_50px_100px_rgba(0,0,0,0.3)] rounded-[3rem] border border-slate-200 flex flex-col justify-between mb-8 overflow-visible relative group">
+                <div id="hmrp" className="bg-white p-12 shadow-[0_50px_100px_rgba(0,0,0,0.3)] rounded-none border border-slate-200 flex flex-col justify-between mb-8 overflow-visible relative group">
                     <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-transparent to-slate-50 pointer-events-none"></div>
 
                     {/* ===== ROW 1: HEADER & LOGO ===== */}
                     <div className="flex justify-between items-start border-b-2 border-slate-900 pb-8 mb-8 relative z-10">
                         <div className="flex items-center gap-6">
-                            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 shadow-sm">
+                            <div className="bg-slate-50 p-4 rounded-none border border-slate-200 shadow-sm">
                                 <img src="/LOGO.png" alt="Company Logo" className="w-16 h-16 object-contain" />
                             </div>
                             <div>
@@ -494,22 +496,22 @@ const HistoryMatchReport = ({ onClose, designParams, actualParams, pump, designR
 
                     {/* ===== ROW 1: STATUS CARDS ===== */}
                     <div className="grid grid-cols-4 gap-2">
-                        <div className="p-2 rounded-xl border-2 flex flex-col gap-0.5" style={{ borderColor: degLvl.brd, backgroundColor: degLvl.bg }}>
+                        <div className="p-2 rounded-none border-2 flex flex-col gap-0.5" style={{ borderColor: degLvl.brd, backgroundColor: degLvl.bg }}>
                             <div className="text-[7px] font-black text-slate-500 uppercase tracking-widest">Estado Hidr\u00e1ulico</div>
                             <div className="text-base font-black uppercase" style={{ color: degLvl.clr }}>{degLvl.label}</div>
                             <div className="text-xl font-black font-mono" style={{ color: degLvl.clr }}>{(degradationPct ?? 0).toFixed(1)}% <span className="text-[8px] font-bold text-slate-400">Degrad.</span></div>
                         </div>
-                        <div className="p-2 rounded-xl border-2 flex flex-col gap-0.5" style={{ borderColor: thrustClr + '99', backgroundColor: thrustBg }}>
+                        <div className="p-2 rounded-none border-2 flex flex-col gap-0.5" style={{ borderColor: thrustClr + '99', backgroundColor: thrustBg }}>
                             <div className="text-[7px] font-black text-slate-500 uppercase tracking-widest">Condici\u00f3n Empuje</div>
                             <div className="text-base font-black uppercase" style={{ color: thrustClr }}>{thrustStatus}</div>
                             <div className="text-sm font-bold text-slate-600">{(flowRatio * 100).toFixed(0)}% BEP</div>
                         </div>
-                        <div className="p-2 rounded-xl border-2 border-blue-200 bg-blue-50 flex flex-col gap-0.5">
+                        <div className="p-2 rounded-none border-2 border-blue-200 bg-blue-50 flex flex-col gap-0.5">
                             <div className="text-[7px] font-black text-slate-500 uppercase tracking-widest">IP Retro-Calculado</div>
                             <div className="text-base font-black text-blue-800">{calculatedIP.toFixed(2)}</div>
                             <div className="text-[9px] font-bold text-slate-500">{(designParams?.inflow?.ip ?? 0).toFixed(2)} bpd/psi</div>
                         </div>
-                        <div className="p-2 rounded-xl border-2 border-slate-200 bg-slate-50 flex flex-col gap-0.5">
+                        <div className="p-2 rounded-none border-2 border-slate-200 bg-slate-50 flex flex-col gap-0.5">
                             <div className="text-[7px] font-black text-slate-500 uppercase tracking-widest">Carga Motor</div>
                             <div className={`text-base font-black ${(actualRes?.motorLoad ?? 0) > 100 ? 'text-red-600' : 'text-slate-900'}`}>{(actualRes?.motorLoad ?? 0).toFixed(0)}%</div>
                             <div className="text-[9px] font-bold text-slate-500">{(actualRes?.hpTotal ?? 0).toFixed(1)} HP</div>
@@ -521,11 +523,11 @@ const HistoryMatchReport = ({ onClose, designParams, actualParams, pump, designR
                         <h3 className="font-black text-[9px] uppercase tracking-[0.2em] text-blue-800 mb-2 pb-1 border-b-2 border-slate-900 flex items-center gap-1">
                             <Brain className="w-3.5 h-3.5" /> Motor IA — Diagn\u00f3stico Integral & Pr\u00f3ximos Pasos Predictivos
                         </h3>
-                        <div className="bg-slate-50 rounded-xl border-2 border-slate-100 p-4 space-y-2">
+                        <div className="bg-slate-50 rounded-none border-2 border-slate-100 p-4 space-y-2">
                             {aiLines.map((line: string, i: number) => {
                                 if (line.startsWith('\u2501')) return <div key={i} className="text-[9px] font-black text-slate-800 uppercase tracking-widest pt-3 pb-1 mt-2 border-t border-slate-200">{line.replace(/\u2501+/g, '').trim()}</div>;
                                 if (/^\d+\./.test(line)) return <div key={i} className="flex gap-2 text-[10px] font-bold text-slate-800 p-1 bg-white rounded border border-slate-100"><span className="text-slate-900 font-black shrink-0 min-w-[14px]">{line.match(/^\d+/)?.[0]}.</span><span>{line.replace(/^\d+\.\s*/, '')}</span></div>;
-                                return <p key={i} className={`text-[10px] font-semibold leading-relaxed p-2 rounded-lg border ${line.includes('CR\u00cdTICO') || line.includes('DOWNTHRUST') || line.includes('UPTHRUST') || line.includes('SOBRECARGADO') ? 'bg-red-50 border-red-100 text-red-900' : line.includes('AVISO') || line.includes('PRECAUCI\u00d3N') || line.includes('GAS') ? 'bg-amber-50 border-amber-100 text-amber-900' : 'bg-white border-slate-100 text-slate-700'}`}>{line}</p>;
+                                return <p key={i} className={`text-[10px] font-semibold leading-relaxed p-2 rounded-none border ${line.includes('CR\u00cdTICO') || line.includes('DOWNTHRUST') || line.includes('UPTHRUST') || line.includes('SOBRECARGADO') ? 'bg-red-50 border-red-100 text-red-900' : line.includes('AVISO') || line.includes('PRECAUCI\u00d3N') || line.includes('GAS') ? 'bg-amber-50 border-amber-100 text-amber-900' : 'bg-white border-slate-100 text-slate-700'}`}>{line}</p>;
                             })}
                         </div>
                     </div>
@@ -535,7 +537,7 @@ const HistoryMatchReport = ({ onClose, designParams, actualParams, pump, designR
                             <h3 className="font-black text-[9px] uppercase tracking-[0.2em] text-slate-800 mb-2 pb-1 border-b-2 border-slate-900 flex items-center gap-1">
                                 <Activity className="w-3 h-3" /> Curva Operación ({actualFreq} Hz)
                             </h3>
-                            <div className="h-[600px] print-graph-container graph-force-height border-2 border-slate-200 rounded-xl overflow-visible bg-white relative w-full flex-1">
+                            <div className="h-[600px] print-graph-container graph-force-height border-2 border-slate-200 rounded-none overflow-visible bg-white relative w-full flex-1">
                                 <PerformanceCurveMultiAxis data={chartData} frequency={actualFreq} currentFlow={fieldData.rate} pump={pump} minHeight={580} className="w-full h-full !bg-transparent !p-4" />
                             </div>
                         </div>
@@ -543,7 +545,7 @@ const HistoryMatchReport = ({ onClose, designParams, actualParams, pump, designR
                             <h3 className="font-black text-[9px] uppercase tracking-[0.2em] text-slate-800 mb-2 pb-1 border-b-2 border-slate-900 flex items-center gap-1">
                                 <Layers className="w-3 h-3" /> Sensibilidad VSD Multifrecuencia
                             </h3>
-                            <div className="h-[600px] print-graph-container graph-force-height border-2 border-slate-200 rounded-xl overflow-visible bg-white relative w-full flex-1">
+                            <div className="h-[600px] print-graph-container graph-force-height border-2 border-slate-200 rounded-none overflow-visible bg-white relative w-full flex-1">
                                 {/* Utilizing PumpChart for MultiFrequency */}
                                 <PumpChart data={chartData} pump={pump} currentFrequency={actualFreq} minHeight={580} className="w-full h-full !bg-transparent !p-4" />
                             </div>
@@ -555,7 +557,7 @@ const HistoryMatchReport = ({ onClose, designParams, actualParams, pump, designR
                         <h3 className="font-black text-[9px] uppercase tracking-[0.2em] text-slate-800 mb-2 pb-1 border-b-2 border-slate-900 flex items-center gap-1">
                             <Repeat className="w-3 h-3" /> Tabla Comparativa: Diseño Original vs. Condiciones Actuales de Campo
                         </h3>
-                        <div className="bg-white border border-slate-200 rounded-2xl shadow-xl overflow-visible mt-4">
+                        <div className="bg-white border border-slate-200 rounded-none shadow-xl overflow-visible mt-4">
                             <table className="w-full text-[10px]">
                                 <thead className="bg-slate-50">
                                     <tr className="border-b border-slate-200">
@@ -585,7 +587,7 @@ const HistoryMatchReport = ({ onClose, designParams, actualParams, pump, designR
                                                     {diff === null ? '—' : `${diff > 0 ? '↑' : '↓'}${Math.abs(diff).toFixed(1)}%`}
                                                 </td>
                                                 <td className={`py-3 px-2 text-center font-black uppercase text-[8px] tracking-widest ${diff === null ? 'text-slate-400' : isGood ? 'text-success' : 'text-danger'}`}>
-                                                    <div className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md border ${isGood ? 'bg-success/10 border-success/20' : 'bg-danger/10 border-danger/20'}`}>
+                                                    <div className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-none border ${isGood ? 'bg-success/10 border-success/20' : 'bg-danger/10 border-danger/20'}`}>
                                                         {diff === null ? 'INFO' : isGood ? 'SYNC' : 'ALIGN'}
                                                     </div>
                                                 </td>
@@ -601,7 +603,7 @@ const HistoryMatchReport = ({ onClose, designParams, actualParams, pump, designR
                         <h3 className="font-black text-[9px] uppercase tracking-[0.2em] text-slate-800 mb-2 pb-1 border-b-2 border-slate-900 flex items-center gap-1">
                             <Layers className="w-3 h-3" /> Tabla de Sensibilidad VSD (Gemelo Digital)
                         </h3>
-                        <div className="bg-white border border-slate-200 rounded-2xl overflow-auto print:overflow-visible max-h-[500px] print:max-h-none mt-2 custom-scrollbar-h shadow-lg">
+                        <div className="bg-white border border-slate-200 rounded-none overflow-auto print:overflow-visible max-h-[500px] print:max-h-none mt-2 custom-scrollbar-h shadow-lg">
                             <table className="w-full text-[9px] text-center border-collapse min-w-[1000px]">
                                 <thead className="bg-slate-50 sticky top-0 z-30">
                                     <tr className="sticky top-0 z-30">
@@ -661,7 +663,7 @@ const HistoryMatchReport = ({ onClose, designParams, actualParams, pump, designR
 // --- MAIN COMPONENT ---
 
 const FieldInput = ({ label, value, unit, onChange, icon: Icon, disabled = false }: any) => (
-    <div className={`bg-surface border border-surface-light rounded-xl p-3 flex flex-col justify-between group focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/20 transition-all shadow-sm ${disabled ? 'opacity-50 pointer-events-none' : ''}`}>
+    <div className={`bg-surface border border-surface-light rounded-none p-3 flex flex-col justify-between group focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/20 transition-all shadow-sm ${disabled ? 'opacity-50 pointer-events-none' : ''}`}>
         <div className="flex justify-between items-center mb-0.5">
             <label className="text-[9px] font-bold text-txt-muted uppercase tracking-wider group-focus-within:text-primary transition-colors">{label}</label>
             {Icon && <Icon className="w-3.5 h-3.5 text-primary opacity-60" />}
@@ -680,7 +682,7 @@ const FieldInput = ({ label, value, unit, onChange, icon: Icon, disabled = false
 );
 
 const DateInput = ({ label, value, onChange, icon: Icon }: any) => (
-    <div className="bg-surface border border-surface-light rounded-xl p-3 flex flex-col justify-between group focus-within:border-secondary/50 focus-within:ring-1 focus-within:ring-secondary/20 transition-all shadow-sm">
+    <div className="bg-surface border border-surface-light rounded-none p-3 flex flex-col justify-between group focus-within:border-secondary/50 focus-within:ring-1 focus-within:ring-secondary/20 transition-all shadow-sm">
         <div className="flex justify-between items-center mb-0.5">
             <label className="text-[9px] font-bold text-txt-muted uppercase tracking-wider group-focus-within:text-secondary transition-colors">{label}</label>
             {Icon && <Icon className="w-3.5 h-3.5 text-secondary opacity-60" />}
@@ -698,13 +700,13 @@ const DateInput = ({ label, value, onChange, icon: Icon }: any) => (
 
 const f0 = (n: number) => (n !== undefined && !isNaN(n) ? n.toFixed(0) : '0');
 
-const CompCard = ({ label, designVal, actualVal, unit }: any) => {
+const CompCardComponent = ({ label, designVal, actualVal, unit }: any) => {
     const diff = actualVal - designVal;
     const pct = designVal !== 0 ? (diff / designVal) * 100 : 0;
     const isGood = Math.abs(pct) < 5;
 
     return (
-        <div className={`glass-surface rounded-2xl border border-surface-light p-4 flex flex-col justify-between relative overflow-hidden group hover:scale-[1.02] transition-all duration-300 light-sweep ${isGood ? 'hover:border-primary/50' : ''}`}>
+        <div className={`glass-surface rounded-none border border-surface-light p-4 flex flex-col justify-between relative overflow-hidden group hover:scale-[1.02] transition-all duration-300 light-sweep ${isGood ? 'hover:border-primary/50' : ''}`}>
             <div className={`absolute top-0 left-0 w-1 h-full ${isGood ? 'bg-primary shadow-glow-primary' : 'bg-secondary'}`}></div>
             <span className="text-[9px] font-black text-txt-muted uppercase tracking-[0.2em] mb-3 opacity-70 group-hover:opacity-100 transition-opacity">{label}</span>
             <div className="flex justify-between items-end relative z-10">
@@ -718,14 +720,16 @@ const CompCard = ({ label, designVal, actualVal, unit }: any) => {
                         <span className="text-[9px] font-bold text-txt-muted uppercase tracking-widest">{unit}</span>
                     </div>
                 </div>
-                <div className={`text-right px-2 py-1 rounded-lg backdrop-blur-md ${Math.abs(pct) < 2 ? 'bg-surface-light text-txt-muted' : pct > 0 ? 'bg-primary/10 text-primary shadow-glow-primary' : 'bg-danger/10 text-danger'}`}>
+                <div className={`text-right px-2 py-1 rounded-none backdrop-blur-md ${Math.abs(pct) < 2 ? 'bg-surface-light text-txt-muted' : pct > 0 ? 'bg-primary/10 text-primary shadow-glow-primary' : 'bg-danger/10 text-danger'}`}>
                     <div className="text-[11px] font-black font-mono tracking-tighter">{pct > 0 ? '↑' : '↓'} {Math.abs(pct).toFixed(1)}%</div>
                 </div>
             </div>
-            <div className="absolute -right-4 -bottom-4 w-16 h-16 bg-primary/5 blur-2xl rounded-full group-hover:bg-primary/20 transition-all duration-500"></div>
+            <div className="absolute -right-4 -bottom-4 w-16 h-16 bg-primary/5 blur-2xl rounded-none group-hover:bg-primary/20 transition-all duration-500"></div>
         </div>
     );
 };
+
+const CompCard = React.memo(CompCardComponent);
 
 const SimulatedMetric = ({ label, value, sub, color = "primary", badge }: any) => {
     const colorClasses: any = {
@@ -736,11 +740,11 @@ const SimulatedMetric = ({ label, value, sub, color = "primary", badge }: any) =
     };
 
     return (
-        <div className="glass-surface-light border border-white/5 rounded-2xl p-4 group transition-all duration-500 hover:border-white/20">
+        <div className="glass-surface-light border border-white/5 rounded-none p-4 group transition-all duration-500 hover:border-white/20">
             <div className="flex justify-between items-start mb-2">
                 <span className="text-[9px] font-black text-txt-muted uppercase tracking-[0.2em] opacity-60">{label}</span>
                 {badge && (
-                    <span className={`text-[8px] font-black px-2 py-0.5 rounded-lg border ${badge.includes('UP') ? 'bg-success/20 text-success border-success/30' : 'bg-danger/20 text-danger border-danger/30'}`}>
+                    <span className={`text-[8px] font-black px-2 py-0.5 rounded-none border ${badge.includes('UP') ? 'bg-success/20 text-success border-success/30' : 'bg-danger/20 text-danger border-danger/30'}`}>
                         {badge}
                     </span>
                 )}
@@ -753,7 +757,7 @@ const SimulatedMetric = ({ label, value, sub, color = "primary", badge }: any) =
     );
 };
 
-export const Phase6: React.FC<Props> = ({ params, setParams, pump, designFreq, trail }) => {
+const Phase6Component: React.FC<Props> = ({ params, setParams, pump, designFreq, trail }) => {
     const { t } = useLanguage();
     const [showReport, setShowReport] = useState(false);
     const [isChartExpanded, setIsChartExpanded] = useState(false);
@@ -1787,11 +1791,11 @@ export const Phase6: React.FC<Props> = ({ params, setParams, pump, designFreq, t
                             <h2 className="text-4xl font-black text-txt-main uppercase tracking-tighter">{t('p6.perfComp')}</h2>
                             <p className="text-base font-bold text-txt-muted uppercase tracking-widest">{t('p6.history')} | FULL SCREEN VIEW</p>
                         </div>
-                        <button onClick={() => setIsChartExpanded(false)} className="p-4 bg-surface rounded-full border border-surface-light text-txt-muted hover:text-white hover:bg-surface-light transition-colors">
+                        <button onClick={() => setIsChartExpanded(false)} className="p-4 bg-surface rounded-none border border-surface-light text-txt-muted hover:text-white hover:bg-surface-light transition-colors">
                             <Minimize2 className="w-10 h-10" />
                         </button>
                     </div>
-                    <div className="flex-1 min-h-0 bg-surface rounded-[32px] border border-surface-light p-4 shadow-2xl relative overflow-hidden">
+                    <div className="flex-1 min-h-0 bg-surface rounded-none border border-surface-light p-4 shadow-2xl relative overflow-hidden">
                         <PumpChart data={chartData} pump={safePump} currentFrequency={fieldData.frequency} referencePoints={trail || referencePoints} targetFlow={fieldData.rate} className="w-full h-full" isDiagnosticMode={chartMode === 'comparative'} />
                     </div>
                 </div>,
@@ -1801,23 +1805,23 @@ export const Phase6: React.FC<Props> = ({ params, setParams, pump, designFreq, t
 
 
             {/* HEADER */}
-            <div className={`flex justify-between items-center px-6 shrink-0 h-13 card-solid rounded-2xl border shadow-xl relative overflow-hidden group transition-all duration-700 mb-4 ${isMaxCapActive ? 'border-success/40 ring-1 ring-success/10' : 'border-white/10'}`}>
+            <div className={`flex justify-between items-center px-6 shrink-0 h-16 card-solid rounded-none border shadow-2xl relative overflow-hidden group transition-all duration-700 mb-4 ${isMaxCapActive ? 'border-success/60 ring-1 ring-success/20' : 'border-white/20'}`}>
                 <div className={`absolute left-0 top-0 w-2 h-full transition-colors duration-700 ${isMaxCapActive ? 'bg-success shadow-glow-success' : 'bg-secondary shadow-glow-secondary'}`}></div>
                 <div className="flex items-center gap-5 relative z-10 pl-2">
-                    <div className={`p-3 rounded-2xl border transition-all duration-700 ${isMaxCapActive ? 'bg-success/20 border-success/30 shadow-glow-success/20' : 'bg-secondary/20 border-white/10 shadow-glow-secondary'}`}>
+                    <div className={`p-3 rounded-none border transition-all duration-700 ${isMaxCapActive ? 'bg-success/20 border-success/30 shadow-glow-success/20' : 'bg-secondary/20 border-white/10 shadow-glow-secondary'}`}>
                         {isMaxCapActive ? <Zap className="w-6 h-6 text-success animate-pulse" /> : <ClipboardCheck className="w-6 h-6 text-secondary" />}
                     </div>
                     <div>
-                        <h2 className="text-2xl font-black text-txt-main uppercase tracking-[0.1em] leading-none drop-shadow-md">
-                            {isMaxCapActive ? "CAPACITY " : (sensScenario.active ? "SENSITIVITY (IP/THP)" : "MATCH")}
+                        <h2 className="text-2xl font-black text-txt-main uppercase tracking-[0.2em] leading-none drop-shadow-[0_2px_8px_rgba(var(--color-primary-rgb),0.4)]">
+                            {isMaxCapActive ? "CAPACITY " : (sensScenario.active ? "SENSITIVITY " : "MATCH")}
                         </h2>
                         <div className="flex items-center gap-3 mt-1.5">
                             <div className={`h-[1px] w-8 ${isMaxCapActive ? 'bg-success' : (sensScenario.active ? 'bg-primary' : 'bg-secondary')}`}></div>
                             <p className="text-[10px] text-txt-muted font-black uppercase tracking-[0.3em] opacity-40">
                                 {isMaxCapActive ? "PREDICCIÓN BASADA EN MUESTRA CALIBRADA" : (sensScenario.active ? "ANÁLISIS DE SENSIBILIDAD PRODUCTIVA" : t('p6.fieldSync'))}
                             </p>
-                            <div className="w-1 h-1 rounded-full bg-txt-muted opacity-30 mx-1"></div>
-                            <span className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest flex items-center gap-1.5 ${params.isMechVerified ? 'bg-cyan-500/10 text-cyan-500 border border-cyan-500/30' : 'bg-white/5 text-txt-muted border border-white/10'}`}>
+                            <div className="w-1 h-1 rounded-none bg-txt-muted opacity-30 mx-1"></div>
+                            <span className={`px-2 py-0.5 rounded-none text-[8px] font-black uppercase tracking-widest flex items-center gap-1.5 ${params.isMechVerified ? 'bg-cyan-500/10 text-cyan-500 border border-cyan-500/30' : 'bg-white/5 text-txt-muted border border-white/10'}`}>
                                 <Database className="w-2.5 h-2.5" />
                                 {params.isMechVerified ? "ESTADOS MECÁNICOS" : "DISEÑO ORIGINAL"}
                             </span>
@@ -1826,7 +1830,7 @@ export const Phase6: React.FC<Props> = ({ params, setParams, pump, designFreq, t
                 </div>
                 <div className="flex items-center gap-4 relative z-10 pr-2">
                     {/* NEW COEFFICIENTS LOCATION (HEADER) */}
-                    <div className="flex items-center gap-4 mr-2 bg-surface px-5 py-1.5 rounded-2xl border border-surface-light shadow-lg">
+                    <div className="flex items-center gap-4 mr-2 bg-surface px-5 py-1.5 rounded-none border border-surface-light shadow-lg">
                         <div className="flex flex-col items-end">
                             <span className="text-[8px] font-black text-primary/60 uppercase tracking-widest">{chartMode === 'comparative' ? 'Kh (Proyectado)' : 'Kh (Actual)'}</span>
                             <span className="text-sm font-mono text-primary font-black leading-tight drop-shadow-sm">
@@ -1842,13 +1846,13 @@ export const Phase6: React.FC<Props> = ({ params, setParams, pump, designFreq, t
                         </div>
                     </div>
 
-                    <div className="flex bg-canvas/40 p-1 rounded-2xl border border-white/10 shadow-inner shrink-0 relative overflow-hidden h-11 items-center px-1.5 mr-2">
+                    <div className="flex bg-canvas/40 p-1 rounded-none border border-white/10 shadow-inner shrink-0 relative overflow-hidden h-11 items-center px-1.5 mr-2">
                         <button
                             onClick={() => {
                                 setChartMode('telemetry');
                                 setIsMaxCapActive(false);
                             }}
-                            className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase transition-all duration-500 relative z-10 ${chartMode === 'telemetry' && !isMaxCapActive
+                            className={`px-6 py-2 rounded-none text-[10px] font-black uppercase transition-all duration-500 relative z-10 ${chartMode === 'telemetry' && !isMaxCapActive
                                 ? 'bg-primary/20 text-primary shadow-glow-primary/20 border border-primary/20'
                                 : 'text-txt-muted hover:text-txt-main'
                                 }`}
@@ -1860,7 +1864,7 @@ export const Phase6: React.FC<Props> = ({ params, setParams, pump, designFreq, t
                                 setChartMode('comparative');
                                 setIsMaxCapActive(false);
                             }}
-                            className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase transition-all duration-500 relative z-10 ${chartMode === 'comparative'
+                            className={`px-6 py-2 rounded-none text-[10px] font-black uppercase transition-all duration-500 relative z-10 ${chartMode === 'comparative'
                                 ? 'bg-secondary/20 text-secondary shadow-glow-secondary/20 border border-secondary/20'
                                 : 'text-txt-muted hover:text-txt-main'
                                 }`}
@@ -1868,18 +1872,18 @@ export const Phase6: React.FC<Props> = ({ params, setParams, pump, designFreq, t
                             Comparativa
                         </button>
                     </div>
-                    <div className="flex bg-canvas/40 p-1 rounded-2xl border border-white/10 shadow-inner shrink-0 relative overflow-hidden h-11 items-center px-1.5">
+                    <div className="flex bg-canvas/40 p-1 rounded-none border border-white/10 shadow-inner shrink-0 relative overflow-hidden h-11 items-center px-1.5">
                         {['min', 'target', 'max'].map(s => (
                             <button
                                 key={s}
                                 onClick={() => setCompareScenario(s as any)}
-                                className={`px-5 py-2 text-[10px] font-black uppercase rounded-xl transition-all duration-500 relative z-10 ${compareScenario === s ? 'bg-secondary/20 text-secondary shadow-glow-secondary/20 border border-secondary/20' : 'text-txt-muted hover:text-txt-main'}`}
+                                className={`px-5 py-2 text-[10px] font-black uppercase rounded-none transition-all duration-500 relative z-10 ${compareScenario === s ? 'bg-secondary/20 text-secondary shadow-glow-secondary/20 border border-secondary/20' : 'text-txt-muted hover:text-txt-main'}`}
                             >
                                 {s === 'min' ? t('p5.min') : s === 'target' ? t('p5.target') : t('p5.max')}
                             </button>
                         ))}
                     </div>
-                    <button onClick={() => setShowReport(true)} className="bg-primary hover:bg-primary/80 text-white px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase transition-all flex items-center gap-2.5 shadow-xl shadow-primary/20 hover:shadow-primary/40 active:scale-95 light-sweep h-11">
+                    <button onClick={() => setShowReport(true)} className="bg-primary hover:bg-primary/80 text-white px-6 py-2.5 rounded-none border border-primary/40 text-[10px] font-black uppercase transition-all flex items-center gap-2.5 shadow-xl shadow-primary/20 hover:shadow-primary/40 active:scale-95 h-11">
                         <Printer className="w-4 h-4" /> {t('p6.print')}
                     </button>
                 </div>
@@ -1887,7 +1891,7 @@ export const Phase6: React.FC<Props> = ({ params, setParams, pump, designFreq, t
 
             <div className="grid grid-cols-12 gap-6 flex-1">
                 <div className="col-span-12 lg:col-span-4 flex flex-col gap-6 overflow-y-auto custom-scrollbar pr-2 min-h-0">
-                    <div className="card-solid border border-white/10 rounded-[2rem] p-6 relative overflow-hidden group shrink-0 shadow-2xl transition-all duration-500 hover:border-secondary/40">
+                    <div className="card-solid border border-white/10 rounded-none p-6 relative overflow-hidden group shrink-0 shadow-2xl transition-all duration-500 hover:border-secondary/40">
                         <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
                             <Activity className="w-24 h-24 text-primary" />
                         </div>
@@ -1895,7 +1899,7 @@ export const Phase6: React.FC<Props> = ({ params, setParams, pump, designFreq, t
                             onClick={() => setIsDesignCollapsed(!isDesignCollapsed)}
                         >
                             <div className="flex items-center gap-3">
-                                <div className={`p-2 rounded-lg transition-all ${isDesignCollapsed ? 'bg-white/5' : 'bg-primary/20 text-primary'}`}>
+                                <div className={`p-2 rounded-none transition-all ${isDesignCollapsed ? 'bg-white/5' : 'bg-primary/20 text-primary'}`}>
                                     {isDesignCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
                                 </div>
                                 <div>
@@ -1905,9 +1909,9 @@ export const Phase6: React.FC<Props> = ({ params, setParams, pump, designFreq, t
                             </div>
                             <div className="flex items-center gap-2">
                                 {params.isMechVerified && (
-                                    <span className="bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 px-2.5 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest">VERIFICADO</span>
+                                    <span className="bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 px-2.5 py-1 rounded-none text-[8px] font-black uppercase tracking-widest">VERIFICADO</span>
                                 )}
-                                <span className="bg-primary text-white px-3 py-1 rounded-lg text-[10px] font-black">TARGET</span>
+                                <span className="bg-primary text-white px-3 py-1 rounded-none text-[10px] font-black">TARGET</span>
                             </div>
                         </div>
 
@@ -1932,11 +1936,11 @@ export const Phase6: React.FC<Props> = ({ params, setParams, pump, designFreq, t
                         </div>
                     </div>
 
-                    <div className={`card-solid rounded-[2rem] border p-6 shadow-2xl flex-1 relative overflow-hidden flex flex-col gap-6 min-h-0 min-h-[400px] transition-all duration-700 ${isMaxCapActive ? 'border-success/40 ring-1 ring-success/20 bg-success/[0.04]' : 'border-white/10'}`}>
+                    <div className={`card-solid rounded-none border p-6 shadow-2xl flex-1 relative overflow-hidden flex flex-col gap-6 min-h-0 min-h-[400px] transition-all duration-700 ${isMaxCapActive ? 'border-success/40 ring-1 ring-success/20 bg-success/[0.04]' : 'border-white/10'}`}>
                         <div className={`absolute inset-0 bg-gradient-to-b transition-colors duration-700 ${isMaxCapActive ? 'from-success/10 to-transparent' : 'from-primary/5 to-transparent'}`}></div>
                         <div className="relative z-10">
-                            <div className="flex items-center gap-3 mb-4 bg-primary/10 -mx-6 -mt-6 p-3 border-b border-primary/20 rounded-t-[2rem]">
-                                <div className="p-1.5 bg-primary/20 rounded-lg text-primary border border-primary/30"><Activity className="w-3.5 h-3.5" /></div>
+                            <div className="flex items-center gap-3 mb-4 bg-primary/10 -mx-6 -mt-6 p-3 border-b border-primary/20 rounded-none">
+                                <div className="p-1.5 bg-primary/20 rounded-none text-primary border border-primary/30"><Activity className="w-3.5 h-3.5" /></div>
                                 <h3 className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">{t('p6.surfaceData')}</h3>
                             </div>
                             <div className="grid grid-cols-2 gap-2.5">
@@ -1963,7 +1967,7 @@ export const Phase6: React.FC<Props> = ({ params, setParams, pump, designFreq, t
 
                         <div className="relative z-10 mt-6">
                             <div className="flex items-center gap-3 mb-4 bg-primary/10 -mx-6 p-3 border-y border-primary/20">
-                                <div className="p-1.5 bg-primary/20 rounded-lg text-primary border border-primary/30"><ArrowDown className="w-3.5 h-3.5" /></div>
+                                <div className="p-1.5 bg-primary/20 rounded-none text-primary border border-primary/30"><ArrowDown className="w-3.5 h-3.5" /></div>
                                 <h3 className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">{t('p6.downholeData')}</h3>
                             </div>
                             <div className="grid grid-cols-2 gap-3 mt-4">
@@ -1971,7 +1975,7 @@ export const Phase6: React.FC<Props> = ({ params, setParams, pump, designFreq, t
                                     <PremiumField label="P. Estática" value={Math.round((fieldData.pStatic > 0) ? fieldData.pStatic : (params.inflow.pStatic || 0))} unit="psi" icon={Layers} onChange={(v: any) => updateField('pStatic', v)} color="primary" />
                                     <PremiumField label={t('p6.measPip')} value={Math.round(fieldData.pip)} unit="psi" icon={Gauge} onChange={(v: any) => updateField('pip', v)} color="primary" />
                                 </div>
-                                <div className={`col-span-2 rounded-[1.5rem] p-4 flex flex-col justify-between group transition-all duration-500 shadow-2xl relative overflow-hidden ${sensScenario.active ? 'bg-primary/20 border-2 border-primary/40 ring-1 ring-primary/20' : 'bg-surface/50 border border-white/10'}`}>
+                                <div className={`col-span-2 rounded-none p-4 flex flex-col justify-between group transition-all duration-500 shadow-2xl relative overflow-hidden ${sensScenario.active ? 'bg-primary/20 border-2 border-primary/40 ring-1 ring-primary/20' : 'bg-surface/50 border border-white/10'}`}>
                                     <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
                                     <div className="flex justify-between items-center mb-3 relative z-10">
                                         <div className="flex flex-col">
@@ -1992,7 +1996,7 @@ export const Phase6: React.FC<Props> = ({ params, setParams, pump, designFreq, t
                                                     thp: sensScenario.active ? sensScenario.thp : 0
                                                 });
                                             }}
-                                            className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all flex items-center gap-2.5 shadow-xl ${sensScenario.active ? 'bg-primary text-white shadow-glow-primary/50 animate-pulse-subtle scale-105' : 'bg-white/5 text-txt-muted hover:bg-white/10 hover:text-white border border-white/5'}`}
+                                            className={`px-4 py-2 rounded-none text-[10px] font-black uppercase transition-all flex items-center gap-2.5 shadow-xl ${sensScenario.active ? 'bg-primary text-white shadow-glow-primary/50 animate-pulse-subtle scale-105' : 'bg-white/5 text-txt-muted hover:bg-white/10 hover:text-white border border-white/5'}`}
                                         >
                                             <TrendingUp className={`w-3.5 h-3.5 ${sensScenario.active ? 'animate-bounce' : ''}`} />
                                             {sensScenario.active ? "En Sesión" : "Sensibilizar"}
@@ -2003,7 +2007,7 @@ export const Phase6: React.FC<Props> = ({ params, setParams, pump, designFreq, t
                                         <div className="flex flex-col gap-4 relative z-10 animate-fadeIn mt-2">
                                             <div className="flex flex-col gap-1.5">
                                                 <label className="text-[8px] font-black text-primary uppercase ml-1 opacity-70">Nuevo IP (BFPD/PSI)</label>
-                                                <div className="flex items-center bg-black/40 rounded-xl border border-white/30 overflow-hidden focus-within:border-primary/50 transition-all shadow-inner">
+                                                <div className="flex items-center bg-black/40 rounded-none border border-white/30 overflow-hidden focus-within:border-primary/50 transition-all shadow-inner">
                                                     <input
                                                         type="number"
                                                         value={sensScenario.ip}
@@ -2019,7 +2023,7 @@ export const Phase6: React.FC<Props> = ({ params, setParams, pump, designFreq, t
                                             </div>
                                             <div className="flex flex-col gap-1.5">
                                                 <label className="text-[8px] font-black text-secondary uppercase ml-1 opacity-70">Nueva THP (PSI)</label>
-                                                <div className="flex items-center bg-black/40 rounded-xl border border-white/30 overflow-hidden focus-within:border-secondary/50 transition-all shadow-inner">
+                                                <div className="flex items-center bg-black/40 rounded-none border border-white/30 overflow-hidden focus-within:border-secondary/50 transition-all shadow-inner">
                                                     <input
                                                         type="number"
                                                         value={sensScenario.thp}
@@ -2033,7 +2037,7 @@ export const Phase6: React.FC<Props> = ({ params, setParams, pump, designFreq, t
                                                     />
                                                 </div>
                                             </div>
-                                            <div className="mt-1 p-2 bg-primary/20 rounded-lg border border-primary/30 shadow-glow-primary/10">
+                                            <div className="mt-1 p-2 bg-primary/20 rounded-none border border-primary/30 shadow-glow-primary/10">
                                                 <p className="text-[7px] font-black text-primary uppercase leading-tight text-center tracking-widest animate-pulse">
                                                     PROYECCIÓN NODAL ACTIVA
                                                 </p>
@@ -2053,21 +2057,21 @@ export const Phase6: React.FC<Props> = ({ params, setParams, pump, designFreq, t
                             <div className="flex flex-col gap-4">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
-                                        <div className={`p-2 rounded-xl border transition-all ${isMaxCapActive ? 'bg-success/20 text-success border-success/40 shadow-glow-success/20' : 'bg-white/5 text-txt-muted border-white/10'}`}>
+                                        <div className={`p-2 rounded-none border transition-all ${isMaxCapActive ? 'bg-success/20 text-success border-success/40 shadow-glow-success/20' : 'bg-white/5 text-txt-muted border-white/10'}`}>
                                             <Zap className={`w-4 h-4 ${isMaxCapActive ? 'animate-pulse' : ''}`} />
                                         </div>
                                         <h3 className="text-[10px] font-black text-txt-main uppercase tracking-[0.2em]">Cálculo Capacidad Máxima</h3>
                                     </div>
                                     <button
                                         onClick={() => setIsMaxCapActive(!isMaxCapActive)}
-                                        className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all border ${isMaxCapActive ? 'bg-success text-white border-success shadow-glow-success' : 'bg-white/5 text-txt-muted border-white/10 hover:bg-white/10'}`}
+                                        className={`px-4 py-2 rounded-none text-[9px] font-black uppercase transition-all border ${isMaxCapActive ? 'bg-success text-white border-success shadow-glow-success' : 'bg-white/5 text-txt-muted border-white/10 hover:bg-white/10'}`}
                                     >
                                         {isMaxCapActive ? 'ACTIVADO' : 'ACTIVAR'}
                                     </button>
                                 </div>
 
                                 {isMaxCapActive && (
-                                    <div className="bg-success/5 rounded-2xl p-4 border border-success/20 animate-fadeIn">
+                                    <div className="bg-success/5 rounded-none p-4 border border-success/20 animate-fadeIn">
                                         <p className="text-[9px] font-medium text-success/80 leading-relaxed uppercase tracking-wider">
                                             Modo Simulación Activo. Ajuste la frecuencia para predecir el comportamiento del pozo y la bomba basándose en el IP y sistema calibrados.
                                         </p>
@@ -2078,22 +2082,22 @@ export const Phase6: React.FC<Props> = ({ params, setParams, pump, designFreq, t
                     </div>
                 </div>
 
-                <div className="col-span-12 lg:col-span-8 flex flex-col gap-3 overflow-y-auto custom-scrollbar pr-2 min-h-0 bg-success/[0.005] rounded-[3rem] p-0">
-                    <div className={`card-solid rounded-[2.5rem] border shadow-2xl overflow-hidden p-3 relative flex flex-col shrink-0 group transition-all duration-700 min-h-[450px] lg:h-[480px] ${isMaxCapActive ? 'border-success/40 ring-1 ring-success/20' : 'border-white/10'}`}>
+                <div className="col-span-12 lg:col-span-8 flex flex-col gap-3 overflow-y-auto custom-scrollbar pr-2 min-h-0 bg-success/[0.005] rounded-none p-0">
+                    <div className={`card-solid rounded-none border shadow-2xl overflow-hidden p-3 relative flex flex-col shrink-0 group transition-all duration-700 min-h-[450px] lg:h-[480px] ${isMaxCapActive ? 'border-success/40 ring-1 ring-success/20' : 'border-white/10'}`}>
                         <div className={`absolute inset-0 ${isMaxCapActive ? 'bg-success/5' : 'bg-secondary/5'} opacity-0 group-hover:opacity-100 transition-opacity`}></div>
                         <div className="absolute top-6 right-8 flex gap-3 z-20">
-                            <div className={`w-2.5 h-2.5 rounded-full ${isMaxCapActive ? 'bg-success animate-pulse shadow-glow-success' : 'bg-secondary animate-pulse shadow-glow-secondary'}`}></div>
-                            <div className="w-2.5 h-2.5 rounded-full bg-primary/40"></div>
+                            <div className={`w-2.5 h-2.5 rounded-none ${isMaxCapActive ? 'bg-success animate-pulse shadow-glow-success' : 'bg-secondary animate-pulse shadow-glow-secondary'}`}></div>
+                            <div className="w-2.5 h-2.5 rounded-none bg-primary/40"></div>
                         </div>
-                        <button onClick={() => setIsChartExpanded(true)} className="absolute bottom-6 right-8 z-30 p-3.5 glass-surface border border-white/10 rounded-2xl text-txt-muted hover:text-secondary hover:scale-110 transition-all opacity-0 group-hover:opacity-100 shadow-2xl">
+                        <button onClick={() => setIsChartExpanded(true)} className="absolute bottom-6 right-8 z-30 p-3.5 glass-surface border border-white/10 rounded-none text-txt-muted hover:text-secondary hover:scale-110 transition-all opacity-0 group-hover:opacity-100 shadow-2xl">
                             <Maximize2 className="w-6 h-6" />
                         </button>
 
                         {chartData.length > 0 ? (
                             <div className="w-full h-full relative">
                                 {(!fieldData.pip || fieldData.pip <= 0 || !fieldData.thp || fieldData.thp <= 0 || !fieldData.frequency || fieldData.frequency <= 0 || !fieldData.rate || fieldData.rate <= 5) && (
-                                    <div className="absolute inset-0 z-40 bg-surface/80 backdrop-blur-md flex flex-col items-center justify-center rounded-[2rem] p-10 text-center animate-fadeIn">
-                                        <div className="p-6 bg-warning/10 rounded-full border border-warning/30 animate-pulse shadow-glow-warning/20 mb-6">
+                                    <div className="absolute inset-0 z-40 bg-surface/80 backdrop-blur-md flex flex-col items-center justify-center rounded-none p-10 text-center animate-fadeIn">
+                                        <div className="p-6 bg-warning/10 rounded-none border border-warning/30 animate-pulse shadow-glow-warning/20 mb-6">
                                             <AlertTriangle className="w-12 h-12 text-warning" />
                                         </div>
                                         <h3 className="text-2xl font-black text-warning uppercase tracking-tighter mb-4">Telemetría Incompleta</h3>
@@ -2102,23 +2106,23 @@ export const Phase6: React.FC<Props> = ({ params, setParams, pump, designFreq, t
                                         </p>
                                         <div className="flex flex-wrap justify-center gap-3">
                                             {(!fieldData.pip || fieldData.pip <= 0) && (
-                                                <div className="px-3 py-1.5 bg-danger/20 border border-danger/40 rounded-lg text-danger font-black text-[10px] uppercase tracking-widest flex items-center gap-2 shadow-glow-danger/20">
-                                                    <div className="w-1.5 h-1.5 rounded-full bg-danger animate-ping"></div> FALTA PIP
+                                                <div className="px-3 py-1.5 bg-danger/20 border border-danger/40 rounded-none text-danger font-black text-[10px] uppercase tracking-widest flex items-center gap-2 shadow-glow-danger/20">
+                                                    <div className="w-1.5 h-1.5 rounded-none bg-danger animate-ping"></div> FALTA PIP
                                                 </div>
                                             )}
                                             {(!fieldData.thp || fieldData.thp <= 0) && (
-                                                <div className="px-3 py-1.5 bg-danger/20 border border-danger/40 rounded-lg text-danger font-black text-[10px] uppercase tracking-widest flex items-center gap-2 shadow-glow-danger/20">
-                                                    <div className="w-1.5 h-1.5 rounded-full bg-danger animate-ping"></div> FALTA THP
+                                                <div className="px-3 py-1.5 bg-danger/20 border border-danger/40 rounded-none text-danger font-black text-[10px] uppercase tracking-widest flex items-center gap-2 shadow-glow-danger/20">
+                                                    <div className="w-1.5 h-1.5 rounded-none bg-danger animate-ping"></div> FALTA THP
                                                 </div>
                                             )}
                                             {(!fieldData.frequency || fieldData.frequency <= 0) && (
-                                                <div className="px-3 py-1.5 bg-danger/20 border border-danger/40 rounded-lg text-danger font-black text-[10px] uppercase tracking-widest flex items-center gap-2 shadow-glow-danger/20">
-                                                    <div className="w-1.5 h-1.5 rounded-full bg-danger animate-ping"></div> FALTA FRECUENCIA
+                                                <div className="px-3 py-1.5 bg-danger/20 border border-danger/40 rounded-none text-danger font-black text-[10px] uppercase tracking-widest flex items-center gap-2 shadow-glow-danger/20">
+                                                    <div className="w-1.5 h-1.5 rounded-none bg-danger animate-ping"></div> FALTA FRECUENCIA
                                                 </div>
                                             )}
                                             {(!fieldData.rate || fieldData.rate <= 5) && (
-                                                <div className="px-3 py-1.5 bg-danger/20 border border-danger/40 rounded-lg text-danger font-black text-[10px] uppercase tracking-widest flex items-center gap-2 shadow-glow-danger/20">
-                                                    <div className="w-1.5 h-1.5 rounded-full bg-danger animate-ping"></div> FALTA CAUDAL
+                                                <div className="px-3 py-1.5 bg-danger/20 border border-danger/40 rounded-none text-danger font-black text-[10px] uppercase tracking-widest flex items-center gap-2 shadow-glow-danger/20">
+                                                    <div className="w-1.5 h-1.5 rounded-none bg-danger animate-ping"></div> FALTA CAUDAL
                                                 </div>
                                             )}
                                         </div>
@@ -2137,7 +2141,7 @@ export const Phase6: React.FC<Props> = ({ params, setParams, pump, designFreq, t
                             </div>
                         ) : (
                             <div className="flex-1 flex flex-col items-center justify-center text-txt-muted opacity-30 uppercase font-black tracking-[0.4em] gap-8">
-                                <div className="p-10 bg-surface rounded-full border border-white/10 animate-float">
+                                <div className="p-10 bg-surface rounded-none border border-white/10 animate-float">
                                     <Activity className="w-20 h-20 text-secondary/40" />
                                 </div>
                                 <span className="text-sm">{pump ? "Syncing Field Telemetry..." : "Hardware Identification Required"}</span>
@@ -2149,8 +2153,8 @@ export const Phase6: React.FC<Props> = ({ params, setParams, pump, designFreq, t
                                 {simAlerts.length > 0 && (
                                     <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar no-scrollbar">
                                         {simAlerts.map((alert, idx) => (
-                                            <div key={idx} className={`shrink-0 px-4 py-2 rounded-xl flex items-center gap-3 border shadow-2xl backdrop-blur-md animate-pulse-slow ${alert.type === 'danger' ? 'bg-danger/20 border-danger/40 text-danger' : 'bg-warning/20 border-warning/40 text-warning'}`}>
-                                                <div className={`w-1.5 h-1.5 rounded-full ${alert.type === 'danger' ? 'bg-danger shadow-glow-danger' : 'bg-warning shadow-glow-warning'}`}></div>
+                                            <div key={idx} className={`shrink-0 px-4 py-2 rounded-none flex items-center gap-3 border shadow-2xl backdrop-blur-md animate-pulse-slow ${alert.type === 'danger' ? 'bg-danger/20 border-danger/40 text-danger' : 'bg-warning/20 border-warning/40 text-warning'}`}>
+                                                <div className={`w-1.5 h-1.5 rounded-none ${alert.type === 'danger' ? 'bg-danger shadow-glow-danger' : 'bg-warning shadow-glow-warning'}`}></div>
                                                 <div className="flex flex-col">
                                                     <span className="text-[7px] font-black uppercase opacity-60 tracking-widest">{alert.field}</span>
                                                     <span className="text-[10px] font-black uppercase tracking-tighter whitespace-nowrap">{alert.message} ({alert.value})</span>
@@ -2159,7 +2163,7 @@ export const Phase6: React.FC<Props> = ({ params, setParams, pump, designFreq, t
                                         ))}
                                     </div>
                                 )}
-                                <div className="bg-surface/90 border border-success/40 rounded-2xl p-4 shadow-glow-success/10 flex items-center justify-between gap-6 relative overflow-hidden">
+                                <div className="bg-surface/90 border border-success/40 rounded-none p-4 shadow-glow-success/10 flex items-center justify-between gap-6 relative overflow-hidden">
                                     <div className="absolute inset-0 bg-success/5 animate-pulse"></div>
                                     <div className="flex flex-col relative z-10">
                                         <span className="text-[8px] font-black text-success uppercase tracking-widest mb-1">Frecuencia Simulación</span>
@@ -2172,7 +2176,7 @@ export const Phase6: React.FC<Props> = ({ params, setParams, pump, designFreq, t
                                         step="0.5"
                                         value={simFreq}
                                         onChange={(e) => setSimFreq(parseFloat(e.target.value))}
-                                        className="flex-1 h-1.5 bg-success/20 rounded-lg appearance-none cursor-pointer accent-success relative z-10"
+                                        className="flex-1 h-1.5 bg-success/20 rounded-none appearance-none cursor-pointer accent-success relative z-10"
                                     />
                                     <div className="flex items-center gap-4 border-l border-white/10 pl-6 relative z-10">
                                         <div className="flex flex-col">
@@ -2193,10 +2197,10 @@ export const Phase6: React.FC<Props> = ({ params, setParams, pump, designFreq, t
                     {showSensModal && createPortal(
                         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
                             <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => setShowSensModal(false)}></div>
-                            <div className="bg-canvas border border-white/10 rounded-[2.5rem] w-full max-w-lg shadow-[0_0_100px_rgba(0,0,0,0.5)] relative z-10 overflow-hidden animate-zoomIn border-t-2 border-t-primary/40">
+                            <div className="bg-canvas border border-white/10 rounded-none w-full max-w-lg shadow-[0_0_100px_rgba(0,0,0,0.5)] relative z-10 overflow-hidden animate-zoomIn border-t-2 border-t-primary/40">
                                 <div className="p-8 border-b border-white/5 flex justify-between items-center bg-surface-raised">
                                     <div className="flex items-center gap-4">
-                                        <div className="p-3 bg-primary/20 rounded-2xl text-primary border border-primary/30">
+                                        <div className="p-3 bg-primary/20 rounded-none text-primary border border-primary/30">
                                             <TrendingUp className="w-6 h-6" />
                                         </div>
                                         <div>
@@ -2204,7 +2208,7 @@ export const Phase6: React.FC<Props> = ({ params, setParams, pump, designFreq, t
                                             <p className="text-[10px] text-txt-muted font-black uppercase mt-2 opacity-50 tracking-widest italic">Simulación de Reservorio y Superficie</p>
                                         </div>
                                     </div>
-                                    <button onClick={() => setShowSensModal(false)} className="p-2 hover:bg-white/5 rounded-full transition-colors">
+                                    <button onClick={() => setShowSensModal(false)} className="p-2 hover:bg-white/5 rounded-none transition-colors">
                                         <X className="w-7 h-7 text-txt-muted hover:text-white" />
                                     </button>
                                 </div>
@@ -2221,7 +2225,7 @@ export const Phase6: React.FC<Props> = ({ params, setParams, pump, designFreq, t
                                                     type="number"
                                                     value={sensScenario.ip}
                                                     onChange={(e) => setSensScenario({ ...sensScenario, ip: parseFloat(e.target.value) || 0 })}
-                                                    className="w-full bg-surface-light border border-white/10 p-6 rounded-[1.5rem] text-3xl font-black text-primary outline-none focus:border-primary/50 transition-all font-mono relative z-10"
+                                                    className="w-full bg-surface-light border border-white/10 p-6 rounded-none text-3xl font-black text-primary outline-none focus:border-primary/50 transition-all font-mono relative z-10"
                                                     placeholder="0.0"
                                                 />
                                                 <span className="absolute right-6 top-1/2 -translate-y-1/2 text-xs font-black text-txt-muted opacity-30 z-10">BFPD/PSI</span>
@@ -2238,7 +2242,7 @@ export const Phase6: React.FC<Props> = ({ params, setParams, pump, designFreq, t
                                                     type="number"
                                                     value={sensScenario.thp}
                                                     onChange={(e) => setSensScenario({ ...sensScenario, thp: parseFloat(e.target.value) || 0 })}
-                                                    className="w-full bg-surface-light border border-white/10 p-6 rounded-[1.5rem] text-3xl font-black text-secondary outline-none focus:border-secondary/50 transition-all font-mono relative z-10"
+                                                    className="w-full bg-surface-light border border-white/10 p-6 rounded-none text-3xl font-black text-secondary outline-none focus:border-secondary/50 transition-all font-mono relative z-10"
                                                     placeholder="0.0"
                                                 />
                                                 <span className="absolute right-6 top-1/2 -translate-y-1/2 text-xs font-black text-txt-muted opacity-30 z-10">PSI</span>
@@ -2252,7 +2256,7 @@ export const Phase6: React.FC<Props> = ({ params, setParams, pump, designFreq, t
                                                 setSensScenario({ active: false, ip: 0, thp: 0 });
                                                 setShowSensModal(false);
                                             }}
-                                            className="flex-1 bg-white/5 hover:bg-white/10 text-txt-muted text-[11px] font-black uppercase py-5 rounded-2xl border border-white/10 transition-all hover:text-white"
+                                            className="flex-1 bg-white/5 hover:bg-white/10 text-txt-muted text-[11px] font-black uppercase py-5 rounded-none border border-white/10 transition-all hover:text-white"
                                         >
                                             Reset / Limpiar
                                         </button>
@@ -2261,7 +2265,7 @@ export const Phase6: React.FC<Props> = ({ params, setParams, pump, designFreq, t
                                                 setSensScenario({ ...sensScenario, active: true });
                                                 setShowSensModal(false);
                                             }}
-                                            className="flex-1 bg-primary text-white text-[11px] font-black uppercase py-5 rounded-2xl shadow-glow-primary/30 hover:scale-[1.03] active:scale-[0.97] transition-all"
+                                            className="flex-1 bg-primary text-white text-[11px] font-black uppercase py-5 rounded-none shadow-glow-primary/30 hover:scale-[1.03] active:scale-[0.97] transition-all"
                                         >
                                             Ejecutar Sensibilidad
                                         </button>
@@ -2274,16 +2278,16 @@ export const Phase6: React.FC<Props> = ({ params, setParams, pump, designFreq, t
 
                     {/* CONSOLIDATED CENTRAL OPERATION BAR */}
                     <div className="flex items-center justify-center gap-6 px-4 py-1 relative">
-                        <div className="flex bg-surface-light/40 backdrop-blur-md p-1 rounded-[1.5rem] border border-white/5 shadow-2xl relative z-10">
+                        <div className="flex bg-surface-light/40 backdrop-blur-md p-1 rounded-none border border-white/5 shadow-2xl relative z-10">
                             <button
                                 onClick={() => setViewMode('telemetry')}
-                                className={`flex items-center gap-3 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all duration-500 ${viewMode === 'telemetry' ? 'bg-secondary text-black shadow-glow-secondary/20 scale-[1.02]' : 'text-txt-muted hover:text-white hover:bg-white/5'}`}
+                                className={`flex items-center gap-3 px-6 py-2.5 rounded-none text-[10px] font-black uppercase transition-all duration-500 ${viewMode === 'telemetry' ? 'bg-secondary text-black shadow-glow-secondary/20 scale-[1.02]' : 'text-txt-muted hover:text-white hover:bg-white/5'}`}
                             >
                                 <Monitor className="w-3.5 h-3.5" /> Telemetría
                             </button>
                             <button
                                 onClick={() => setViewMode('sensitivity')}
-                                className={`flex items-center gap-3 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all duration-500 ${viewMode === 'sensitivity' ? 'bg-primary text-white shadow-glow-primary/20 scale-[1.02]' : 'text-txt-muted hover:text-white hover:bg-white/5'}`}
+                                className={`flex items-center gap-3 px-6 py-2.5 rounded-none text-[10px] font-black uppercase transition-all duration-500 ${viewMode === 'sensitivity' ? 'bg-primary text-white shadow-glow-primary/20 scale-[1.02]' : 'text-txt-muted hover:text-white hover:bg-white/5'}`}
                             >
                                 <TrendingUp className="w-3.5 h-3.5" /> Sensibilidad VSD
                             </button>
@@ -2292,7 +2296,7 @@ export const Phase6: React.FC<Props> = ({ params, setParams, pump, designFreq, t
 
                             <button
                                 onClick={() => setIsVsdTableExpanded(!isVsdTableExpanded)}
-                                className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all duration-500 ${isVsdTableExpanded ? 'bg-warning/20 text-warning border border-warning/30 shadow-glow-warning/10' : 'text-txt-muted hover:text-txt-main hover:bg-white/5'}`}
+                                className={`flex items-center gap-2 px-6 py-2.5 rounded-none text-[10px] font-black uppercase transition-all duration-500 ${isVsdTableExpanded ? 'bg-warning/20 text-warning border border-warning/30 shadow-glow-warning/10' : 'text-txt-muted hover:text-txt-main hover:bg-white/5'}`}
                             >
                                 <Activity className="w-3.5 h-3.5 text-warning" />
                                 {isVsdTableExpanded ? 'Modo Simple' : 'Modo Detallado (1Hz)'}
@@ -2301,7 +2305,7 @@ export const Phase6: React.FC<Props> = ({ params, setParams, pump, designFreq, t
 
                         {/* Floating Status Indicator */}
                         <div className="absolute right-8 flex items-center gap-4 text-[9px] font-black text-txt-muted uppercase tracking-[0.3em] opacity-40">
-                            <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-success"></div> Live</div>
+                            <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-none bg-success"></div> Live</div>
                             <span>Node: {String((params as any)?.id || 'GEN-01').slice(-6)}</span>
                         </div>
                     </div>
@@ -2350,7 +2354,7 @@ export const Phase6: React.FC<Props> = ({ params, setParams, pump, designFreq, t
                             </div>
                         </>
                     ) : (
-                        <div className="card-solid border border-white/10 rounded-[2rem] overflow-hidden flex flex-col min-h-[500px] shadow-2xl animate-fadeIn">
+                        <div className="card-solid border border-white/10 rounded-none overflow-hidden flex flex-col min-h-[500px] shadow-2xl animate-fadeIn">
                             <div className="px-5 py-3 border-b border-white/5 flex justify-between items-center bg-surface-raised/50">
                                 <div className="flex items-center gap-4">
                                     <h3 className="text-xs font-black text-txt-main uppercase tracking-tight border-l-2 border-primary pl-3">Simulación VSD (30-80 Hz)</h3>
@@ -2358,7 +2362,7 @@ export const Phase6: React.FC<Props> = ({ params, setParams, pump, designFreq, t
                                 </div>
                                 <div className="flex items-center gap-4">
                                     <div className="flex items-center gap-2">
-                                        <div className="w-3 h-3 rounded-full bg-blue-500 shadow-glow-primary animate-pulse"></div>
+                                        <div className="w-3 h-3 rounded-none bg-blue-500 shadow-glow-primary animate-pulse"></div>
                                         <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Frecuencia Campo: {fieldData.frequency} Hz</span>
                                     </div>
                                 </div>
@@ -2397,24 +2401,24 @@ export const Phase6: React.FC<Props> = ({ params, setParams, pump, designFreq, t
                                                 >
                                                     <td className={`${tdBaseClass} ${stickyBgClass} px-5 py-4 whitespace-nowrap sticky left-0 z-30 shadow-[4px_0_10px_rgba(0,0,0,0.3)] text-white font-black border-r border-white/10`}>
                                                         <div className="flex items-center gap-3">
-                                                            {row.isActual && <div className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-glow-primary animate-pulse"></div>}
-                                                            {row.isDanger && !row.isActual && <div className="w-2.5 h-2.5 rounded-full bg-danger shadow-glow-danger animate-pulse"></div>}
-                                                            {row.isWarning && !row.isActual && <div className="w-2.5 h-2.5 rounded-full bg-amber-500 shadow-glow-warning"></div>}
-                                                            {row.isSuccess && !row.isActual && <div className="w-2 h-2 rounded-full bg-success/40"></div>}
+                                                            {row.isActual && <div className="w-2.5 h-2.5 rounded-none bg-blue-500 shadow-glow-primary animate-pulse"></div>}
+                                                            {row.isDanger && !row.isActual && <div className="w-2.5 h-2.5 rounded-none bg-danger shadow-glow-danger animate-pulse"></div>}
+                                                            {row.isWarning && !row.isActual && <div className="w-2.5 h-2.5 rounded-none bg-amber-500 shadow-glow-warning"></div>}
+                                                            {row.isSuccess && !row.isActual && <div className="w-2 h-2 rounded-none bg-success/40"></div>}
 
                                                             <span className="text-sm font-black tracking-tight">
                                                                 {row.hz} <small className="opacity-40 text-[9px]">Hz</small>
                                                             </span>
-                                                            {row.isActual && <span className="text-[9px] text-primary px-2 py-0.5 rounded border border-primary/30 font-black uppercase tracking-widest bg-primary/5">ACTUAL</span>}
+                                                            {row.isActual && <span className="text-[9px] text-primary px-2 py-0.5 rounded-none border border-primary/30 font-black uppercase tracking-widest bg-primary/5">ACTUAL</span>}
                                                             {row.violations.length > 0 && !row.isActual && !row.noIntersection && (
                                                                 <div className="flex gap-1.5">
                                                                     {row.violations.map((v, idx) => (
-                                                                        <div key={idx} className={`w-2 h-2 rounded-full ${v.type === 'danger' ? 'bg-danger shadow-glow-danger' : 'bg-warning shadow-glow-warning'}`} title={v.reason}></div>
+                                                                        <div key={idx} className={`w-2 h-2 rounded-none ${v.type === 'danger' ? 'bg-danger shadow-glow-danger' : 'bg-warning shadow-glow-warning'}`} title={v.reason}></div>
                                                                     ))}
                                                                 </div>
                                                             )}
                                                             {row.noIntersection && (
-                                                                <span className="text-[9px] bg-white/10 text-txt-muted px-2 py-0.5 rounded-md font-black tracking-wide opacity-40">
+                                                                <span className="text-[9px] bg-white/10 text-txt-muted px-2 py-0.5 rounded-none font-black tracking-wide opacity-40">
                                                                     Sin Convergencia
                                                                 </span>
                                                             )}
@@ -2481,3 +2485,4 @@ export const Phase6: React.FC<Props> = ({ params, setParams, pump, designFreq, t
         </>
     );
 };
+export const Phase6 = React.memo(Phase6Component);

@@ -22,7 +22,7 @@ interface Props {
     };
 }
 
-export const VisualESPStack: React.FC<Props> = ({ pump, motor, params, results, frequency, cable, selectedVSD, mode = 'ui', health }) => {
+const VisualESPStackComponent: React.FC<Props> = ({ pump, motor, params, results, frequency, cable, selectedVSD, mode = 'ui', health }) => {
     const { t } = useLanguage();
     const { theme } = useTheme();
     const isDark = theme === 'fusion' || theme === 'cyber';
@@ -89,16 +89,7 @@ export const VisualESPStack: React.FC<Props> = ({ pump, motor, params, results, 
     const perfsVisualY = espBottomY + (ratHoleH * 0.5);
     const perfsH = 80;
 
-    const bubbles = useMemo(() => {
-        return Array.from({ length: 80 }).map((_, i) => ({
-            id: i,
-            side: Math.random() > 0.5 ? 'left' : 'right',
-            offset: (isReport ? 35 : 50) + Math.random() * 80,
-            size: 2.5 + Math.random() * 5,
-            delay: Math.random() * 6,
-            duration: 2.5 + Math.random() * 5
-        }));
-    }, [isReport]);
+    const bubbles = useMemo(() => [], []);
 
     const safeResults = {
         pip: results?.pip ?? 0,
@@ -714,30 +705,11 @@ export const VisualESPStack: React.FC<Props> = ({ pump, motor, params, results, 
                         </filter>
 
                         <style>{`
-                            @keyframes rise {
-                                0%   { transform: translateY(0); opacity: 0; }
-                                20%  { opacity: 0.45; }
-                                100% { transform: translateY(-${Math.max(0, perfsVisualY - fluidY)}px); opacity: 0; }
-                            }
-                            .oil-bubble { animation: rise linear infinite; }
-                            .cable-flow { 
-                                stroke-dasharray: 8 16; 
-                                stroke-dashoffset: 100; 
-                                animation: flow 3s linear infinite; 
-                            }
-                            @keyframes flow { to { stroke-dashoffset: 0; } }
-                            .component-hover:hover { filter: brightness(1.15); cursor: pointer; }
-                            @keyframes fluidPulse {
-                                0%, 100% { opacity: 0.9; }
-                                50%       { opacity: 1; }
-                            }
-                            .fluid-layer { animation: fluidPulse 6s ease-in-out infinite; }
-                            @keyframes flowIn {
-                                0% { stroke-dashoffset: 100; opacity: 0; }
-                                50% { opacity: 0.8; }
-                                100% { stroke-dashoffset: 0; opacity: 0; }
-                            }
-                            .flow-line { stroke-dasharray: 20, 80; animation: flowIn 3s infinite linear; }
+                            .oil-bubble { display: none; }
+                            .cable-flow { opacity: 0.3; }
+                            .component-hover:hover { filter: brightness(1.1); cursor: pointer; }
+                            .fluid-layer { opacity: 0.95; }
+                            .flow-line { opacity: 0.3; }
                         `}</style>
                     </defs>
 
@@ -883,34 +855,16 @@ export const VisualESPStack: React.FC<Props> = ({ pump, motor, params, results, 
                                                 {[-trafW * 0.3, 0, trafW * 0.3].map((bOff, bi) => (
                                                     <g key={bi} transform={`translate(${trafX + trafW / 2 + bOff}, ${trafY - (isReport ? 30 : 25)})`}>
                                                         {/* Core Bolt */}
-                                                        <path d="M -8 0 L 0 -20 L 8 -10 L 15 -30" fill="none" stroke={coreColor} strokeWidth="2.5" filter="url(#elec-glow-strong)">
-                                                            <animate attributeName="opacity" values="0;1;0.2;1;0" dur="0.8s" repeatCount="indefinite" begin={`${bi * 0.2}s`} />
-                                                            <animate attributeName="d" values="M -8 0 L 0 -20 L 8 -10 L 15 -30; M -4 -4 L 8 -15 L 0 -25 L 12 -40; M -8 0 L 0 -20 L 8 -10 L 15 -30" dur="0.15s" repeatCount="indefinite" />
-                                                        </path>
+                                                        <path d="M -8 0 L 0 -20 L 8 -10 L 15 -30" fill="none" stroke={coreColor} strokeWidth="2.5" opacity="0.4" />
                                                         {/* Outer Glow Path */}
-                                                        <path d="M -8 0 L 0 -20 L 8 -10 L 15 -30" fill="none" stroke={glowColor} strokeWidth="5" opacity={isDark ? 0.3 : 0.5} filter="url(#elec-glow-strong)">
-                                                            <animate attributeName="opacity" values="0;0.3;0" dur="0.8s" repeatCount="indefinite" begin={`${bi * 0.2}s`} />
-                                                        </path>
+                                                        <path d="M -8 0 L 0 -20 L 8 -10 L 15 -30" fill="none" stroke={glowColor} strokeWidth="5" opacity="0.1" />
                                                     </g>
                                                 ))}
 
-                                                {/* Sparks around the VSD Vents (Theme Aware) */}
-                                                {Array.from({ length: 8 }).map((_, i) => (
-                                                    <circle key={i} r="2.5" fill={sparkColor}>
-                                                        <animateMotion
-                                                            path={`M ${cabX + cabW * 0.6} ${cabY + 40} q 30 -40 60 0 t 60 0`}
-                                                            dur={`${1.5 + i * 0.5}s`}
-                                                            repeatCount="indefinite"
-                                                        />
-                                                        <animate attributeName="opacity" values="0;1;0" dur="0.4s" repeatCount="indefinite" />
-                                                    </circle>
-                                                ))}
+
 
                                                 {/* High Voltage Arc (Transformer to VSD - Theme Aware) */}
-                                                <path d={`M${trafX} ${trafY + 15} Q ${trafX - 30} ${trafY - 20}, ${cabX + cabW} ${cabY + 20}`} fill="none" stroke={glowColor} strokeWidth="3" strokeDasharray="8 4" filter="url(#elec-glow-strong)">
-                                                    <animate attributeName="stroke-dashoffset" from="100" to="0" dur="1s" repeatCount="indefinite" />
-                                                    <animate attributeName="opacity" values="0.4;1;0.4" dur="0.5s" repeatCount="indefinite" />
-                                                </path>
+                                                <path d={`M${trafX} ${trafY + 15} Q ${trafX - 30} ${trafY - 20}, ${cabX + cabW} ${cabY + 20}`} fill="none" stroke={glowColor} strokeWidth="1.5" opacity="0.2" />
                                             </>
                                         );
                                     })()}
@@ -1459,3 +1413,5 @@ export const VisualESPStack: React.FC<Props> = ({ pump, motor, params, results, 
         </div >
     );
 };
+
+export const VisualESPStack = React.memo(VisualESPStackComponent);

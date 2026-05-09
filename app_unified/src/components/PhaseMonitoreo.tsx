@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useDeferredValue } from 'react';
 import {
     Activity, Gauge, Thermometer, Zap, AlertTriangle, ShieldCheck,
     Monitor, Clock, LayoutGrid, List, Search, ArrowUpRight,
@@ -14,7 +14,6 @@ import {
     LineChart, Line, AreaChart, Area, Legend
 } from 'recharts';
 import * as XLSX from 'xlsx';
-
 import { SystemParams, EspPump, EspMotor, EspVSD, MonitoringEvent, WellHealthStatus, PredictiveData, ProductionTest, SurveyPoint, HistoryMatchData, WellFleetItem, PipeData } from '@/types';
 import { calculateSystemResults, findIntersection, generateMultiCurveData, calculateTDH, calculateBaseHead, getShaftLimitHp, interpolateTVD, calculateFluidProperties, calculateOperatingRange, calculateAffinityHead, calculateSystemTDH, calculateAOF } from '@/utils';
 import { PerformanceCurveMultiAxis } from './PerformanceCurveMultiAxis';
@@ -28,6 +27,35 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { DesignDataImport } from './DesignDataImport';
 import { MatchHistorico } from './MatchHistorico';
 import { AiMemoryService } from '../services/AiMemoryService';
+
+// --- PERFORMANCE OPTIMIZED SUB-COMPONENTS ---
+const WellListItem = React.memo(({ well, health, isActive, isMechVerified, onSelect }: any) => {
+    return (
+        <button
+            onClick={() => onSelect(well.id)}
+            className={`w-full flex items-center gap-4 px-4 py-3 rounded-none transition-all text-left mb-1 ${isActive
+                ? 'bg-primary/20 border border-primary/30'
+                : 'hover:bg-white/5 border border-transparent'
+                }`}
+        >
+            <div className={`w-2.5 h-2.5 rounded-none shrink-0 ${health >= 85 ? 'bg-success shadow-glow-success' : health >= 60 ? 'bg-warning' : 'bg-danger shadow-glow-danger'}`}></div>
+            <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                    <span className={`text-sm font-black uppercase tracking-tight truncate ${isActive ? 'text-primary' : 'text-txt-main'}`}>{well.name}</span>
+                    {isMechVerified && (
+                        <span className="bg-cyan-500/10 text-cyan-500 border border-cyan-500/30 px-1.5 py-0.5 rounded text-[7px] font-black uppercase tracking-widest">MECH</span>
+                    )}
+                </div>
+                <span className="text-[9px] font-bold text-txt-muted uppercase tracking-widest">
+                    {Math.round(well.currentRate)} BPD • {well.productionTest.freq || 0} Hz
+                </span>
+            </div>
+            <span className={`text-xs font-black ${health >= 85 ? 'text-success' : health >= 60 ? 'text-warning' : 'text-danger'}`}>{health}%</span>
+        </button>
+    );
+});
+
+
 
 const getApiKey = () => {
     // Nueva clave nivel gratuito proporcionada por el usuario
@@ -241,7 +269,7 @@ const getOptimizationPath = (well: WellFleetItem, capacity: any, pump: EspPump |
 };
 // --- AI PREDICTIVE WIDGET ---
 // --- AI PREDICTIVE WIDGET (Optimized with useMemo) ---
-const PredictiveWidget = ({ selectedWell, wellMatchParams, pump, computeWellCapacity, getOptimizationPath }: any) => {
+const PredictiveWidget = React.memo(({ selectedWell, wellMatchParams, pump, computeWellCapacity, getOptimizationPath }: any) => {
     const [isMinimized, setIsMinimized] = useState(false);
 
     // Solo calculamos si el widget está expandido para ahorrar CPU
@@ -283,7 +311,7 @@ const PredictiveWidget = ({ selectedWell, wellMatchParams, pump, computeWellCapa
             <div className="absolute top-24 right-8 z-50 pointer-events-auto">
                 <button
                     onClick={() => setIsMinimized(false)}
-                    className="glass-surface border border-primary/30 bg-gradient-to-tr from-primary/20 to-transparent rounded-full p-4 shadow-[0_20px_40px_rgba(34,211,238,0.4)] hover:bg-primary/20 transition-all flex items-center justify-center animate-pulse"
+                    className="glass-surface border border-primary/30 bg-gradient-to-tr from-primary/20 to-transparent rounded-none p-4 shadow-[0_20px_40px_rgba(34,211,238,0.4)] hover:bg-primary/20 transition-all flex items-center justify-center animate-pulse"
                 >
                     <Brain className="w-6 h-6 text-primary drop-shadow-[0_0_5px_rgba(34,211,238,0.8)]" />
                 </button>
@@ -298,12 +326,12 @@ const PredictiveWidget = ({ selectedWell, wellMatchParams, pump, computeWellCapa
 
     return (
         <div className="absolute top-24 right-8 z-40 pointer-events-none animate-slideUp">
-            <div className="glass-surface border border-primary/30 bg-gradient-to-br from-primary/10 via-surface to-surface rounded-[2rem] rounded-tr-xl p-6 shadow-[0_30px_50px_-10px_rgba(34,211,238,0.4)] w-[420px] flex flex-col gap-4 group transition-all backdrop-blur-3xl relative pointer-events-auto">
-                <button onClick={() => setIsMinimized(true)} className="absolute top-5 right-5 p-2 rounded-full hover:bg-white/10 text-primary border border-primary/20 bg-primary/5 transition-all z-10">
+            <div className="glass-surface border border-primary/30 bg-gradient-to-br from-primary/10 via-surface to-surface rounded-none rounded-none p-6 shadow-[0_30px_50px_-10px_rgba(34,211,238,0.4)] w-[420px] flex flex-col gap-4 group transition-all backdrop-blur-3xl relative pointer-events-auto">
+                <button onClick={() => setIsMinimized(true)} className="absolute top-5 right-5 p-2 rounded-none hover:bg-white/10 text-primary border border-primary/20 bg-primary/5 transition-all z-10">
                     <Minimize2 className="w-4 h-4" />
                 </button>
                 <div className="flex items-center gap-4 border-b border-white/5 pb-4 pr-10">
-                    <div className="p-3 bg-primary/20 rounded-xl ring-1 ring-primary/40 animate-[pulse_3s_ease-in-out_infinite]">
+                    <div className="p-3 bg-primary/20 rounded-none ring-1 ring-primary/40 animate-[pulse_3s_ease-in-out_infinite]">
                         <Brain className="w-6 h-6 text-primary drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]" />
                     </div>
                     <div>
@@ -337,13 +365,13 @@ const PredictiveWidget = ({ selectedWell, wellMatchParams, pump, computeWellCapa
             </div>
         </div>
     );
-};
+});
 
 // --- SUB-COMPONENTS ---
 
 const MetricCard = ({ label, value, unit, icon: Icon, color = 'primary', alert = false }: any) => (
-    <div className={`glass-surface rounded-2xl border ${alert ? 'border-danger/50 shadow-glow-danger/20' : 'border-white/5'} p-4 flex flex-col justify-between h-28 relative overflow-hidden group transition-all`}>
-        <div className={`absolute -right-4 -top-4 w-16 h-16 ${color === 'primary' ? 'bg-primary/5' : color === 'secondary' ? 'bg-secondary/5' : 'bg-danger/5'} blur-2xl rounded-full`}></div>
+    <div className={`glass-surface rounded-none border ${alert ? 'border-danger/50 shadow-glow-danger/20' : 'border-white/5'} p-4 flex flex-col justify-between h-28 relative overflow-hidden group transition-all`}>
+        <div className={`absolute -right-4 -top-4 w-16 h-16 ${color === 'primary' ? 'bg-primary/5' : color === 'secondary' ? 'bg-secondary/5' : 'bg-danger/5'} blur-2xl rounded-none`}></div>
         <div className="flex justify-between items-start z-10">
             <span className="text-[10px] font-black text-txt-muted uppercase tracking-widest opacity-60">{label}</span>
             <Icon className={`w-4 h-4 ${color === 'primary' ? 'text-primary' : color === 'secondary' ? 'text-secondary' : 'text-danger'} ${alert ? 'animate-pulse' : ''}`} />
@@ -380,7 +408,7 @@ const HealthTag = ({ status, label }: { status: string, label: string }) => {
     return (
         <div className="flex items-center justify-between gap-12 w-full">
             <span className="text-[9px] font-black text-txt-muted uppercase tracking-widest opacity-60">{label}</span>
-            <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest border ${colors[status] || colors.inactive}`}>
+            <span className={`px-2 py-0.5 rounded-none text-[8px] font-black uppercase tracking-widest border ${colors[status] || colors.inactive}`}>
                 {displayLabel}
             </span>
         </div>
@@ -389,7 +417,7 @@ const HealthTag = ({ status, label }: { status: string, label: string }) => {
 
 // --- HEALTH CALCULATION UTILITY ---
 // --- RIGOROUS HEALTH CALCULATION UTILITY ---
-const getWellHealthScore = (well: WellFleetItem, customDesigns?: Record<string, any>, defaultPump?: any) => {
+const getWellHealthScore = (well: WellFleetItem, design?: SystemParams | null, defaultPump?: any) => {
     const hasMatch = well.productionTest.hasMatchData && (well.currentRate > 5 || well.productionTest.pip > 0 || well.productionTest.thp > 0);
     if (!hasMatch) return 0;
 
@@ -412,8 +440,6 @@ const getWellHealthScore = (well: WellFleetItem, customDesigns?: Record<string, 
 
     let performanceScore = 100;
 
-    // We dramatically soften power/rate deviation penalties to avoid false "Yellow/Orange" alerts 
-    // when the well is physically operating fine just because a rigid target was missed.
     if (well.consumptionTheo > 0) {
         const pwrDev = Math.abs(well.consumptionReal - well.consumptionTheo) / well.consumptionTheo;
         if (pwrDev > 0.25) performanceScore -= 30;
@@ -426,20 +452,15 @@ const getWellHealthScore = (well: WellFleetItem, customDesigns?: Record<string, 
         else if (rateDev > 0.15) performanceScore -= 10;
     }
 
-    // Physical constraints like low PIP are still highly valid 
     if (well.productionTest.pip > 0) {
-        if (well.productionTest.pip < 100) performanceScore -= 50; // Critical gas lock risk
+        if (well.productionTest.pip < 100) performanceScore -= 50;
         else if (well.productionTest.pip < 200) performanceScore -= 20;
     }
 
     const totalScore = (componentHealth * 0.70) + (Math.max(0, performanceScore) * 0.30);
-
     let finalScore = totalScore;
 
-    // VERY STRICT INTELLIGENCE: Evaluate Downthrust/Upthrust based on active pump
-    if (customDesigns && defaultPump) {
-        const wellNorm = fuzzyWellName(well.name);
-        const design = Object.entries(customDesigns).find(([k]) => fuzzyWellName(k) === wellNorm)?.[1];
+    if (defaultPump) {
         let pump = defaultPump;
         let motor: any = null;
 
@@ -467,30 +488,24 @@ const getWellHealthScore = (well: WellFleetItem, customDesigns?: Record<string, 
         const minQ = (pump.minRate || 0) * ratio;
         const maxQ = (pump.maxRate || 2000) * ratio;
 
-        const isDownthrust = currentRate < minQ * 0.95;
-        const isUpthrust = currentRate > maxQ * 1.05;
-
-        // If physically destroying equipment in downthrust or choking in upthrust, penalize strictly!
-        if (isDownthrust || isUpthrust) {
-            finalScore = Math.min(finalScore, 55); // Forces Orange/Warning
+        if (currentRate < minQ * 0.95 || currentRate > maxQ * 1.05) {
+            finalScore = Math.min(finalScore, 55);
         }
 
-        // Evaluate Motor Overload dynamically
         if (motor && motor.hp) {
             const depth = well.depthMD || 8000;
-            const bhpEst = (currentRate * (depth * 0.433) * 0.9) / (135770 * 0.65); // Standard ESP power heuristic
+            const bhpEst = (currentRate * (depth * 0.433) * 0.9) / (135770 * 0.65);
             const motorLimit = motor.hp * (currentFreq / 60);
 
             if (motorLimit > 0) {
                 const loadPct = (bhpEst / motorLimit) * 100;
-                if (loadPct > 105) finalScore = Math.min(finalScore, 30); // Danger / Red
-                else if (loadPct > 95) finalScore = Math.min(finalScore, 55); // Caution / Orange 
+                if (loadPct > 105) finalScore = Math.min(finalScore, 30);
+                else if (loadPct > 95) finalScore = Math.min(finalScore, 55);
             }
         }
     }
 
     const criticalFailure = [well.health.pump, well.health.motor, well.health.cable].some(s => s === 'alert' || s === 'failure' || s === 'ground-fault');
-
     return Math.round(Math.max(0, Math.min(100, criticalFailure ? Math.min(finalScore, 35) : finalScore)));
 };
 
@@ -511,19 +526,19 @@ const MetricSummaryCard = ({ label, value, unit, icon: Icon, color = 'primary' }
     const borderHover = color === 'primary' ? 'group-hover:border-primary/50' : color === 'secondary' ? 'group-hover:border-secondary/50' : 'group-hover:border-danger/50';
 
     return (
-        <div className={`glass-surface rounded-[2.5rem] border border-white/5 p-6 flex items-center gap-6 shadow-2xl transition-all duration-700 flex-1 min-w-[220px] relative overflow-hidden group ${glowClass} ${borderHover}`}>
+        <div className={`glass-surface rounded-none border border-white/5 p-6 flex items-center gap-6 shadow-2xl transition-all duration-700 flex-1 min-w-[220px] relative overflow-hidden group ${glowClass} ${borderHover}`}>
             {/* Ambient Background Gradient Glows */}
-            <div className={`absolute -right-8 -top-8 w-40 h-40 ${color === 'primary' ? 'bg-primary/25' : color === 'secondary' ? 'bg-secondary/25' : 'bg-danger/25'} blur-[60px] rounded-full opacity-0 group-hover:opacity-100 transition-all duration-1000`}></div>
-            <div className={`absolute -left-12 -bottom-12 w-32 h-32 ${color === 'primary' ? 'bg-primary/15' : color === 'secondary' ? 'bg-secondary/15' : 'bg-danger/15'} blur-[40px] rounded-full opacity-30 transition-transform duration-1000 delay-150`}></div>
+            <div className={`absolute -right-8 -top-8 w-40 h-40 ${color === 'primary' ? 'bg-primary/25' : color === 'secondary' ? 'bg-secondary/25' : 'bg-danger/25'} blur-[60px] rounded-none opacity-0 group-hover:opacity-100 transition-all duration-1000`}></div>
+            <div className={`absolute -left-12 -bottom-12 w-32 h-32 ${color === 'primary' ? 'bg-primary/15' : color === 'secondary' ? 'bg-secondary/15' : 'bg-danger/15'} blur-[40px] rounded-none opacity-30 transition-transform duration-1000 delay-150`}></div>
 
             {/* Themed Internal Overlay Gradient */}
             <div className={`absolute inset-0 bg-gradient-to-tr ${color === 'primary' ? 'from-primary/5 via-transparent to-primary/5' : color === 'secondary' ? 'from-secondary/5 via-transparent to-secondary/5' : 'from-danger/5 via-transparent to-danger/5'} opacity-0 group-hover:opacity-100 transition-opacity duration-700`}></div>
 
             {/* Icon Container with Dynamic Theme Ring */}
-            <div className={`p-4 rounded-[1.5rem] ${color === 'primary' ? 'bg-primary/15 text-primary border-primary/30 shadow-glow-primary/20' : color === 'secondary' ? 'bg-secondary/15 text-secondary border-secondary/30 shadow-glow-secondary/20' : 'bg-danger/15 text-danger border-danger/30 shadow-glow-danger/20'} border relative z-10 transition-all duration-500 group-hover:rotate-6`}>
+            <div className={`p-4 rounded-none ${color === 'primary' ? 'bg-primary/15 text-primary border-primary/30 shadow-glow-primary/20' : color === 'secondary' ? 'bg-secondary/15 text-secondary border-secondary/30 shadow-glow-secondary/20' : 'bg-danger/15 text-danger border-danger/30 shadow-glow-danger/20'} border relative z-10 transition-all duration-500 group-hover:rotate-6`}>
                 <Icon className="w-7 h-7" />
                 {/* Micro pulse effect on icon ring */}
-                <div className={`absolute inset-0 rounded-[1.5rem] border-2 ${color === 'primary' ? 'border-primary' : color === 'secondary' ? 'border-secondary' : 'border-danger'} opacity-0 group-hover:animate-ping opacity-20`}></div>
+                <div className={`absolute inset-0 rounded-none border-2 ${color === 'primary' ? 'border-primary' : color === 'secondary' ? 'border-secondary' : 'border-danger'} opacity-0 group-hover:animate-ping opacity-20`}></div>
             </div>
 
             <div className="flex flex-col relative z-20">
@@ -542,9 +557,9 @@ const MetricSummaryCard = ({ label, value, unit, icon: Icon, color = 'primary' }
 
 const DiagnosticBadge = ({ well, health, normalWellCapacity }: { well: WellFleetItem, health: number, normalWellCapacity?: any }) => {
     const isRunning = well.currentRate > 5;
-    if (!isRunning) return <div className="flex items-center gap-2 bg-surface-light/50 px-3 py-1 rounded-full text-txt-muted opacity-40 font-black text-[8px] uppercase tracking-widest border border-surface-light"><Clock className="w-2.5 h-2.5" /> Standby</div>;
+    if (!isRunning) return <div className="flex items-center gap-2 bg-surface-light/50 px-3 py-1 rounded-none text-txt-muted opacity-40 font-black text-[8px] uppercase tracking-widest border border-surface-light"><Clock className="w-2.5 h-2.5" /> Standby</div>;
 
-    if (health >= 85) return <div className="flex items-center gap-2 bg-success/10 px-3 py-1 rounded-full text-success font-black text-[8px] uppercase tracking-widest border border-success/20 shadow-glow-success/5"><ShieldCheck className="w-2.5 h-2.5" /> Optimized</div>;
+    if (health >= 85) return <div className="flex items-center gap-2 bg-success/10 px-3 py-1 rounded-none text-success font-black text-[8px] uppercase tracking-widest border border-success/20 shadow-glow-success/5"><ShieldCheck className="w-2.5 h-2.5" /> Optimized</div>;
 
     // Identify Cause
     let cause = "Investigate";
@@ -556,7 +571,7 @@ const DiagnosticBadge = ({ well, health, normalWellCapacity }: { well: WellFleet
     else if (well.consumptionReal > well.consumptionTheo * 1.15) cause = "Overload";
     else if (well.currentRate < well.targetRate * 0.8) cause = "Prod. Drop";
 
-    return <div className={`flex items-center gap-2 ${health < 40 ? 'bg-danger/10 text-danger border-danger/20' : 'bg-warning/10 text-warning border-warning/20'} px-3 py-1 rounded-full font-black text-[8px] uppercase tracking-widest border animate-pulse`}>
+    return <div className={`flex items-center gap-2 ${health < 40 ? 'bg-danger/10 text-danger border-danger/20' : 'bg-warning/10 text-warning border-warning/20'} px-3 py-1 rounded-none font-black text-[8px] uppercase tracking-widest border animate-pulse`}>
         <AlertTriangle className="w-2.5 h-2.5" /> {cause}
     </div>;
 };
@@ -736,6 +751,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
     const { theme, cycleTheme, toggleLightMode } = useTheme();
     const [isBhaMinimized, setIsBhaMinimized] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const deferredSearchTerm = useDeferredValue(searchTerm);
     const [showFullMatch, setShowFullMatch] = useState(false);
     const [fleet, setFleet] = useState<WellFleetItem[]>(_cachedFleet);
     const [customDesigns, setCustomDesigns] = useState<Record<string, SystemParams>>(_cachedDesigns);
@@ -756,13 +772,24 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
     useEffect(() => { _cachedHistoricalData = wellsHistoricalData; }, [wellsHistoricalData]);
 
     // --- PERFORMANCE OPTIMIZATIONS: PRE-CALCULATED DATA ---
+    // Pre-index designs for O(1) lookup in health calculations
+    const indexedDesigns = useMemo(() => {
+        const map: Record<string, SystemParams> = {};
+        Object.entries(customDesigns).forEach(([key, design]) => {
+            map[fuzzyWellName(key)] = design;
+        });
+        return map;
+    }, [customDesigns]);
+
     const wellHealthMap = useMemo(() => {
         const map: Record<string, number> = {};
         fleet.forEach(well => {
-            map[well.id] = getWellHealthScore(well, customDesigns, providedPump);
+            const wellNorm = fuzzyWellName(well.name);
+            const design = indexedDesigns[wellNorm];
+            map[well.id] = getWellHealthScore(well, design, providedPump);
         });
         return map;
-    }, [fleet, customDesigns, providedPump?.id]);
+    }, [fleet, indexedDesigns, providedPump?.id]);
 
     const filteredFleet = useMemo(() => {
         let result = fleet;
@@ -792,14 +819,14 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
             });
         }
 
-        // Filter by search term (normalized)
-        if (searchTerm.trim()) {
-            const st = norm_ext(searchTerm);
+        // Filter by search term (normalized) - Using deferred term to keep UI responsive
+        if (deferredSearchTerm.trim()) {
+            const st = norm_ext(deferredSearchTerm);
             result = result.filter(well => norm_ext(well.name).includes(st) || norm_ext(well.id).includes(st));
         }
 
         return result;
-    }, [fleet, healthFilter, dataFilter, searchTerm, wellHealthMap]);
+    }, [fleet, healthFilter, dataFilter, deferredSearchTerm, wellHealthMap]);
 
     const sortedFleet = useMemo(() => {
         return [...filteredFleet].sort((a, b) => {
@@ -2122,12 +2149,12 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
         const liveBhaResults = calculateSystemResults(q, head, wellMatchParams, pump, f) || { pip: selectedWell.productionTest.pip, motorLoad: Math.abs(selectedWell.consumptionReal) };
 
         return (
-            <div className="space-y-8 animate-fadeIn p-4 pb-20 relative">
+            <div className="space-y-4 animate-fadeIn p-4 pb-20 relative">
                 {/* NO MATCH DATA WARNING */}
                 {!hasMatch && (
-                    <div className="mb-4 bg-danger/10 border border-danger/30 p-10 rounded-[3rem] flex items-center justify-between shadow-glow-danger/5 animate-fadeIn">
+                    <div className="mb-4 bg-danger/10 border border-danger/30 p-10 rounded-none flex items-center justify-between shadow-glow-danger/5 animate-fadeIn">
                         <div className="flex items-center gap-8">
-                            <div className="p-6 bg-danger/20 rounded-3xl border border-danger/20 text-danger"><AlertTriangle className="w-12 h-12" /></div>
+                            <div className="p-6 bg-danger/20 rounded-none border border-danger/20 text-danger"><AlertTriangle className="w-12 h-12" /></div>
                             <div>
                                 <h3 className="text-3xl font-black text-danger uppercase mb-2 tracking-tighter italic">Faltan Datos de Cotejo (Match)</h3>
                                 <p className="text-sm font-bold text-danger/70 uppercase tracking-widest leading-relaxed max-w-2xl">El diseño cargado no contiene datos de historial (Phase 7). Se requiere cargar una prueba de producción o configurar el cotejo manual para habilitar el análisis de salud en tiempo real.</p>
@@ -2138,9 +2165,9 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
 
                 {/* NO SURVEY DATA WARNING */}
                 {wellMatchParams.survey.length === 0 && (
-                    <div className="mb-4 bg-warning/10 border border-warning/30 p-8 rounded-[2.5rem] flex items-center justify-between shadow-glow-warning/5 animate-fadeIn">
+                    <div className="mb-4 bg-warning/10 border border-warning/30 p-8 rounded-none flex items-center justify-between shadow-glow-warning/5 animate-fadeIn">
                         <div className="flex items-center gap-6">
-                            <div className="p-4 bg-warning/20 rounded-2xl border border-warning/20 text-warning"><Globe className="w-8 h-8" /></div>
+                            <div className="p-4 bg-warning/20 rounded-none border border-warning/20 text-warning"><Globe className="w-8 h-8" /></div>
                             <div>
                                 <h3 className="text-xl font-black text-warning uppercase mb-1 tracking-tighter">Trayectoria (Survey) No Encontrada</h3>
                                 <p className="text-[10px] font-bold text-warning/70 uppercase tracking-widest leading-relaxed max-w-xl">No se pudo vincular automáticamente una trayectoria direccional para el pozo "{selectedWell.name}". Los cálculos de TVD y presiones de fondo utilizarán aproximaciones verticales hasta que se cargue el survey correspondiente.</p>
@@ -2149,12 +2176,12 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                     </div>
                 )}
                 {/* WELL HEADER WITH DROPDOWN SELECTOR */}
-                <div className="flex justify-between items-center bg-surface/40 backdrop-blur-xl py-3 px-6 rounded-2xl border border-white/5 shadow-2xl relative group z-20">
-                    <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl"></div>
+                <div className="flex justify-between items-center bg-surface/40 backdrop-blur-xl py-3 px-6 rounded-none border border-white/5 shadow-2xl relative group z-20">
+                    <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-none"></div>
                     <div className="flex items-center gap-6 relative z-10 w-full">
                         <div className="flex items-center gap-4">
                             {/* BACK BUTTON INTEGRATED */}
-                            <button onClick={onBack} className="p-2.5 bg-white/10 hover:bg-primary/20 rounded-xl border border-white/10 text-txt-muted hover:text-primary transition-all group shadow-lg" title="Regresar al Inicio">
+                            <button onClick={onBack} className="p-2.5 bg-white/10 hover:bg-primary/20 rounded-none border border-white/10 text-txt-muted hover:text-primary transition-all group shadow-lg" title="Regresar al Inicio">
                                 <ChevronLeft className="w-6 h-6 group-hover:-translate-x-1" />
                             </button>
 
@@ -2162,13 +2189,13 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                             <div className="relative" ref={wellDropdownRef}>
                                 <button
                                     onClick={() => setIsWellDropdownOpen(!isWellDropdownOpen)}
-                                    className="flex items-center gap-3 px-4 py-2 bg-white/10 hover:bg-white/15 rounded-xl border border-white/10 transition-all shadow-lg cursor-pointer group/dd"
+                                    className="flex items-center gap-3 px-4 py-2 bg-white/10 hover:bg-white/15 rounded-none border border-white/10 transition-all shadow-lg cursor-pointer group/dd"
                                 >
                                     <h2 className="text-xl font-black text-txt-main tracking-tighter uppercase leading-none group-hover/dd:text-primary transition-colors">{selectedWell.name}</h2>
                                     <ChevronRight className={`w-4 h-4 text-txt-muted transition-transform duration-300 ${isWellDropdownOpen ? 'rotate-90' : ''}`} />
                                 </button>
                                 {isWellDropdownOpen && (
-                                    <div className="absolute top-full left-0 mt-3 w-[450px] max-h-[500px] overflow-y-auto bg-surface/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-[0_30px_80px_rgba(0,0,0,0.5)] z-[100] animate-fadeIn custom-scrollbar">
+                                    <div className="absolute top-full left-0 mt-3 w-[450px] max-h-[500px] overflow-y-auto bg-surface/95 backdrop-blur-xl border border-white/10 rounded-none shadow-[0_30px_80px_rgba(0,0,0,0.5)] z-[100] animate-fadeIn custom-scrollbar">
                                         <div className="p-3 border-b border-white/5 space-y-2">
                                             <div className="relative">
                                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-txt-muted/50" />
@@ -2177,12 +2204,12 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                                     placeholder="Buscar pozo..."
                                                     value={searchTerm}
                                                     onChange={(e) => setSearchTerm(e.target.value)}
-                                                    className="w-full bg-canvas/60 border border-surface-light rounded-xl pl-10 pr-4 py-2.5 text-xs font-bold text-txt-main focus:outline-none focus:border-primary/50 uppercase tracking-wider placeholder:text-txt-muted/30"
+                                                    className="w-full bg-canvas/60 border border-surface-light rounded-none pl-10 pr-4 py-2.5 text-xs font-bold text-txt-main focus:outline-none focus:border-primary/50 uppercase tracking-wider placeholder:text-txt-muted/30"
                                                 />
                                             </div>
 
                                             {/* Data filter controls inside dropdown */}
-                                            <div className="flex items-center gap-1 bg-canvas/40 p-1 rounded-xl border border-white/5">
+                                            <div className="flex items-center gap-1 bg-canvas/40 p-1 rounded-none border border-white/5">
                                                 <button onClick={(e) => { e.stopPropagation(); setDataFilter('all'); }} className={`h-7 px-2.5 rounded-lg flex items-center justify-center transition-all text-[8px] font-black uppercase tracking-widest flex-1 ${dataFilter === 'all' ? 'bg-primary text-white shadow-sm' : 'text-txt-muted hover:bg-white/5'}`}>Datos: Todos</button>
                                                 <button onClick={(e) => { e.stopPropagation(); setDataFilter('complete'); }} className={`h-7 px-2.5 rounded-lg flex items-center justify-center transition-all text-[8px] font-black uppercase tracking-widest flex-1 ${dataFilter === 'complete' ? 'bg-success/20 text-success' : 'text-txt-muted hover:bg-white/5'}`}>Completos</button>
                                                 <button onClick={(e) => { e.stopPropagation(); setDataFilter('missing'); }} className={`h-7 px-2.5 rounded-lg flex items-center justify-center transition-all text-[8px] font-black uppercase tracking-widest flex-1 ${dataFilter === 'missing' ? 'bg-warning/20 text-warning' : 'text-txt-muted hover:bg-white/5'}`}>Faltan</button>
@@ -2190,7 +2217,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                             </div>
 
                                             {/* Health filter controls inside dropdown */}
-                                            <div className="flex items-center gap-1 bg-canvas/40 p-1 rounded-xl border border-white/5">
+                                            <div className="flex items-center gap-1 bg-canvas/40 p-1 rounded-none border border-white/5">
                                                 <button onClick={(e) => { e.stopPropagation(); setHealthFilter('all'); }} className={`h-7 px-2.5 rounded-lg flex items-center justify-center transition-all text-[8px] font-black uppercase tracking-widest flex-1 ${healthFilter === 'all' ? 'bg-primary text-white shadow-sm' : 'text-txt-muted hover:bg-white/5'}`}>Salud: Todos</button>
                                                 <button onClick={(e) => { e.stopPropagation(); setHealthFilter('healthy'); }} className={`h-7 px-2.5 rounded-lg flex items-center justify-center transition-all text-[8px] font-black uppercase tracking-widest flex-1 ${healthFilter === 'healthy' ? 'bg-success/20 text-success' : 'text-txt-muted hover:bg-white/5'}`}>Healthy</button>
                                                 <button onClick={(e) => { e.stopPropagation(); setHealthFilter('caution'); }} className={`h-7 px-2.5 rounded-lg flex items-center justify-center transition-all text-[8px] font-black uppercase tracking-widest flex-1 ${healthFilter === 'caution' ? 'bg-warning/20 text-warning' : 'text-txt-muted hover:bg-white/5'}`}>Caution</button>
@@ -2198,39 +2225,21 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                             </div>
                                         </div>
                                         <div className="p-2">
-                                            {sortedFleet.map(well => {
-                                                const health = wellHealthMap[well.id] || 0;
-                                                const isActive = well.id === selectedWellId;
-                                                return (
-                                                    <button
-                                                        key={well.id}
-                                                        onClick={() => {
-                                                            setSelectedWellId(well.id);
-                                                            setWellViewMode('monitoring');
-                                                            setIsWellDropdownOpen(false);
-                                                            setSearchTerm('');
-                                                        }}
-                                                        className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all text-left mb-1 ${isActive
-                                                            ? 'bg-primary/20 border border-primary/30'
-                                                            : 'hover:bg-white/5 border border-transparent'
-                                                            }`}
-                                                    >
-                                                        <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${health >= 85 ? 'bg-success shadow-glow-success' : health >= 60 ? 'bg-warning' : 'bg-danger shadow-glow-danger'}`}></div>
-                                                        <div className="flex-1 min-w-0">
-                                                            <div className="flex items-center gap-2">
-                                                                <span className={`text-sm font-black uppercase tracking-tight truncate ${isActive ? 'text-primary' : 'text-txt-main'}`}>{well.name}</span>
-                                                                {customDesigns[fuzzyWellName(well.name)]?.isMechVerified && (
-                                                                    <span className="bg-cyan-500/10 text-cyan-500 border border-cyan-500/30 px-1.5 py-0.5 rounded text-[7px] font-black uppercase tracking-widest">MECH</span>
-                                                                )}
-                                                            </div>
-                                                            <span className="text-[9px] font-bold text-txt-muted uppercase tracking-widest">
-                                                                {Math.round(well.currentRate)} BPD • {well.productionTest.freq || 0} Hz
-                                                            </span>
-                                                        </div>
-                                                        <span className={`text-xs font-black ${health >= 85 ? 'text-success' : health >= 60 ? 'text-warning' : 'text-danger'}`}>{health}%</span>
-                                                    </button>
-                                                );
-                                            })}
+                                            {sortedFleet.map(well => (
+                                                <WellListItem
+                                                    key={well.id}
+                                                    well={well}
+                                                    health={wellHealthMap[well.id] || 0}
+                                                    isActive={well.id === selectedWellId}
+                                                    isMechVerified={customDesigns[fuzzyWellName(well.name)]?.isMechVerified}
+                                                    onSelect={(id: string) => {
+                                                        setSelectedWellId(id);
+                                                        setWellViewMode('monitoring');
+                                                        setIsWellDropdownOpen(false);
+                                                        setSearchTerm('');
+                                                    }}
+                                                />
+                                            ))}
                                         </div>
                                     </div>
                                 )}
@@ -2240,7 +2249,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                         <div className="flex items-center gap-3 flex-1 justify-center">
                             <button
                                 onClick={() => importDbRef.current?.click()}
-                                className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border bg-secondary/10 text-secondary border-secondary/20 hover:bg-secondary/20 hover:shadow-glow-secondary/20"
+                                className="flex items-center gap-2.5 px-4 py-2.5 rounded-none text-[9px] font-black uppercase tracking-widest transition-all border bg-secondary/10 text-secondary border-secondary/20 hover:bg-secondary/20 hover:shadow-glow-secondary/20"
                                 title="Subir prueba de producción puntual (CSV/Excel)"
                             >
                                 <Database className="w-4 h-4" />
@@ -2253,7 +2262,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                         onClick={() => {
                                             onNavigateToDesign(wellMatchParams, pump);
                                         }}
-                                        className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border bg-primary/10 text-primary border-primary/20 hover:bg-primary hover:text-white hover:shadow-glow-primary/40 relative"
+                                        className="flex items-center gap-2.5 px-4 py-2.5 rounded-none text-[9px] font-black uppercase tracking-widest transition-all border bg-primary/10 text-primary border-primary/20 hover:bg-primary hover:text-white hover:shadow-glow-primary/40 relative"
                                         title="Ir a Diseño (Phase 5)"
                                     >
                                         <Settings className="w-4 h-4" />
@@ -2265,7 +2274,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                             <SecureWrapper isLocked={true} tooltip="Módulo de Ajuste Histórico Restringido">
                                 <button
                                     onClick={() => setWellViewMode(wellViewMode === 'history' ? 'monitoring' : 'history')}
-                                    className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border ${wellViewMode === 'history' ? 'bg-primary text-white border-primary shadow-glow-primary/40' : 'bg-success/10 text-success border-success/20 hover:bg-success/20 hover:shadow-glow-success/20'}`}
+                                    className={`flex items-center gap-2.5 px-4 py-2.5 rounded-none text-[9px] font-black uppercase tracking-widest transition-all border ${wellViewMode === 'history' ? 'bg-primary text-white border-primary shadow-glow-primary/40' : 'bg-success/10 text-success border-success/20 hover:bg-success/20 hover:shadow-glow-success/20'}`}
                                 >
                                     {wellViewMode === 'history' ? <Activity className="w-4 h-4" /> : <TrendingUp className="w-4 h-4" />}
                                     {wellViewMode === 'history' ? 'Monitoreo' : 'Histórico (Match)'}
@@ -2274,23 +2283,23 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                         </div>
 
                         {/* GLOBAL SETTINGS (LANGUAGE / THEME) */}
-                        <div className="flex items-center gap-1.5 bg-white/5 p-1 rounded-xl border border-white/10 shadow-inner ml-auto">
+                        <div className="flex items-center gap-1.5 bg-white/5 p-1 rounded-none border border-white/10 shadow-inner ml-auto">
                             <button
                                 onClick={toggleLanguage}
-                                className="flex items-center gap-2 px-3 py-1.5 hover:bg-white/10 rounded-lg transition-all text-[9px] font-black font-mono text-txt-main tracking-widest uppercase"
+                                className="flex items-center gap-2 px-3 py-1.5 hover:bg-white/10 rounded-none transition-all text-[9px] font-black font-mono text-txt-main tracking-widest uppercase"
                             >
                                 <Globe className="w-3.5 h-3.5 text-primary" /> {language}
                             </button>
                             <button
                                 onClick={cycleTheme}
-                                className="p-2 bg-white/5 hover:bg-white/10 rounded-lg transition-all border border-white/5 text-txt-muted hover:text-primary hover:border-primary/20 group/palette"
+                                className="p-2 bg-white/5 hover:bg-white/10 rounded-none transition-all border border-white/5 text-txt-muted hover:text-primary hover:border-primary/20 group/palette"
                                 title="Cambiar Tema"
                             >
                                 <Palette className="w-4 h-4 text-secondary group-hover/palette:text-primary" />
                             </button>
                             <button
                                 onClick={() => setZoomLevel(zoomLevel === 1 ? 0.8 : 1)}
-                                className="p-2 bg-white/5 hover:bg-white/10 rounded-lg transition-all border border-white/5 text-txt-muted hover:text-primary hover:border-primary/20 group/palette"
+                                className="p-2 bg-white/5 hover:bg-white/10 rounded-none transition-all border border-white/5 text-txt-muted hover:text-primary hover:border-primary/20 group/palette"
                                 title={zoomLevel === 1 ? "Reducir Escala (80%)" : "Aumentar Escala (100%)"}
                             >
                                 {zoomLevel === 1 ? <Minimize2 className="w-4 h-4 text-primary" /> : <Maximize2 className="w-4 h-4 text-primary" />}
@@ -2309,7 +2318,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                         onClose={() => setWellViewMode('monitoring')}
                     />
                 ) : (
-                    <div className="flex flex-col gap-6 animate-fadeIn relative z-10 mt-12">
+                    <div className="flex flex-col gap-2 relative z-10 mt-4">
                         {/* THE AI COMMENT - FLOATING BUBBLE */}
                         <PredictiveWidget
                             selectedWell={selectedWell}
@@ -2320,23 +2329,23 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                         />
 
                         {/* COMPACT ANALYTICS SECTION: PHASE 6 + BHA SCHEME */}
-                        <div className="flex gap-6 items-stretch w-full min-h-[900px] relative mt-16 lg:mt-0">
+                        <div className="flex gap-2 items-stretch w-full min-h-[900px] relative mt-4 lg:mt-0">
                             {/* BHA DIGITAL TWIN ON THE LEFT */}
-                            <div className={`glass-surface rounded-[3rem] border border-white/5 overflow-hidden shadow-2xl flex flex-col relative group transition-all duration-500 ${isBhaMinimized ? 'w-20' : 'w-[400px]'}`}>
+                            <div className={`glass-surface rounded-none border border-white/5 overflow-hidden shadow-2xl flex flex-col relative group transition-all duration-500 ${isBhaMinimized ? 'w-20' : 'w-[400px]'}`}>
                                 {!isBhaMinimized && (
                                     <div className="p-5 border-b border-white/5 flex justify-between items-center bg-white/5 backdrop-blur-md">
                                         <button
                                             onClick={() => setIsBhaMinimized(true)}
-                                            className="p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/5 text-primary"
+                                            className="p-2 bg-white/5 hover:bg-white/10 rounded-sm transition-all border border-white/5 text-primary"
                                             title="Minimizar BHA"
                                         >
                                             <ChevronLeft className="w-5 h-5" />
                                         </button>
                                         <div className="flex items-center gap-2">
-                                            <div className="p-2 bg-secondary/10 rounded-xl text-secondary border border-secondary/20"><Layers className="w-4 h-4" /></div>
+                                            <div className="p-2 bg-secondary/10 rounded-sm text-secondary border border-secondary/20"><Layers className="w-4 h-4" /></div>
                                             <h3 className="text-xs font-black text-txt-main uppercase tracking-widest">Esquema BHA</h3>
                                         </div>
-                                        <Activity className="w-4 h-4 text-primary animate-pulse" />
+                                        <Activity className="w-4 h-4 text-primary" />
                                     </div>
                                 )}
                                 <div className={`flex-1 relative bg-canvas/40 overflow-hidden flex items-center justify-center p-4 transition-all duration-500 ${isBhaMinimized ? 'opacity-30 grayscale' : 'opacity-100'}`}>
@@ -2358,19 +2367,19 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                         className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-canvas/80 backdrop-blur-sm cursor-pointer group-hover:bg-canvas/60 transition-all"
                                         onClick={() => setIsBhaMinimized(false)}
                                     >
-                                        <div className="flex flex-col items-center gap-6 bg-primary/10 text-primary border border-primary/20 p-4 rounded-full shadow-glow-primary group-hover:bg-primary group-hover:text-white transition-all duration-500">
+                                        <div className="flex flex-col items-center gap-6 bg-primary/10 text-primary border border-primary/20 p-4 rounded-none shadow-glow-primary group-hover:bg-primary group-hover:text-white transition-all duration-500">
                                             <Layers className="w-5 h-5" />
                                             <div className="[writing-mode:vertical-lr] text-[12px] font-black uppercase tracking-[0.4em] transform rotate-180 whitespace-nowrap">
                                                 VER BHA ESP
                                             </div>
-                                            <Maximize2 className="w-5 h-5 mt-2 animate-bounce" />
+                                            <Maximize2 className="w-5 h-5 mt-2" />
                                         </div>
                                     </div>
                                 )}
                             </div>
 
                             {/* MAIN PHASE 6 CANVAS ON THE RIGHT */}
-                            <div className="flex-1 glass-surface rounded-[3rem] border border-white/5 shadow-3xl overflow-y-auto custom-scrollbar relative z-30" style={{ minHeight: '900px' }}>
+                            <div className="flex-1 glass-surface rounded-none border border-white/5 shadow-3xl overflow-y-auto custom-scrollbar relative z-30" style={{ minHeight: '900px' }}>
                                 {hasMatch ? (
                                     <Phase6
                                         key={selectedWell.id}
@@ -2381,39 +2390,39 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                     />
                                 ) : (
                                     <div className="h-[600px] flex flex-col items-center justify-center space-y-6 text-center px-10">
-                                        <div className="p-8 bg-warning/10 rounded-full border border-warning/30 animate-pulse shadow-glow-warning/30">
+                                        <div className="p-8 bg-warning/10 rounded-sm border border-warning/30 shadow-glow-warning/30">
                                             <AlertTriangle className="w-16 h-16 text-warning" />
                                         </div>
                                         <h3 className="text-3xl font-black text-warning uppercase tracking-tighter">Análisis de Match Incompleto</h3>
-                                        <div className="bg-surface/50 border border-white/10 rounded-2xl p-6 max-w-lg shadow-inner">
+                                        <div className="bg-surface/50 border border-white/10 rounded-none p-6 max-w-lg shadow-inner">
                                             <p className="text-txt-main/80 font-medium mb-4 text-sm leading-relaxed">
                                                 Para ejecutar el simulador de desgaste y calcular los coeficientes de degradación (<strong className="text-white">Kh, Kf</strong>), el motor necesita la siguiente telemetría de campo obligatoria:
                                             </p>
                                             <div className="flex flex-wrap gap-3 justify-center mb-6">
                                                 {(!selectedWell.productionTest.pip || selectedWell.productionTest.pip <= 0) && (
-                                                    <div className="px-4 py-2 bg-danger/20 border border-danger/40 rounded-xl text-danger font-black text-xs uppercase tracking-widest flex items-center gap-2 shadow-glow-danger/20">
-                                                        <div className="w-2 h-2 rounded-full bg-danger animate-ping"></div> FALTA PIP
+                                                    <div className="px-4 py-2 bg-danger/20 border border-danger/40 rounded-none text-danger font-black text-xs uppercase tracking-widest flex items-center gap-2 shadow-glow-danger/20">
+                                                        <div className="w-2 h-2 rounded-none bg-danger animate-ping"></div> FALTA PIP
                                                     </div>
                                                 )}
                                                 {(!selectedWell.productionTest.thp || selectedWell.productionTest.thp <= 0) && (
-                                                    <div className="px-4 py-2 bg-danger/20 border border-danger/40 rounded-xl text-danger font-black text-xs uppercase tracking-widest flex items-center gap-2 shadow-glow-danger/20">
-                                                        <div className="w-2 h-2 rounded-full bg-danger animate-ping"></div> FALTA THP
+                                                    <div className="px-4 py-2 bg-danger/20 border border-danger/40 rounded-none text-danger font-black text-xs uppercase tracking-widest flex items-center gap-2 shadow-glow-danger/20">
+                                                        <div className="w-2 h-2 rounded-none bg-danger animate-ping"></div> FALTA THP
                                                     </div>
                                                 )}
                                                 {(!selectedWell.productionTest.freq || selectedWell.productionTest.freq <= 0) && (
-                                                    <div className="px-4 py-2 bg-danger/20 border border-danger/40 rounded-xl text-danger font-black text-xs uppercase tracking-widest flex items-center gap-2 shadow-glow-danger/20">
-                                                        <div className="w-2 h-2 rounded-full bg-danger animate-ping"></div> FALTA FRECUENCIA
+                                                    <div className="px-4 py-2 bg-danger/20 border border-danger/40 rounded-none text-danger font-black text-xs uppercase tracking-widest flex items-center gap-2 shadow-glow-danger/20">
+                                                        <div className="w-2 h-2 rounded-none bg-danger animate-ping"></div> FALTA FRECUENCIA
                                                     </div>
                                                 )}
                                                 {(!selectedWell.currentRate || selectedWell.currentRate <= 5) && (
-                                                    <div className="px-4 py-2 bg-danger/20 border border-danger/40 rounded-xl text-danger font-black text-xs uppercase tracking-widest flex items-center gap-2 shadow-glow-danger/20">
-                                                        <div className="w-2 h-2 rounded-full bg-danger animate-ping"></div> FALTA CAUDAL (BPD)
+                                                    <div className="px-4 py-2 bg-danger/20 border border-danger/40 rounded-none text-danger font-black text-xs uppercase tracking-widest flex items-center gap-2 shadow-glow-danger/20">
+                                                        <div className="w-2 h-2 rounded-none bg-danger animate-ping"></div> FALTA CAUDAL (BPD)
                                                     </div>
                                                 )}
                                             </div>
                                             <button
                                                 onClick={() => importDbRef.current?.click()}
-                                                className="w-full py-4 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 hover:border-primary/60 rounded-xl font-black uppercase tracking-widest text-xs transition-all flex items-center justify-center gap-2"
+                                                className="w-full py-4 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 hover:border-primary/60 rounded-none font-black uppercase tracking-widest text-xs transition-all flex items-center justify-center gap-2"
                                             >
                                                 <Database className="w-4 h-4" />
                                                 Subir Nuevo Reporte Excel / CSV
@@ -2433,7 +2442,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
         const alerts = fleet.filter(w => getWellHealthScore(w) < 55);
 
         return (
-            <div className="w-full h-full bg-surface/60 backdrop-blur-xl border border-surface-light rounded-[3rem] shadow-3xl relative overflow-hidden flex flex-col group/panel">
+            <div className="w-full h-full bg-surface/60 backdrop-blur-xl border border-surface-light rounded-none shadow-3xl relative overflow-hidden flex flex-col group/panel">
                 {/* Panel edge highlight */}
                 <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-primary/40 to-transparent"></div>
 
@@ -2445,7 +2454,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                         </h4>
                         <p className="text-[10px] font-black text-primary uppercase tracking-[0.4em] mt-1 opacity-70">Fleet Intelligence Radar</p>
                     </div>
-                    <div className={`px-4 py-1.5 rounded-full text-[10px] font-black ${alerts.length > 0 ? 'bg-danger/10 text-danger border border-danger/30 animate-pulse shadow-glow-danger/20' : 'bg-success/10 text-success border border-success/30'} uppercase tracking-widest`}>
+                    <div className={`px-4 py-1.5 rounded-none text-[10px] font-black ${alerts.length > 0 ? 'bg-danger/10 text-danger border border-danger/30 animate-pulse shadow-glow-danger/20' : 'bg-success/10 text-success border border-success/30'} uppercase tracking-widest`}>
                         {alerts.length} Active Alarms
                     </div>
                 </div>
@@ -2453,7 +2462,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                 <div className="p-6 space-y-5 overflow-y-auto custom-scrollbar flex-1 bg-canvas/30">
                     {alerts.length === 0 ? (
                         <div className="h-full flex flex-col items-center justify-center opacity-30 text-center py-20 animate-fadeIn">
-                            <div className="p-8 bg-success/5 rounded-full mb-6 border border-success/10">
+                            <div className="p-8 bg-success/5 rounded-none mb-6 border border-success/10">
                                 <ShieldCheck className="w-20 h-20 text-success" />
                             </div>
                             <p className="text-[11px] font-black uppercase tracking-[0.4em]">Global Fleet Status<br /><span className="text-success opacity-100">Optimal</span></p>
@@ -2461,13 +2470,13 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                     ) : (
                         <div className="space-y-5">
                             {alerts.map(w => (
-                                <div key={w.id} className="p-6 bg-surface/80 border border-white/5 rounded-[2.5rem] animate-fadeIn hover:border-danger/40 transition-all cursor-pointer shadow-xl relative overflow-hidden group/item" onClick={() => { setSelectedWellId(w.id); }}>
+                                <div key={w.id} className="p-6 bg-surface/80 border border-white/5 rounded-none animate-fadeIn hover:border-danger/40 transition-all cursor-pointer shadow-xl relative overflow-hidden group/item" onClick={() => { setSelectedWellId(w.id); }}>
                                     <div className="absolute inset-0 bg-gradient-to-tr from-danger/5 to-transparent opacity-0 group-hover/item:opacity-100 transition-opacity"></div>
-                                    <div className="absolute left-0 top-8 bottom-8 w-1 bg-danger rounded-full shadow-glow-danger"></div>
+                                    <div className="absolute left-0 top-8 bottom-8 w-1 bg-danger rounded-none shadow-glow-danger"></div>
 
                                     <div className="flex items-center justify-between mb-4 relative z-10 pl-2">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-2 h-2 rounded-full bg-danger animate-ping"></div>
+                                            <div className="w-2 h-2 rounded-none bg-danger"></div>
                                             <span className="text-[10px] font-black text-danger uppercase italic tracking-[0.2em]">Salud Crítica</span>
                                         </div>
                                         <span className="text-[10px] font-mono text-txt-muted opacity-40">{(new Date(w.lastUpdate)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
@@ -2477,7 +2486,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                         Análisis predictivo detecta degradación acelerada del {100 - getWellHealthScore(w)}%. Posible interferencia de gas o desgaste mecánico.
                                     </p>
                                     <div className="flex justify-end relative z-10">
-                                        <button className="px-6 py-2.5 bg-danger/10 text-danger text-[10px] font-black rounded-xl border border-danger/20 group-hover/item:bg-danger group-hover/item:text-white transition-all tracking-widest uppercase shadow-lg shadow-danger/5">
+                                        <button className="px-6 py-2.5 bg-danger/10 text-danger text-[10px] font-black rounded-none border border-danger/20 group-hover/item:bg-danger group-hover/item:text-white transition-all tracking-widest uppercase shadow-lg shadow-danger/5">
                                             Ver Diagnóstico
                                         </button>
                                     </div>
@@ -2497,18 +2506,18 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
             <div className="flex gap-6 mt-6 pb-20">
                 <div className="flex-1 min-w-0 transition-all duration-500">
                     {fleet.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center p-20 glass-surface rounded-[3.5rem] border border-white/5 border-dashed min-h-[550px] animate-fadeIn mx-4 shadow-3xl">
-                            <div className="p-8 bg-primary/10 rounded-[2.5rem] mb-10 relative border border-primary/20 shadow-glow-primary/10">
+                        <div className="flex flex-col items-center justify-center p-20 glass-surface rounded-none border border-white/5 border-dashed min-h-[550px] animate-fadeIn mx-4 shadow-3xl">
+                            <div className="p-8 bg-primary/10 rounded-none mb-10 relative border border-primary/20 shadow-glow-primary/10">
                                 <Activity className="w-20 h-20 text-primary animate-pulse" />
-                                <div className="absolute -top-3 -right-3 w-10 h-10 bg-primary rounded-full animate-ping opacity-20"></div>
+                                <div className="absolute -top-3 -right-3 w-10 h-10 bg-primary rounded-none animate-ping opacity-20"></div>
                             </div>
                             <h3 className="text-4xl font-black text-txt-main uppercase tracking-tighter mb-4 text-center">Centro de Control ALS</h3>
                             <p className="text-txt-muted text-center max-w-xl font-medium leading-relaxed text-lg opacity-70">
                                 La flota se encuentra vacía o está inicializando. Utilice los controles en la parte superior derecha para cargar sus diseños técnicos y pruebas de producción.
                             </p>
                             <div className="flex items-center gap-4 mt-8">
-                                <button onClick={() => importDesignRef.current?.click()} className="h-12 px-8 bg-primary text-white rounded-xl flex items-center gap-3 hover:bg-primary/80 transition-all font-black text-[10px] uppercase tracking-widest shadow-lg shadow-primary/20"><Download className="w-5 h-5" /> Cargar Diseños</button>
-                                <button onClick={() => importDbRef.current?.click()} className="h-12 px-8 bg-secondary text-white rounded-xl flex items-center gap-3 hover:bg-secondary/80 transition-all font-black text-[10px] uppercase tracking-widest shadow-lg shadow-secondary/20"><Database className="w-5 h-5" /> Cargar SCADA</button>
+                                <button onClick={() => importDesignRef.current?.click()} className="h-12 px-8 bg-primary text-white rounded-none flex items-center gap-3 hover:bg-primary/80 transition-all font-black text-[10px] uppercase tracking-widest shadow-lg shadow-primary/20"><Download className="w-5 h-5" /> Cargar Diseños</button>
+                                <button onClick={() => importDbRef.current?.click()} className="h-12 px-8 bg-secondary text-white rounded-none flex items-center gap-3 hover:bg-secondary/80 transition-all font-black text-[10px] uppercase tracking-widest shadow-lg shadow-secondary/20"><Database className="w-5 h-5" /> Cargar SCADA</button>
                             </div>
                         </div>
                     ) : (
@@ -2545,30 +2554,30 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                 <div className="fixed inset-0 z-[100] bg-canvas/95 backdrop-blur-xl animate-fadeIn overflow-hidden flex flex-col">
                     <div className="h-20 bg-surface/80 border-b border-white/10 flex items-center justify-between px-10 shrink-0 backdrop-blur-md">
                         <div className="flex items-center gap-6">
-                            <div className="p-3 bg-primary/20 rounded-2xl border border-primary/20 shadow-glow-primary/10"><ClipboardCheck className="w-6 h-6 text-primary" /></div>
+                            <div className="p-3 bg-primary/20 rounded-none border border-primary/20 shadow-glow-primary/10"><ClipboardCheck className="w-6 h-6 text-primary" /></div>
                             <div className="flex flex-wrap items-center gap-3">
                                 <button
                                     onClick={() => importExcelDesignRef.current?.click()}
-                                    className="flex items-center gap-2.5 px-5 py-2.5 bg-primary/10 hover:bg-primary text-primary hover:text-white border border-primary/20 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all hover:shadow-glow-primary/20"
+                                    className="flex items-center gap-2.5 px-5 py-2.5 bg-primary/10 hover:bg-primary text-primary hover:text-white border border-primary/20 rounded-none font-black text-[10px] uppercase tracking-widest transition-all hover:shadow-glow-primary/20"
                                 >
                                     <Database className="w-4 h-4" />
                                     Importar Diseños (Excel)
                                 </button>
                                 <button
                                     onClick={() => importDesignRef.current?.click()}
-                                    className="flex items-center gap-2.5 px-5 py-2.5 bg-surface-light/50 hover:bg-surface-light text-txt-main border border-white/5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all"
+                                    className="flex items-center gap-2.5 px-5 py-2.5 bg-surface-light/50 hover:bg-surface-light text-txt-main border border-white/5 rounded-none font-black text-[10px] uppercase tracking-widest transition-all"
                                 >
                                     <Download className="w-4 h-4" />
                                     Cargar JSON
                                 </button>
                                 <button
                                     onClick={() => importDbRef.current?.click()}
-                                    className="flex items-center gap-2.5 px-5 py-2.5 bg-secondary/10 hover:bg-secondary text-secondary hover:text-white border border-secondary/20 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all hover:shadow-glow-secondary/20"
+                                    className="flex items-center gap-2.5 px-5 py-2.5 bg-secondary/10 hover:bg-secondary text-secondary hover:text-white border border-secondary/20 rounded-none font-black text-[10px] uppercase tracking-widest transition-all hover:shadow-glow-secondary/20"
                                 >
                                     <TrendingUp className="w-4 h-4" />
                                     Cargar Historial (Match)
                                 </button>
-                                <button onClick={clearFleet} className="p-2.5 bg-danger/10 hover:bg-danger text-danger hover:text-white rounded-xl border border-danger/20 transition-all" title="Limpiar Flota">
+                                <button onClick={clearFleet} className="p-2.5 bg-danger/10 hover:bg-danger text-danger hover:text-white rounded-none border border-danger/20 transition-all" title="Limpiar Flota">
                                     <Trash2 className="w-4 h-4" />
                                 </button>
                             </div>
@@ -2578,7 +2587,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                 <p className="text-[10px] font-black text-primary uppercase tracking-[0.3em] opacity-60">Digital Twin • {selectedWell.name}</p>
                             </div>
                         </div>
-                        <button onClick={() => setShowFullMatch(false)} className="p-3 bg-white/5 hover:bg-danger/20 text-txt-muted hover:text-danger rounded-2xl border border-white/10 transition-all">
+                        <button onClick={() => setShowFullMatch(false)} className="p-3 bg-white/5 hover:bg-danger/20 text-txt-muted hover:text-danger rounded-none border border-white/10 transition-all">
                             <X className="w-6 h-6" />
                         </button>
                     </div>
@@ -2612,19 +2621,19 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent h-[200%] animate-[eks-scanline_10s_linear_infinite]" />
                     </div>
 
-                    <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-primary/20 rounded-full blur-[180px] animate-pulse"></div>
-                    <div className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] bg-secondary/15 rounded-full blur-[180px] animate-pulse-slow"></div>
+                    <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-primary/20 rounded-none blur-[180px] animate-pulse"></div>
+                    <div className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] bg-secondary/15 rounded-none blur-[180px] animate-pulse-slow"></div>
 
-                    <div className="bg-surface/60 backdrop-blur-3xl border border-white/10 rounded-[4rem] p-16 shadow-[0_0_150px_rgba(var(--color-primary),0.2)] flex flex-col items-center gap-10 max-w-2xl w-full relative overflow-hidden group">
+                    <div className="bg-surface/60 backdrop-blur-3xl border border-white/10 rounded-none p-16 shadow-[0_0_150px_rgba(var(--color-primary),0.2)] flex flex-col items-center gap-10 max-w-2xl w-full relative overflow-hidden group">
                         {/* Shimmer effect */}
                         <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent -translate-x-full group-hover:animate-[shimmer_3s_infinite] pointer-events-none"></div>
 
                         <div className="relative">
                             {/* ENLARGED VIDEO CONTAINER FOR LOADING */}
                             <div className="relative w-[480px] h-[270px] flex items-center justify-center max-w-full">
-                                <div className="absolute inset-0 bg-primary/10 rounded-full blur-[100px] animate-pulse"></div>
+                                <div className="absolute inset-0 bg-primary/10 rounded-none blur-[100px] animate-pulse"></div>
 
-                                <div className="relative z-10 w-full h-full overflow-hidden rounded-[2rem] border border-white/10 shadow-[0_0_50px_rgba(var(--color-primary),0.2)] bg-canvas/40 backdrop-blur-md">
+                                <div className="relative z-10 w-full h-full overflow-hidden rounded-none border border-white/10 shadow-[0_0_50px_rgba(var(--color-primary),0.2)] bg-canvas/40 backdrop-blur-md">
                                     <video
                                         src="/loading_mini.mp4"
                                         autoPlay
@@ -2642,7 +2651,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                 <h3 className="text-3xl font-black text-txt-main uppercase tracking-[0.3em] drop-shadow-2xl">
                                     {importProgress.label.replace('...', '')}
                                 </h3>
-                                <div className="h-1 w-24 bg-primary mx-auto rounded-full shadow-glow-primary opacity-60"></div>
+                                <div className="h-1 w-24 bg-primary mx-auto rounded-none shadow-glow-primary opacity-60"></div>
                             </div>
 
                             <p className="text-txt-muted text-[10px] font-black uppercase tracking-[0.5em] opacity-50 flex items-center gap-3">
@@ -2651,9 +2660,9 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                             </p>
 
                             <div className="w-full mt-10 space-y-5">
-                                <div className="w-full h-4 bg-canvas/60 rounded-full overflow-hidden border border-white/10 shadow-inner p-[3px] relative">
+                                <div className="w-full h-4 bg-canvas/60 rounded-none overflow-hidden border border-white/10 shadow-inner p-[3px] relative">
                                     <div
-                                        className="h-full bg-gradient-to-r from-primary via-secondary to-primary bg-[length:200%_100%] animate-shimmer-fast rounded-full transition-all duration-700 ease-out shadow-[0_0_20px_rgba(var(--color-primary),0.6)]"
+                                        className="h-full bg-gradient-to-r from-primary via-secondary to-primary bg-[length:200%_100%] animate-shimmer-fast rounded-none transition-all duration-700 ease-out shadow-[0_0_20px_rgba(var(--color-primary),0.6)]"
                                         style={{ width: `${(importProgress.current / Math.max(1, importProgress.total)) * 100}%` }}
                                     ></div>
                                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer pointer-events-none"></div>
@@ -2662,7 +2671,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                 <div className="flex justify-between items-end px-2">
                                     <div className="flex flex-col items-start">
                                         <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-1.5">System Status</span>
-                                        <span className="text-[11px] font-black text-txt-muted uppercase tracking-widest bg-white/5 px-4 py-1.5 rounded-xl border border-white/10 font-mono">
+                                        <span className="text-[11px] font-black text-txt-muted uppercase tracking-widest bg-white/5 px-4 py-1.5 rounded-none border border-white/10 font-mono">
                                             {importProgress.current} / {importProgress.total} Nodes
                                         </span>
                                     </div>
@@ -2689,10 +2698,10 @@ const PredictiveMiniWidget = ({ label, status, desc }: any) => {
     };
     const config = statusConfig[status] || statusConfig.optimal;
     return (
-        <div className="flex items-center justify-between p-5 bg-canvas/40 backdrop-blur-md rounded-[1.5rem] border border-white/5 hover:border-primary/30 transition-all group cursor-default shadow-lg relative overflow-hidden">
+        <div className="flex items-center justify-between p-5 bg-canvas/40 backdrop-blur-md rounded-none border border-white/5 hover:border-primary/30 transition-all group cursor-default shadow-lg relative overflow-hidden">
             <div className={`absolute left-0 top-0 bottom-0 w-1 ${config.bg} opacity-50`}></div>
             <div className="flex items-center gap-5 relative z-10">
-                <div className={`w-3 h-3 rounded-full ${config.bg} ${config.glow} shadow-sm transition-transform`}></div>
+                <div className={`w-3 h-3 rounded-none ${config.bg} ${config.glow} shadow-sm transition-transform`}></div>
                 <div>
                     <span className="text-[11px] font-black text-txt-main uppercase tracking-widest opacity-90">{label}</span>
                     <p className="text-[10px] font-bold text-txt-muted uppercase opacity-40 tracking-tighter mt-0.5 group-hover:opacity-80 transition-opacity">{desc}</p>
@@ -2707,11 +2716,11 @@ const CompValueCard = ({ label, design, actual, unit }: any) => {
     const diff = design !== 0 ? ((actual - design) / design) * 100 : 0;
     const isGood = Math.abs(diff) < 10;
     return (
-        <div className="glass-surface p-7 rounded-[2rem] border border-white/5 group hover:border-primary/40 transition-all relative overflow-hidden shadow-2xl">
-            <div className={`absolute top-0 right-0 w-24 h-24 ${isGood ? 'bg-success/5' : 'bg-danger/5'} blur-[30px] rounded-full`}></div>
+        <div className="glass-surface p-7 rounded-none border border-white/5 group hover:border-primary/40 transition-all relative overflow-hidden shadow-2xl">
+            <div className={`absolute top-0 right-0 w-24 h-24 ${isGood ? 'bg-success/5' : 'bg-danger/5'} blur-[30px] rounded-none`}></div>
             <div className="flex justify-between items-start mb-5 relative z-10">
                 <span className="text-[11px] font-black text-txt-muted uppercase tracking-[0.2em] opacity-50">{label}</span>
-                <div className={`px-3 py-1 rounded-full text-[9px] font-black border ${isGood ? 'bg-success/10 text-success border-success/20 shadow-glow-success/10' : 'bg-danger/10 text-danger border-danger/20 shadow-glow-danger/10'}`}>
+                <div className={`px-3 py-1 rounded-none text-[9px] font-black border ${isGood ? 'bg-success/10 text-success border-success/20 shadow-glow-success/10' : 'bg-danger/10 text-danger border-danger/20 shadow-glow-danger/10'}`}>
                     {Math.abs(diff).toFixed(1)}% {diff > 0 ? 'UP' : 'DN'}
                 </div>
             </div>
@@ -2719,7 +2728,7 @@ const CompValueCard = ({ label, design, actual, unit }: any) => {
                 <span className="text-3xl font-black text-txt-main tracking-tighter drop-shadow-sm">{actual?.toFixed(0)}</span>
                 <span className="text-[10px] font-black text-txt-muted uppercase opacity-40">{unit}</span>
             </div>
-            <div className="mt-4 flex items-center gap-3 relative z-10 bg-canvas/40 p-2.5 rounded-xl border border-white/5 w-fit">
+            <div className="mt-4 flex items-center gap-3 relative z-10 bg-canvas/40 p-2.5 rounded-none border border-white/5 w-fit">
                 <span className="text-[9px] font-black text-txt-muted uppercase tracking-widest opacity-30">Goal:</span>
                 <span className="text-[11px] font-black text-primary font-mono">{design?.toFixed(0)}</span>
             </div>
@@ -2740,7 +2749,7 @@ const DiagnosticRow = ({ label, unit, theoretical, real, lowIsBad = false, noDif
                 {noDiff ? '-' : `${diff > 0 ? '+' : ''}${diff.toFixed(1)}%`}
             </td>
             <td className="py-6 px-4 text-right">
-                <div className={`inline-block w-4 h-4 rounded-full ${isBad ? 'bg-danger shadow-glow-danger/60 animate-pulse' : 'bg-success shadow-glow-success/40'} border-2 border-white/10 shadow-lg`}></div>
+                <div className={`inline-block w-4 h-4 rounded-none ${isBad ? 'bg-danger shadow-glow-danger/60 animate-pulse' : 'bg-success shadow-glow-success/40'} border-2 border-white/10 shadow-lg`}></div>
             </td>
         </tr>
     );
@@ -2865,13 +2874,13 @@ const FloatingAiPanel = ({ fleet, selectedWell, language, t }: { fleet: WellFlee
                     {/* CHAT HEADER */}
                     <div className="p-5 border-b border-surface-light flex items-center justify-between bg-primary/5">
                         <div className="flex items-center gap-3">
-                            <div className="p-2.5 bg-primary rounded-2xl shadow-[0_0_20px_rgba(var(--color-primary),0.4)] ring-4 ring-primary/20 animate-pulse">
+                            <div className="p-2.5 bg-primary rounded-none shadow-[0_0_20px_rgba(var(--color-primary),0.4)] ring-4 ring-primary/20 animate-pulse">
                                 <Sparkles className="w-4 h-4 text-white" />
                             </div>
                             <div className="space-y-0.5">
                                 <h4 className="text-[11px] font-black uppercase tracking-widest text-txt-main text-glow">ANTIGRAVITY AI</h4>
                                 <div className="flex items-center gap-1.5">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+                                    <div className="w-1.5 h-1.5 rounded-none bg-emerald-500 animate-ping" />
                                     <span className="text-[8px] font-black text-emerald-500 uppercase tracking-tighter">Monitoreo Co-Piloto</span>
                                 </div>
                             </div>
@@ -2879,12 +2888,12 @@ const FloatingAiPanel = ({ fleet, selectedWell, language, t }: { fleet: WellFlee
                         <div className="flex items-center gap-1">
                             <button
                                 onClick={() => AiMemoryService.exportMemory()}
-                                className="p-2 hover:bg-white/10 rounded-xl transition-all group"
+                                className="p-2 hover:bg-white/10 rounded-none transition-all group"
                                 title={language === 'es' ? 'Exportar Memoria IA (Archivo .json)' : 'Export AI Memory (.json)'}
                             >
                                 <Download className="w-4 h-4 text-txt-muted group-hover:text-primary" />
                             </button>
-                            <button onClick={() => setIsOpen(false)} className="p-2 hover:bg-surface-light rounded-xl transition-colors">
+                            <button onClick={() => setIsOpen(false)} className="p-2 hover:bg-surface-light rounded-none transition-colors">
                                 <X className="w-4 h-4 text-txt-muted" />
                             </button>
                         </div>
@@ -2894,21 +2903,21 @@ const FloatingAiPanel = ({ fleet, selectedWell, language, t }: { fleet: WellFlee
                     <div className="flex-1 overflow-y-auto p-5 space-y-4 custom-scrollbar bg-canvas/30">
                         {msgs.map((m, i) => (
                             <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                <div className={`max-w-[85%] px-4 py-3 rounded-2xl text-[11px] leading-relaxed font-medium ${m.role === 'user' ? 'bg-primary text-white shadow-lg rounded-br-none' : 'bg-surface border border-surface-light text-txt-main shadow-sm rounded-bl-none'}`}>
+                                <div className={`max-w-[85%] px-4 py-3 rounded-none text-[11px] leading-relaxed font-medium ${m.role === 'user' ? 'bg-primary text-white shadow-lg rounded-none' : 'bg-surface border border-surface-light text-txt-main shadow-sm rounded-none'}`}>
                                     {/* Optional markdown parsing could be added here similar to App.tsx */}
                                     <div className="whitespace-pre-wrap">{m.text}</div>
                                 </div>
                             </div>
                         ))}
-                        {loading && <div className="flex justify-start"><div className="bg-surface px-4 py-2 rounded-2xl border border-surface-light"><RefreshCw className="w-3 h-3 animate-spin text-primary" /></div></div>}
+                        {loading && <div className="flex justify-start"><div className="bg-surface px-4 py-2 rounded-none border border-surface-light"><RefreshCw className="w-3 h-3 animate-spin text-primary" /></div></div>}
                         <div ref={endRef} />
                     </div>
 
                     {/* INPUT */}
                     <div className="p-4 bg-surface border-t border-surface-light">
                         <div className="relative">
-                            <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && send()} placeholder={language === 'es' ? 'Escribe o pregunta...' : 'Ask about fleet/wells...'} className="w-full bg-canvas border border-surface-light rounded-2xl pl-4 pr-12 py-3 text-[11px] text-txt-main outline-none focus:border-primary/50 transition-all font-semibold placeholder:text-txt-muted/50" />
-                            <button onClick={send} disabled={!input.trim() || loading} className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-primary text-white rounded-xl shadow-md hover:bg-primary/90 transition-all disabled:opacity-30">
+                            <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && send()} placeholder={language === 'es' ? 'Escribe o pregunta...' : 'Ask about fleet/wells...'} className="w-full bg-canvas border border-surface-light rounded-none pl-4 pr-12 py-3 text-[11px] text-txt-main outline-none focus:border-primary/50 transition-all font-semibold placeholder:text-txt-muted/50" />
+                            <button onClick={send} disabled={!input.trim() || loading} className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-primary text-white rounded-none shadow-md hover:bg-primary/90 transition-all disabled:opacity-30">
                                 <Send className="w-3.5 h-3.5" />
                             </button>
                         </div>
@@ -2916,11 +2925,11 @@ const FloatingAiPanel = ({ fleet, selectedWell, language, t }: { fleet: WellFlee
                 </div>
             </div>
 
-            <button onClick={() => setIsOpen(!isOpen)} className={`relative flex items-center justify-center w-16 h-16 rounded-full shadow-[0_15px_35px_rgba(var(--color-primary),0.4)] transition-all duration-500 group border-4 border-canvas overflow-hidden ${isOpen ? 'bg-surface text-primary rotate-90 scale-90' : 'bg-primary text-white'}`}>
+            <button onClick={() => setIsOpen(!isOpen)} className={`relative flex items-center justify-center w-16 h-16 rounded-none shadow-[0_15px_35px_rgba(var(--color-primary),0.4)] transition-all duration-500 group border-4 border-canvas overflow-hidden ${isOpen ? 'bg-surface text-primary rotate-90 scale-90' : 'bg-primary text-white'}`}>
                 {isOpen ? <X className="w-6 h-6" /> : <Sparkles className="w-7 h-7 group-hover:rotate-12 transition-transform" />}
                 <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                 {fleet.filter(w => w.status !== 'normal').length > 0 && !isOpen && (
-                    <div className="absolute top-0 right-0 w-4 h-4 bg-danger rounded-full border-2 border-canvas shadow-glow-danger animate-pulse"></div>
+                    <div className="absolute top-0 right-0 w-4 h-4 bg-danger rounded-none border-2 border-canvas shadow-glow-danger animate-pulse"></div>
                 )}
             </button>
         </div>
