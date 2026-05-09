@@ -764,7 +764,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
     const [wellViewMode, setWellViewMode] = useState<'monitoring' | 'history'>('monitoring');
     const [wellsHistoricalData, setWellsHistoricalData] = useState<Record<string, ProductionTest[]>>(_cachedHistoricalData);
     const [importProgress, setImportProgress] = useState<{ current: number, total: number, label: string } | null>(null);
-    const [zoomLevel, setZoomLevel] = useState<number>(1);
+    const [zoomLevel, setZoomLevel] = useState<number>(0.8);
 
     // ── Sync module cache whenever state changes ──────────────────
     useEffect(() => { _cachedFleet = fleet; }, [fleet]);
