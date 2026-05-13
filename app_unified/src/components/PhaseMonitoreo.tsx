@@ -30,27 +30,39 @@ import { AiMemoryService } from '../services/AiMemoryService';
 
 // --- PERFORMANCE OPTIMIZED SUB-COMPONENTS ---
 const WellListItem = React.memo(({ well, health, isActive, isMechVerified, onSelect }: any) => {
+    const isPendiente = well.estadoActual === 'pendiente';
+    const isESP = !well.als || well.als.toUpperCase() === 'ESP';
+
+    const statusColor = isPendiente ? 'bg-slate-500' : (health >= 85 ? 'bg-success shadow-glow-success' : health >= 60 ? 'bg-warning' : 'bg-danger shadow-glow-danger');
+    const healthDisplay = isPendiente ? '--' : `${health}%`;
+
     return (
         <button
-            onClick={() => onSelect(well.id)}
-            className={`w-full flex items-center gap-4 px-4 py-3 rounded-none transition-all text-left mb-1 ${isActive
+            onClick={() => isESP && onSelect(well.id)}
+            disabled={!isESP}
+            className={`w-full flex items-center gap-4 px-4 py-3 rounded-none transition-all text-left mb-1 ${!isESP ? 'opacity-40 grayscale cursor-not-allowed' : (isActive
                 ? 'bg-primary/20 border border-primary/30'
                 : 'hover:bg-white/5 border border-transparent'
-                }`}
+                )}`}
         >
-            <div className={`w-2.5 h-2.5 rounded-none shrink-0 ${health >= 85 ? 'bg-success shadow-glow-success' : health >= 60 ? 'bg-warning' : 'bg-danger shadow-glow-danger'}`}></div>
+            <div className={`w-2.5 h-2.5 rounded-none shrink-0 ${statusColor}`}></div>
             <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                     <span className={`text-sm font-black uppercase tracking-tight truncate ${isActive ? 'text-primary' : 'text-txt-main'}`}>{well.name}</span>
                     {isMechVerified && (
                         <span className="bg-cyan-500/10 text-cyan-500 border border-cyan-500/30 px-1.5 py-0.5 rounded text-[7px] font-black uppercase tracking-widest">MECH</span>
                     )}
+                    {well.als && (
+                        <span className={`${isESP ? 'bg-primary/10 text-primary border-primary/30' : 'bg-warning/10 text-warning border-warning/30'} border px-1.5 py-0.5 rounded text-[7px] font-black uppercase tracking-widest`}>
+                            {well.als} {!isESP && '• NO SOPORTADO'}
+                        </span>
+                    )}
                 </div>
                 <span className="text-[9px] font-bold text-txt-muted uppercase tracking-widest">
-                    {Math.round(well.currentRate)} BPD • {well.productionTest.freq || 0} Hz
+                    {isPendiente ? 'Pendiente por Instalación' : `${Math.round(well.currentRate)} BPD • ${well.productionTest.freq || 0} Hz`}
                 </span>
             </div>
-            <span className={`text-xs font-black ${health >= 85 ? 'text-success' : health >= 60 ? 'text-warning' : 'text-danger'}`}>{health}%</span>
+            <span className={`text-xs font-black ${isPendiente ? 'text-txt-muted' : (health >= 85 ? 'text-success' : health >= 60 ? 'text-warning' : 'text-danger')}`}>{healthDisplay}</span>
         </button>
     );
 });
@@ -757,6 +769,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
     const [customDesigns, setCustomDesigns] = useState<Record<string, SystemParams>>(_cachedDesigns);
     const [healthFilter, setHealthFilter] = useState<'all' | 'healthy' | 'caution' | 'critical'>('all');
     const [dataFilter, setDataFilter] = useState<'all' | 'complete' | 'missing' | 'no-tests'>('all');
+    const [statusFilter, setStatusFilter] = useState<'all' | 'operativo' | 'fallado' | 'pull' | 'pendiente'>('all');
     const [isNotifOpen, setIsNotifOpen] = useState(false);
     const [selectedWellId, setSelectedWellId] = useState<string | null>(null);
     const [isWellDropdownOpen, setIsWellDropdownOpen] = useState(false);
@@ -819,6 +832,11 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
             });
         }
 
+        // Filter by status (estadoActual)
+        if (statusFilter !== 'all') {
+            result = result.filter(well => well.estadoActual === statusFilter);
+        }
+
         // Filter by search term (normalized) - Using deferred term to keep UI responsive
         if (deferredSearchTerm.trim()) {
             const st = norm_ext(deferredSearchTerm);
@@ -826,10 +844,14 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
         }
 
         return result;
-    }, [fleet, healthFilter, dataFilter, deferredSearchTerm, wellHealthMap]);
+    }, [fleet, healthFilter, dataFilter, statusFilter, deferredSearchTerm, wellHealthMap]);
 
     const sortedFleet = useMemo(() => {
         return [...filteredFleet].sort((a, b) => {
+            // Prioritize 'operativo' status
+            if (a.estadoActual === 'operativo' && b.estadoActual !== 'operativo') return -1;
+            if (a.estadoActual !== 'operativo' && b.estadoActual === 'operativo') return 1;
+
             const ha = wellHealthMap[a.id] || 0;
             const hb = wellHealthMap[b.id] || 0;
             return ha - hb; // Show critical first
@@ -1192,6 +1214,15 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                     const motorAmps = n_ext(get_ext(row, ['AMP', 'AMPERAGE', 'AMPERIOS', 'A', 'MOTOR AMP', 'MOTOR AMPERAGE']));
                     const vsdName = s_ext(get_ext(row, ['VARIADOR', 'VFD', 'VSD', 'VARIABLE SPEED DRIVE']));
 
+                    // --- NEW: Estado Actual y ALS ---
+                    const estadoActualRaw = s_ext(get_ext(row, ['ESTADO ACTUAL', 'ESTADOACTUAL', 'STATUS', 'CURRENT STATUS'])).toLowerCase();
+                    let estadoActual: any = 'operativo';
+                    if (estadoActualRaw.includes('falla') || estadoActualRaw.includes('fallado')) estadoActual = 'fallado';
+                    else if (estadoActualRaw.includes('pull')) estadoActual = 'pull';
+                    else if (estadoActualRaw.includes('pendiente')) estadoActual = 'pendiente';
+
+                    const als = s_ext(get_ext(row, ['ALS', 'SISTEMA', 'SISTEMA DE LEVANTAMIENTO', 'TIPO']));
+
                     const foundPump = smartMatchExt(pumpCatalog, pumpName, false);
                     if (foundPump) {
                         (design as any).customPump = { ...foundPump, stages: stages || foundPump.stages || 100 };
@@ -1211,7 +1242,9 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                     wellsToAdd.push({
                         id: `EXCEL-${nickName}-${Date.now()}-${i + idx}`,
                         name: nickName,
-                        status: 'normal',
+                        status: estadoActual === 'fallado' ? 'failure' : (estadoActual === 'pendiente' ? 'caution' : 'normal'),
+                        estadoActual,
+                        als,
                         health: { pump: 'normal', motor: 'normal', seal: 'normal', sensor: 'active', cable: 'normal' },
                         predictive: { ttf: 365, vsdStatus: 'optimal', vsdAnalysis: 'Excel Import', transformerStatus: 'optimal', transformerAnalysis: 'Normal', ventBoxStatus: 'optimal', ventBoxAnalysis: 'Normal' },
                         lastUpdate: new Date().toISOString(),
@@ -1343,7 +1376,9 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                         wellsToAdd.push({
                             id: `JSON-${wellName}-${Date.now()}-${processed}-${index}`,
                             name: rawName,
-                            status: (design.historyMatch?.rate > 0) ? (design.healthStatus || 'normal') : 'inactive',
+                            status: (design.historyMatch?.rate > 5) ? (design.healthStatus || 'normal') : 'inactive',
+                            estadoActual: design.estadoActual || (design.historyMatch?.rate > 5 ? 'operativo' : 'fallado'),
+                            als: design.als || 'ESP',
                             health: design.health || { pump: 'normal', motor: 'normal', seal: 'normal', sensor: 'active', cable: 'normal' },
                             predictive: design.predictive || { ttf: 365, vsdStatus: 'optimal', vsdAnalysis: 'Manual Import', transformerStatus: 'optimal', transformerAnalysis: 'Normal', ventBoxStatus: 'optimal', ventBoxAnalysis: 'Normal' },
                             lastUpdate: new Date(design.metadata?.date || Date.now()).toISOString(),
@@ -1787,7 +1822,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
     const selectedWell = useMemo(() => fleet.find(w => w.id === selectedWellId), [selectedWellId, fleet]);
 
     const pump = useMemo(() => {
-        if (!selectedWell) return providedPump || FALLBACK_PUMP;
+        if (!selectedWell || selectedWell.estadoActual === 'pendiente') return null;
         const normalizedName = selectedWell.name.toUpperCase().trim();
 
         let design: any = customDesigns[normalizedName];
@@ -2068,6 +2103,28 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
 
     const renderDetailedWellView = () => {
         if (!selectedWell) return null;
+
+        const isESP = !selectedWell.als || selectedWell.als.toUpperCase() === 'ESP';
+        if (!isESP) {
+            return (
+                <div className="flex flex-col gap-8 p-10 items-center justify-center min-h-[700px] animate-fadeIn">
+                    <div className="w-32 h-32 bg-warning/10 rounded-full border border-warning/20 flex items-center justify-center shadow-glow-warning/20">
+                        <LockIcon className="w-16 h-16 text-warning" />
+                    </div>
+                    <div className="text-center space-y-4 max-w-2xl">
+                        <h2 className="text-4xl font-black text-white uppercase tracking-tighter">Sistema No Soportado</h2>
+                        <p className="text-lg font-medium text-txt-muted leading-relaxed">
+                            El pozo ({selectedWell.name}) utiliza un sistema de levantamiento <strong className="text-warning uppercase tracking-widest text-sm">{selectedWell.als}</strong>.
+                            Actualmente, el tablero de monitoreo avanzado está optimizado exclusivamente para sistemas <strong className="text-primary">ESP (Bombeo Electrosumergible)</strong>.
+                        </p>
+                        <div className="pt-6">
+                            <p className="text-[10px] font-black text-txt-muted uppercase tracking-[0.4em]">Módulos para otros sistemas en desarrollo</p>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
         const isSynced = !!customDesigns[selectedWell.name.toUpperCase().trim()] || !!Object.keys(customDesigns).find(k => fuzzyWellName(k) === fuzzyWellName(selectedWell.name));
         const hasMatch = selectedWell.productionTest.hasMatchData || selectedWell.currentRate > 0;
 
@@ -2076,8 +2133,9 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
         const customDesign = Object.entries(customDesigns).find(([k]) => fuzzyWellName(k) === wellNorm)?.[1];
 
         // Resolve pump
-        let pump = providedPump;
-        if (customDesign) {
+        const isPendiente = selectedWell.estadoActual === 'pendiente';
+        let pump = isPendiente ? null : providedPump;
+        if (customDesign && !isPendiente) {
             const findPump = (obj: any): EspPump | null => {
                 if (!obj || typeof obj !== 'object') return null;
                 if (obj.stages && (obj.h0 || obj.h1)) return obj as EspPump;
@@ -2089,7 +2147,9 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
             }
             pump = findPump(customDesign) || pump;
         }
-        pump = pump || FALLBACK_PUMP;
+        if (!isPendiente) {
+            pump = pump || FALLBACK_PUMP;
+        }
 
 
 
@@ -2147,6 +2207,56 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
 
         const baselineDesign = customDesign || params;
         const liveBhaResults = calculateSystemResults(q, head, wellMatchParams, pump, f) || { pip: selectedWell.productionTest.pip, motorLoad: Math.abs(selectedWell.consumptionReal) };
+
+        if (isPendiente) {
+            return (
+                <div className="flex flex-col gap-8 p-10 items-center justify-center min-h-[700px] animate-fadeIn">
+                    <div className="w-32 h-32 bg-slate-500/10 rounded-full border border-slate-500/20 flex items-center justify-center shadow-glow-slate/20">
+                        <Clock className="w-16 h-16 text-slate-400" />
+                    </div>
+                    <div className="text-center space-y-4 max-w-2xl">
+                        <h2 className="text-4xl font-black text-white uppercase tracking-tighter">Estado: Pendiente</h2>
+                        <p className="text-lg font-medium text-txt-muted leading-relaxed">
+                            Este pozo ({selectedWell.name}) ha sido marcado como <strong className="text-primary uppercase tracking-widest text-sm">Pendiente</strong> en la base de datos de diseño.
+                            Actualmente no se encuentra en operación y no cuenta con un sistema de levantamiento artificial (ESP) instalado.
+                        </p>
+                        <div className="flex flex-col items-center gap-2 pt-6">
+                            <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">Acciones Disponibles</span>
+                            <div className="flex gap-4">
+                                <button
+                                    onClick={() => onNavigateToDesign?.(wellMatchParams, pump)}
+                                    className="px-8 py-3 bg-primary text-white font-black uppercase tracking-widest text-[11px] shadow-glow-primary/40 hover:scale-105 transition-all"
+                                >
+                                    Ver Diseño Planificado
+                                </button>
+                                <button
+                                    onClick={() => setWellViewMode('history')}
+                                    className="px-8 py-3 bg-white/10 text-white font-black uppercase tracking-widest text-[11px] border border-white/20 hover:bg-white/20 transition-all"
+                                >
+                                    Ver Historial de Match
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Placeholder for BHA area to maintain layout balance */}
+                    <div className="w-full max-w-4xl grid grid-cols-3 gap-6 mt-12 opacity-40 grayscale">
+                        <div className="h-32 glass-surface border border-white/5 p-6 flex flex-col justify-center items-center gap-2">
+                            <Target className="w-6 h-6" />
+                            <span className="text-[10px] font-black uppercase tracking-widest">Sin Equipo</span>
+                        </div>
+                        <div className="h-32 glass-surface border border-white/5 p-6 flex flex-col justify-center items-center gap-2">
+                            <Database className="w-6 h-6" />
+                            <span className="text-[10px] font-black uppercase tracking-widest">Sin Telemetría</span>
+                        </div>
+                        <div className="h-32 glass-surface border border-white/5 p-6 flex flex-col justify-center items-center gap-2">
+                            <Monitor className="w-6 h-6" />
+                            <span className="text-[10px] font-black uppercase tracking-widest">Sin Registro</span>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
 
         return (
             <div className="space-y-4 animate-fadeIn p-4 pb-20 relative">
@@ -2222,6 +2332,15 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                                 <button onClick={(e) => { e.stopPropagation(); setHealthFilter('healthy'); }} className={`h-7 px-2.5 rounded-lg flex items-center justify-center transition-all text-[8px] font-black uppercase tracking-widest flex-1 ${healthFilter === 'healthy' ? 'bg-success/20 text-success' : 'text-txt-muted hover:bg-white/5'}`}>Healthy</button>
                                                 <button onClick={(e) => { e.stopPropagation(); setHealthFilter('caution'); }} className={`h-7 px-2.5 rounded-lg flex items-center justify-center transition-all text-[8px] font-black uppercase tracking-widest flex-1 ${healthFilter === 'caution' ? 'bg-warning/20 text-warning' : 'text-txt-muted hover:bg-white/5'}`}>Caution</button>
                                                 <button onClick={(e) => { e.stopPropagation(); setHealthFilter('critical'); }} className={`h-7 px-2.5 rounded-lg flex items-center justify-center transition-all text-[8px] font-black uppercase tracking-widest flex-1 ${healthFilter === 'critical' ? 'bg-danger/20 text-danger' : 'text-txt-muted hover:bg-white/5'}`}>Critical</button>
+                                            </div>
+
+                                            {/* Status filter controls inside dropdown */}
+                                            <div className="flex items-center gap-1 bg-canvas/40 p-1 rounded-none border border-white/5">
+                                                <button onClick={(e) => { e.stopPropagation(); setStatusFilter('all'); }} className={`h-7 px-2.5 rounded-lg flex items-center justify-center transition-all text-[8px] font-black uppercase tracking-widest flex-1 ${statusFilter === 'all' ? 'bg-primary text-white shadow-sm' : 'text-txt-muted hover:bg-white/5'}`}>Estado: Todos</button>
+                                                <button onClick={(e) => { e.stopPropagation(); setStatusFilter('operativo'); }} className={`h-7 px-2.5 rounded-lg flex items-center justify-center transition-all text-[8px] font-black uppercase tracking-widest flex-1 ${statusFilter === 'operativo' ? 'bg-success/20 text-success' : 'text-txt-muted hover:bg-white/5'}`}>Operativo</button>
+                                                <button onClick={(e) => { e.stopPropagation(); setStatusFilter('fallado'); }} className={`h-7 px-2.5 rounded-lg flex items-center justify-center transition-all text-[8px] font-black uppercase tracking-widest flex-1 ${statusFilter === 'fallado' ? 'bg-danger/20 text-danger' : 'text-txt-muted hover:bg-white/5'}`}>Fallado</button>
+                                                <button onClick={(e) => { e.stopPropagation(); setStatusFilter('pull'); }} className={`h-7 px-2.5 rounded-lg flex items-center justify-center transition-all text-[8px] font-black uppercase tracking-widest flex-1 ${statusFilter === 'pull' ? 'bg-warning/20 text-warning' : 'text-txt-muted hover:bg-white/5'}`}>Pull</button>
+                                                <button onClick={(e) => { e.stopPropagation(); setStatusFilter('pendiente'); }} className={`h-7 px-2.5 rounded-lg flex items-center justify-center transition-all text-[8px] font-black uppercase tracking-widest flex-1 ${statusFilter === 'pendiente' ? 'bg-slate-500/20 text-slate-400' : 'text-txt-muted hover:bg-white/5'}`}>Pendiente</button>
                                             </div>
                                         </div>
                                         <div className="p-2">

@@ -316,6 +316,8 @@ export interface WellFleetItem {
   id: string;
   name: string;
   status: 'normal' | 'caution' | 'alert' | 'failure';
+  estadoActual?: 'operativo' | 'fallado' | 'pull' | 'pendiente' | string;
+  als?: string; // ESP, PCP, Bombeo Mecánico, etc.
   health: WellHealthStatus;
   predictive: PredictiveData;
   lastUpdate: string;
