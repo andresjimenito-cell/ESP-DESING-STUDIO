@@ -74,6 +74,8 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         '@': path.resolve('./src'),
+        'jspdf': 'https://esm.sh/jspdf@2.5.1',
+        'html2canvas': 'https://esm.sh/html2canvas@1.4.1',
       }
     }
   };
