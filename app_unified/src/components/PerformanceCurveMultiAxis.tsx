@@ -180,19 +180,20 @@ export const PerformanceCurveMultiAxis: React.FC<Props> = ({ data, currentFlow, 
               opacity={0.9}
               connectNulls={false}
               filter="url(#neon-s)"
+              isAnimationActive={false}
             />
-            <Line yAxisId="left" type="monotone" dataKey="idealSystemCurve" stroke={colorSystem} strokeWidth={2} strokeDasharray="3 3" dot={false} name="Sistema Ideal (Mismo IP)" opacity={0.4} connectNulls={false} />
+            <Line yAxisId="left" type="monotone" dataKey="idealSystemCurve" stroke={colorSystem} strokeWidth={2} strokeDasharray="3 3" dot={false} name="Sistema Ideal (Mismo IP)" opacity={0.4} connectNulls={false} isAnimationActive={false} />
 
-            <Line yAxisId="left" type="monotone" dataKey="headCurr" stroke={colorHead} strokeWidth={4} dot={false} name="Head (ft)" connectNulls={false} filter="url(#neon-p)" />
-            <Line yAxisId="right_eff" type="monotone" dataKey="effCurr" stroke={colorEff} strokeWidth={3} dot={false} name="Efficiency (%)" connectNulls={false} opacity={0.8} />
-            <Line yAxisId="right_pwr" type="monotone" dataKey="pwrCurr" stroke={colorPower} strokeWidth={3} dot={false} name="Power (HP)" connectNulls={false} opacity={0.8} />
+            <Line yAxisId="left" type="monotone" dataKey="headCurr" stroke={colorHead} strokeWidth={4} dot={false} name="Head (ft)" connectNulls={false} filter="url(#neon-p)" isAnimationActive={false} />
+            <Line yAxisId="right_eff" type="monotone" dataKey="effCurr" stroke={colorEff} strokeWidth={3} dot={false} name="Efficiency (%)" connectNulls={false} opacity={0.8} isAnimationActive={false} />
+            <Line yAxisId="right_pwr" type="monotone" dataKey="pwrCurr" stroke={colorPower} strokeWidth={3} dot={false} name="Power (HP)" connectNulls={false} opacity={0.8} isAnimationActive={false} />
 
-            <Line yAxisId="left" type="monotone" dataKey="headNew" stroke={colorHead} strokeWidth={1} strokeDasharray="4 4" dot={false} name="Design Head" opacity={0.4} connectNulls={false} />
-            <Line yAxisId="right_eff" type="monotone" dataKey="effNew" stroke={colorEff} strokeWidth={1} strokeDasharray="4 4" dot={false} name="Design Eff" opacity={0.4} connectNulls={false} />
-            <Line yAxisId="right_pwr" type="monotone" dataKey="pwrNew" stroke={colorPower} strokeWidth={1} strokeDasharray="4 4" dot={false} name="Design Power" opacity={0.4} connectNulls={false} />
+            <Line yAxisId="left" type="monotone" dataKey="headNew" stroke={colorHead} strokeWidth={1} strokeDasharray="4 4" dot={false} name="Design Head" opacity={0.4} connectNulls={false} isAnimationActive={false} />
+            <Line yAxisId="right_eff" type="monotone" dataKey="effNew" stroke={colorEff} strokeWidth={1} strokeDasharray="4 4" dot={false} name="Design Eff" opacity={0.4} connectNulls={false} isAnimationActive={false} />
+            <Line yAxisId="right_pwr" type="monotone" dataKey="pwrNew" stroke={colorPower} strokeWidth={1} strokeDasharray="4 4" dot={false} name="Design Power" opacity={0.4} connectNulls={false} isAnimationActive={false} />
 
-            <Line yAxisId="left" type="monotone" dataKey="minLimit" stroke="#64748b" strokeWidth={1.5} strokeDasharray="5 5" dot={false} name="ROR Min" opacity={0.6} />
-            <Line yAxisId="left" type="monotone" dataKey="maxLimit" stroke="#64748b" strokeWidth={1.5} strokeDasharray="5 5" dot={false} name="ROR Max" opacity={0.6} />
+            <Line yAxisId="left" type="monotone" dataKey="minLimit" stroke="#64748b" strokeWidth={1.5} strokeDasharray="5 5" dot={false} name="ROR Min" opacity={0.6} isAnimationActive={false} />
+            <Line yAxisId="left" type="monotone" dataKey="maxLimit" stroke="#64748b" strokeWidth={1.5} strokeDasharray="5 5" dot={false} name="ROR Max" opacity={0.6} isAnimationActive={false} />
 
             {opPoint && (
               <>

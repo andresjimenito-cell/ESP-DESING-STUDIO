@@ -1,6 +1,56 @@
 [
   {
     "category": "diagnosis",
+    "wellName": "YAGUAZO-3#5",
+    "technicalSignature": "normal|Q:930|PIP:0|F:60",
+    "context": {
+      "id": "EXCEL-YAGUAZO-3#5-1778777916233-563",
+      "name": "YAGUAZO-3#5",
+      "status": "normal",
+      "estadoActual": "operativo",
+      "als": "ESP",
+      "health": {
+        "pump": "normal",
+        "motor": "normal",
+        "seal": "normal",
+        "sensor": "active",
+        "cable": "normal"
+      },
+      "predictive": {
+        "ttf": 365,
+        "vsdStatus": "optimal",
+        "vsdAnalysis": "Excel Import",
+        "transformerStatus": "optimal",
+        "transformerAnalysis": "Normal",
+        "ventBoxStatus": "optimal",
+        "ventBoxAnalysis": "Normal"
+      },
+      "lastUpdate": "2026-05-13",
+      "currentRate": 930.63,
+      "targetRate": 1316.9,
+      "consumptionReal": 0,
+      "consumptionTheo": 0,
+      "depthMD": 6967.6,
+      "productionTest": {
+        "date": "2026-05-13",
+        "rate": 930.63,
+        "freq": 60,
+        "pip": 0,
+        "thp": 0,
+        "tht": 80,
+        "waterCut": 81.8,
+        "gor": 0,
+        "hp": 0,
+        "pdp": 0,
+        "hasMatchData": true
+      }
+    },
+    "recommendation": "Listo. Analizando **YAGUAZO-3#5**. ¿Qué revisamos?",
+    "id": "e59e723d-1da6-4edf-b70e-f8acdc62a3e3",
+    "timestamp": "2026-05-14T17:00:54.124Z"
+  },
+  {
+    "category": "diagnosis",
     "wellName": "QF-1062H#1",
     "technicalSignature": "normal|Q:2490|PIP:520|F:44",
     "context": {
