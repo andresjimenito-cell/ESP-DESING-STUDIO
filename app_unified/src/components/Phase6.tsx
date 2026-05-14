@@ -1,10 +1,12 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Activity, Gauge, Printer, Droplets, ArrowDown, ClipboardCheck, X, Hammer, Thermometer, RefreshCw, Maximize2, Minimize2, Brain, Calendar, Play, Zap, TrendingDown, TrendingUp, Monitor, Layers, Repeat, Cpu, Target, Info, ShieldCheck, ChevronDown, ChevronUp, AlertTriangle, Database } from 'lucide-react';
+import { Activity, Gauge, Printer, Download, Droplets, ArrowDown, ClipboardCheck, X, Hammer, Thermometer, RefreshCw, Maximize2, Minimize2, Brain, Calendar, Play, Zap, TrendingDown, TrendingUp, Monitor, Layers, Repeat, Cpu, Target, Info, ShieldCheck, ChevronDown, ChevronUp, AlertTriangle, Database } from 'lucide-react';
 import { SystemParams, EspPump, ScenarioData } from '../types';
 import { calculateTDH, calculateSystemResults, calculateBaseHead, calculateBasePowerPerStage, calculatePDP, calculatePIP, calculateFluidProperties, interpolateTVD, generateMultiCurveData, findIntersection, getShaftLimitHp, calculatePwf, getDownloadFilename } from '../utils';
 import { PumpChart } from './PumpChart';
 import { PerformanceCurveMultiAxis } from './PerformanceCurveMultiAxis';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import { useLanguage } from '../i18n';
 
 interface Props {
@@ -309,12 +311,49 @@ const buildVsdRows = (
 const HistoryMatchReport = ({ onClose, designParams, actualParams, pump, designRes, actualRes, designFreq, actualFreq, chartData, mechanics, compareScenario, fieldData, refPoints, calculatedIP, aiAnalysis, motor, degradationPct, vsdRows }: any) => {
     const { t } = useLanguage();
 
-    const handlePrint = () => {
-        const originalTitle = document.title;
-        const fname = getDownloadFilename(designParams, pump, 'Field_Sync');
-        document.title = fname;
-        window.print();
-        setTimeout(() => { document.title = originalTitle; }, 500);
+    const [isDownloading, setIsDownloading] = useState(false);
+
+    const handleDownloadPDF = async () => {
+        setIsDownloading(true);
+        const element = document.getElementById('hmrp');
+        if (!element) return;
+
+        try {
+            const canvas = await html2canvas(element, {
+                scale: 2,
+                useCORS: true,
+                logging: false,
+                backgroundColor: '#ffffff'
+            });
+
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const imgWidth = 210; 
+            const pageHeight = 297;  
+            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+            let heightLeft = imgHeight;
+
+            let position = 0;
+
+            // Page 1
+            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+            heightLeft -= pageHeight;
+
+            // Subsequent pages
+            while (heightLeft > 0) {
+                position -= pageHeight;
+                pdf.addPage();
+                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+            }
+
+            pdf.save(`${getDownloadFilename(designParams, pump, 'Report_Vertical')}.pdf`);
+        } catch (err) {
+            console.error("Error generating PDF:", err);
+            alert("Error al generar el PDF. Intente nuevamente.");
+        } finally {
+            setIsDownloading(false);
+        }
     };
 
     const rp0 = (n: number) => n !== undefined && !isNaN(n) ? n.toFixed(0) : '-';
@@ -385,8 +424,8 @@ const HistoryMatchReport = ({ onClose, designParams, actualParams, pump, designR
         { label: 'Pump Shaft', key: 'pumpShaft', fmt: rp1, unit: '%' },
     ];
 
-    return (
-        <div className="fixed inset-0 z-[9999] bg-canvas overflow-hidden flex flex-col animate-fadeIn">
+    return createPortal(
+        <div className="fixed inset-0 z-[100000] bg-canvas overflow-hidden flex flex-col animate-fadeIn">
             {/* TOP BAR */}
             <div className="h-16 bg-surface border-b border-surface-light flex items-center justify-between px-8 shrink-0 no-print z-50">
                 <div className="flex items-center gap-4">
@@ -397,8 +436,13 @@ const HistoryMatchReport = ({ onClose, designParams, actualParams, pump, designR
                     </div>
                 </div>
                 <div className="flex gap-4">
-                    <button onClick={handlePrint} className="flex items-center gap-2 bg-primary hover:bg-primary/80 text-white px-5 py-2 rounded-none font-bold text-xs uppercase shadow-lg active:scale-95 transition-all">
-                        <Printer className="w-4 h-4" /> Imprimir / PDF
+                    <button 
+                        onClick={handleDownloadPDF} 
+                        disabled={isDownloading}
+                        className="flex items-center gap-2 bg-primary hover:bg-primary/80 disabled:bg-slate-400 text-white px-5 py-2 rounded-none font-bold text-xs uppercase shadow-lg active:scale-95 transition-all"
+                    >
+                        {isDownloading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                        {isDownloading ? 'Generando...' : 'Descargar PDF'}
                     </button>
                     <button onClick={onClose} className="p-2 bg-surface-light hover:bg-red-500/20 text-txt-muted hover:text-danger rounded-none transition-all"><X className="w-5 h-5" /></button>
                 </div>
@@ -410,66 +454,35 @@ const HistoryMatchReport = ({ onClose, designParams, actualParams, pump, designR
                     .graph-force-height .recharts-responsive-container,
                     .graph-force-height .recharts-wrapper {
                         height: 100% !important;
-                        min-height: 480px !important;
+                        min-height: 400px !important;
+                    }
+                    #hmrp {
+                        width: 210mm;
+                        min-height: 297mm;
+                        margin: 0 auto;
+                        background: white !important;
+                        color: black !important;
                     }
                     @media print { 
-                        @page { margin: 5mm; size: A4 landscape; }
-                        html, body { 
-                            height: auto !important; 
-                            overflow: visible !important; 
-                            background: white !important; 
-                            width: 100% !important;
-                            margin: 0 !important;
-                            padding: 0 !important;
-                        }
-                        /* Hide everything using visibility to allow nested elements to override */
-                        body * { visibility: hidden !important; }
-                        
-                        /* Show the report container and all its children */
-                        div[class*="fixed"][class*="z-[9999]"],
-                        div[class*="fixed"][class*="z-[9999]"] * { 
-                            visibility: visible !important; 
-                        }
-                        
-                        /* Position the report container at the top */
-                        div[class*="fixed"][class*="z-[9999]"] { 
-                            display: block !important; 
-                            position: absolute !important; 
-                            left: 0 !important;
-                            top: 0 !important;
-                            width: 100% !important;
-                            height: auto !important; 
-                            overflow: visible !important; 
-                            padding: 0 !important;
-                            margin: 0 !important;
-                            background: white !important;
-                            z-index: 99999 !important;
-                        }
+                        @page { margin: 0; size: A4 portrait; }
+                        body { margin: 0; padding: 0; }
+                        .no-print { display: none !important; }
                         #hmrp { 
-                            position: static !important;
-                            width: 100% !important; 
-                            max-width: none !important; 
-                            background: white !important; 
-                            color: black !important; 
-                            padding: 10mm !important; 
-                            margin: 0 !important; 
+                            width: 100% !important;
+                            margin: 0 !important;
+                            padding: 10mm !important;
                             box-shadow: none !important;
                             border: none !important;
-                            overflow: visible !important;
                         }
-                        .page-break { page-break-before: always !important; break-before: page !important; display: block !important; height: 1px !important; }
-                        .no-print { display: none !important; }
-                        .break-inside-avoid { page-break-inside: avoid !important; break-inside: avoid !important; }
-                        .print-graph-container { height: 350px !important; width: 100% !important; overflow: visible !important; border: 1px solid #eee !important; }
-                        .graph-force-height { height: 350px !important; }
-                        .sticky { position: static !important; } 
-                        .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 6mm !important; }
-                        .grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; gap: 2mm !important; }
-                        table, th, td { color: black !important; border-color: #eee !important; font-size: 8.5pt !important; line-height: 1.2 !important; }
-                        .bg-blue-900, .bg-amber-700, .bg-secondary { color: white !important; -webkit-print-color-adjust: exact !important; }
-                        .recharts-wrapper { overflow: visible !important; width: 100% !important; height: 100% !important; }
-                        .recharts-legend-wrapper { position: static !important; padding: 5px !important; }
-                        .recharts-cartesian-axis-tick-value { font-size: 9pt !important; fill: black !important; }
+                    }
+                    /* Portrait Adjustments */
+                    .portrait-grid {
+                        display: flex !important;
+                        flex-direction: column !important;
+                        gap: 1.5rem !important;
+                    }
+                    .vsd-table-mini {
+                        zoom: 0.65;
                     }
                 `}</style>
 
@@ -532,7 +545,7 @@ const HistoryMatchReport = ({ onClose, designParams, actualParams, pump, designR
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4 mt-4 pt-2 border-t border-slate-200 overflow-visible break-inside-avoid">
+                    <div className="portrait-grid mt-4 pt-2 border-t border-slate-200 overflow-visible break-inside-avoid">
                         <div className="flex flex-col">
                             <h3 className="font-black text-[9px] uppercase tracking-[0.2em] text-slate-800 mb-2 pb-1 border-b-2 border-slate-900 flex items-center gap-1">
                                 <Activity className="w-3 h-3" /> Curva Operación ({actualFreq} Hz)
@@ -603,7 +616,7 @@ const HistoryMatchReport = ({ onClose, designParams, actualParams, pump, designR
                         <h3 className="font-black text-[9px] uppercase tracking-[0.2em] text-slate-800 mb-2 pb-1 border-b-2 border-slate-900 flex items-center gap-1">
                             <Layers className="w-3 h-3" /> Tabla de Sensibilidad VSD (Gemelo Digital)
                         </h3>
-                        <div className="bg-white border border-slate-200 rounded-none overflow-auto print:overflow-visible max-h-[500px] print:max-h-none mt-2 custom-scrollbar-h shadow-lg">
+                        <div className="bg-white border border-slate-200 rounded-none overflow-auto print:overflow-visible max-h-none mt-2 custom-scrollbar-h shadow-lg vsd-table-mini">
                             <table className="w-full text-[9px] text-center border-collapse min-w-[1000px]">
                                 <thead className="bg-slate-50 sticky top-0 z-30">
                                     <tr className="sticky top-0 z-30">
@@ -657,7 +670,7 @@ const HistoryMatchReport = ({ onClose, designParams, actualParams, pump, designR
                 </div>
             </div>
         </div>
-    );
+    , document.body);
 };
 
 // --- MAIN COMPONENT ---
