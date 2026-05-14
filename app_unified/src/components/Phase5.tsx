@@ -231,6 +231,7 @@ const f1 = (n: number) => n !== undefined && !isNaN(n) ? n.toFixed(1) : '-';
 
 // --- REPORT SELECTOR MODAL ---
 export const ReportSelectorModal = ({ isOpen, onClose, onSelect, scenarios }: any) => {
+    const { t } = useLanguage();
     if (!isOpen) return null;
     return (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
@@ -238,13 +239,13 @@ export const ReportSelectorModal = ({ isOpen, onClose, onSelect, scenarios }: an
             <div className="relative bg-surface border border-white/10 rounded-[32px] w-full max-w-md p-8 shadow-[0_32px_64px_rgba(0,0,0,0.5)] animate-fadeIn">
                 <div className="flex justify-between items-center mb-6">
                     <h3 className="text-xl font-black text-txt-main uppercase tracking-tight flex items-center gap-3">
-                        <Printer className="w-5 h-5 text-primary" /> {useLanguage().t('p5.designReport')}
+                        <Printer className="w-5 h-5 text-primary" /> {t('p5.designReport')}
                     </h3>
                     <button onClick={onClose} className="p-2 hover:bg-surface-light rounded-xl transition-all"><X className="w-5 h-5 text-txt-muted" /></button>
                 </div>
                 <div className="space-y-3">
                     <button onClick={() => onSelect('comprehensive')} className="w-full p-6 text-left bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-2xl transition-all group">
-                        <div className="font-black text-primary uppercase text-sm mb-1">{useLanguage().t('p5.compReport')}</div>
+                        <div className="font-black text-primary uppercase text-sm mb-1">{t('p5.compReport')}</div>
                         <div className="text-xs text-txt-muted font-bold">Resumen completo de los 3 casos de diseño (MIN, OBJ, MAX)</div>
                     </button>
                     <div className="h-px bg-surface-light my-4"></div>
@@ -846,7 +847,8 @@ const AIRecommendationsModal: React.FC<AIRecommendationsModalProps> = ({ isOpen,
 };
 
 export const Phase5: React.FC<Phase5Props> = ({ params, setParams, customPump, setCustomPump, pumpCatalog, motorCatalog, setShowPumpModal, curveData, match, results, onCompare, onReloadCatalog }) => {
-    const { t } = useLanguage();
+    const { t, language } = useLanguage();
+    const isEs = language === 'es';
     const [showAIModal, setShowAIModal] = useState(false);
     const [aiRecommendations, setAIRecommendations] = useState<any[]>([]);
     const [showAIRecommendations, setShowAIRecommendations] = useState(false);
@@ -1173,7 +1175,7 @@ export const Phase5: React.FC<Phase5Props> = ({ params, setParams, customPump, s
                 </div>
                 <div className="flex items-center gap-2 relative z-10 pr-1">
                     <button onClick={handleExportJson} className="glass-surface hover:bg-white/10 text-success hover:text-success/80 px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all flex items-center gap-2 border border-success/30 shadow-sm light-sweep">
-                        <Save className="w-3.5 h-3.5" /> {useLanguage().language === 'es' ? 'GUARDAR' : 'SAVE'}
+                        <Save className="w-3.5 h-3.5" /> {isEs ? 'GUARDAR' : 'SAVE'}
                     </button>
                     <button onClick={() => {
                         if (onCompare && customPump) {
@@ -1187,7 +1189,7 @@ export const Phase5: React.FC<Phase5Props> = ({ params, setParams, customPump, s
                             });
                         }
                     }} className="glass-surface hover:bg-white/10 text-indigo-500 hover:text-indigo-400 px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all flex items-center gap-2 border border-indigo-500/20 shadow-sm light-sweep">
-                        <GitCompareArrows className="w-3.5 h-3.5" /> {useLanguage().language === 'es' ? 'COMPARAR' : 'COMPARE'}
+                        <GitCompareArrows className="w-3.5 h-3.5" /> {isEs ? 'COMPARAR' : 'COMPARE'}
                     </button>
 
                     <button onClick={() => setShowPumpModal(true)} className="glass-surface hover:bg-white/10 text-txt-muted hover:text-txt-main px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all flex items-center gap-2 border border-white/5 shadow-sm light-sweep">
@@ -1242,10 +1244,10 @@ export const Phase5: React.FC<Phase5Props> = ({ params, setParams, customPump, s
                     {/* --- COMPONENT NAVIGATION (5 BUTTONS) --- */}
                     <div className="flex flex-col gap-2">
                         <div className="grid grid-cols-5 gap-2 px-1">
-                            <NavTab imgSrc="/ICONOS/ICONO DERRATEO.PNG" label={useLanguage().language === 'es' ? "DERRATEO" : "DERATE"} active={activeComp === 'derating'} onClick={() => setActiveComp(activeComp === 'derating' ? null : 'derating')} color="primary" />
-                            <NavTab imgSrc="/ICONOS/ICONO PUMP .PNG" label={useLanguage().language === 'es' ? "BOMBAS" : "PUMPS"} active={activeComp === 'pumps'} onClick={() => setActiveComp(activeComp === 'pumps' ? null : 'pumps')} color="primary" />
-                            <NavTab imgSrc="/ICONOS/ICONO MOTOR.PNG" label={useLanguage().language === 'es' ? "MOTORES" : "MOTORS"} active={activeComp === 'motors'} onClick={() => setActiveComp(activeComp === 'motors' ? null : 'motors')} color="secondary" />
-                            <NavTab imgSrc="/ICONOS/ICONO CABLE.PNG" label={useLanguage().language === 'es' ? "CABLES" : "CABLES"} active={activeComp === 'cables'} onClick={() => setActiveComp(activeComp === 'cables' ? null : 'cables')} color="primary" />
+                            <NavTab imgSrc="/ICONOS/ICONO DERRATEO.PNG" label={isEs ? "DERRATEO" : "DERATE"} active={activeComp === 'derating'} onClick={() => setActiveComp(activeComp === 'derating' ? null : 'derating')} color="primary" />
+                            <NavTab imgSrc="/ICONOS/ICONO PUMP .PNG" label={isEs ? "BOMBAS" : "PUMPS"} active={activeComp === 'pumps'} onClick={() => setActiveComp(activeComp === 'pumps' ? null : 'pumps')} color="primary" />
+                            <NavTab imgSrc="/ICONOS/ICONO MOTOR.PNG" label={isEs ? "MOTORES" : "MOTORS"} active={activeComp === 'motors'} onClick={() => setActiveComp(activeComp === 'motors' ? null : 'motors')} color="secondary" />
+                            <NavTab imgSrc="/ICONOS/ICONO CABLE.PNG" label={isEs ? "CABLES" : "CABLES"} active={activeComp === 'cables'} onClick={() => setActiveComp(activeComp === 'cables' ? null : 'cables')} color="primary" />
                             <NavTab imgSrc="/ICONOS/ICONO VSD.PNG" label="VSD" active={activeComp === 'vsd'} onClick={() => setActiveComp(activeComp === 'vsd' ? null : 'vsd')} color="secondary" />
                         </div>
 
@@ -1282,7 +1284,7 @@ export const Phase5: React.FC<Phase5Props> = ({ params, setParams, customPump, s
                                             className="w-full py-3 rounded-2xl bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 text-[10px] font-black uppercase transition-all flex items-center justify-center gap-3 shadow-sm group"
                                         >
                                             <Clock className="w-4 h-4 group-hover:rotate-180 transition-transform duration-700" />
-                                            {useLanguage().language === 'es' ? 'SINCRONIZAR CATÁLOGO' : 'SYNC CATALOG'}
+                                            {isEs ? 'SINCRONIZAR CATÁLOGO' : 'SYNC CATALOG'}
                                         </button>
                                     )}
                                     <div className="space-y-3">
@@ -1511,10 +1513,10 @@ export const Phase5: React.FC<Phase5Props> = ({ params, setParams, customPump, s
                         <div className="flex-1 flex glass-surface p-1.5 rounded-[1.5rem] border border-white/5 shadow-inner shrink-0 relative overflow-hidden group">
                             <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-secondary/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                             <button onClick={() => setViewMode('analytics')} className={`flex-1 py-3 rounded-2xl text-xs font-black uppercase flex items-center justify-center gap-3 transition-all relative z-10 ${viewMode === 'analytics' ? 'bg-primary/20 text-primary shadow-glow-primary/10 border border-primary/20' : 'text-txt-muted hover:text-txt-main hover:bg-white/5'}`}>
-                                <Activity className="w-4 h-4" /> {useLanguage().language === 'es' ? 'ANALÍTICOS' : 'ANALYTICS'}
+                                <Activity className="w-4 h-4" /> {isEs ? 'ANALÍTICOS' : 'ANALYTICS'}
                             </button>
                             <button onClick={() => setViewMode('table')} className={`flex-1 py-3 rounded-2xl text-xs font-black uppercase flex items-center justify-center gap-3 transition-all relative z-10 ${viewMode === 'table' ? 'bg-secondary/20 text-secondary shadow-glow-secondary/10 border border-secondary/20' : 'text-txt-muted hover:text-txt-main hover:bg-white/5'}`}>
-                                <Table className="w-4 h-4" /> {useLanguage().language === 'es' ? 'OPERATIVOS' : 'VSD TABLE'}
+                                <Table className="w-4 h-4" /> {isEs ? 'OPERATIVOS' : 'VSD TABLE'}
                             </button>
                         </div>
                     </div>
