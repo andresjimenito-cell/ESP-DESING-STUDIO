@@ -5,8 +5,8 @@ import { SystemParams, EspPump, ScenarioData } from '../types';
 import { calculateTDH, calculateSystemResults, calculateBaseHead, calculateBasePowerPerStage, calculatePDP, calculatePIP, calculateFluidProperties, interpolateTVD, generateMultiCurveData, findIntersection, getShaftLimitHp, calculatePwf, getDownloadFilename } from '../utils';
 import { PumpChart } from './PumpChart';
 import { PerformanceCurveMultiAxis } from './PerformanceCurveMultiAxis';
-import { jsPDF } from 'jspdf';
-import html2canvas from 'html2canvas';
+import { jsPDF } from 'https://esm.sh/jspdf@2.5.1';
+import html2canvas from 'https://esm.sh/html2canvas@1.4.1';
 import { useLanguage } from '../i18n';
 
 interface Props {
