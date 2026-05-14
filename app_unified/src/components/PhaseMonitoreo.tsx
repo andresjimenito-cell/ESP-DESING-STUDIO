@@ -43,7 +43,7 @@ const WellListItem = React.memo(({ well, health, isActive, isMechVerified, onSel
             className={`w-full flex items-center gap-4 px-4 py-3 rounded-none transition-all text-left mb-1 ${!isESP ? 'opacity-40 grayscale cursor-not-allowed' : (isActive
                 ? 'bg-primary/20 border border-primary/30'
                 : 'hover:bg-white/5 border border-transparent'
-                )}`}
+            )}`}
         >
             <div className={`w-2.5 h-2.5 rounded-none shrink-0 ${statusColor}`}></div>
             <div className="flex-1 min-w-0">
@@ -188,11 +188,12 @@ const computeWellCapacity = (well: WellFleetItem, wellMatchParams: SystemParams,
     let limitingFactor = 'Operación en Punto de Diseño';
     let estimatedMaxRate = test.rate;
 
-    // OPTIMIZACIÓN: Saltamos de a 2 Hz para reducir carga computacional en un 50%
-    for (let simFreq = currentFreq + 2; simFreq <= 80; simFreq += 2) {
+    // OPTIMIZACIÓN AGRESIVA: Saltamos de a 5 Hz para reducir carga computacional en un 80%
+    // Esto es suficiente para una estimación predictiva de monitoreo.
+    for (let simFreq = currentFreq + 5; simFreq <= 85; simFreq += 5) {
         const ratio = simFreq / baseFreq;
         const maxExpectedFlow = (pump.maxGraphRate || 6000) * ratio;
-        const steps = 30; // Reducido de 60 a 30 (Suficiente precisión para monitoreo)
+        const steps = 20; // Reducido de 30 a 20 (Suficiente para tendencia predictiva)
         const stepSize = maxExpectedFlow / steps;
 
         let bestRate = 0;
@@ -223,15 +224,15 @@ const computeWellCapacity = (well: WellFleetItem, wellMatchParams: SystemParams,
         const totalKva = res?.electrical?.systemKva || 0;
         const vsdKva = (wellMatchParams as any).selectedVSD?.kvaRating || 350;
 
-        if (sub < 500) { limitingFactor = `Sumergencia de Protección (>500 ft)`; break; }
-        if (ml >= 75) { limitingFactor = `Reserva Térmica Motor (Límite 75%)`; break; }
-        if (sl >= 70) { limitingFactor = `Reserva Mecánica Eje (Límite 70%)`; break; }
-        if (res?.pip < 300) { limitingFactor = `Protección PIP (>300 psi)`; break; }
-        if (totalKva >= (vsdKva * 0.90)) { limitingFactor = `Capacidad Reservada VSD (${totalKva.toFixed(0)} kVA)`; break; }
+        if (sub < 400) { limitingFactor = `Sumergencia Crítica (<400 ft)`; break; }
+        if (ml >= 85) { limitingFactor = `Límite Térmico Motor (85%)`; break; }
+        if (sl >= 80) { limitingFactor = `Límite Mecánico Eje (80%)`; break; }
+        if (res?.pip < 250) { limitingFactor = `Protección PIP (<250 psi)`; break; }
+        if (totalKva >= (vsdKva * 0.95)) { limitingFactor = `Capacidad VSD (${totalKva.toFixed(0)} kVA)`; break; }
 
         maxAllowedFreq = simFreq;
         estimatedMaxRate = bestRate;
-        if (simFreq >= 80) limitingFactor = 'Optimizado a 80 Hz (Límite Máximo VSD)';
+        if (simFreq >= 80) limitingFactor = 'Optimizado (Límite VSD)';
     }
 
     const potentialGain = Math.max(0, estimatedMaxRate - test.rate);
@@ -381,7 +382,7 @@ const PredictiveWidget = React.memo(({ selectedWell, wellMatchParams, pump, comp
 
 // --- SUB-COMPONENTS ---
 
-const MetricCard = ({ label, value, unit, icon: Icon, color = 'primary', alert = false }: any) => (
+const MetricCard = React.memo(({ label, value, unit, icon: Icon, color = 'primary', alert = false }: any) => (
     <div className={`glass-surface rounded-none border ${alert ? 'border-danger/50 shadow-glow-danger/20' : 'border-white/5'} p-4 flex flex-col justify-between h-28 relative overflow-hidden group transition-all`}>
         <div className={`absolute -right-4 -top-4 w-16 h-16 ${color === 'primary' ? 'bg-primary/5' : color === 'secondary' ? 'bg-secondary/5' : 'bg-danger/5'} blur-2xl rounded-none`}></div>
         <div className="flex justify-between items-start z-10">
@@ -392,7 +393,7 @@ const MetricCard = ({ label, value, unit, icon: Icon, color = 'primary', alert =
             <div className={`text-2xl font-black ${alert ? 'text-danger' : 'text-txt-main'} tracking-tighter`}>{value} <small className="text-[10px] text-txt-muted uppercase">{unit}</small></div>
         </div>
     </div>
-);
+));
 
 const HealthTagLabels: any = {
     normal: 'Operativo',
@@ -405,7 +406,7 @@ const HealthTagLabels: any = {
     error: 'Error Sensor'
 };
 
-const HealthTag = ({ status, label }: { status: string, label: string }) => {
+const HealthTag = React.memo(({ status, label }: { status: string, label: string }) => {
     const colors: any = {
         normal: 'bg-success/20 text-success border-success/30 shadow-glow-success/10',
         caution: 'bg-warning/20 text-warning border-warning/30',
@@ -425,7 +426,7 @@ const HealthTag = ({ status, label }: { status: string, label: string }) => {
             </span>
         </div>
     );
-};
+});
 
 // --- HEALTH CALCULATION UTILITY ---
 // --- RIGOROUS HEALTH CALCULATION UTILITY ---
@@ -533,7 +534,7 @@ const FALLBACK_PUMP: EspPump = {
     maxFlow: 1600
 };
 
-const MetricSummaryCard = ({ label, value, unit, icon: Icon, color = 'primary' }: any) => {
+const MetricSummaryCard = React.memo(({ label, value, unit, icon: Icon, color = 'primary' }: any) => {
     const glowClass = color === 'primary' ? 'group-hover:shadow-glow-primary/40' : color === 'secondary' ? 'group-hover:shadow-glow-secondary/40' : 'group-hover:shadow-glow-danger/40';
     const borderHover = color === 'primary' ? 'group-hover:border-primary/50' : color === 'secondary' ? 'group-hover:border-secondary/50' : 'group-hover:border-danger/50';
 
@@ -565,7 +566,7 @@ const MetricSummaryCard = ({ label, value, unit, icon: Icon, color = 'primary' }
             <div className={`absolute bottom-0 left-10 right-10 h-[2px] ${color === 'primary' ? 'bg-gradient-to-r from-transparent via-primary/60 to-transparent' : color === 'secondary' ? 'bg-gradient-to-r from-transparent via-secondary/60 to-transparent' : 'bg-gradient-to-r from-transparent via-danger/60 to-transparent'} opacity-0 group-hover:opacity-100 transition-opacity duration-700`}></div>
         </div>
     );
-};
+});
 
 const DiagnosticBadge = ({ well, health, normalWellCapacity }: { well: WellFleetItem, health: number, normalWellCapacity?: any }) => {
     const isRunning = well.currentRate > 5;
@@ -1918,7 +1919,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
             } : undefined
         };
 
-        return JSON.parse(JSON.stringify(mp)); // Kill all references to ensure isolation
+        return mp; // No deep clone needed if we don't mutate. mp is fresh.
     }, [selectedWell, params, customDesigns]);
 
     // The derived wellMatchParams is the SOLE TRUTH for the analysis engine.
@@ -2205,7 +2206,6 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
         const ratio = f / baseFreq;
         const head = calculateBaseHead(q / ratio, pump) * Math.pow(ratio, 2);
 
-        const baselineDesign = customDesign || params;
         const liveBhaResults = calculateSystemResults(q, head, wellMatchParams, pump, f) || { pip: selectedWell.productionTest.pip, motorLoad: Math.abs(selectedWell.consumptionReal) };
 
         if (isPendiente) {
@@ -2467,19 +2467,21 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                         <Activity className="w-4 h-4 text-primary" />
                                     </div>
                                 )}
-                                <div className={`flex-1 relative bg-canvas/40 overflow-hidden flex items-center justify-center p-4 transition-all duration-500 ${isBhaMinimized ? 'opacity-30 grayscale' : 'opacity-100'}`}>
+                                <div className={`flex-1 relative bg-canvas/40 overflow-hidden flex items-center justify-center p-4 transition-all duration-500 ${isBhaMinimized ? 'opacity-0' : 'opacity-100'}`}>
                                     <div className="absolute inset-0 opacity-10 pointer-events-none blueprint-grid"></div>
-                                    <div className={`h-full origin-top flex items-center justify-center w-full transition-all duration-500 ${isBhaMinimized ? 'scale-[0.4] translate-y-10' : 'scale-100'}`}>
-                                        <VisualESPStack
-                                            pump={pump}
-                                            motor={wellMatchParams.selectedMotor || undefined}
-                                            params={wellMatchParams}
-                                            results={liveBhaResults}
-                                            frequency={f}
-                                            health={physicalHealth as any}
-                                            selectedVSD={wellMatchParams.selectedVSD}
-                                        />
-                                    </div>
+                                    {!isBhaMinimized && (
+                                        <div className={`h-full origin-top flex items-center justify-center w-full transition-all duration-500`}>
+                                            <VisualESPStack
+                                                pump={pump}
+                                                motor={wellMatchParams.selectedMotor || undefined}
+                                                params={wellMatchParams}
+                                                results={liveBhaResults}
+                                                frequency={f}
+                                                health={physicalHealth as any}
+                                                selectedVSD={wellMatchParams.selectedVSD}
+                                            />
+                                        </div>
+                                    )}
                                 </div>
                                 {isBhaMinimized && (
                                     <div
@@ -2809,7 +2811,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
     );
 };
 
-const PredictiveMiniWidget = ({ label, status, desc }: any) => {
+const PredictiveMiniWidget = React.memo(({ label, status, desc }: any) => {
     const statusConfig: any = {
         optimal: { color: 'text-success', bg: 'bg-success', glow: 'shadow-glow-success' },
         caution: { color: 'text-warning', bg: 'bg-warning', glow: 'shadow-glow-warning/30' },
@@ -2829,9 +2831,9 @@ const PredictiveMiniWidget = ({ label, status, desc }: any) => {
             <span className={`text-[9px] font-black uppercase tracking-widest ${config.color} opacity-80 bg-white/5 px-3 py-1 rounded-lg border border-white/5`}>{status}</span>
         </div>
     );
-};
+});
 
-const CompValueCard = ({ label, design, actual, unit }: any) => {
+const CompValueCard = React.memo(({ label, design, actual, unit }: any) => {
     const diff = design !== 0 ? ((actual - design) / design) * 100 : 0;
     const isGood = Math.abs(diff) < 10;
     return (
@@ -2853,9 +2855,9 @@ const CompValueCard = ({ label, design, actual, unit }: any) => {
             </div>
         </div>
     );
-};
+});
 
-const DiagnosticRow = ({ label, unit, theoretical, real, lowIsBad = false, noDiff = false }: any) => {
+const DiagnosticRow = React.memo(({ label, unit, theoretical, real, lowIsBad = false, noDiff = false }: any) => {
     const diff = noDiff ? 0 : theoretical > 0 ? ((real - theoretical) / theoretical) * 100 : 0;
     const isBad = noDiff ? false : lowIsBad ? diff < -10 : Math.abs(diff) > 10;
     return (
@@ -2872,7 +2874,7 @@ const DiagnosticRow = ({ label, unit, theoretical, real, lowIsBad = false, noDif
             </td>
         </tr>
     );
-};
+});
 
 // ── FLOATING AI PANEL FOR MONITORING ──────────────────────────────────────────────
 const FloatingAiPanel = ({ fleet, selectedWell, language, t }: { fleet: WellFleetItem[], selectedWell?: WellFleetItem, language: string, t: any }) => {

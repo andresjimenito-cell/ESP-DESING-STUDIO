@@ -139,13 +139,6 @@ export const PerformanceCurveMultiAxis: React.FC<Props> = ({ data, currentFlow, 
       <div className="flex-1 min-h-0 z-10">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={safeData} margin={{ top: 20, right: 60, left: 30, bottom: 50 }}>
-            <defs>
-              <filter id="neon-h" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3" result="b" /><feComposite in="SourceGraphic" in2="b" operator="over" /></filter>
-              <filter id="neon-p" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3" result="b" /><feComposite in="SourceGraphic" in2="b" operator="over" /></filter>
-              <filter id="neon-e" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3" result="b" /><feComposite in="SourceGraphic" in2="b" operator="over" /></filter>
-              <filter id="neon-s" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="4" result="b" /><feComposite in="SourceGraphic" in2="b" operator="over" /></filter>
-            </defs>
-
             <CartesianGrid strokeDasharray="3 3" stroke={colorGrid} vertical={false} />
 
             <XAxis
@@ -179,12 +172,11 @@ export const PerformanceCurveMultiAxis: React.FC<Props> = ({ data, currentFlow, 
               name="Sistema Calibrado"
               opacity={0.9}
               connectNulls={false}
-              filter="url(#neon-s)"
               isAnimationActive={false}
             />
             <Line yAxisId="left" type="monotone" dataKey="idealSystemCurve" stroke={colorSystem} strokeWidth={2} strokeDasharray="3 3" dot={false} name="Sistema Ideal (Mismo IP)" opacity={0.4} connectNulls={false} isAnimationActive={false} />
 
-            <Line yAxisId="left" type="monotone" dataKey="headCurr" stroke={colorHead} strokeWidth={4} dot={false} name="Head (ft)" connectNulls={false} filter="url(#neon-p)" isAnimationActive={false} />
+            <Line yAxisId="left" type="monotone" dataKey="headCurr" stroke={colorHead} strokeWidth={4} dot={false} name="Head (ft)" connectNulls={false} isAnimationActive={false} />
             <Line yAxisId="right_eff" type="monotone" dataKey="effCurr" stroke={colorEff} strokeWidth={3} dot={false} name="Efficiency (%)" connectNulls={false} opacity={0.8} isAnimationActive={false} />
             <Line yAxisId="right_pwr" type="monotone" dataKey="pwrCurr" stroke={colorPower} strokeWidth={3} dot={false} name="Power (HP)" connectNulls={false} opacity={0.8} isAnimationActive={false} />
 
