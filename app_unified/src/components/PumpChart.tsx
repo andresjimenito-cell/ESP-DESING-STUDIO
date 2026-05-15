@@ -471,7 +471,7 @@ export const PumpChart: React.FC<PumpChartProps> = ({ data, pump, currentFrequen
               activeDot={{ r: 5, strokeWidth: 2, fill: colorPrimary, stroke: '#fff' }}
               connectNulls={false}
               strokeLinecap="round"
-              animationDuration={500}
+              isAnimationActive={false}
             >
               <LabelList content={<FloatingFreqLabel frequency={currentFrequency} color={colorPrimary} />} />
             </Line>
@@ -490,6 +490,7 @@ export const PumpChart: React.FC<PumpChartProps> = ({ data, pump, currentFrequen
                   connectNulls={false}
                   strokeLinecap="round"
                   opacity={0.6}
+                  isAnimationActive={false}
                 />
                 <Line
                   yAxisId="left"
@@ -502,6 +503,7 @@ export const PumpChart: React.FC<PumpChartProps> = ({ data, pump, currentFrequen
                   name="Referencia 60 Hz"
                   connectNulls={false}
                   opacity={0.3}
+                  isAnimationActive={false}
                 />
               </>
             )}

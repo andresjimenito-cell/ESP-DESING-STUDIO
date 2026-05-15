@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef, useDeferredValue } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useDeferredValue, useCallback } from 'react';
 import {
     Activity, Gauge, Thermometer, Zap, AlertTriangle, ShieldCheck,
     Monitor, Clock, LayoutGrid, List, Search, ArrowUpRight,
@@ -68,6 +68,32 @@ const WellListItem = React.memo(({ well, health, isActive, isMechVerified, onSel
 });
 
 
+
+const isWellMatchComplete = (well: WellFleetItem) => {
+    const t = well.productionTest;
+    const rate = Math.max(well.currentRate || 0, t?.rate || 0);
+    return rate > 5 && (t?.pip || 0) > 0 && (t?.thp || 0) > 0 && (t?.freq || 0) > 0;
+};
+
+const buildHistoryMatchFromWell = (well: WellFleetItem, basePStatic = 0): HistoryMatchData => {
+    const t = well.productionTest;
+    return {
+        rate: t?.rate || well.currentRate || 0,
+        frequency: t?.freq || 60,
+        waterCut: t?.waterCut || 0,
+        thp: t?.thp || 0,
+        tht: t?.tht || 80,
+        pip: t?.pip || 0,
+        pd: t?.pdp || t?.hp || 0,
+        pdp: t?.pdp,
+        fluidLevel: 0,
+        submergence: 0,
+        pStatic: basePStatic > 0 ? basePStatic : 0,
+        startDate: t?.date || new Date().toISOString().split('T')[0],
+        matchDate: t?.date || new Date().toISOString().split('T')[0],
+        gor: t?.gor,
+    };
+};
 
 const getApiKey = () => {
     // Nueva clave nivel gratuito proporcionada por el usuario
@@ -769,7 +795,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
     const [fleet, setFleet] = useState<WellFleetItem[]>(_cachedFleet);
     const [customDesigns, setCustomDesigns] = useState<Record<string, SystemParams>>(_cachedDesigns);
     const [healthFilter, setHealthFilter] = useState<'all' | 'healthy' | 'caution' | 'critical'>('all');
-    const [dataFilter, setDataFilter] = useState<'all' | 'complete' | 'missing' | 'no-tests'>('all');
+    const [dataFilter, setDataFilter] = useState<'all' | 'complete' | 'missing'>('all');
     const [statusFilter, setStatusFilter] = useState<'all' | 'operativo' | 'fallado' | 'pull' | 'pendiente'>('all');
     const [isNotifOpen, setIsNotifOpen] = useState(false);
     const [selectedWellId, setSelectedWellId] = useState<string | null>(null);
@@ -822,13 +848,9 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
         // Filter by data completeness
         if (dataFilter !== 'all') {
             result = result.filter(well => {
-                const hasMatch = !!well.productionTest?.hasMatchData && (well.currentRate > 0 || well.productionTest.rate > 0);
-                const isComplete = hasMatch &&
-                    (well.productionTest.rate > 0 && well.productionTest.pip > 0 && well.productionTest.thp > 0);
-
+                const isComplete = isWellMatchComplete(well);
                 if (dataFilter === 'complete') return isComplete;
-                if (dataFilter === 'missing') return hasMatch && !isComplete;
-                if (dataFilter === 'no-tests') return !hasMatch;
+                if (dataFilter === 'missing') return !isComplete;
                 return true;
             });
         }
@@ -1822,6 +1844,35 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
 
     const selectedWell = useMemo(() => fleet.find(w => w.id === selectedWellId), [selectedWellId, fleet]);
 
+    const handleHistoryMatchChange = useCallback((hm: HistoryMatchData) => {
+        if (!selectedWellId) return;
+        setFleet(prev => prev.map(w => {
+            if (w.id !== selectedWellId) return w;
+            const rate = Number(hm.rate) || 0;
+            const freq = Number(hm.frequency) || 0;
+            const pip = Number(hm.pip) || 0;
+            const thp = Number(hm.thp) || 0;
+            return {
+                ...w,
+                currentRate: rate > 0 ? rate : w.currentRate,
+                productionTest: {
+                    ...w.productionTest,
+                    rate,
+                    freq,
+                    pip,
+                    thp,
+                    tht: Number(hm.tht) || 0,
+                    waterCut: Number(hm.waterCut) || 0,
+                    pdp: Number(hm.pd) || Number(hm.pdp) || 0,
+                    hp: Number(hm.pd) || Number(hm.pdp) || 0,
+                    gor: hm.gor ?? w.productionTest.gor,
+                    date: hm.matchDate || hm.startDate || w.productionTest.date,
+                    hasMatchData: rate > 5 || (pip > 0 && thp > 0),
+                },
+            };
+        }));
+    }, [selectedWellId]);
+
     const pump = useMemo(() => {
         if (!selectedWell || selectedWell.estadoActual === 'pendiente') return null;
         const normalizedName = selectedWell.name.toUpperCase().trim();
@@ -1877,7 +1928,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
         const base = designBase || params;
 
         const test = selectedWell.productionTest;
-        const hasMatch = test.hasMatchData || (selectedWell.currentRate > 5);
+        const pStaticBase = base.inflow?.pStatic || params.inflow?.pStatic || 0;
 
         // HIGH-FIDELITY DEEP MERGE - CATEGORY BY CATEGORY
         // We ensure that each well has a UNIQUE SystemParams object
@@ -1901,22 +1952,8 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                 ...base.targets,
                 target: { ...base.targets.target }
             },
-            // The History Match object is the CORE of the monitoring view
-            historyMatch: hasMatch ? {
-                rate: test.rate,
-                frequency: test.freq,
-                waterCut: test.waterCut,
-                thp: test.thp,
-                tht: test.tht,
-                pip: test.pip,
-                pd: test.hp || test.pdp,
-                fluidLevel: 0,
-                submergence: 0,
-                pStatic: base.inflow?.pStatic || 0, // No inventar presión estática si no hay match
-                startDate: test.date,
-                matchDate: test.date,
-                gor: test.gor
-            } : undefined
+            // Siempre disponible para entrada manual aunque no haya prueba importada
+            historyMatch: buildHistoryMatchFromWell(selectedWell, pStaticBase)
         };
 
         return mp; // No deep clone needed if we don't mutate. mp is fresh.
@@ -2127,7 +2164,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
         }
 
         const isSynced = !!customDesigns[selectedWell.name.toUpperCase().trim()] || !!Object.keys(customDesigns).find(k => fuzzyWellName(k) === fuzzyWellName(selectedWell.name));
-        const hasMatch = selectedWell.productionTest.hasMatchData || selectedWell.currentRate > 0;
+        const isMatchComplete = isWellMatchComplete(selectedWell);
 
         // Derive physical health for BHA coloring
         const wellNorm = fuzzyWellName(selectedWell.name);
@@ -2261,15 +2298,25 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
         return (
             <div className="space-y-4 animate-fadeIn p-4 pb-20 relative">
                 {/* NO MATCH DATA WARNING */}
-                {!hasMatch && (
+                {!isMatchComplete && (
                     <div className="mb-4 bg-danger/10 border border-danger/30 p-10 rounded-none flex items-center justify-between shadow-glow-danger/5 animate-fadeIn">
                         <div className="flex items-center gap-8">
                             <div className="p-6 bg-danger/20 rounded-none border border-danger/20 text-danger"><AlertTriangle className="w-12 h-12" /></div>
                             <div>
                                 <h3 className="text-3xl font-black text-danger uppercase mb-2 tracking-tighter italic">Faltan Datos de Cotejo (Match)</h3>
-                                <p className="text-sm font-bold text-danger/70 uppercase tracking-widest leading-relaxed max-w-2xl">El diseño cargado no contiene datos de historial (Phase 7). Se requiere cargar una prueba de producción o configurar el cotejo manual para habilitar el análisis de salud en tiempo real.</p>
+                                <p className="text-sm font-bold text-danger/70 uppercase tracking-widest leading-relaxed max-w-2xl">
+                                    Complete los campos en el panel de match (tasa, frecuencia, THP, PIP) o suba un reporte Excel/CSV.
+                                </p>
                             </div>
                         </div>
+                        <button
+                            type="button"
+                            onClick={() => importDbRef.current?.click()}
+                            className="shrink-0 px-6 py-3 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 hover:border-primary/60 rounded-none font-black uppercase tracking-widest text-[10px] transition-all flex items-center gap-2"
+                        >
+                            <Database className="w-4 h-4" />
+                            Subir Reporte
+                        </button>
                     </div>
                 )}
 
@@ -2323,7 +2370,6 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                                 <button onClick={(e) => { e.stopPropagation(); setDataFilter('all'); }} className={`h-7 px-2.5 rounded-lg flex items-center justify-center transition-all text-[8px] font-black uppercase tracking-widest flex-1 ${dataFilter === 'all' ? 'bg-primary text-white shadow-sm' : 'text-txt-muted hover:bg-white/5'}`}>Datos: Todos</button>
                                                 <button onClick={(e) => { e.stopPropagation(); setDataFilter('complete'); }} className={`h-7 px-2.5 rounded-lg flex items-center justify-center transition-all text-[8px] font-black uppercase tracking-widest flex-1 ${dataFilter === 'complete' ? 'bg-success/20 text-success' : 'text-txt-muted hover:bg-white/5'}`}>Completos</button>
                                                 <button onClick={(e) => { e.stopPropagation(); setDataFilter('missing'); }} className={`h-7 px-2.5 rounded-lg flex items-center justify-center transition-all text-[8px] font-black uppercase tracking-widest flex-1 ${dataFilter === 'missing' ? 'bg-warning/20 text-warning' : 'text-txt-muted hover:bg-white/5'}`}>Faltan</button>
-                                                <button onClick={(e) => { e.stopPropagation(); setDataFilter('no-tests'); }} className={`h-7 px-2.5 rounded-lg flex items-center justify-center transition-all text-[8px] font-black uppercase tracking-widest flex-1 ${dataFilter === 'no-tests' ? 'bg-danger/20 text-danger' : 'text-txt-muted hover:bg-white/5'}`}>Sin Prueba</button>
                                             </div>
 
                                             {/* Health filter controls inside dropdown */}
@@ -2501,56 +2547,14 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
 
                             {/* MAIN PHASE 6 CANVAS ON THE RIGHT */}
                             <div className="flex-1 glass-surface rounded-none border border-white/5 shadow-3xl overflow-y-auto custom-scrollbar relative z-30" style={{ minHeight: '900px' }}>
-                                {hasMatch ? (
-                                    <Phase6
-                                        key={selectedWell.id}
-                                        params={wellMatchParams}
-                                        setParams={() => { }}
-                                        pump={pump}
-                                        designFreq={selectedWell.productionTest.freq || 60}
-                                    />
-                                ) : (
-                                    <div className="h-[600px] flex flex-col items-center justify-center space-y-6 text-center px-10">
-                                        <div className="p-8 bg-warning/10 rounded-sm border border-warning/30 shadow-glow-warning/30">
-                                            <AlertTriangle className="w-16 h-16 text-warning" />
-                                        </div>
-                                        <h3 className="text-3xl font-black text-warning uppercase tracking-tighter">Análisis de Match Incompleto</h3>
-                                        <div className="bg-surface/50 border border-white/10 rounded-none p-6 max-w-lg shadow-inner">
-                                            <p className="text-txt-main/80 font-medium mb-4 text-sm leading-relaxed">
-                                                Para ejecutar el simulador de desgaste y calcular los coeficientes de degradación (<strong className="text-white">Kh, Kf</strong>), el motor necesita la siguiente telemetría de campo obligatoria:
-                                            </p>
-                                            <div className="flex flex-wrap gap-3 justify-center mb-6">
-                                                {(!selectedWell.productionTest.pip || selectedWell.productionTest.pip <= 0) && (
-                                                    <div className="px-4 py-2 bg-danger/20 border border-danger/40 rounded-none text-danger font-black text-xs uppercase tracking-widest flex items-center gap-2 shadow-glow-danger/20">
-                                                        <div className="w-2 h-2 rounded-none bg-danger animate-ping"></div> FALTA PIP
-                                                    </div>
-                                                )}
-                                                {(!selectedWell.productionTest.thp || selectedWell.productionTest.thp <= 0) && (
-                                                    <div className="px-4 py-2 bg-danger/20 border border-danger/40 rounded-none text-danger font-black text-xs uppercase tracking-widest flex items-center gap-2 shadow-glow-danger/20">
-                                                        <div className="w-2 h-2 rounded-none bg-danger animate-ping"></div> FALTA THP
-                                                    </div>
-                                                )}
-                                                {(!selectedWell.productionTest.freq || selectedWell.productionTest.freq <= 0) && (
-                                                    <div className="px-4 py-2 bg-danger/20 border border-danger/40 rounded-none text-danger font-black text-xs uppercase tracking-widest flex items-center gap-2 shadow-glow-danger/20">
-                                                        <div className="w-2 h-2 rounded-none bg-danger animate-ping"></div> FALTA FRECUENCIA
-                                                    </div>
-                                                )}
-                                                {(!selectedWell.currentRate || selectedWell.currentRate <= 5) && (
-                                                    <div className="px-4 py-2 bg-danger/20 border border-danger/40 rounded-none text-danger font-black text-xs uppercase tracking-widest flex items-center gap-2 shadow-glow-danger/20">
-                                                        <div className="w-2 h-2 rounded-none bg-danger animate-ping"></div> FALTA CAUDAL (BPD)
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <button
-                                                onClick={() => importDbRef.current?.click()}
-                                                className="w-full py-4 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 hover:border-primary/60 rounded-none font-black uppercase tracking-widest text-xs transition-all flex items-center justify-center gap-2"
-                                            >
-                                                <Database className="w-4 h-4" />
-                                                Subir Nuevo Reporte Excel / CSV
-                                            </button>
-                                        </div>
-                                    </div>
-                                )}
+                                <Phase6
+                                    key={selectedWell.id}
+                                    params={wellMatchParams}
+                                    syncParams={false}
+                                    onHistoryMatchChange={handleHistoryMatchChange}
+                                    pump={pump}
+                                    designFreq={selectedWell.productionTest.freq || 60}
+                                />
                             </div>
                         </div>
                     </div>
@@ -2715,9 +2719,10 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                     <div className="flex-1 overflow-y-auto custom-scrollbar bg-canvas/30">
                         <Phase6
                             params={wellMatchParams}
-                            setParams={() => { }}
+                            syncParams={false}
+                            onHistoryMatchChange={handleHistoryMatchChange}
                             pump={pump}
-                            designFreq={selectedWell.productionTest.freq}
+                            designFreq={selectedWell.productionTest.freq || 60}
                         />
                     </div>
                 </div>
@@ -2885,18 +2890,16 @@ const FloatingAiPanel = ({ fleet, selectedWell, language, t }: { fleet: WellFlee
     const [session, setSession] = useState<any>(null);
     const endRef = useRef<HTMLDivElement>(null);
 
-    // AI 15s MINIMIZE
-    const [lastInteraction, setLastInteraction] = useState(Date.now());
+    const lastInteractionRef = useRef(Date.now());
+    const touchActivity = () => { lastInteractionRef.current = Date.now(); };
+
     useEffect(() => {
-        if (!isOpen) {
-            setLastInteraction(Date.now());
-            return;
-        }
+        if (!isOpen) return;
         const interval = setInterval(() => {
-            if (Date.now() - lastInteraction >= 15000) setIsOpen(false);
-        }, 1000);
+            if (Date.now() - lastInteractionRef.current >= 30000) setIsOpen(false);
+        }, 5000);
         return () => clearInterval(interval);
-    }, [isOpen, lastInteraction]);
+    }, [isOpen]);
 
     useEffect(() => {
         const apiKey = getApiKey();
@@ -2988,8 +2991,8 @@ const FloatingAiPanel = ({ fleet, selectedWell, language, t }: { fleet: WellFlee
         <div className="fixed bottom-8 right-8 z-[100] flex flex-col items-end">
             <div className={`transition-all duration-500 transform origin-bottom-right mb-4 ${isOpen ? 'scale-100 opacity-100 translate-y-0' : 'scale-90 opacity-0 translate-y-10 pointer-events-none'}`}>
                 <div
-                    onMouseMove={() => setLastInteraction(Date.now())}
-                    onKeyDown={() => setLastInteraction(Date.now())}
+                    onMouseMove={touchActivity}
+                    onKeyDown={touchActivity}
                     className="w-[380px] h-[520px] glass-surface border-primary/30 rounded-[32px] shadow-[0_30px_60px_rgba(0,0,0,0.4)] flex flex-col overflow-hidden"
                 >
                     {/* CHAT HEADER */}

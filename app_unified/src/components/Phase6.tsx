@@ -1,7 +1,7 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Activity, Gauge, Printer, Download, Droplets, ArrowDown, ClipboardCheck, X, Hammer, Thermometer, RefreshCw, Maximize2, Minimize2, Brain, Calendar, Play, Zap, TrendingDown, TrendingUp, Monitor, Layers, Repeat, Cpu, Target, Info, ShieldCheck, ChevronDown, ChevronUp, AlertTriangle, Database } from 'lucide-react';
-import { SystemParams, EspPump, ScenarioData } from '../types';
+import { SystemParams, EspPump, ScenarioData, HistoryMatchData } from '../types';
 import { calculateTDH, calculateSystemResults, calculateBaseHead, calculateBasePowerPerStage, calculatePDP, calculatePIP, calculateFluidProperties, interpolateTVD, generateMultiCurveData, findIntersection, getShaftLimitHp, calculatePwf, getDownloadFilename } from '../utils';
 import { PumpChart } from './PumpChart';
 import { PerformanceCurveMultiAxis } from './PerformanceCurveMultiAxis';
@@ -11,7 +11,11 @@ import { useLanguage } from '../i18n';
 
 interface Props {
     params: SystemParams; // Design Params
-    setParams: React.Dispatch<React.SetStateAction<SystemParams>>;
+    setParams?: React.Dispatch<React.SetStateAction<SystemParams>>;
+    /** When false (monitoring/playback), field edits stay local and do not sync to parent params. */
+    syncParams?: boolean;
+    /** Monitoring: persiste telemetría editada en la flota del padre */
+    onHistoryMatchChange?: (match: HistoryMatchData) => void;
     pump: EspPump | null;
     designFreq: number;
     trail?: any[];
@@ -46,6 +50,27 @@ const PremiumField = ({ label, value, unit, icon: Icon, onChange, color = 'prima
         success: { border: 'border-success/30', line: 'bg-success', icon: 'text-success', unit: 'text-success' },
     }[color] || { border: 'border-primary/30', line: 'bg-primary', icon: 'text-primary', unit: 'text-primary' };
 
+    const [isFocused, setIsFocused] = useState(false);
+    const [draft, setDraft] = useState('');
+
+    const formatForInput = (v: unknown) => {
+        if (v === '' || v === null || v === undefined) return '';
+        const n = Number(v);
+        return Number.isFinite(n) ? String(n) : '';
+    };
+
+    const commitDraft = (raw: string) => {
+        const trimmed = raw.trim();
+        if (trimmed === '' || trimmed === '-' || trimmed === '.') {
+            onChange(0);
+            return;
+        }
+        const n = parseFloat(trimmed);
+        onChange(Number.isFinite(n) ? n : 0);
+    };
+
+    const displayValue = isFocused ? draft : formatForInput(value);
+
     return (
         <div className={`bg-surface border ${colorClasses.border} rounded-none p-3 flex flex-col justify-between group h-20 transition-all shadow-sm relative overflow-hidden focus-within:border-white/40`}>
             <div className={`absolute top-0 left-0 w-1 h-full ${colorClasses.line}`}></div>
@@ -55,9 +80,21 @@ const PremiumField = ({ label, value, unit, icon: Icon, onChange, color = 'prima
             </div>
             <div className="flex items-baseline gap-2 relative z-10">
                 <input
-                    type="number"
-                    value={value}
-                    onChange={(e) => onChange(e.target.value === '' ? '' : (isNaN(parseFloat(e.target.value)) ? '' : parseFloat(e.target.value)))}
+                    type="text"
+                    inputMode="decimal"
+                    value={displayValue}
+                    onFocus={() => {
+                        setIsFocused(true);
+                        setDraft(formatForInput(value));
+                    }}
+                    onChange={(e) => setDraft(e.target.value)}
+                    onBlur={(e) => {
+                        commitDraft(e.currentTarget.value);
+                        setIsFocused(false);
+                    }}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                    }}
                     className="w-full bg-transparent text-lg font-black text-txt-main outline-none font-mono tracking-tighter select-all"
                 />
                 <span className={`text-[9px] font-black ${colorClasses.unit} uppercase mb-0.5`}>{unit}</span>
@@ -770,7 +807,7 @@ const SimulatedMetric = ({ label, value, sub, color = "primary", badge }: any) =
     );
 };
 
-const Phase6Component: React.FC<Props> = ({ params, setParams, pump, designFreq, trail }) => {
+const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true, onHistoryMatchChange, pump, designFreq, trail }) => {
     const { t } = useLanguage();
     const [showReport, setShowReport] = useState(false);
     const [isChartExpanded, setIsChartExpanded] = useState(false);
@@ -814,41 +851,45 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, pump, designFreq,
         }
     }, [isMaxCapActive, fieldData.frequency]);
 
-    // EXTERNAL SYNC: React to changes in params.historyMatch (e.g. during playback)
-    useEffect(() => {
-        if (params.historyMatch) {
-            const h = params.historyMatch;
-            // Only update if there is a real difference
-            if (h.rate !== fieldData.rate || h.frequency !== fieldData.frequency || h.pip !== fieldData.pip || h.thp !== fieldData.thp) {
-                setFieldData({
-                    ...h,
-                    pStatic: (h.pStatic > 0) ? h.pStatic : (params.inflow?.pStatic || 0),
-                    ip: h.ip ?? 0
-                });
-                if (!isMaxCapActive) setSimFreq(h.frequency);
-            }
-        }
-    }, [params.historyMatch, params.inflow?.pStatic]);
+    // Stable key: only re-sync local fields when external telemetry actually changes (well switch / playback)
+    const externalHmKey = useMemo(() => {
+        const h = params.historyMatch;
+        if (!h) return '';
+        return [
+            h.rate, h.frequency, h.pip, h.thp, h.waterCut, h.tht,
+            h.pStatic, h.ip, h.pd, h.fluidLevel, h.submergence,
+            h.startDate, h.matchDate,
+        ].join('|');
+    }, [params.historyMatch]);
 
-    // BUG FIX: Persist fieldData to global params
-    useEffect(() => {
-        if (setParams) {
-            setParams(prev => {
-                // Avoid infinite feedback loops
-                if (prev.historyMatch &&
-                    prev.historyMatch.rate === fieldData.rate &&
-                    prev.historyMatch.frequency === fieldData.frequency &&
-                    prev.historyMatch.pip === fieldData.pip &&
-                    prev.historyMatch.thp === fieldData.thp &&
-                    prev.historyMatch.pd === fieldData.pd) return prev;
+    const lastExternalHmKeyRef = useRef(externalHmKey);
 
-                return {
-                    ...prev,
-                    historyMatch: fieldData
-                };
-            });
-        }
-    }, [fieldData, setParams]);
+    // Monitoring/playback only: design mode owns fieldData locally (persist writes up, no read-back)
+    useEffect(() => {
+        if (syncParams) return;
+        const h = params.historyMatch;
+        if (!h || lastExternalHmKeyRef.current === externalHmKey) return;
+        lastExternalHmKeyRef.current = externalHmKey;
+        setFieldData({
+            rate: h.rate ?? 0,
+            frequency: h.frequency ?? 0,
+            waterCut: h.waterCut ?? 0,
+            thp: h.thp ?? 0,
+            tht: h.tht ?? 0,
+            pip: h.pip ?? 0,
+            pd: h.pd ?? 0,
+            fluidLevel: h.fluidLevel ?? 0,
+            submergence: h.submergence ?? 0,
+            pStatic: (h.pStatic > 0) ? h.pStatic : (params.inflow?.pStatic || 0),
+            ip: h.ip ?? 0,
+            startDate: h.startDate ?? '',
+            matchDate: h.matchDate ?? '',
+        });
+        if (!isMaxCapActive) setSimFreq(h.frequency ?? designFreq ?? 60);
+    }, [syncParams, externalHmKey, params.historyMatch, params.inflow?.pStatic, isMaxCapActive, designFreq]);
+
+    const setParamsRef = useRef(setParams);
+    setParamsRef.current = setParams;
 
     // 1. DERIVE DESIGN PARAMS (Standard)
     const designParams = useMemo(() => {
@@ -953,13 +994,58 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, pump, designFreq,
         return calculateTDH(safeRate, actualParams);
     }, [pump, fieldData.rate, actualPumpTDH, actualParams]);
 
-    useEffect(() => {
+    const derivedPd = useMemo(() => {
         const { pdp } = calculatePDP(Number(fieldData.rate) || 0, actualParams);
-        setFieldData(prev => {
-            const newPd = Math.round(pdp);
-            return (prev.pd !== newPd) ? { ...prev, pd: newPd } : prev;
+        return Math.round(pdp);
+    }, [fieldData.rate, fieldData.pip, fieldData.thp, fieldData.waterCut, fieldData.frequency, fieldData.pStatic, fieldData.ip, isIpManual, actualParams]);
+
+    // Persist fieldData to global params (design mode only) — after derivedPd to avoid read-back flicker
+    useEffect(() => {
+        if (!syncParams) return;
+        const apply = setParamsRef.current;
+        if (!apply) return;
+        apply(prev => {
+            const hm = prev.historyMatch;
+            if (hm &&
+                hm.rate === fieldData.rate &&
+                hm.frequency === fieldData.frequency &&
+                hm.pip === fieldData.pip &&
+                hm.thp === fieldData.thp &&
+                hm.pd === derivedPd &&
+                hm.waterCut === fieldData.waterCut &&
+                hm.tht === fieldData.tht &&
+                hm.pStatic === fieldData.pStatic) {
+                return prev;
+            }
+            return { ...prev, historyMatch: { ...fieldData, pd: derivedPd } };
         });
-    }, [actualTDH, fieldData.rate, actualParams]);
+    }, [fieldData, derivedPd, syncParams]);
+
+    const lastFleetReportRef = useRef('');
+
+    useEffect(() => {
+        if (syncParams || !onHistoryMatchChange) return;
+        const payload: HistoryMatchData = {
+            rate: Number(fieldData.rate) || 0,
+            frequency: Number(fieldData.frequency) || 0,
+            waterCut: Number(fieldData.waterCut) || 0,
+            thp: Number(fieldData.thp) || 0,
+            tht: Number(fieldData.tht) || 0,
+            pip: Number(fieldData.pip) || 0,
+            pd: derivedPd,
+            fluidLevel: fieldData.fluidLevel ?? 0,
+            submergence: fieldData.submergence ?? 0,
+            pStatic: Number(fieldData.pStatic) || 0,
+            ip: fieldData.ip,
+            startDate: fieldData.startDate || '',
+            matchDate: fieldData.matchDate || '',
+            gor: params.historyMatch?.gor,
+        };
+        const key = JSON.stringify(payload);
+        if (lastFleetReportRef.current === key) return;
+        lastFleetReportRef.current = key;
+        onHistoryMatchChange(payload);
+    }, [fieldData, derivedPd, syncParams, onHistoryMatchChange, params.historyMatch?.gor]);
 
     const targetFreq = params.targets && params.targets[compareScenario] ? params.targets[compareScenario].frequency : designFreq;
     const designRes = calculateSystemResults(designParams.pressures.totalRate, calculateTDH(designParams.pressures.totalRate, designParams), designParams, pump || {} as any, targetFreq);
@@ -1985,8 +2071,8 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, pump, designFreq,
                             </div>
                             <div className="grid grid-cols-2 gap-3 mt-4">
                                 <div className="col-span-2 grid grid-cols-2 gap-3">
-                                    <PremiumField label="P. Estática" value={Math.round((fieldData.pStatic > 0) ? fieldData.pStatic : (params.inflow.pStatic || 0))} unit="psi" icon={Layers} onChange={(v: any) => updateField('pStatic', v)} color="primary" />
-                                    <PremiumField label={t('p6.measPip')} value={Math.round(fieldData.pip)} unit="psi" icon={Gauge} onChange={(v: any) => updateField('pip', v)} color="primary" />
+                                    <PremiumField label="P. Estática" value={(fieldData.pStatic > 0) ? fieldData.pStatic : (params.inflow.pStatic || 0)} unit="psi" icon={Layers} onChange={(v: any) => updateField('pStatic', v)} color="primary" />
+                                    <PremiumField label={t('p6.measPip')} value={fieldData.pip} unit="psi" icon={Gauge} onChange={(v: any) => updateField('pip', v)} color="primary" />
                                 </div>
                                 <div className={`col-span-2 rounded-none p-4 flex flex-col justify-between group transition-all duration-500 shadow-2xl relative overflow-hidden ${sensScenario.active ? 'bg-primary/20 border-2 border-primary/40 ring-1 ring-primary/20' : 'bg-surface/50 border border-white/10'}`}>
                                     <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>

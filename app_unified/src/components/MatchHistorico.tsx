@@ -468,7 +468,7 @@ export const MatchHistorico: React.FC<Props> = ({ wellName, pump, designParams, 
                 <div className="relative z-10">
                     <Phase6
                         params={dynamicParams}
-                        setParams={() => { }} // Non-editable in playback mode
+                        syncParams={false}
                         pump={pump}
                         designFreq={currentRecord.frequency || designParams.targets?.target?.frequency || 60}
                         trail={historyTrail}

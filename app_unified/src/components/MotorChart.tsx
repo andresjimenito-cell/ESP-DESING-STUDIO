@@ -209,8 +209,7 @@ export const MotorChart: React.FC<MotorChartProps> = ({ motor, currentLoadPct, m
               dot={false} 
               name="Power Factor"
               filter="url(#glow-secondary-motor)"
-              isAnimationActive={true}
-              animationDuration={1000}
+              isAnimationActive={false}
             />
 
             {/* Efficiency Curve */}
@@ -222,8 +221,7 @@ export const MotorChart: React.FC<MotorChartProps> = ({ motor, currentLoadPct, m
               dot={false} 
               name={t('chart.efficiency')}
               filter="url(#glow-primary-motor)"
-              isAnimationActive={true}
-              animationDuration={800}
+              isAnimationActive={false}
             />
 
             {/* Operating Point */}
