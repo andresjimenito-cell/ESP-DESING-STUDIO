@@ -14,7 +14,7 @@ Los colores se manejan mediante variables CSS en `index.css` y se mapean en `tai
 
 ### Temas Oscuros (Dark Mode)
 - **Fusion (Carbon):** Gris Carbón (#0F172A) + Azul Pizarra Mate (#64748B). Minimalista y elegante.
-- **Matrix (Cyber):** Negro Puro (#050505) + Verde Neón (#22C55E). Estilo futurista/hacker.
+- **La Velada (Cyber):** Negro Puro (#000000) + Dorado Real (#D4AF37). Estilo premium inspirado en "La Velada del Año".
 
 ### Temas Claros (Light Mode)
 - **Executive (Petroleum):** Azul Petróleo Profundo (#042166) + Vinotinto Seco. Serio y profesional.

@@ -5,7 +5,7 @@
    LIGHT: [data-theme=chalk] CHALK  |  [data-theme=sage] SAGE
    ============================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&family=Cinzel:wght@400;500;600;700;800;900&display=swap');
 
 @import "tailwindcss";
 
@@ -80,24 +80,23 @@
    CYBER — Arctic Blue + Bright Celeste (Lighter Canvas)
    ============================================================ */
 [data-theme='cyber'] {
-  --color-primary: 0 220 60;
-  /* Vivid Pure Green */
-  --color-secondary: 6 182 212;
-  --color-accent: 8 145 178;
-  --color-tertiary: 2 132 199;
-  --color-glow: 0 255 65;
-  /* Bright Green Glow */
-  --color-canvas: 2 6 10;
-  --color-surface: 8 15 25;
-  --color-surface-light: 15 25 40;
-  --color-surface-raised: 20 35 55;
-  --color-text-main: 165 243 252;
-  --color-text-muted: 34 211 238;
-  --color-text-faint: 21 94 117;
-  --color-success: 34 197 94;
-  --color-warning: 250 204 21;
-  --color-danger: 244 63 94;
-  --font-display: 'JetBrains Mono', monospace;
+  --color-primary: 212 175 55; /* Metallic Gold (#D4AF37) */
+  --color-secondary: 197 160 89; /* Matte Gold (#C5A059) */
+  --color-accent: 245 245 220; /* Cream Accent (#F5F5DC) */
+  --color-tertiary: 212 175 55;
+  --color-glow: 212 175 55;
+  --color-canvas: 0 0 0; /* Pure Black */
+  --color-surface: 12 12 12; /* Deep Obsidian Surface */
+  --color-surface-light: 22 22 22;
+  --color-surface-raised: 32 32 32;
+  --color-text-main: 245 245 220; /* Cream Text */
+  --color-text-muted: 180 160 120; /* Goldish Muted Text */
+  --color-text-faint: 60 55 45;
+  --color-success: 160 220 100;
+  --color-warning: 255 180 0;
+  --color-danger: 255 60 40;
+  --font-display: 'Cinzel', serif;
+  --font-body: 'Inter', sans-serif;
 }
 
 /* ============================================================
@@ -237,6 +236,17 @@
     color: rgb(var(--color-text-muted));
   }
 
+  [data-theme='cyber'] h1,
+  [data-theme='cyber'] h2,
+  [data-theme='cyber'] h3 {
+    font-family: var(--font-display);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 700;
+    color: rgb(var(--color-primary));
+    text-shadow: 0 0 20px rgb(var(--color-primary) / 0.15);
+  }
+
   [data-theme='forge'] h1,
   [data-theme='chalk'] h1 {
     font-style: italic;
@@ -294,10 +304,10 @@
   pointer-events: none;
 }
 
-/* CYBER — Matrix-style green grid */
+/* CYBER — Gold & Obsidian atmosphere */
 [data-theme='cyber'] .aurora-bg::before {
-  background-image: radial-gradient(circle, rgb(var(--color-primary) / 0.25) 1.2px, transparent 1.2px);
-  background-size: 20px 20px;
+  background-image: radial-gradient(circle, rgb(var(--color-primary) / 0.15) 1px, transparent 1px);
+  background-size: 40px 40px;
 }
 
 /* FUSION — subtle deep indigo dot grid */
