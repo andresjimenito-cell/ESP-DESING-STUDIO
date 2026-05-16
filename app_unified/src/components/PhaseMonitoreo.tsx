@@ -33,8 +33,9 @@ const WellListItem = React.memo(({ well, health, isActive, isMechVerified, onSel
     const isPendiente = well.estadoActual === 'pendiente';
     const isESP = !well.als || well.als.toUpperCase() === 'ESP';
 
-    const statusColor = isPendiente ? 'bg-slate-500' : (health >= 85 ? 'bg-success shadow-glow-success' : health >= 60 ? 'bg-warning' : 'bg-danger shadow-glow-danger');
-    const healthDisplay = isPendiente ? '--' : `${health}%`;
+    // Status mapping based on tiered health score
+    const statusColor = isPendiente ? 'bg-slate-500' : (health >= 90 ? 'bg-success shadow-glow-success' : health >= 60 ? 'bg-warning' : 'bg-danger shadow-glow-danger');
+    const statusLabel = isPendiente ? 'PENDIENTE' : (health >= 90 ? 'OPTIMAL' : health >= 60 ? 'CAUTION' : 'CRITICAL');
 
     return (
         <button
@@ -62,7 +63,7 @@ const WellListItem = React.memo(({ well, health, isActive, isMechVerified, onSel
                     {isPendiente ? 'Pendiente por Instalación' : `${Math.round(well.currentRate)} BPD • ${well.productionTest.freq || 0} Hz`}
                 </span>
             </div>
-            <span className={`text-xs font-black ${isPendiente ? 'text-txt-muted' : (health >= 85 ? 'text-success' : health >= 60 ? 'text-warning' : 'text-danger')}`}>{healthDisplay}</span>
+            <span className={`text-[9px] font-black tracking-widest px-2 py-1 ${isPendiente ? 'text-txt-muted' : (health >= 90 ? 'text-success' : health >= 60 ? 'text-warning' : 'text-danger')}`}>{statusLabel}</span>
         </button>
     );
 });
@@ -486,44 +487,14 @@ const getWellHealthScore = (well: WellFleetItem, design?: SystemParams | null, d
     const hasMatch = well.productionTest.hasMatchData && (well.currentRate > 5 || well.productionTest.pip > 0 || well.productionTest.thp > 0);
     if (!hasMatch) return 0;
 
-    const getStrictStatusValue = (s: string) => {
-        const statuses: Record<string, number> = {
-            normal: 100, active: 100, optimal: 100,
-            caution: 75,
-            alert: 30, failure: 0,
-            error: 0, 'ground-fault': 0, inactive: 50
-        };
-        return statuses[s] ?? 100;
-    };
+    // --- 1. CRITICAL STATUS (Sensor Alarms & Immediate Risk) ---
+    const criticalFailure = [well.health.pump, well.health.motor, well.health.cable, well.health.seal]
+        .some(s => s === 'alert' || s === 'failure' || s === 'ground-fault');
 
-    const componentHealth = (
-        getStrictStatusValue(well.health.pump) * 0.35 +
-        getStrictStatusValue(well.health.motor) * 0.35 +
-        getStrictStatusValue(well.health.cable) * 0.20 +
-        getStrictStatusValue(well.health.seal) * 0.10
-    );
+    if (criticalFailure) return 30; // CRITICAL
 
-    let performanceScore = 100;
-
-    if (well.consumptionTheo > 0) {
-        const pwrDev = Math.abs(well.consumptionReal - well.consumptionTheo) / well.consumptionTheo;
-        if (pwrDev > 0.25) performanceScore -= 30;
-        else if (pwrDev > 0.15) performanceScore -= 10;
-    }
-
-    if (well.targetRate > 0) {
-        const rateDev = Math.abs(well.currentRate - well.targetRate) / well.targetRate;
-        if (rateDev > 0.30) performanceScore -= 30;
-        else if (rateDev > 0.15) performanceScore -= 10;
-    }
-
-    if (well.productionTest.pip > 0) {
-        if (well.productionTest.pip < 100) performanceScore -= 50;
-        else if (well.productionTest.pip < 200) performanceScore -= 20;
-    }
-
-    const totalScore = (componentHealth * 0.70) + (Math.max(0, performanceScore) * 0.30);
-    let finalScore = totalScore;
+    // --- 2. OPERATIONAL LIMITS ANALYSIS ---
+    let finalStatus: 'optimal' | 'caution' | 'critical' = 'optimal';
 
     if (defaultPump) {
         let pump = defaultPump;
@@ -553,10 +524,14 @@ const getWellHealthScore = (well: WellFleetItem, design?: SystemParams | null, d
         const minQ = (pump.minRate || 0) * ratio;
         const maxQ = (pump.maxRate || 2000) * ratio;
 
-        if (currentRate < minQ * 0.95 || currentRate > maxQ * 1.05) {
-            finalScore = Math.min(finalScore, 55);
+        // --- Flow Limits (Cone) ---
+        if (currentRate < minQ || currentRate > maxQ) {
+            finalStatus = 'caution'; // Exceeding range is Caution (per user preference)
+        } else if (currentRate < minQ * 1.15 || currentRate > maxQ * 0.85) {
+            finalStatus = 'caution'; // Approaching range limit (within 15%) -> Caution
         }
 
+        // --- Motor Load Limits ---
         if (motor && motor.hp) {
             const depth = well.depthMD || 8000;
             const bhpEst = (currentRate * (depth * 0.433) * 0.9) / (135770 * 0.65);
@@ -564,14 +539,22 @@ const getWellHealthScore = (well: WellFleetItem, design?: SystemParams | null, d
 
             if (motorLimit > 0) {
                 const loadPct = (bhpEst / motorLimit) * 100;
-                if (loadPct > 105) finalScore = Math.min(finalScore, 30);
-                else if (loadPct > 95) finalScore = Math.min(finalScore, 55);
+                if (loadPct > 105) return 30; // CRITICAL OVERLOAD
+                else if (loadPct > 90) finalStatus = 'caution'; // Approaching limit -> Caution
             }
         }
     }
 
-    const criticalFailure = [well.health.pump, well.health.motor, well.health.cable].some(s => s === 'alert' || s === 'failure' || s === 'ground-fault');
-    return Math.round(Math.max(0, Math.min(100, criticalFailure ? Math.min(finalScore, 35) : finalScore)));
+    // --- PIP Limits ---
+    const pip = well.productionTest.pip || 0;
+    if (pip > 0) {
+        if (pip < 100) return 30; // CRITICAL PIP
+        if (pip < 300) finalStatus = 'caution'; // Approaching/Low PIP -> Caution
+    }
+
+    // --- 3. RETURN TIERED SCORE ---
+    if (finalStatus === 'caution') return 70;
+    return 100; // OPTIMAL
 };
 
 
@@ -631,10 +614,11 @@ const DiagnosticBadge = ({ well, health, normalWellCapacity }: { well: WellFleet
     if (well.health.pump !== 'normal') cause = `Pump: ${well.health.pump.toUpperCase()}`;
     else if (well.health.motor !== 'normal') cause = `Motor: ${well.health.motor.toUpperCase()}`;
     else if (well.health.cable !== 'normal') cause = `Cable: ${well.health.cable.toUpperCase()}`;
-    else if (well.productionTest.pip < 150) cause = "Gas Lock / Low PIP";
-    else if (well.productionTest.pip < 300) cause = "Gas Intf.";
-    else if (well.consumptionReal > well.consumptionTheo * 1.15) cause = "Overload";
-    else if (well.currentRate < well.targetRate * 0.8) cause = "Prod. Drop";
+    else if (well.productionTest.pip < 100) cause = "CRITICAL: PIP < 100";
+    else if (well.productionTest.pip < 300) cause = "Approaching PIP Limit";
+    else if (well.consumptionReal > well.consumptionTheo * 1.25) cause = "Overload";
+    else if (well.currentRate < (well as any).minQ * 1.1) cause = "Near Downthrust";
+    else if (well.currentRate > (well as any).maxQ * 0.9) cause = "Near Upthrust";
 
     return <div className={`flex items-center gap-2 ${health < 40 ? 'bg-danger/10 text-danger border-danger/20' : 'bg-warning/10 text-warning border-warning/20'} px-3 py-1 rounded-none font-black text-[8px] uppercase tracking-widest border animate-pulse`}>
         <AlertTriangle className="w-2.5 h-2.5" /> {cause}
