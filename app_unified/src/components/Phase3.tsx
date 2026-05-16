@@ -13,8 +13,8 @@ interface Props {
 }
 
 const CompactInput = ({ label, value, unit, onChange, step = "any", icon: Icon, colorClass = "primary" }: any) => (
-    <div className="glass-surface border border-white/5 rounded-[2rem] p-5 flex flex-col justify-between relative group hover:border-primary/40 transition-all h-full overflow-hidden shadow-xl light-sweep">
-        <div className={`absolute top-0 right-0 w-32 h-32 ${colorClass === 'primary' ? 'bg-primary/10 shadow-glow-primary' : 'bg-secondary/10 shadow-glow-secondary'} rounded-full blur-3xl -mr-12 -mt-12 opacity-0 group-hover:opacity-100 transition-opacity duration-1000`}></div>
+    <div className="glass-surface border border-white/5 rounded-none-[2rem] p-5 flex flex-col justify-between relative group hover:border-primary/40 transition-all h-full overflow-hidden shadow-xl light-sweep">
+        <div className={`absolute top-0 right-0 w-32 h-32 ${colorClass === 'primary' ? 'bg-primary/10 shadow-glow-primary' : 'bg-secondary/10 shadow-glow-secondary'} rounded-none blur-3xl -mr-12 -mt-12 opacity-0 group-hover:opacity-100 transition-opacity duration-1000`}></div>
 
         <div className="flex justify-between items-center mb-4 relative z-10">
             <label className="text-[10px] font-black text-txt-muted uppercase tracking-[0.2em] group-hover:text-primary transition-colors">{label}</label>
@@ -28,7 +28,7 @@ const CompactInput = ({ label, value, unit, onChange, step = "any", icon: Icon, 
                 onChange={onChange}
                 className="w-full bg-transparent text-3xl font-black text-txt-main outline-none placeholder-surface-light/40 font-mono tracking-tighter"
             />
-            <span className="text-[9px] font-black text-txt-muted uppercase select-none px-3 py-1.5 rounded-xl glass-surface-light border border-white/5 shadow-inner backdrop-blur-sm">{unit}</span>
+            <span className="text-[9px] font-black text-txt-muted uppercase select-none px-3 py-1.5 rounded-none glass-surface-light border border-white/5 shadow-inner backdrop-blur-sm">{unit}</span>
         </div>
     </div>
 );
@@ -46,21 +46,21 @@ const ResultMetric = ({ label, value, unit, subtext, variant = "primary", icon: 
     const isSecondary = variant === 'secondary';
 
     return (
-        <div className={`glass-surface rounded-[2rem] border border-white/5 p-5 flex items-center justify-between relative overflow-hidden group h-full shadow-2xl transition-all duration-700 hover:border-primary/30 light-sweep`}>
+        <div className={`glass-surface rounded-none-[2rem] border border-white/5 p-5 flex items-center justify-between relative overflow-hidden group h-full shadow-2xl transition-all duration-700 hover:border-primary/30 light-sweep`}>
             <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${v.bar} opacity-40 group-hover:opacity-100 transition-all duration-700 ${isPrimary ? 'shadow-glow-primary' : isSecondary ? 'shadow-glow-secondary' : ''}`}></div>
             <div className={`absolute inset-0 bg-gradient-to-r ${isPrimary ? 'from-primary/5' : isSecondary ? 'from-secondary/5' : 'from-white/5'} to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000`}></div>
 
             <div className="relative z-10">
                 <div className="flex items-center gap-3 mb-3">
                     <span className="text-[10px] font-black text-txt-muted uppercase tracking-[0.2em]">{label}</span>
-                    {subtext && <span className={`text-[9px] font-black font-mono px-2 py-0.5 rounded-lg glass-surface border border-white/10 ${v.text}`}>{subtext}</span>}
+                    {subtext && <span className={`text-[9px] font-black font-mono px-2 py-0.5 rounded-none glass-surface border border-white/10 ${v.text}`}>{subtext}</span>}
                 </div>
                 <div className="flex items-baseline gap-2">
                     <span className={`text-4xl font-black ${v.text} font-mono tracking-tighter drop-shadow-md`}>{value}</span>
                     <span className="text-[10px] font-black text-txt-muted uppercase tracking-widest">{unit}</span>
                 </div>
             </div>
-            {Icon && <div className={`p-4 rounded-2xl ${v.icon} shadow-glow-primary group-hover:scale-110 transition-transform duration-700 relative z-10`}><Icon className="w-8 h-8" /></div>}
+            {Icon && <div className={`p-4 rounded-none ${v.icon} shadow-glow-primary group-hover:scale-110 transition-transform duration-700 relative z-10`}><Icon className="w-8 h-8" /></div>}
         </div>
     );
 };
@@ -82,22 +82,22 @@ export const Phase3: React.FC<Props> = ({ params, setParams, results }) => {
         <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-120px)] pb-4 overflow-hidden relative">
 
             {/* LEFT COLUMN */}
-            <div className="flex-1 flex flex-col gap-6 min-w-0 glass-surface rounded-[2.5rem] border border-white/5 p-8 overflow-y-auto custom-scrollbar shadow-2xl animate-fadeIn relative overflow-hidden" style={{ animationDelay: '0.1s' }}>
+            <div className="flex-1 flex flex-col gap-6 min-w-0 glass-surface rounded-none-[2.5rem] border border-white/5 p-8 overflow-y-auto custom-scrollbar shadow-2xl animate-fadeIn relative overflow-hidden" style={{ animationDelay: '0.1s' }}>
                 <div className="absolute inset-0 bg-[linear-gradient(rgb(var(--color-primary)/0.02)_1px,transparent_1px)] bg-[size:100%_40px] pointer-events-none"></div>
                 <div className="flex items-center justify-between px-1">
                     <div className="flex items-center gap-3">
-                        <div className="p-2.5 bg-primary/20 rounded-xl text-primary border border-primary/30 shadow-sm"><Activity className="w-6 h-6" /></div>
+                        <div className="p-2.5 bg-primary/20 rounded-none text-primary border border-primary/30 shadow-sm"><Activity className="w-6 h-6" /></div>
                         <h3 className="text-lg font-black text-txt-main uppercase tracking-wide">{t('p3.inflow')}</h3>
                     </div>
-                    <div className="bg-canvas px-4 py-2 rounded-full border border-white/5 shadow-md">
+                    <div className="bg-canvas px-4 py-2 rounded-none border border-white/5 shadow-md">
                         <span className="text-xs font-bold text-txt-muted uppercase tracking-widest">{t('p3.calcAof')}: <span className="text-txt-main font-black font-mono ml-2 text-lg">{aof.toLocaleString(undefined, { maximumFractionDigits: 0 })} BPD</span></span>
                     </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                    <div className="col-span-2 bg-surface border border-white/10 rounded-2xl p-2 flex shadow-inner">
+                    <div className="col-span-2 bg-surface border border-white/10 rounded-none p-2 flex shadow-inner">
                         {['Productivity Index', 'Vogel'].map((m) => (
-                            <button key={m} onClick={() => setParams({ ...params, inflow: { ...params.inflow, model: m as any } })} className={`flex-1 py-2 text-xs font-black uppercase rounded-xl transition-all flex items-center justify-center gap-2 ${params.inflow.model === m ? 'bg-primary text-white shadow-md' : 'text-txt-muted hover:text-txt-main hover:bg-surface-light/50'}`}>
+                            <button key={m} onClick={() => setParams({ ...params, inflow: { ...params.inflow, model: m as any } })} className={`flex-1 py-2 text-xs font-black uppercase rounded-none transition-all flex items-center justify-center gap-2 ${params.inflow.model === m ? 'bg-primary text-white shadow-md' : 'text-txt-muted hover:text-txt-main hover:bg-surface-light/50'}`}>
                                 {m === 'Productivity Index' ? t('p3.piModel') : t('p3.vogel')}
                             </button>
                         ))}
@@ -106,7 +106,7 @@ export const Phase3: React.FC<Props> = ({ params, setParams, results }) => {
                     <CompactInput label={t('p3.pi')} value={params.inflow.ip} unit="bpd/psi" step="0.1" icon={TrendingUp} colorClass="secondary" onChange={(e: any) => setParams({ ...params, inflow: { ...params.inflow, ip: parseFloat(e.target.value) } })} />
                 </div>
 
-                <div className="flex-1 min-h-[350px] glass-surface-light rounded-[2rem] border border-white/5 shadow-2xl relative overflow-hidden flex flex-col p-6 group">
+                <div className="flex-1 min-h-[350px] glass-surface-light rounded-none-[2rem] border border-white/5 shadow-2xl relative overflow-hidden flex flex-col p-6 group">
                     <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ backgroundImage: 'radial-gradient(rgba(var(--color-primary),0.15) 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
                     <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent_50%,rgba(var(--color-primary),0.02)_50%)] bg-[size:100%_4px] pointer-events-none opacity-40"></div>
                     <div className="absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-primary/10 to-transparent pointer-events-none"></div>
@@ -128,16 +128,16 @@ export const Phase3: React.FC<Props> = ({ params, setParams, results }) => {
             </div>
 
             {/* RIGHT COLUMN */}
-            <div className="flex-1 flex flex-col gap-4 min-w-0 glass-surface rounded-[40px] border border-white/5 p-6 overflow-y-auto custom-scrollbar shadow-2xl animate-fadeIn" style={{ animationDelay: '0.2s' }}>
+            <div className="flex-1 flex flex-col gap-4 min-w-0 glass-surface rounded-none-[40px] border border-white/5 p-6 overflow-y-auto custom-scrollbar shadow-2xl animate-fadeIn" style={{ animationDelay: '0.2s' }}>
                 <div className="flex items-center justify-between px-1">
                     <div className="flex items-center gap-3">
-                        <div className="p-2.5 bg-secondary/20 rounded-xl text-secondary border border-secondary/30 shadow-sm"><Settings2 className="w-6 h-6" /></div>
+                        <div className="p-2.5 bg-secondary/20 rounded-none text-secondary border border-secondary/30 shadow-sm"><Settings2 className="w-6 h-6" /></div>
                         <h3 className="text-lg font-black text-txt-main uppercase tracking-wide">{t('p3.ops')}</h3>
                     </div>
                 </div>
 
                 {showPumpOffWarning && (
-                    <div className="bg-danger/10 border border-danger/20 p-4 rounded-2xl flex items-center gap-4 animate-pulse">
+                    <div className="bg-danger/10 border border-danger/20 p-4 rounded-none flex items-center gap-4 animate-pulse">
                         <AlertTriangle className="w-6 h-6 text-danger" />
                         <div>
                             <h4 className="text-xs font-black text-danger uppercase tracking-widest mb-0.5">{t('ai.critical')}</h4>
@@ -146,15 +146,15 @@ export const Phase3: React.FC<Props> = ({ params, setParams, results }) => {
                     </div>
                 )}
 
-                <div className="bg-surface border border-white/5 rounded-2xl p-5 shadow-sm relative overflow-hidden">
+                <div className="bg-surface border border-white/5 rounded-none p-5 shadow-sm relative overflow-hidden">
                     <div className="flex justify-between items-center mb-5 relative z-10">
                         <label className="text-base font-black text-txt-muted uppercase flex items-center gap-4 tracking-widest"><Target className="w-6 h-6 text-primary" /> {t('p3.target')}</label>
-                        <div className="bg-canvas px-4 py-2 rounded-xl border border-white/5 flex items-baseline gap-2 shadow-inner">
+                        <div className="bg-canvas px-4 py-2 rounded-none border border-white/5 flex items-baseline gap-2 shadow-inner">
                             <input type="number" value={params.pressures.totalRate || ''} onChange={e => { const val = e.target.value; setParams({ ...params, pressures: { ...params.pressures, totalRate: val === '' ? 0 : parseFloat(val) } }); }} className="bg-transparent w-28 text-right text-3xl font-black text-primary outline-none font-mono" />
                             <span className="text-xs font-black text-txt-muted tracking-widest">BPD</span>
                         </div>
                     </div>
-                    <input type="range" min="100" max="10000" step="100" value={params.pressures.totalRate || 0} onChange={e => setParams({ ...params, pressures: { ...params.pressures, totalRate: parseFloat(e.target.value) } })} className="w-full h-3 bg-surface-light rounded-full appearance-none cursor-pointer accent-primary" />
+                    <input type="range" min="100" max="10000" step="100" value={params.pressures.totalRate || 0} onChange={e => setParams({ ...params, pressures: { ...params.pressures, totalRate: parseFloat(e.target.value) } })} className="w-full h-3 bg-surface-light rounded-none appearance-none cursor-pointer accent-primary" />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -172,3 +172,4 @@ export const Phase3: React.FC<Props> = ({ params, setParams, results }) => {
         </div>
     );
 };
+

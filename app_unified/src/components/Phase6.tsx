@@ -1990,52 +1990,8 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
 
             <div className="grid grid-cols-12 gap-6 flex-1">
                 <div className="col-span-12 lg:col-span-4 flex flex-col gap-6 overflow-y-auto custom-scrollbar pr-2 min-h-0">
-                    <div className="card-solid border border-white/10 rounded-none p-6 relative overflow-hidden group shrink-0 shadow-2xl transition-all duration-500 hover:border-secondary/40">
-                        <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                            <Activity className="w-24 h-24 text-primary" />
-                        </div>
-                        <div className="flex justify-between items-center mb-0 relative z-10 bg-primary/10 -mx-6 -mt-6 p-4 border-b border-primary/20 cursor-pointer hover:bg-primary/20 transition-colors"
-                            onClick={() => setIsDesignCollapsed(!isDesignCollapsed)}
-                        >
-                            <div className="flex items-center gap-3">
-                                <div className={`p-2 rounded-none transition-all ${isDesignCollapsed ? 'bg-white/5' : 'bg-primary/20 text-primary'}`}>
-                                    {isDesignCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
-                                </div>
-                                <div>
-                                    <h3 className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">{t('p6.designRef')}</h3>
-                                    <div className="text-[10px] font-black text-primary mt-0.5 uppercase tracking-tighter opacity-80">{compareScenario.toUpperCase()} — {t('p5.preview')}</div>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                {params.isMechVerified && (
-                                    <span className="bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 px-2.5 py-1 rounded-none text-[8px] font-black uppercase tracking-widest">VERIFICADO</span>
-                                )}
-                                <span className="bg-primary text-white px-3 py-1 rounded-none text-[10px] font-black">TARGET</span>
-                            </div>
-                        </div>
 
-                        {!isDesignCollapsed && (
-                            <div className="grid grid-cols-2 gap-3 relative z-10 mt-6 animate-slideDown">
-                                <DesignMetric label={t('tele.flow')} value={`${designParams.pressures.totalRate} BPD`} />
-                                <DesignMetric label={t('p5.freq')} value={`${params.targets[compareScenario].frequency} Hz`} />
-                                <DesignMetric label="TDH" value={`${designRes.tdh?.toFixed(0)} ft`} />
-                                <DesignMetric label={t('p3.pip')} value={`${designRes.pip?.toFixed(0)} psi`} />
-                                <DesignMetric label="INTAKE MD" value={`${designParams.pressures.pumpDepthMD?.toFixed(0)} ft`} />
-                                <DesignMetric label="INTAKE TVD" value={`${interpolateTVD(designParams.pressures.pumpDepthMD, designParams.survey).toFixed(0)} ft`} />
-                                <DesignMetric label="PMP (MD)" value={`${designParams.wellbore.midPerfsMD?.toFixed(0)} ft`} />
-                                <DesignMetric label="PMP (TVD)" value={`${interpolateTVD(designParams.wellbore.midPerfsMD, designParams.survey).toFixed(0)} ft`} />
-                            </div>
-                        )}
-
-                        <div className="mt-4 pt-4 border-t border-white/5 flex items-center gap-2 opacity-50 group-hover:opacity-100 transition-opacity">
-                            <Info className="w-3 h-3 text-txt-muted" />
-                            <span className="text-[7px] font-black uppercase tracking-[0.2em] text-txt-muted">
-                                Fuente: {params.isMechVerified ? 'ESTADOS MECÁNICOS (VERIFICADO)' : 'DISEÑO ORIGINAL (AUTO)'}
-                            </span>
-                        </div>
-                    </div>
-
-                    <div className={`card-solid rounded-none border p-6 shadow-2xl flex-1 relative overflow-hidden flex flex-col gap-6 min-h-0 min-h-[400px] transition-all duration-700 ${isMaxCapActive ? 'border-success/40 ring-1 ring-success/20 bg-success/[0.04]' : 'border-white/10'}`}>
+                    <div className={`card-solid rounded-none border p-6 shadow-2xl relative overflow-hidden flex flex-col gap-6 min-h-0 transition-all duration-700 ${isMaxCapActive ? 'border-success/40 ring-1 ring-success/20 bg-success/[0.04]' : 'border-white/10'}`}>
                         <div className={`absolute inset-0 bg-gradient-to-b transition-colors duration-700 ${isMaxCapActive ? 'from-success/10 to-transparent' : 'from-primary/5 to-transparent'}`}></div>
                         <div className="relative z-10">
                             <div className="flex items-center gap-3 mb-4 bg-primary/10 -mx-6 -mt-6 p-3 border-b border-primary/20 rounded-none">
@@ -2177,6 +2133,51 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
                                     </div>
                                 )}
                             </div>
+                        </div>
+                    </div>
+
+                    <div className="card-solid border border-white/10 rounded-none p-6 relative overflow-hidden group shrink-0 shadow-2xl transition-all duration-500 hover:border-secondary/40">
+                        <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-100 transition-opacity">
+                            <Activity className="w-24 h-24 text-primary" />
+                        </div>
+                        <div className="flex justify-between items-center mb-0 relative z-10 bg-primary/10 -mx-6 -mt-6 p-4 border-b border-primary/20 cursor-pointer hover:bg-primary/20 transition-colors"
+                            onClick={() => setIsDesignCollapsed(!isDesignCollapsed)}
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className={`p-2 rounded-none transition-all ${isDesignCollapsed ? 'bg-white/5' : 'bg-primary/20 text-primary'}`}>
+                                    {isDesignCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+                                </div>
+                                <div>
+                                    <h3 className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">{t('p6.designRef')}</h3>
+                                    <div className="text-[10px] font-black text-primary mt-0.5 uppercase tracking-tighter opacity-80">{compareScenario.toUpperCase()} — {t('p5.preview')}</div>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                {params.isMechVerified && (
+                                    <span className="bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 px-2.5 py-1 rounded-none text-[8px] font-black uppercase tracking-widest">VERIFICADO</span>
+                                )}
+                                <span className="bg-primary text-white px-3 py-1 rounded-none text-[10px] font-black">TARGET</span>
+                            </div>
+                        </div>
+
+                        {!isDesignCollapsed && (
+                            <div className="grid grid-cols-2 gap-3 relative z-10 mt-6 animate-slideDown">
+                                <DesignMetric label={t('tele.flow')} value={`${designParams.pressures.totalRate} BPD`} />
+                                <DesignMetric label={t('p5.freq')} value={`${params.targets[compareScenario].frequency} Hz`} />
+                                <DesignMetric label="TDH" value={`${designRes.tdh?.toFixed(0)} ft`} />
+                                <DesignMetric label={t('p3.pip')} value={`${designRes.pip?.toFixed(0)} psi`} />
+                                <DesignMetric label="INTAKE MD" value={`${designParams.pressures.pumpDepthMD?.toFixed(0)} ft`} />
+                                <DesignMetric label="INTAKE TVD" value={`${interpolateTVD(designParams.pressures.pumpDepthMD, designParams.survey).toFixed(0)} ft`} />
+                                <DesignMetric label="PMP (MD)" value={`${designParams.wellbore.midPerfsMD?.toFixed(0)} ft`} />
+                                <DesignMetric label="PMP (TVD)" value={`${interpolateTVD(designParams.wellbore.midPerfsMD, designParams.survey).toFixed(0)} ft`} />
+                            </div>
+                        )}
+
+                        <div className="mt-4 pt-4 border-t border-white/5 flex items-center gap-2 opacity-50 group-hover:opacity-100 transition-opacity">
+                            <Info className="w-3 h-3 text-txt-muted" />
+                            <span className="text-[7px] font-black uppercase tracking-[0.2em] text-txt-muted">
+                                Fuente: {params.isMechVerified ? 'ESTADOS MECÁNICOS (VERIFICADO)' : 'DISEÑO ORIGINAL (AUTO)'}
+                            </span>
                         </div>
                     </div>
                 </div>

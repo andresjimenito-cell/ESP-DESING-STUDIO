@@ -65,19 +65,22 @@ export const SecureWrapper: React.FC<SecureWrapperProps> = ({
                 e.stopPropagation();
             }}
         >
-            <div className="opacity-20 pointer-events-none grayscale transition-all duration-300">
+            <div className="opacity-40 pointer-events-none transition-all duration-500 blur-[1px]">
                 {children}
             </div>
 
             <div className="absolute inset-0 flex items-center justify-center z-10 cursor-not-allowed group">
-                <div className="bg-black/60 p-1.5 rounded-full border border-white/10 backdrop-blur-sm shadow-xl transition-all group-hover:bg-danger/20 group-hover:border-danger/40">
-                    <Lock className="w-4 h-4 text-txt-muted/70 group-hover:text-danger/80" />
+                <div className="bg-black/60 p-2 rounded-2xl border border-white/20 backdrop-blur-md shadow-2xl transition-all group-hover:bg-danger/30 group-hover:border-danger/50 group-hover:scale-110">
+                    <Lock className="w-5 h-5 text-white/90 group-hover:text-white group-hover:animate-bounce" />
                 </div>
             </div>
 
             {showTooltip && (
-                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-3 py-1.5 bg-black/95 border border-white/20 rounded-lg text-[10px] font-black text-white uppercase tracking-widest whitespace-nowrap z-50 animate-fadeIn shadow-2xl">
-                    {tooltip}
+                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 px-4 py-2 bg-black/90 border border-danger/30 rounded-xl text-[10px] font-black text-white uppercase tracking-[0.2em] whitespace-nowrap z-50 animate-fadeIn shadow-[0_10px_30px_rgba(239,68,68,0.2)]">
+                    <span className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-danger animate-pulse" />
+                        {tooltip}
+                    </span>
                 </div>
             )}
         </div>

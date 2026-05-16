@@ -31,18 +31,18 @@ interface Phase5Props {
 // --- REUSABLE COLLAPSIBLE SECTION COMPONENT ---
 const CollapsibleSection = ({ title, icon: Icon, children, isOpen, onToggle, colorClass = "primary" }: any) => {
     return (
-        <div className={`glass-surface rounded-[2rem] border border-white/5 shadow-xl overflow-hidden transition-all duration-700 flex-shrink-0 ${isOpen ? 'ring-2 ring-primary/30 shadow-glow-primary/10' : ''}`}>
+        <div className={`glass-surface rounded-none-[2rem] border border-white/5 shadow-xl overflow-hidden transition-all duration-700 flex-shrink-0 ${isOpen ? 'ring-2 ring-primary/30 shadow-glow-primary/10' : ''}`}>
             <button
                 onClick={onToggle}
                 className={`w-full flex items-center justify-between p-4 transition-all duration-500 group outline-none sticky top-0 z-10 light-sweep ${isOpen ? 'bg-primary/5' : 'bg-transparent'}`}
             >
                 <div className="flex items-center gap-4">
-                    <div className={`p-2.5 rounded-2xl glass-surface-light text-${colorClass} border border-white/5 group-hover:bg-white/10 transition-all duration-500 shadow-sm shadow-${colorClass}/20`}>
+                    <div className={`p-2.5 rounded-none glass-surface-light text-${colorClass} border border-white/5 group-hover:bg-white/10 transition-all duration-500 shadow-sm shadow-${colorClass}/20`}>
                         {Icon && <Icon className="w-4 h-4" />}
                     </div>
                     <span className="text-[10px] font-black text-txt-main uppercase tracking-[0.2em] group-hover:tracking-[0.25em] transition-all duration-500">{title}</span>
                 </div>
-                <div className={`p-2 rounded-full transition-all duration-500 ${isOpen ? 'rotate-180 bg-primary/20 text-primary shadow-glow-primary' : 'rotate-0 text-txt-muted'}`}>
+                <div className={`p-2 rounded-none transition-all duration-500 ${isOpen ? 'rotate-180 bg-primary/20 text-primary shadow-glow-primary' : 'rotate-0 text-txt-muted'}`}>
                     <ChevronDown className="w-4 h-4" />
                 </div>
             </button>
@@ -96,9 +96,9 @@ const KPICard = ({ label, value, unit, icon: Icon, colorClass, highlight = false
     const isMet = target > 0 && Math.abs(parseFloat(value) - target) / target < 0.02;
 
     return (
-        <div className={`relative glass-surface rounded-2xl border ${border} p-3 flex flex-col justify-between overflow-hidden group hover:scale-[1.02] hover:border-primary/40 transition-all duration-500 min-h-[90px] light-sweep shadow-lg`}>
-            {isMet && <div className="absolute top-0 right-0 px-2 py-0.5 bg-primary text-[7px] font-black text-white rounded-bl-lg z-20 animate-fadeIn shadow-glow-primary uppercase tracking-widest flex items-center gap-1"><CheckCircle2 className="w-2 h-2" /> MET</div>}
-            <div className={`absolute -right-10 -top-10 w-20 h-20 bg-${colorClass}/10 blur-3xl rounded-full pointer-events-none group-hover:scale-150 transition-transform duration-1000`}></div>
+        <div className={`relative glass-surface rounded-none border ${border} p-3 flex flex-col justify-between overflow-hidden group hover:scale-[1.02] hover:border-primary/40 transition-all duration-500 min-h-[90px] light-sweep shadow-lg`}>
+            {isMet && <div className="absolute top-0 right-0 px-2 py-0.5 bg-primary text-[7px] font-black text-white rounded-none-bl-lg z-20 animate-fadeIn shadow-glow-primary uppercase tracking-widest flex items-center gap-1"><CheckCircle2 className="w-2 h-2" /> MET</div>}
+            <div className={`absolute -right-10 -top-10 w-20 h-20 bg-${colorClass}/10 blur-3xl rounded-none pointer-events-none group-hover:scale-150 transition-transform duration-1000`}></div>
 
             <div className="flex justify-between items-start z-10">
                 <div className="flex flex-col gap-0.5">
@@ -108,13 +108,13 @@ const KPICard = ({ label, value, unit, icon: Icon, colorClass, highlight = false
                         <span className="text-[9px] font-black text-txt-main/40 uppercase tracking-widest">{unit}</span>
                     </div>
                     {target > 0 && (
-                        <div className="mt-1 flex items-center gap-1.5 px-1.5 py-0.5 rounded bg-white/5 border border-white/5 w-fit">
+                        <div className="mt-1 flex items-center gap-1.5 px-1.5 py-0.5 rounded-none bg-white/5 border border-white/5 w-fit">
                             <div className="text-[7px] font-black text-txt-muted uppercase tracking-tighter opacity-50">TARGET:</div>
                             <div className={`text-[9px] font-black font-mono ${isMet ? 'text-primary' : 'text-secondary/70'}`}>{target.toLocaleString()}</div>
                         </div>
                     )}
                 </div>
-                <div className={`p-2 rounded-xl glass-surface-light text-${colorClass === 'primary' ? 'primary' : 'secondary'} border border-white/5 shadow-inner group-hover:shadow-glow-${colorClass === 'primary' ? 'primary' : 'secondary'} transition-all duration-500`}>
+                <div className={`p-2 rounded-none glass-surface-light text-${colorClass === 'primary' ? 'primary' : 'secondary'} border border-white/5 shadow-inner group-hover:shadow-glow-${colorClass === 'primary' ? 'primary' : 'secondary'} transition-all duration-500`}>
                     {Icon && <Icon className={`w-4 h-4 ${glow ? 'animate-pulse' : ''}`} />}
                 </div>
             </div>
@@ -125,7 +125,7 @@ const KPICard = ({ label, value, unit, icon: Icon, colorClass, highlight = false
 const DigitalReadout = ({ label, value, unit, color }: any) => {
     const safeVal = (value === undefined || value === null || isNaN(value)) ? '0.0' : value;
     return (
-        <div className="glass-surface-light border border-white/5 rounded-2xl p-3.5 flex items-center justify-between min-w-[130px] shadow-inner relative overflow-hidden group hover:border-white/10 transition-all duration-500">
+        <div className="glass-surface-light border border-white/5 rounded-none p-3.5 flex items-center justify-between min-w-[130px] shadow-inner relative overflow-hidden group hover:border-white/10 transition-all duration-500">
             <div className="absolute left-0 top-0 w-1 h-full bg-gradient-to-b from-transparent via-white/10 to-transparent"></div>
             <div className="flex flex-col gap-0.5 relative z-10">
                 <span className="text-[8px] font-black text-txt-muted uppercase tracking-[0.2em] mb-0.5 opacity-60 group-hover:opacity-100 transition-opacity">{label}</span>
@@ -134,7 +134,7 @@ const DigitalReadout = ({ label, value, unit, color }: any) => {
                     <span className="text-[9px] font-black text-txt-muted uppercase opacity-40">{unit}</span>
                 </div>
             </div>
-            <div className={`w-1 h-8 rounded-full bg-${color}/10 border border-${color}/20 group-hover:scale-y-110 transition-transform duration-500`}></div>
+            <div className={`w-1 h-8 rounded-none bg-${color}/10 border border-${color}/20 group-hover:scale-y-110 transition-transform duration-500`}></div>
         </div>
     );
 };
@@ -143,7 +143,7 @@ const NavTab = ({ icon: Icon, imgSrc, label, active, onClick, color = "primary" 
     return (
         <button
             onClick={onClick}
-            className={`flex flex-col items-center justify-center gap-0.5 p-1 rounded-2xl transition-all duration-500 border-2 relative overflow-hidden group ${
+            className={`flex flex-col items-center justify-center gap-0.5 p-1 rounded-none transition-all duration-500 border-2 relative overflow-hidden group ${
                 active 
                 ? `bg-${color}/25 border-${color}/60 shadow-glow-${color} scale-[1.05] z-10` 
                 : 'glass-surface border-white/10 text-txt-muted hover:border-white/30 hover:bg-white/10'
@@ -155,7 +155,7 @@ const NavTab = ({ icon: Icon, imgSrc, label, active, onClick, color = "primary" 
                     <div className={`absolute top-0 left-0 w-full h-1 bg-${color} shadow-glow-${color} animate-pulse`}></div>
                 </>
             )}
-            <div className={`p-0.5 rounded-xl transition-all duration-500 relative z-10 ${active ? `bg-${color} text-white shadow-glow-${color} rotate-3` : 'bg-white/10 group-hover:bg-white/20'}`}>
+            <div className={`p-0.5 rounded-none transition-all duration-500 relative z-10 ${active ? `bg-${color} text-white shadow-glow-${color} rotate-3` : 'bg-white/10 group-hover:bg-white/20'}`}>
                 {imgSrc ? (
                     <img src={imgSrc} alt={label} className={`w-13 h-13 object-contain transition-all duration-500 ${active ? 'brightness-125 contrast-125' : 'opacity-40 grayscale group-hover:opacity-80 group-hover:grayscale-0'}`} />
                 ) : (
@@ -236,22 +236,22 @@ export const ReportSelectorModal = ({ isOpen, onClose, onSelect, scenarios }: an
     return (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-canvas/80 backdrop-blur-md" onClick={onClose}></div>
-            <div className="relative bg-surface border border-white/10 rounded-[32px] w-full max-w-md p-8 shadow-[0_32px_64px_rgba(0,0,0,0.5)] animate-fadeIn">
+            <div className="relative bg-surface border border-white/10 rounded-none-[32px] w-full max-w-md p-8 shadow-[0_32px_64px_rgba(0,0,0,0.5)] animate-fadeIn">
                 <div className="flex justify-between items-center mb-6">
                     <h3 className="text-xl font-black text-txt-main uppercase tracking-tight flex items-center gap-3">
                         <Printer className="w-5 h-5 text-primary" /> {t('p5.designReport')}
                     </h3>
-                    <button onClick={onClose} className="p-2 hover:bg-surface-light rounded-xl transition-all"><X className="w-5 h-5 text-txt-muted" /></button>
+                    <button onClick={onClose} className="p-2 hover:bg-surface-light rounded-none transition-all"><X className="w-5 h-5 text-txt-muted" /></button>
                 </div>
                 <div className="space-y-3">
-                    <button onClick={() => onSelect('comprehensive')} className="w-full p-6 text-left bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-2xl transition-all group">
+                    <button onClick={() => onSelect('comprehensive')} className="w-full p-6 text-left bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-none transition-all group">
                         <div className="font-black text-primary uppercase text-sm mb-1">{t('p5.compReport')}</div>
                         <div className="text-xs text-txt-muted font-bold">Resumen completo de los 3 casos de diseño (MIN, OBJ, MAX)</div>
                     </button>
                     <div className="h-px bg-surface-light my-4"></div>
                     <div className="text-[10px] font-black text-txt-muted uppercase tracking-widest mb-2 px-1">Escenarios Individuales</div>
                     {['min', 'target', 'max'].map((s) => (
-                        <button key={s} onClick={() => onSelect(s)} className="w-full p-4 text-left hover:bg-white/5 border border-white/5 rounded-2xl font-black uppercase text-xs flex justify-between items-center transition-all">
+                        <button key={s} onClick={() => onSelect(s)} className="w-full p-4 text-left hover:bg-white/5 border border-white/5 rounded-none font-black uppercase text-xs flex justify-between items-center transition-all">
                             <span>{s === 'target' ? 'OBJETIVO (TARGET)' : s.toUpperCase()}</span>
                             <ChevronRight className="w-4 h-4 text-primary" />
                         </button>
@@ -319,17 +319,17 @@ export const DesignReport = ({ onClose, params, pump, results, frequency, motor,
         <div className="fixed inset-0 z-[9999] bg-canvas overflow-hidden flex flex-col animate-fadeIn report-overlay-backdrop">
             <div className="h-16 bg-surface border-b border-white/5 flex items-center justify-between px-8 shadow-2xl shrink-0 no-print z-50">
                 <div className="flex items-center gap-4">
-                    <div className="bg-primary p-2.5 rounded-xl text-white shadow-lg"><Printer className="w-6 h-6" /></div>
+                    <div className="bg-primary p-2.5 rounded-none text-white shadow-lg"><Printer className="w-6 h-6" /></div>
                     <div>
                         <h3 className="text-base font-black text-white uppercase tracking-wider">{t('p5.designReport')}</h3>
                         <p className="text-sm text-txt-muted font-bold truncate max-w-[300px]">{type === 'comprehensive' ? 'Comprehensive Multi-Case Analysis' : `Scenario Analysis: ${type.toUpperCase()}`}</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-4">
-                    <button onClick={handlePrint} className="flex items-center gap-3 bg-primary hover:bg-primary/80 text-white px-8 py-3 rounded-2xl font-bold text-sm uppercase shadow-lg shadow-primary/20 transition-all active:scale-95">
+                    <button onClick={handlePrint} className="flex items-center gap-3 bg-primary hover:bg-primary/80 text-white px-8 py-3 rounded-none font-bold text-sm uppercase shadow-lg shadow-primary/20 transition-all active:scale-95">
                         <Download className="w-5 h-5" /> {t('p5.printPdf')}
                     </button>
-                    <button onClick={onClose} className="p-3 bg-surface-light hover:bg-red-500/20 text-txt-muted hover:text-red-500 rounded-2xl transition-all">
+                    <button onClick={onClose} className="p-3 bg-surface-light hover:bg-red-500/20 text-txt-muted hover:text-red-500 rounded-none transition-all">
                         <X className="w-6 h-6" />
                     </button>
                 </div>
@@ -423,12 +423,12 @@ export const DesignReport = ({ onClose, params, pump, results, frequency, motor,
                     {/* COMMON EQUIPMENT SECTION (Shown once at the top if comprehensive, or as part of scenario if individual) */}
                     {(type === 'comprehensive' || scenariosToRender.length === 1) && (
                         <div className="mb-10">
-                            <div className="bg-slate-900 text-white px-8 py-3 rounded-xl mb-6">
+                            <div className="bg-slate-900 text-white px-8 py-3 rounded-none mb-6">
                                 <h2 className="text-xl font-black uppercase tracking-widest">{type === 'comprehensive' ? t('p5.compReport') : `Scenario: ${type.toUpperCase()}`}</h2>
                             </div>
 
                             <div className="grid grid-cols-3 gap-6 mb-8">
-                                <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 shadow-sm">
+                                <div className="bg-slate-50 p-6 rounded-none border border-slate-200 shadow-sm">
                                     <h4 className="text-xs font-black text-slate-400 uppercase mb-3 tracking-widest">Wellbore Summary</h4>
                                     <div className="space-y-2 text-sm font-bold">
                                         <div className="flex justify-between"><span>{t('sens.pumpDepth')}:</span><span>{params.pressures.pumpDepthMD} ft</span></div>
@@ -436,7 +436,7 @@ export const DesignReport = ({ onClose, params, pump, results, frequency, motor,
                                         <div className="flex justify-between"><span>{t('p3.pi')}:</span><span>{params.inflow.ip} bpd/psi</span></div>
                                     </div>
                                 </div>
-                                <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 shadow-sm">
+                                <div className="bg-slate-50 p-6 rounded-none border border-slate-200 shadow-sm">
                                     <h4 className="text-xs font-black text-slate-400 uppercase mb-3 tracking-widest">{t('p5.equipSpec')}</h4>
                                     <div className="space-y-2 text-sm font-bold">
                                         <div className="flex justify-between"><span>{t('p5.pump')}:</span><span className="truncate ml-2">{pump?.model || '-'}</span></div>
@@ -446,7 +446,7 @@ export const DesignReport = ({ onClose, params, pump, results, frequency, motor,
                                         <div className="flex justify-between"><span>VSD:</span><span className="truncate ml-2">{(params as any).selectedVSD?.model || 'N/A'}</span></div>
                                     </div>
                                 </div>
-                                <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 shadow-sm">
+                                <div className="bg-slate-50 p-6 rounded-none border border-slate-200 shadow-sm">
                                     <h4 className="text-xs font-black text-slate-400 uppercase mb-3 tracking-widest">{t('p5.designTarget')}</h4>
                                     <div className="space-y-2 text-sm font-bold">
                                         <div className="flex justify-between"><span>{t('p5.targetFlow')}:</span><span>{params.targets[params.activeScenario].rate} BPD</span></div>
@@ -457,7 +457,7 @@ export const DesignReport = ({ onClose, params, pump, results, frequency, motor,
                             </div>
 
                             {/* SINGLE BHA SCHEMATIC FOR THE REPORT */}
-                            <div className="border-2 border-slate-900 rounded-2xl bg-[#020617] overflow-hidden mb-10 h-[650px] relative">
+                            <div className="border-2 border-slate-900 rounded-none bg-[#020617] overflow-hidden mb-10 h-[650px] relative">
                                 <h4 className="bg-slate-900 text-white text-[12px] font-black uppercase px-6 py-3 tracking-widest flex items-center gap-2">
                                     <Layers className="w-5 h-5" /> SCHEMATIC (DESIGN CONFIGURATION)
                                 </h4>
@@ -486,13 +486,13 @@ export const DesignReport = ({ onClose, params, pump, results, frequency, motor,
 
                         return (
                             <div key={scenarioId} className={sIdx > 0 ? "page-break pt-10" : "mt-10"}>
-                                <div className="bg-slate-900 text-white px-8 py-3 rounded-xl mb-6 flex justify-between items-center">
+                                <div className="bg-slate-900 text-white px-8 py-3 rounded-none mb-6 flex justify-between items-center">
                                     <h2 className="text-lg font-black uppercase tracking-widest">Case: {scenarioId.toUpperCase()} Performance</h2>
                                     <span className="text-blue-400 font-bold font-mono">{params.targets[scenarioId as keyof typeof params.targets].rate} BPD @ {sFreq} Hz</span>
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-8 mb-8">
-                                    <div className="flex flex-col border-2 border-slate-900 rounded-2xl bg-white overflow-hidden shadow-sm">
+                                    <div className="flex flex-col border-2 border-slate-900 rounded-none bg-white overflow-hidden shadow-sm">
                                         <h4 className="bg-slate-900 text-white text-[10px] font-black uppercase px-4 py-2 tracking-widest">
                                             {t('p5.perfCurve')} @ {sFreq} Hz
                                         </h4>
@@ -506,7 +506,7 @@ export const DesignReport = ({ onClose, params, pump, results, frequency, motor,
                                         </div>
                                     </div>
 
-                                    <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-center">
+                                    <div className="bg-slate-50 p-6 rounded-none border border-slate-200 shadow-sm flex flex-col justify-center">
                                         <h4 className="text-xs font-black text-slate-400 uppercase mb-4 tracking-widest">Operating Results</h4>
                                         <div className="grid grid-cols-2 gap-4">
                                             {[
@@ -530,8 +530,8 @@ export const DesignReport = ({ onClose, params, pump, results, frequency, motor,
 
                                 {/* VSD TABLE FOR THIS SCENARIO */}
                                 <div className="mb-8">
-                                    <h4 className="font-black text-xs uppercase tracking-wider text-white bg-slate-900 px-4 py-2 rounded-t-xl inline-block">{t('p5.vsdAnalysis')}</h4>
-                                    <div className="border-2 border-slate-900 rounded-b-xl rounded-tr-xl overflow-hidden shadow-sm">
+                                    <h4 className="font-black text-xs uppercase tracking-wider text-white bg-slate-900 px-4 py-2 rounded-none-t-xl inline-block">{t('p5.vsdAnalysis')}</h4>
+                                    <div className="border-2 border-slate-900 rounded-none-b-xl rounded-none-tr-xl overflow-hidden shadow-sm">
                                         <table className="w-full text-[9px] text-left">
                                             <thead className="bg-slate-100 text-slate-600 uppercase font-black">
                                                 <tr>
@@ -569,7 +569,7 @@ export const DesignReport = ({ onClose, params, pump, results, frequency, motor,
                                     <h4 className="flex items-center gap-2 text-[12px] font-black uppercase text-slate-900 border-b-2 border-slate-900 pb-1 mb-4">
                                         <Layers className="w-4 h-4" /> {t('p5.wellSysCurve')}
                                     </h4>
-                                    <div className="overflow-hidden rounded-lg border-2 border-slate-900">
+                                    <div className="overflow-hidden rounded-none border-2 border-slate-900">
                                         <table className="w-full text-[10px] text-left">
                                             <thead className="bg-slate-900 text-white uppercase font-black">
                                                 <tr>
@@ -613,7 +613,7 @@ export const DesignReport = ({ onClose, params, pump, results, frequency, motor,
                                     <h4 className="flex items-center gap-2 text-[12px] font-black uppercase text-slate-900 border-b-2 border-slate-900 pb-1 mb-4">
                                         <Activity className="w-4 h-4" /> {t('p5.theoPerf')}
                                     </h4>
-                                    <div className="overflow-hidden rounded-lg border-2 border-slate-900">
+                                    <div className="overflow-hidden rounded-none border-2 border-slate-900">
                                         <table className="w-full text-[10px] text-right font-bold">
                                             <thead className="bg-slate-900 text-white uppercase font-black">
                                                 <tr>
@@ -660,13 +660,13 @@ export const DesignReport = ({ onClose, params, pump, results, frequency, motor,
 
                     {/* AI ANALYSIS SECTION */}
                     <div className="page-break pt-10">
-                        <div className="bg-slate-900 text-white px-8 py-3 rounded-xl mb-6 flex items-center gap-3">
+                        <div className="bg-slate-900 text-white px-8 py-3 rounded-none mb-6 flex items-center gap-3">
                             <Sparkles className="w-5 h-5 text-primary" />
                             <h2 className="text-xl font-black uppercase tracking-widest">AI Design Analysis & Recommendations</h2>
                         </div>
 
                         <div className="grid grid-cols-2 gap-8 mb-8">
-                            <div className="bg-slate-50 p-8 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+                            <div className="bg-slate-50 p-8 rounded-none border border-slate-200 shadow-sm space-y-4">
                                 <h4 className="font-black text-slate-900 uppercase tracking-widest text-sm flex items-center gap-2">
                                     <Target className="w-4 h-4 text-blue-500" /> Operational Range Analysis
                                 </h4>
@@ -674,15 +674,15 @@ export const DesignReport = ({ onClose, params, pump, results, frequency, motor,
                                     The selected ESP configuration ({pump?.model}) shows a highly viable operational range between {params.targets.min.frequency}Hz and {params.targets.max.frequency}Hz.
                                     The "Target" efficiency is optimized at {results?.effEstimated?.toFixed(1)}%, with the operating point sitting within {Math.abs(((results?.flow || 0) - (pump?.bepRate || 0)) / (pump?.bepRate || 1) * 100).toFixed(1)}% of the Best Efficiency Point (BEP).
                                 </p>
-                                <div className="p-4 bg-white rounded-2xl border border-slate-100">
+                                <div className="p-4 bg-white rounded-none border border-slate-100">
                                     <div className="flex justify-between text-xs font-black uppercase mb-1"><span>Recommended Min</span><span className="text-blue-500">{params.targets.min.rate} BPD</span></div>
-                                    <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                                    <div className="w-full h-2 bg-slate-100 rounded-none overflow-hidden">
                                         <div className="h-full bg-blue-500" style={{ width: '30%' }}></div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="bg-slate-50 p-8 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+                            <div className="bg-slate-50 p-8 rounded-none border border-slate-200 shadow-sm space-y-4">
                                 <h4 className="font-black text-slate-900 uppercase tracking-widest text-sm flex items-center gap-2">
                                     <AlertCircle className="w-4 h-4 text-amber-500" /> Maintenance & Life-Cycle
                                 </h4>
@@ -694,7 +694,7 @@ export const DesignReport = ({ onClose, params, pump, results, frequency, motor,
                             </div>
                         </div>
 
-                        <div className="bg-blue-50 border-2 border-blue-200 p-6 rounded-2xl">
+                        <div className="bg-blue-50 border-2 border-blue-200 p-6 rounded-none">
                             <h4 className="font-black text-blue-900 uppercase text-xs mb-3">Expert Design Summary</h4>
                             <p className="text-sm text-blue-800 font-bold italic leading-relaxed">
                                 "The design is robust for the specified conditions. We recommend starting production at {params.targets.min.frequency}Hz to monitor initial drawdown before ramping up to the {params.targets.target.frequency}Hz target point. Ensure high-frequency monitoring of motor vibration if operating above 65Hz."
@@ -718,12 +718,12 @@ const AISourceModal: React.FC<AISourceModalProps> = ({ isOpen, onClose, onSelect
     if (!isOpen) return null;
     return (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-canvas/60 backdrop-blur-xl p-4 animate-fadeIn">
-            <div className="glass-surface p-12 rounded-[3.5rem] max-w-xl w-full shadow-2xl border border-white/10 space-y-10 relative overflow-hidden light-sweep">
+            <div className="glass-surface p-12 rounded-none-[3.5rem] max-w-xl w-full shadow-2xl border border-white/10 space-y-10 relative overflow-hidden light-sweep">
                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent"></div>
 
                 <div className="text-center space-y-4 relative z-10">
-                    <div className="w-24 h-24 glass-surface-light rounded-[2.5rem] flex items-center justify-center mx-auto mb-8 border border-white/5 shadow-2xl shadow-primary/20 relative group">
-                        <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full animate-pulse"></div>
+                    <div className="w-24 h-24 glass-surface-light rounded-none-[2.5rem] flex items-center justify-center mx-auto mb-8 border border-white/5 shadow-2xl shadow-primary/20 relative group">
+                        <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-none animate-pulse"></div>
                         <Sparkles className="w-12 h-12 text-primary relative z-10 animate-float" />
                     </div>
                     <h3 className="text-4xl font-black text-txt-main uppercase tracking-tighter leading-none">{t('p5.aiEngine')}</h3>
@@ -731,12 +731,12 @@ const AISourceModal: React.FC<AISourceModalProps> = ({ isOpen, onClose, onSelect
                 </div>
 
                 <div className="grid grid-cols-2 gap-8 relative z-10">
-                    <button onClick={() => onSelectSource('standard')} className="glass-surface-light hover:bg-white/5 border border-white/5 hover:border-primary/40 p-10 rounded-[2.5rem] flex flex-col items-center gap-5 transition-all duration-500 group relative overflow-hidden">
+                    <button onClick={() => onSelectSource('standard')} className="glass-surface-light hover:bg-white/5 border border-white/5 hover:border-primary/40 p-10 rounded-none-[2.5rem] flex flex-col items-center gap-5 transition-all duration-500 group relative overflow-hidden">
                         <div className="absolute bottom-0 left-0 w-full h-1 bg-primary/0 group-hover:bg-primary/40 transition-all"></div>
                         <Server className="w-12 h-12 text-txt-muted group-hover:text-primary transition-all duration-500 group-hover:scale-110" />
                         <span className="text-[11px] font-black uppercase text-txt-muted group-hover:text-txt-main tracking-widest transition-all">{t('p5.standard')}</span>
                     </button>
-                    <button onClick={() => onSelectSource('imported')} className="glass-surface-light hover:bg-white/5 border border-white/5 hover:border-secondary/40 p-10 rounded-[2.5rem] flex flex-col items-center gap-5 transition-all duration-500 group relative overflow-hidden">
+                    <button onClick={() => onSelectSource('imported')} className="glass-surface-light hover:bg-white/5 border border-white/5 hover:border-secondary/40 p-10 rounded-none-[2.5rem] flex flex-col items-center gap-5 transition-all duration-500 group relative overflow-hidden">
                         <div className="absolute bottom-0 left-0 w-full h-1 bg-secondary/0 group-hover:bg-secondary/40 transition-all"></div>
                         <UploadCloud className="w-12 h-12 text-txt-muted group-hover:text-secondary transition-all duration-500 group-hover:scale-110" />
                         <span className="text-[11px] font-black uppercase text-txt-muted group-hover:text-txt-main tracking-widest transition-all">{t('p5.imported')}</span>
@@ -760,31 +760,31 @@ const AIRecommendationsModal: React.FC<AIRecommendationsModalProps> = ({ isOpen,
     if (!isOpen || !recommendations.length) return null;
     return (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-canvas/60 backdrop-blur-2xl p-4 animate-fadeIn">
-            <div className="glass-surface border border-white/10 rounded-[3.5rem] max-w-4xl w-full shadow-2xl p-10 space-y-8 relative overflow-hidden light-sweep">
+            <div className="glass-surface border border-white/10 rounded-none-[3.5rem] max-w-4xl w-full shadow-2xl p-10 space-y-8 relative overflow-hidden light-sweep">
                 <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-primary/5 to-transparent pointer-events-none"></div>
 
                 <div className="flex justify-between items-center relative z-10">
                     <div className="flex items-center gap-5">
-                        <div className="p-4 glass-surface-light rounded-[1.5rem] border border-white/5 shadow-glow-primary"><Sparkles className="w-8 h-8 text-primary" /></div>
+                        <div className="p-4 glass-surface-light rounded-none-[1.5rem] border border-white/5 shadow-glow-primary"><Sparkles className="w-8 h-8 text-primary" /></div>
                         <div>
                             <h3 className="text-2xl font-black text-txt-main uppercase tracking-tighter leading-none">AI CORE RECOMMENDATIONS</h3>
                             <p className="text-[10px] font-black text-txt-muted uppercase tracking-[0.3em] mt-2 opacity-60">OPTIMIZED HYDRAULIC CONFIGURATIONS (TOP 5)</p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="p-3 glass-surface-light hover:bg-white/10 rounded-2xl transition-all border border-white/5 active:scale-90 group">
+                    <button onClick={onClose} className="p-3 glass-surface-light hover:bg-white/10 rounded-none transition-all border border-white/5 active:scale-90 group">
                         <X className="w-6 h-6 text-txt-muted group-hover:text-txt-main" />
                     </button>
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 max-h-[600px] overflow-y-auto pr-4 custom-scrollbar relative z-10">
                     {recommendations.map((rec, i) => (
-                        <button key={i} onClick={() => onSelect(rec)} className="w-full glass-surface-light hover:bg-white/5 border border-white/5 hover:border-primary/40 p-6 rounded-[2.5rem] flex items-center gap-8 transition-all duration-500 group relative overflow-hidden text-left">
+                        <button key={i} onClick={() => onSelect(rec)} className="w-full glass-surface-light hover:bg-white/5 border border-white/5 hover:border-primary/40 p-6 rounded-none-[2.5rem] flex items-center gap-8 transition-all duration-500 group relative overflow-hidden text-left">
                             <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-all duration-500 group-hover:translate-x-0 translate-x-4"><ChevronRight className="w-6 h-6 text-primary shadow-glow-primary" /></div>
 
                             <div className="w-1/2 flex flex-col gap-3">
                                 <div className="flex items-center gap-3">
-                                    <div className="px-3 py-1 rounded-full bg-primary/20 text-primary text-[9px] font-black uppercase tracking-widest border border-primary/20">{rec.pump.manufacturer}</div>
-                                    {rec.isMostUsed && <div className="bg-white/5 text-txt-main text-[8px] font-black px-2 py-1 rounded-full border border-white/10 uppercase tracking-widest flex items-center gap-1.5"><Star className="w-3 h-3 text-amber-500 fill-amber-500" /> TOP INVENTORY</div>}
+                                    <div className="px-3 py-1 rounded-none bg-primary/20 text-primary text-[9px] font-black uppercase tracking-widest border border-primary/20">{rec.pump.manufacturer}</div>
+                                    {rec.isMostUsed && <div className="bg-white/5 text-txt-main text-[8px] font-black px-2 py-1 rounded-none border border-white/10 uppercase tracking-widest flex items-center gap-1.5"><Star className="w-3 h-3 text-amber-500 fill-amber-500" /> TOP INVENTORY</div>}
                                 </div>
                                 <div className="text-2xl font-black text-txt-main uppercase tracking-tighter leading-tight group-hover:text-primary transition-colors">{rec.pump.model}</div>
                                 <div className="flex gap-4 items-center">
@@ -826,7 +826,7 @@ const AIRecommendationsModal: React.FC<AIRecommendationsModalProps> = ({ isOpen,
                                         <span className="text-xl font-black text-txt-main font-mono">{Math.round(rec.score)}%</span>
                                     </div>
                                 </div>
-                                <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden relative">
+                                <div className="w-full h-1.5 bg-white/5 rounded-none overflow-hidden relative">
                                     <div className="absolute inset-0 bg-primary/20 blur-[1px]"></div>
                                     <div className="h-full bg-gradient-to-r from-primary to-secondary relative z-10 shadow-glow-primary" style={{ width: `${Math.min(100, rec.score)}%` }}></div>
                                 </div>
@@ -837,8 +837,8 @@ const AIRecommendationsModal: React.FC<AIRecommendationsModalProps> = ({ isOpen,
                 <div className="flex justify-between items-center opacity-40 px-2 relative z-10">
                     <p className="text-[9px] font-black text-txt-muted uppercase tracking-[0.4em]">ESP DESIGNER ANALYTIC ENGINE v2.0</p>
                     <div className="flex gap-4">
-                        <div className="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
-                        <div className="w-2 h-2 rounded-full bg-secondary animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+                        <div className="w-2 h-2 rounded-none bg-primary animate-pulse"></div>
+                        <div className="w-2 h-2 rounded-none bg-secondary animate-pulse" style={{ animationDelay: '0.2s' }}></div>
                     </div>
                 </div>
             </div>
@@ -1162,10 +1162,10 @@ export const Phase5: React.FC<Phase5Props> = ({ params, setParams, customPump, s
             {reportConfig.isOpen && <DesignReport onClose={() => setReportConfig({ isOpen: false, type: 'target' })} type={reportConfig.type} params={params} pump={effectivePump} results={activeResults} frequency={frequency} motor={params.selectedMotor} cable={params.selectedCable} />}
 
             {/* HEADER - COMPACT */}
-            <div className="flex justify-between items-center px-4 shrink-0 h-14 glass-surface rounded-2xl border border-white/5 shadow-lg relative overflow-hidden group">
+            <div className="flex justify-between items-center px-4 shrink-0 h-14 glass-surface rounded-none border border-white/5 shadow-lg relative overflow-hidden group">
                 <div className="absolute left-0 top-0 w-1.5 h-full bg-primary shadow-glow-primary"></div>
                 <div className="flex items-center gap-4 relative z-10 pl-1">
-                    <div className="p-2 bg-primary/20 rounded-xl border border-white/10 shadow-glow-primary">
+                    <div className="p-2 bg-primary/20 rounded-none border border-white/10 shadow-glow-primary">
                         <Cpu className="w-5 h-5 text-primary" />
                     </div>
                     <div>
@@ -1174,7 +1174,7 @@ export const Phase5: React.FC<Phase5Props> = ({ params, setParams, customPump, s
                     </div>
                 </div>
                 <div className="flex items-center gap-2 relative z-10 pr-1">
-                    <button onClick={handleExportJson} className="glass-surface hover:bg-white/10 text-success hover:text-success/80 px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all flex items-center gap-2 border border-success/30 shadow-sm light-sweep">
+                    <button onClick={handleExportJson} className="glass-surface hover:bg-white/10 text-success hover:text-success/80 px-4 py-2 rounded-none text-[9px] font-black uppercase transition-all flex items-center gap-2 border border-success/30 shadow-sm light-sweep">
                         <Save className="w-3.5 h-3.5" /> {isEs ? 'GUARDAR' : 'SAVE'}
                     </button>
                     <button onClick={() => {
@@ -1188,14 +1188,14 @@ export const Phase5: React.FC<Phase5Props> = ({ params, setParams, customPump, s
                                 frequency: frequency
                             });
                         }
-                    }} className="glass-surface hover:bg-white/10 text-indigo-500 hover:text-indigo-400 px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all flex items-center gap-2 border border-indigo-500/20 shadow-sm light-sweep">
+                    }} className="glass-surface hover:bg-white/10 text-indigo-500 hover:text-indigo-400 px-4 py-2 rounded-none text-[9px] font-black uppercase transition-all flex items-center gap-2 border border-indigo-500/20 shadow-sm light-sweep">
                         <GitCompareArrows className="w-3.5 h-3.5" /> {isEs ? 'COMPARAR' : 'COMPARE'}
                     </button>
 
-                    <button onClick={() => setShowPumpModal(true)} className="glass-surface hover:bg-white/10 text-txt-muted hover:text-txt-main px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all flex items-center gap-2 border border-white/5 shadow-sm light-sweep">
+                    <button onClick={() => setShowPumpModal(true)} className="glass-surface hover:bg-white/10 text-txt-muted hover:text-txt-main px-4 py-2 rounded-none text-[9px] font-black uppercase transition-all flex items-center gap-2 border border-white/5 shadow-sm light-sweep">
                         <Database className="w-3.5 h-3.5" /> {t('p5.loadDb')}
                     </button>
-                    <button onClick={() => setShowAIModal(true)} className="btn-premium-primary animate-pulse-glow text-white px-5 py-2 rounded-xl text-[9px] font-black uppercase flex items-center gap-2 transition-all active:scale-95 light-sweep">
+                    <button onClick={() => setShowAIModal(true)} className="btn-premium-primary animate-pulse-glow text-white px-5 py-2 rounded-none text-[9px] font-black uppercase flex items-center gap-2 transition-all active:scale-95 light-sweep">
                         <Sparkles className="w-3.5 h-3.5 animate-pulse text-white" /> {t('p5.auto')}
                     </button>
                 </div>
@@ -1213,22 +1213,22 @@ export const Phase5: React.FC<Phase5Props> = ({ params, setParams, customPump, s
 
             {/* SYMMETRIC SCENARIO BRIDGE - FULL WIDTH (COMPACT) */}
             <div className="px-1 shrink-0">
-                <div className="glass-surface p-1 rounded-2xl border border-white/5 shadow-lg flex items-center gap-2 relative overflow-hidden group">
+                <div className="glass-surface p-1 rounded-none border border-white/5 shadow-lg flex items-center gap-2 relative overflow-hidden group">
                     <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-secondary/5"></div>
                     {['min', 'target', 'max'].map((s) => (
                         <button
                             key={s}
                             onClick={() => switchScenario(s as any)}
-                            className={`flex-1 py-2 rounded-xl text-[9px] font-black uppercase transition-all duration-500 flex items-center justify-center gap-3 relative z-10 border ${params.activeScenario === s ? 'bg-primary/20 text-primary border-primary/40 shadow-glow-primary/10' : 'glass-surface-light border-white/5 text-txt-muted hover:text-txt-main hover:border-white/10'}`}
+                            className={`flex-1 py-2 rounded-none text-[9px] font-black uppercase transition-all duration-500 flex items-center justify-center gap-3 relative z-10 border ${params.activeScenario === s ? 'bg-primary/20 text-primary border-primary/40 shadow-glow-primary/10' : 'glass-surface-light border-white/5 text-txt-muted hover:text-txt-main hover:border-white/10'}`}
                         >
-                            <div className={`p-1.5 rounded-lg border ${params.activeScenario === s ? 'bg-primary/25 border-primary shadow-glow-primary' : 'bg-white/5 border-white/10'}`}>
+                            <div className={`p-1.5 rounded-none border ${params.activeScenario === s ? 'bg-primary/25 border-primary shadow-glow-primary' : 'bg-white/5 border-white/10'}`}>
                                 <Target className="w-3.5 h-3.5" />
                             </div>
                             <div className="flex items-center gap-2">
                                 <span className={`text-[7px] tracking-[0.1em] font-black ${params.activeScenario === s ? 'text-primary' : 'opacity-40'}`}>{s === 'min' ? 'IDLE' : s === 'target' ? 'NOMINAL' : 'LIMIT'}</span>
                                 <span className="text-xs font-mono tracking-tighter leading-none">{params.targets[s as keyof typeof params.targets].rate} <small className="opacity-60 text-[8px]">BPD</small></span>
                             </div>
-                            {params.activeScenario === s && <div className="absolute top-1 right-3 w-1 h-1 bg-primary rounded-full shadow-glow-primary animate-pulse"></div>}
+                            {params.activeScenario === s && <div className="absolute top-1 right-3 w-1 h-1 bg-primary rounded-none shadow-glow-primary animate-pulse"></div>}
                         </button>
                     ))}
                 </div>
@@ -1254,9 +1254,9 @@ export const Phase5: React.FC<Phase5Props> = ({ params, setParams, customPump, s
                         <div className="animate-fadeIn">
                             {/* --- DERRATEO --- */}
                             {activeComp === 'derating' && (
-                                <div className="glass-surface rounded-[2rem] border border-white/5 shadow-xl overflow-hidden p-6 space-y-6">
+                                <div className="glass-surface rounded-none-[2rem] border border-white/5 shadow-xl overflow-hidden p-6 space-y-6">
                                     <div className="flex items-center gap-3 mb-2">
-                                        <div className="p-2.5 rounded-2xl bg-primary/20 text-primary border border-white/5">
+                                        <div className="p-2.5 rounded-none bg-primary/20 text-primary border border-white/5">
                                             <TrendingDown className="w-4 h-4" />
                                         </div>
                                         <span className="text-[10px] font-black text-txt-main uppercase tracking-[0.2em]">PUMP DERATING FACTORS</span>
@@ -1267,9 +1267,9 @@ export const Phase5: React.FC<Phase5Props> = ({ params, setParams, customPump, s
                                             <button onClick={resetDerating} className="text-[8px] font-black text-primary uppercase tracking-widest hover:text-txt-main">Reset Defaults</button>
                                         </div>
                                         <div className="space-y-6">
-                                            <div><div className="flex justify-between text-[9px] font-black mb-2"><span className="text-txt-muted uppercase">HEAD DERATING</span><span className="text-secondary font-mono">{derating.head.toFixed(2)}x</span></div><input type="range" min="0.5" max="1.5" step="0.01" value={derating.head} onChange={(e) => setDerating(prev => ({ ...prev, head: parseFloat(e.target.value) }))} className="w-full h-1 bg-canvas rounded-lg appearance-none cursor-pointer accent-secondary" /></div>
-                                            <div><div className="flex justify-between text-[9px] font-black mb-2"><span className="text-txt-muted uppercase">POWER DERATING</span><span className="text-secondary font-mono">{derating.power.toFixed(2)}x</span></div><input type="range" min="0.5" max="1.5" step="0.01" value={derating.power} onChange={(e) => setDerating(prev => ({ ...prev, power: parseFloat(e.target.value) }))} className="w-full h-1 bg-canvas rounded-lg appearance-none cursor-pointer accent-secondary" /></div>
-                                            <div><div className="flex justify-between text-[9px] font-black mb-2"><span className="text-txt-muted uppercase">EFFICIENCY DERATING</span><span className="text-primary font-mono">{derating.eff.toFixed(2)}x</span></div><input type="range" min="0.5" max="1.5" step="0.01" value={derating.eff} onChange={(e) => setDerating(prev => ({ ...prev, eff: parseFloat(e.target.value) }))} className="w-full h-1 bg-canvas rounded-lg appearance-none cursor-pointer accent-primary shadow-glow-primary" /></div>
+                                            <div><div className="flex justify-between text-[9px] font-black mb-2"><span className="text-txt-muted uppercase">HEAD DERATING</span><span className="text-secondary font-mono">{derating.head.toFixed(2)}x</span></div><input type="range" min="0.5" max="1.5" step="0.01" value={derating.head} onChange={(e) => setDerating(prev => ({ ...prev, head: parseFloat(e.target.value) }))} className="w-full h-1 bg-canvas rounded-none appearance-none cursor-pointer accent-secondary" /></div>
+                                            <div><div className="flex justify-between text-[9px] font-black mb-2"><span className="text-txt-muted uppercase">POWER DERATING</span><span className="text-secondary font-mono">{derating.power.toFixed(2)}x</span></div><input type="range" min="0.5" max="1.5" step="0.01" value={derating.power} onChange={(e) => setDerating(prev => ({ ...prev, power: parseFloat(e.target.value) }))} className="w-full h-1 bg-canvas rounded-none appearance-none cursor-pointer accent-secondary" /></div>
+                                            <div><div className="flex justify-between text-[9px] font-black mb-2"><span className="text-txt-muted uppercase">EFFICIENCY DERATING</span><span className="text-primary font-mono">{derating.eff.toFixed(2)}x</span></div><input type="range" min="0.5" max="1.5" step="0.01" value={derating.eff} onChange={(e) => setDerating(prev => ({ ...prev, eff: parseFloat(e.target.value) }))} className="w-full h-1 bg-canvas rounded-none appearance-none cursor-pointer accent-primary shadow-glow-primary" /></div>
                                         </div>
                                     </div>
                                 </div>
@@ -1277,11 +1277,11 @@ export const Phase5: React.FC<Phase5Props> = ({ params, setParams, customPump, s
 
                             {/* --- PUMPS --- */}
                             {activeComp === 'pumps' && (
-                                <div className="glass-surface rounded-[2rem] border border-white/5 shadow-xl overflow-hidden p-4 space-y-4">
+                                <div className="glass-surface rounded-none-[2rem] border border-white/5 shadow-xl overflow-hidden p-4 space-y-4">
                                     {onReloadCatalog && (
                                         <button 
                                             onClick={onReloadCatalog} 
-                                            className="w-full py-3 rounded-2xl bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 text-[10px] font-black uppercase transition-all flex items-center justify-center gap-3 shadow-sm group"
+                                            className="w-full py-3 rounded-none bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 text-[10px] font-black uppercase transition-all flex items-center justify-center gap-3 shadow-sm group"
                                         >
                                             <Clock className="w-4 h-4 group-hover:rotate-180 transition-transform duration-700" />
                                             {isEs ? 'SINCRONIZAR CATÁLOGO' : 'SYNC CATALOG'}
@@ -1289,22 +1289,22 @@ export const Phase5: React.FC<Phase5Props> = ({ params, setParams, customPump, s
                                     )}
                                     <div className="space-y-3">
                                         <div className="relative">
-                                            <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search Pump Model..." className="w-full bg-canvas/40 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-[10px] font-black text-txt-main outline-none focus:border-primary/40 uppercase" />
+                                            <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search Pump Model..." className="w-full bg-canvas/40 border border-white/10 rounded-none py-3 pl-10 pr-4 text-[10px] font-black text-txt-main outline-none focus:border-primary/40 uppercase" />
                                             <Search className="w-4 h-4 text-txt-muted absolute left-3.5 top-1/2 -translate-y-1/2" />
                                         </div>
                                         <div className="flex gap-2">
-                                            <select value={filterSeries} onChange={(e) => setFilterSeries(e.target.value)} className="flex-1 glass-surface-light text-[9px] font-black text-txt-muted px-3 py-2.5 rounded-xl outline-none border border-white/5">
+                                            <select value={filterSeries} onChange={(e) => setFilterSeries(e.target.value)} className="flex-1 glass-surface-light text-[9px] font-black text-txt-muted px-3 py-2.5 rounded-none outline-none border border-white/5">
                                                 <option value="ALL">All Series</option>
                                                 {uniqueSeries.map(s => <option key={s} value={s}>{s}</option>)}
                                             </select>
-                                            <select value={filterManuf} onChange={(e) => setFilterManuf(e.target.value)} className="flex-1 glass-surface-light text-[9px] font-black text-txt-muted px-3 py-2.5 rounded-xl outline-none border border-white/5">
+                                            <select value={filterManuf} onChange={(e) => setFilterManuf(e.target.value)} className="flex-1 glass-surface-light text-[9px] font-black text-txt-muted px-3 py-2.5 rounded-none outline-none border border-white/5">
                                                 <option value="ALL">All Manuf</option>
                                                 {uniqueManuf.map(m => <option key={m} value={m}>{m}</option>)}
                                             </select>
                                         </div>
                                         <button 
                                             onClick={() => setShowViableOnly(!showViableOnly)}
-                                            className={`w-full py-2.5 rounded-xl text-[9px] font-black uppercase transition-all flex items-center justify-center gap-2 border ${showViableOnly ? 'bg-primary/20 text-primary border-primary/30' : 'bg-white/5 text-txt-muted border-white/10 hover:border-white/20'}`}
+                                            className={`w-full py-2.5 rounded-none text-[9px] font-black uppercase transition-all flex items-center justify-center gap-2 border ${showViableOnly ? 'bg-primary/20 text-primary border-primary/30' : 'bg-white/5 text-txt-muted border-white/10 hover:border-white/20'}`}
                                         >
                                             <Filter className="w-3.5 h-3.5" />
                                             {showViableOnly ? 'Showing Viable Only' : 'Showing All Pumps'}
@@ -1313,16 +1313,16 @@ export const Phase5: React.FC<Phase5Props> = ({ params, setParams, customPump, s
                                     <div className="max-h-[350px] overflow-y-auto custom-scrollbar space-y-2 pr-1">
                                         {Object.entries(groupedPumps).map(([series, items]: [string, any[]]) => (
                                             <div key={series} className="space-y-1.5">
-                                                <div className="text-[8px] font-black text-txt-muted uppercase tracking-widest pl-3 py-1.5 bg-primary/5 rounded-lg">{series}</div>
+                                                <div className="text-[8px] font-black text-txt-muted uppercase tracking-widest pl-3 py-1.5 bg-primary/5 rounded-none">{series}</div>
                                                 {items.map((item: any, idx: number) => {
                                                     const isActive = item.pump.id === customPump?.id;
                                                     return (
-                                                        <button key={idx} onClick={() => handleManualSelect(item)} className={`w-full text-left p-3 rounded-xl border transition-all flex justify-between items-center group ${isActive ? 'bg-primary/10 border-primary shadow-glow-primary/5' : 'glass-surface-light border-white/5 hover:border-primary/40'}`}>
+                                                        <button key={idx} onClick={() => handleManualSelect(item)} className={`w-full text-left p-3 rounded-none border transition-all flex justify-between items-center group ${isActive ? 'bg-primary/10 border-primary shadow-glow-primary/5' : 'glass-surface-light border-white/5 hover:border-primary/40'}`}>
                                                             <div className="min-w-0 flex-1">
                                                                 <div className={`text-[10px] font-black uppercase truncate ${isActive ? 'text-primary' : 'text-txt-main'}`}>{item.pump.model}</div>
                                                                 <div className="text-[7px] text-txt-muted font-black uppercase opacity-60 tracking-widest">{item.pump.manufacturer}</div>
                                                             </div>
-                                                            <div className={`px-2.5 py-1 rounded-lg text-[8px] font-black ml-2 ${isActive ? 'bg-primary text-white shadow-glow-primary' : 'bg-white/5 text-txt-muted'}`}>{item.reqStages} STG</div>
+                                                            <div className={`px-2.5 py-1 rounded-none text-[8px] font-black ml-2 ${isActive ? 'bg-primary text-white shadow-glow-primary' : 'bg-white/5 text-txt-muted'}`}>{item.reqStages} STG</div>
                                                         </button>
                                                     );
                                                 })}
@@ -1334,8 +1334,8 @@ export const Phase5: React.FC<Phase5Props> = ({ params, setParams, customPump, s
 
                             {/* --- MOTORS --- */}
                             {activeComp === 'motors' && (
-                                <div className="glass-surface rounded-[2rem] border border-white/5 shadow-xl overflow-hidden p-4 space-y-4">
-                                    <div className="flex items-center gap-3 p-4 rounded-2xl bg-secondary/10 border border-secondary/20 shadow-inner">
+                                <div className="glass-surface rounded-none-[2rem] border border-white/5 shadow-xl overflow-hidden p-4 space-y-4">
+                                    <div className="flex items-center gap-3 p-4 rounded-none bg-secondary/10 border border-secondary/20 shadow-inner">
                                         <Zap className="w-5 h-5 text-secondary shrink-0" />
                                         <div className="flex-1 min-w-0">
                                             <div className="text-[8px] font-black text-txt-muted uppercase tracking-[0.2em] mb-1">REQ POWER (BHP)</div>
@@ -1351,15 +1351,15 @@ export const Phase5: React.FC<Phase5Props> = ({ params, setParams, customPump, s
 
                                     <div className="space-y-3">
                                         <div className="relative">
-                                            <input type="text" value={motorSearch} onChange={(e) => setMotorSearch(e.target.value)} placeholder="Search Motor..." className="w-full bg-canvas/40 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-[10px] font-black text-txt-main outline-none focus:border-secondary/40 uppercase" />
+                                            <input type="text" value={motorSearch} onChange={(e) => setMotorSearch(e.target.value)} placeholder="Search Motor..." className="w-full bg-canvas/40 border border-white/10 rounded-none py-3 pl-10 pr-4 text-[10px] font-black text-txt-main outline-none focus:border-secondary/40 uppercase" />
                                             <Search className="w-4 h-4 text-txt-muted absolute left-3.5 top-1/2 -translate-y-1/2" />
                                         </div>
                                         <div className="flex gap-2">
-                                            <select value={motorFilterSeries} onChange={(e) => setMotorFilterSeries(e.target.value)} className="flex-1 glass-surface-light text-[9px] font-black text-txt-muted px-3 py-2.5 rounded-xl outline-none border border-white/5">
+                                            <select value={motorFilterSeries} onChange={(e) => setMotorFilterSeries(e.target.value)} className="flex-1 glass-surface-light text-[9px] font-black text-txt-muted px-3 py-2.5 rounded-none outline-none border border-white/5">
                                                 <option value="ALL">All Series</option>
                                                 {uniqueMotorSeries.map(s => <option key={s} value={s}>{s}</option>)}
                                             </select>
-                                            <select value={motorFilterManuf} onChange={(e) => setMotorFilterManuf(e.target.value)} className="flex-1 glass-surface-light text-[9px] font-black text-txt-muted px-3 py-2.5 rounded-xl outline-none border border-white/5">
+                                            <select value={motorFilterManuf} onChange={(e) => setMotorFilterManuf(e.target.value)} className="flex-1 glass-surface-light text-[9px] font-black text-txt-muted px-3 py-2.5 rounded-none outline-none border border-white/5">
                                                 <option value="ALL">All Manuf</option>
                                                 {uniqueMotorManuf.map(m => <option key={m} value={m}>{m}</option>)}
                                             </select>
@@ -1370,12 +1370,12 @@ export const Phase5: React.FC<Phase5Props> = ({ params, setParams, customPump, s
                                         {processedMotors.map(({ motor, isFit }, idx) => {
                                             const isActive = params.selectedMotor?.id === motor.id;
                                             return (
-                                                <button key={idx} onClick={() => { handleMotorSelect(motor); setActiveChart('motor'); }} className={`w-full text-left p-4 rounded-xl border transition-all flex justify-between items-center ${isActive ? 'bg-secondary/15 border-secondary shadow-glow-secondary/10' : isFit ? 'glass-surface-light border-white/5 hover:border-secondary/40' : 'bg-red-500/10 border-red-500/30 grayscale contrast-75'} group`}>
+                                                <button key={idx} onClick={() => { handleMotorSelect(motor); setActiveChart('motor'); }} className={`w-full text-left p-4 rounded-none border transition-all flex justify-between items-center ${isActive ? 'bg-secondary/15 border-secondary shadow-glow-secondary/10' : isFit ? 'glass-surface-light border-white/5 hover:border-secondary/40' : 'bg-red-500/10 border-red-500/30 grayscale contrast-75'} group`}>
                                                     <div className="min-w-0 flex-1">
                                                         <div className={`text-[11px] font-black uppercase truncate ${isActive ? 'text-secondary' : 'text-txt-main'}`}>{motor.model}</div>
                                                         <div className="flex items-center gap-2 mt-1">
                                                             <div className="text-[8px] text-txt-muted font-black uppercase opacity-60 tracking-widest">{(motor.manufacturer)}</div>
-                                                            <div className="h-1 w-1 rounded-full bg-white/10"></div>
+                                                            <div className="h-1 w-1 rounded-none bg-white/10"></div>
                                                             <div className="text-[9px] font-black text-primary font-mono">{motor.hp} HP</div>
                                                         </div>
                                                     </div>
@@ -1392,16 +1392,16 @@ export const Phase5: React.FC<Phase5Props> = ({ params, setParams, customPump, s
 
                             {/* --- CABLES --- */}
                             {activeComp === 'cables' && (
-                                <div className="glass-surface rounded-[2rem] border border-white/5 shadow-xl overflow-hidden p-4 space-y-4">
+                                <div className="glass-surface rounded-none-[2rem] border border-white/5 shadow-xl overflow-hidden p-4 space-y-4">
                                     <div className="relative">
-                                        <input type="text" value={cableSearch} onChange={(e) => setCableSearch(e.target.value)} placeholder="Filter Cable..." className="w-full bg-canvas/40 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-[10px] font-black text-txt-main outline-none focus:border-primary/40 uppercase" />
+                                        <input type="text" value={cableSearch} onChange={(e) => setCableSearch(e.target.value)} placeholder="Filter Cable..." className="w-full bg-canvas/40 border border-white/10 rounded-none py-3 pl-10 pr-4 text-[10px] font-black text-txt-main outline-none focus:border-primary/40 uppercase" />
                                         <Search className="w-4 h-4 text-txt-muted absolute left-3.5 top-1/2 -translate-y-1/2" />
                                     </div>
                                     <div className="max-h-[350px] overflow-y-auto custom-scrollbar space-y-2 pr-1">
                                         {processedCables.map((cbl, idx) => {
                                             const isActive = params.selectedCable?.id === cbl.id;
                                             return (
-                                                <button key={idx} onClick={() => handleCableSelect(cbl)} className={`w-full text-left p-4 rounded-xl border transition-all flex justify-between items-center group ${isActive ? 'bg-primary/10 border-primary shadow-glow-primary/5' : 'glass-surface-light border-white/5 hover:border-primary/40'}`}>
+                                                <button key={idx} onClick={() => handleCableSelect(cbl)} className={`w-full text-left p-4 rounded-none border transition-all flex justify-between items-center group ${isActive ? 'bg-primary/10 border-primary shadow-glow-primary/5' : 'glass-surface-light border-white/5 hover:border-primary/40'}`}>
                                                     <div className="min-w-0 flex-1">
                                                         <div className={`text-[11px] font-black uppercase truncate ${isActive ? 'text-primary' : 'text-txt-main'}`}>{cbl.awg} {cbl.type}</div>
                                                         <div className="text-[8px] text-txt-muted font-black uppercase opacity-60 tracking-widest mt-1">{cbl.model}</div>
@@ -1416,9 +1416,9 @@ export const Phase5: React.FC<Phase5Props> = ({ params, setParams, customPump, s
 
                             {/* --- VSD --- */}
                             {activeComp === 'vsd' && (
-                                <div className="glass-surface rounded-[2rem] border border-white/5 shadow-xl overflow-hidden p-4 space-y-4">
+                                <div className="glass-surface rounded-none-[2rem] border border-white/5 shadow-xl overflow-hidden p-4 space-y-4">
                                     {(activeResults?.electrical?.kva || 0) > 0 && (
-                                        <div className="flex items-center gap-3 p-4 rounded-2xl bg-secondary/10 border border-secondary/20 shadow-inner">
+                                        <div className="flex items-center gap-3 p-4 rounded-none bg-secondary/10 border border-secondary/20 shadow-inner">
                                             <Monitor className="w-5 h-5 text-secondary shrink-0" />
                                             <div className="flex-1 min-w-0">
                                                 <div className="text-[8px] font-black text-txt-muted uppercase tracking-[0.2em] mb-1">REQ. MIN. VSD (x1.25)</div>
@@ -1434,7 +1434,7 @@ export const Phase5: React.FC<Phase5Props> = ({ params, setParams, customPump, s
                                     )}
 
                                     <div className="relative">
-                                        <input type="text" value={vsdSearch} onChange={(e) => setVsdSearch(e.target.value)} placeholder="Search VSD Model..." className="w-full bg-canvas/40 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-[10px] font-black text-txt-main outline-none focus:border-secondary/40 uppercase" />
+                                        <input type="text" value={vsdSearch} onChange={(e) => setVsdSearch(e.target.value)} placeholder="Search VSD Model..." className="w-full bg-canvas/40 border border-white/10 rounded-none py-3 pl-10 pr-4 text-[10px] font-black text-txt-main outline-none focus:border-secondary/40 uppercase" />
                                         <Search className="w-4 h-4 text-txt-muted absolute left-3.5 top-1/2 -translate-y-1/2" />
                                     </div>
 
@@ -1446,7 +1446,7 @@ export const Phase5: React.FC<Phase5Props> = ({ params, setParams, customPump, s
                                                     key={idx}
                                                     onClick={() => handleVSDSelect(vsd)}
                                                     disabled={isUnder}
-                                                    className={`w-full text-left p-4 rounded-xl border transition-all ${isActive ? 'bg-secondary/15 border-secondary shadow-glow-secondary/20'
+                                                    className={`w-full text-left p-4 rounded-none border transition-all ${isActive ? 'bg-secondary/15 border-secondary shadow-glow-secondary/20'
                                                         : isUnder ? 'opacity-25 grayscale pointer-events-none'
                                                             : isFit ? 'glass-surface-light border-green-500/30 hover:border-secondary/40'
                                                                 : 'glass-surface-light border-white/5 hover:border-white/20 opacity-60'
@@ -1459,7 +1459,7 @@ export const Phase5: React.FC<Phase5Props> = ({ params, setParams, customPump, s
                                                             </div>
                                                             <div className="text-[7px] text-txt-muted font-black uppercase opacity-60 tracking-widest mt-0.5">{vsd.brand} · {vsd.manufacturer}</div>
                                                         </div>
-                                                        <div className={`px-2.5 py-1.5 rounded-lg text-[9px] font-black ml-4 shrink-0 font-mono ${isActive ? 'bg-secondary text-white shadow-glow-secondary'
+                                                        <div className={`px-2.5 py-1.5 rounded-none text-[9px] font-black ml-4 shrink-0 font-mono ${isActive ? 'bg-secondary text-white shadow-glow-secondary'
                                                             : isFit ? 'bg-green-500/20 text-green-400'
                                                                 : 'bg-white/10 text-txt-muted'
                                                             }`}>
@@ -1473,8 +1473,8 @@ export const Phase5: React.FC<Phase5Props> = ({ params, setParams, customPump, s
                                                     </div>
                                                     {isFit && margin !== null && (
                                                         <div className="mt-3 pt-3 border-t border-white/5 flex items-center gap-2">
-                                                            <div className="h-1 flex-1 bg-white/5 rounded-full overflow-hidden">
-                                                                <div className="h-full bg-green-500/60 rounded-full shadow-glow-green" style={{ width: `${Math.min(100, 100 / (1 + margin / 100))}%` }}></div>
+                                                            <div className="h-1 flex-1 bg-white/5 rounded-none overflow-hidden">
+                                                                <div className="h-full bg-green-500/60 rounded-none shadow-glow-green" style={{ width: `${Math.min(100, 100 / (1 + margin / 100))}%` }}></div>
                                                             </div>
                                                             <span className="text-[7px] font-black text-green-400 uppercase tracking-widest">+{margin.toFixed(0)}% MARGIN</span>
                                                         </div>
@@ -1490,7 +1490,7 @@ export const Phase5: React.FC<Phase5Props> = ({ params, setParams, customPump, s
 
                     {/* BHA SCHEMATIC */}
                     <CollapsibleSection title={t('vis.bha')} icon={Layers} isOpen={openSections.visualStack} onToggle={() => toggleSection('visualStack')} colorClass="secondary">
-                        <div className="relative h-[650px] w-full overflow-hidden glass-surface rounded-b-[2rem] shadow-2xl group">
+                        <div className="relative h-[650px] w-full overflow-hidden glass-surface rounded-none-b-[2rem] shadow-2xl group">
                             <div className="absolute inset-0 bg-gradient-to-b from-canvas/40 via-transparent to-canvas/40 pointer-events-none z-10"></div>
                             <div className="flex-1 w-full relative h-full transition-all duration-700">
                                 <VisualESPStack
@@ -1510,12 +1510,12 @@ export const Phase5: React.FC<Phase5Props> = ({ params, setParams, customPump, s
                 {/* 2. MAIN RESULTS DASHBOARD (Center) */}
                 <div className="flex-1 lg:flex-[0.44] flex flex-col gap-2 overflow-y-auto custom-scrollbar min-h-0 pr-2 pb-4">
                     <div className="flex items-center justify-between gap-2">
-                        <div className="flex-1 flex glass-surface p-1.5 rounded-[1.5rem] border border-white/5 shadow-inner shrink-0 relative overflow-hidden group">
+                        <div className="flex-1 flex glass-surface p-1.5 rounded-none-[1.5rem] border border-white/5 shadow-inner shrink-0 relative overflow-hidden group">
                             <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-secondary/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                            <button onClick={() => setViewMode('analytics')} className={`flex-1 py-3 rounded-2xl text-xs font-black uppercase flex items-center justify-center gap-3 transition-all relative z-10 ${viewMode === 'analytics' ? 'bg-primary/20 text-primary shadow-glow-primary/10 border border-primary/20' : 'text-txt-muted hover:text-txt-main hover:bg-white/5'}`}>
+                            <button onClick={() => setViewMode('analytics')} className={`flex-1 py-3 rounded-none text-xs font-black uppercase flex items-center justify-center gap-3 transition-all relative z-10 ${viewMode === 'analytics' ? 'bg-primary/20 text-primary shadow-glow-primary/10 border border-primary/20' : 'text-txt-muted hover:text-txt-main hover:bg-white/5'}`}>
                                 <Activity className="w-4 h-4" /> {isEs ? 'ANALÍTICOS' : 'ANALYTICS'}
                             </button>
-                            <button onClick={() => setViewMode('table')} className={`flex-1 py-3 rounded-2xl text-xs font-black uppercase flex items-center justify-center gap-3 transition-all relative z-10 ${viewMode === 'table' ? 'bg-secondary/20 text-secondary shadow-glow-secondary/10 border border-secondary/20' : 'text-txt-muted hover:text-txt-main hover:bg-white/5'}`}>
+                            <button onClick={() => setViewMode('table')} className={`flex-1 py-3 rounded-none text-xs font-black uppercase flex items-center justify-center gap-3 transition-all relative z-10 ${viewMode === 'table' ? 'bg-secondary/20 text-secondary shadow-glow-secondary/10 border border-secondary/20' : 'text-txt-muted hover:text-txt-main hover:bg-white/5'}`}>
                                 <Table className="w-4 h-4" /> {isEs ? 'OPERATIVOS' : 'VSD TABLE'}
                             </button>
                         </div>
@@ -1523,23 +1523,23 @@ export const Phase5: React.FC<Phase5Props> = ({ params, setParams, customPump, s
 
                     {viewMode === 'analytics' ? (
                         <div className="flex flex-col gap-2">
-                            <div className="flex glass-surface p-1 rounded-2xl border border-white/5 shadow-inner shrink-0 relative overflow-hidden group">
+                            <div className="flex glass-surface p-1 rounded-none border border-white/5 shadow-inner shrink-0 relative overflow-hidden group">
                                 <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-secondary/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                                <button onClick={() => setActiveChart('pump')} className={`flex-1 py-3 rounded-2xl text-[10px] font-black uppercase flex items-center justify-center gap-3 transition-all relative z-10 ${activeChart === 'pump' ? 'bg-primary/10 text-primary border border-primary/20' : 'text-txt-muted hover:text-txt-main hover:bg-white/5'}`}>
+                                <button onClick={() => setActiveChart('pump')} className={`flex-1 py-3 rounded-none text-[10px] font-black uppercase flex items-center justify-center gap-3 transition-all relative z-10 ${activeChart === 'pump' ? 'bg-primary/10 text-primary border border-primary/20' : 'text-txt-muted hover:text-txt-main hover:bg-white/5'}`}>
                                     <Layers className="w-4 h-4" /> {t('p5.perfCurve')}
                                 </button>
-                                <button onClick={() => setActiveChart('multi')} className={`flex-1 py-3 rounded-2xl text-[10px] font-black uppercase flex items-center justify-center gap-3 transition-all relative z-10 ${activeChart === 'multi' ? 'bg-primary/10 text-primary border border-primary/20' : 'text-txt-muted hover:text-txt-main hover:bg-white/5'}`}>
+                                <button onClick={() => setActiveChart('multi')} className={`flex-1 py-3 rounded-none text-[10px] font-black uppercase flex items-center justify-center gap-3 transition-all relative z-10 ${activeChart === 'multi' ? 'bg-primary/10 text-primary border border-primary/20' : 'text-txt-muted hover:text-txt-main hover:bg-white/5'}`}>
                                     <Sparkles className="w-4 h-4" /> {t('p5.analytics')}
                                 </button>
-                                <button onClick={() => setActiveChart('motor')} className={`flex-1 py-3 rounded-2xl text-[10px] font-black uppercase flex items-center justify-center gap-3 transition-all relative z-10 ${activeChart === 'motor' ? 'bg-secondary/10 text-secondary border border-secondary/20' : 'text-txt-muted hover:text-txt-main hover:bg-white/5'}`}>
+                                <button onClick={() => setActiveChart('motor')} className={`flex-1 py-3 rounded-none text-[10px] font-black uppercase flex items-center justify-center gap-3 transition-all relative z-10 ${activeChart === 'motor' ? 'bg-secondary/10 text-secondary border border-secondary/20' : 'text-txt-muted hover:text-txt-main hover:bg-white/5'}`}>
                                     <Zap className="w-4 h-4" /> {t('p5.motorCurve')}
                                 </button>
                             </div>
-                            <div className="glass-surface-light rounded-3xl border border-white/5 shadow-2xl overflow-hidden p-2 relative flex flex-col shrink-0 group transition-all duration-700 h-[600px]">
+                            <div className="glass-surface-light rounded-none border border-white/5 shadow-2xl overflow-hidden p-2 relative flex flex-col shrink-0 group transition-all duration-700 h-[600px]">
                                 <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                                 <div className="absolute top-4 right-6 flex gap-2 z-20">
-                                    <div className="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
-                                    <div className="w-2 h-2 rounded-full bg-secondary/50"></div>
+                                    <div className="w-2 h-2 rounded-none bg-primary animate-pulse"></div>
+                                    <div className="w-2 h-2 rounded-none bg-secondary/50"></div>
                                 </div>
                                 {activeChart === 'pump' && effectivePump && effectiveCurveData.length > 0 ? (
                                     <PumpChart
@@ -1589,7 +1589,7 @@ export const Phase5: React.FC<Phase5Props> = ({ params, setParams, customPump, s
                                     <MotorChart motor={params.selectedMotor} currentLoadPct={activeResults?.motorLoad || 0} />
                                 ) : (
                                     <div className="flex-1 flex flex-col gap-6 items-center justify-center text-txt-muted font-black uppercase tracking-[0.3em] text-sm opacity-40">
-                                        <div className="p-8 glass-surface-light rounded-full border border-white/5 animate-float">
+                                        <div className="p-8 glass-surface-light rounded-none border border-white/5 animate-float">
                                             <Settings className="w-16 h-16 animate-spin-slow text-primary/40" />
                                         </div>
                                         {!effectivePump ? t('p5.selectEq') : "Synthesizing Analytic Model..."}
@@ -1600,10 +1600,10 @@ export const Phase5: React.FC<Phase5Props> = ({ params, setParams, customPump, s
                         </div>
                     ) : (
                         <div className="flex-1 min-h-0 flex flex-col gap-4 animate-fadeIn">
-                            <div className="glass-surface-light rounded-[2.5rem] border border-white/5 shadow-2xl overflow-hidden flex flex-col p-1.5 h-[620px]">
+                            <div className="glass-surface-light rounded-none-[2.5rem] border border-white/5 shadow-2xl overflow-hidden flex flex-col p-1.5 h-[620px]">
                                 <div className="p-6 border-b border-white/5 flex justify-between items-center bg-primary/5">
                                     <div className="flex items-center gap-3">
-                                        <div className="p-2 bg-primary/20 rounded-xl"><Table className="w-5 h-5 text-primary" /></div>
+                                        <div className="p-2 bg-primary/20 rounded-none"><Table className="w-5 h-5 text-primary" /></div>
                                         <div>
                                             <h3 className="text-sm font-black text-txt-main uppercase tracking-tighter">{t('p5.vsdAnalysis')}</h3>
                                             <p className="text-[9px] text-txt-muted font-black uppercase tracking-widest opacity-60">Multifrequency performance analysis</p>
@@ -1611,13 +1611,13 @@ export const Phase5: React.FC<Phase5Props> = ({ params, setParams, customPump, s
                                     </div>
                                     <div className="flex gap-4 items-center">
                                         <div className="flex gap-2">
-                                            <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-glow-emerald"></div>
-                                            <div className="w-2 h-2 rounded-full bg-amber-400"></div>
-                                            <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                                            <div className="w-2 h-2 rounded-none bg-emerald-500 shadow-glow-emerald"></div>
+                                            <div className="w-2 h-2 rounded-none bg-amber-400"></div>
+                                            <div className="w-2 h-2 rounded-none bg-red-500"></div>
                                         </div>
                                         <button
                                             onClick={() => setIsTableMaximized(true)}
-                                            className="p-2 rounded-xl glass-surface border border-white/10 text-txt-muted hover:text-primary hover:border-primary/40 transition-all active:scale-95"
+                                            className="p-2 rounded-none glass-surface border border-white/10 text-txt-muted hover:text-primary hover:border-primary/40 transition-all active:scale-95"
                                         >
                                             <Maximize2 className="w-4 h-4" />
                                         </button>
@@ -1661,9 +1661,9 @@ export const Phase5: React.FC<Phase5Props> = ({ params, setParams, customPump, s
                                 <div className="p-4 bg-canvas/30 border-t border-white/5 flex justify-between items-center">
                                     <span className="text-[9px] font-black text-txt-muted uppercase tracking-[0.3em]">Stability Matrix @ Current SG</span>
                                     <div className="flex items-center gap-6">
-                                        <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-emerald-500"></div><span className="text-[8px] font-black text-emerald-500 uppercase">SAFE</span></div>
-                                        <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-amber-400"></div><span className="text-[8px] font-black text-amber-400 uppercase">CAUTION</span></div>
-                                        <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-red-500"></div><span className="text-[8px] font-black text-red-500 uppercase">ALARM</span></div>
+                                        <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-none bg-emerald-500"></div><span className="text-[8px] font-black text-emerald-500 uppercase">SAFE</span></div>
+                                        <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-none bg-amber-400"></div><span className="text-[8px] font-black text-amber-400 uppercase">CAUTION</span></div>
+                                        <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-none bg-red-500"></div><span className="text-[8px] font-black text-red-500 uppercase">ALARM</span></div>
                                     </div>
                                 </div>
                             </div>
@@ -1679,8 +1679,8 @@ export const Phase5: React.FC<Phase5Props> = ({ params, setParams, customPump, s
                         <div className="p-6 space-y-5 bg-white/5">
                             {customPump && (
                                 <div className="pb-6 border-b border-white/5 space-y-5">
-                                    <div className="flex items-center gap-5 glass-surface p-5 rounded-[2rem] border border-white/10 shadow-glow-primary/5 group focus-within:ring-2 ring-primary/30 transition-all relative overflow-hidden">
-                                        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-3xl rounded-full"></div>
+                                    <div className="flex items-center gap-5 glass-surface p-5 rounded-none-[2rem] border border-white/10 shadow-glow-primary/5 group focus-within:ring-2 ring-primary/30 transition-all relative overflow-hidden">
+                                        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-3xl rounded-none"></div>
                                         <div className="flex-1 relative z-10">
                                             <label className="text-[9px] font-black text-txt-muted uppercase block mb-2 tracking-[0.2em] opacity-60">{t('p6.operatingFreq')}</label>
                                             <div className="flex items-baseline gap-2">
@@ -1688,14 +1688,14 @@ export const Phase5: React.FC<Phase5Props> = ({ params, setParams, customPump, s
                                                 <span className="text-xs font-black text-txt-muted uppercase opacity-40">Hz</span>
                                             </div>
                                         </div>
-                                        <div className="p-4 glass-surface-light rounded-2xl text-primary group-focus-within:shadow-glow-primary transition-all relative z-10"><Activity className="w-7 h-7" /></div>
+                                        <div className="p-4 glass-surface-light rounded-none text-primary group-focus-within:shadow-glow-primary transition-all relative z-10"><Activity className="w-7 h-7" /></div>
                                     </div>
 
                                     <div className="flex gap-4">
-                                        <button onClick={() => { const step = customPump.stageIncrease || 1; const s = Math.max((customPump.stages || 0) - step, customPump.minStages || 1); const bodies = Math.ceil(s / (customPump.maxStages || 100)); setCustomPump({ ...customPump, stages: s, housingCount: bodies }); }} className="w-16 h-16 rounded-2xl glass-surface border border-white/10 hover:bg-white/5 flex items-center justify-center font-black text-txt-muted text-2xl hover:text-danger transition-all active:scale-90 shadow-xl border-b-4 border-white/5 hover:border-b-2 active:border-b-0 group">
+                                        <button onClick={() => { const step = customPump.stageIncrease || 1; const s = Math.max((customPump.stages || 0) - step, customPump.minStages || 1); const bodies = Math.ceil(s / (customPump.maxStages || 100)); setCustomPump({ ...customPump, stages: s, housingCount: bodies }); }} className="w-16 h-16 rounded-none glass-surface border border-white/10 hover:bg-white/5 flex items-center justify-center font-black text-txt-muted text-2xl hover:text-danger transition-all active:scale-90 shadow-xl border-b-4 border-white/5 hover:border-b-2 active:border-b-0 group">
                                             <span className="group-hover:scale-125 transition-transform">-</span>
                                         </button>
-                                        <div className="flex-1 glass-surface border border-white/10 rounded-2xl flex flex-col items-center justify-center shadow-xl border-b-4 border-white/5 group">
+                                        <div className="flex-1 glass-surface border border-white/10 rounded-none flex flex-col items-center justify-center shadow-xl border-b-4 border-white/5 group">
                                             <span className="text-[9px] font-black text-txt-muted uppercase tracking-[0.3em] mt-1 opacity-60">{t('p6.stages')}</span>
                                             <DraftInput
                                                 type="number"
@@ -1710,23 +1710,23 @@ export const Phase5: React.FC<Phase5Props> = ({ params, setParams, customPump, s
                                                 className="w-full bg-transparent text-center text-2xl font-black text-txt-main outline-none font-mono tracking-tighter"
                                             />
                                         </div>
-                                        <button onClick={() => { const step = customPump.stageIncrease || 1; const s = (customPump.stages || 0) + step; const bodies = Math.ceil(s / (customPump.maxStages || 100)); setCustomPump({ ...customPump, stages: s, housingCount: bodies }); }} className="w-16 h-16 rounded-2xl glass-surface border border-white/10 hover:bg-white/5 flex items-center justify-center font-black text-txt-muted text-2xl hover:text-primary transition-all active:scale-90 shadow-xl border-b-4 border-white/5 hover:border-b-2 active:border-b-0 group">
+                                        <button onClick={() => { const step = customPump.stageIncrease || 1; const s = (customPump.stages || 0) + step; const bodies = Math.ceil(s / (customPump.maxStages || 100)); setCustomPump({ ...customPump, stages: s, housingCount: bodies }); }} className="w-16 h-16 rounded-none glass-surface border border-white/10 hover:bg-white/5 flex items-center justify-center font-black text-txt-muted text-2xl hover:text-primary transition-all active:scale-90 shadow-xl border-b-4 border-white/5 hover:border-b-2 active:border-b-0 group">
                                             <span className="group-hover:scale-125 transition-transform">+</span>
                                         </button>
                                     </div>
                                 </div>
                             )}
 
-                            <div className="flex justify-between items-center glass-surface-light p-5 rounded-[1.5rem] border border-white/5 shadow-inner group hover:border-primary/40 transition-all duration-500">
+                            <div className="flex justify-between items-center glass-surface-light p-5 rounded-none-[1.5rem] border border-white/5 shadow-inner group hover:border-primary/40 transition-all duration-500">
                                 <div className="min-w-0 flex-1">
                                     <span className="text-[9px] text-primary font-black uppercase block tracking-[0.2em] mb-2 opacity-60">{t('p6.hydraulic')}</span>
                                     <div className="text-xs font-black text-txt-main truncate leading-tight group-hover:text-primary transition-colors">{customPump?.model || '-'}</div>
                                     <div className="text-[8px] text-txt-muted font-black uppercase mt-1 tracking-widest">{customPump?.series} {t('p6.seriesT')}</div>
                                 </div>
                                 <div className="text-right flex flex-col gap-2 items-end ml-4 shrink-0">
-                                    <span className="text-[10px] text-txt-main font-black block glass-surface px-4 py-1.5 rounded-xl border border-white/10 shadow-sm">{customPump?.stages || 0} STG</span>
+                                    <span className="text-[10px] text-txt-main font-black block glass-surface px-4 py-1.5 rounded-none border border-white/10 shadow-sm">{customPump?.stages || 0} STG</span>
                                     {customPump?.housingCount && customPump.housingCount > 0 && (
-                                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-secondary/20 border border-secondary/20 shadow-glow-secondary/10">
+                                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-none bg-secondary/20 border border-secondary/20 shadow-glow-secondary/10">
                                             <Box className="w-3 h-3 text-secondary" />
                                             <span className="text-[9px] text-secondary font-black uppercase tracking-tighter">
                                                 {customPump.housingCount} {customPump.housingCount === 1 ? 'UNIT' : 'UNITS'}
@@ -1736,36 +1736,36 @@ export const Phase5: React.FC<Phase5Props> = ({ params, setParams, customPump, s
                                 </div>
                             </div>
 
-                            <div className="flex justify-between items-center glass-surface-light p-5 rounded-[1.5rem] border border-white/5 shadow-inner group hover:border-secondary/40 transition-all duration-500">
+                            <div className="flex justify-between items-center glass-surface-light p-5 rounded-none-[1.5rem] border border-white/5 shadow-inner group hover:border-secondary/40 transition-all duration-500">
                                 <div className="min-w-0 flex-1">
                                     <span className="text-[9px] text-secondary font-black uppercase block tracking-[0.2em] mb-2 opacity-60">{t('p5.inductionMotor')}</span>
                                     <div className="text-xs font-black text-txt-main truncate leading-tight group-hover:text-secondary transition-colors">{params.selectedMotor?.model || '-'}</div>
                                     <div className="text-[8px] text-txt-muted font-black uppercase mt-1 tracking-widest">{params.selectedMotor?.manufacturer}</div>
                                 </div>
                                 <div className="text-right flex flex-col gap-2 items-end ml-4 shrink-0">
-                                    <span className="text-[10px] text-txt-main font-black block glass-surface px-4 py-1.5 rounded-xl border border-white/10 shadow-sm">{params.selectedMotor?.hp || params.motorHp} HP</span>
+                                    <span className="text-[10px] text-txt-main font-black block glass-surface px-4 py-1.5 rounded-none border border-white/10 shadow-sm">{params.selectedMotor?.hp || params.motorHp} HP</span>
                                     <div className="text-[8px] text-secondary font-black uppercase tracking-widest opacity-60">SYSTEM DRIVE</div>
                                 </div>
                             </div>
 
-                            <div className="flex justify-between items-center glass-surface-light p-5 rounded-[1.5rem] border border-white/5 shadow-inner group hover:border-primary/40 transition-all duration-500">
+                            <div className="flex justify-between items-center glass-surface-light p-5 rounded-none-[1.5rem] border border-white/5 shadow-inner group hover:border-primary/40 transition-all duration-500">
                                 <div className="min-w-0 flex-1">
                                     <span className="text-[9px] text-txt-muted font-black uppercase block tracking-[0.2em] mb-2 opacity-60">POWER CONDUCTOR</span>
                                     <div className="text-xs font-black text-txt-main truncate leading-tight">{params.selectedCable?.awg || '-'} AWG {params.selectedCable?.type}</div>
                                     <div className="text-[8px] text-txt-muted font-black uppercase mt-1 tracking-widest">{params.selectedCable?.model}</div>
                                 </div>
-                                <div className="p-3 glass-surface rounded-xl border border-white/5 text-txt-muted"><Cable className="w-4 h-4" /></div>
+                                <div className="p-3 glass-surface rounded-none border border-white/5 text-txt-muted"><Cable className="w-4 h-4" /></div>
                             </div>
 
-                            <div className="flex justify-between items-center glass-surface-light p-5 rounded-[1.5rem] border border-white/5 shadow-inner group hover:border-secondary/40 transition-all duration-500">
+                            <div className="flex justify-between items-center glass-surface-light p-5 rounded-none-[1.5rem] border border-white/5 shadow-inner group hover:border-secondary/40 transition-all duration-500">
                                 <div className="min-w-0 flex-1">
                                     <span className="text-[9px] text-secondary font-black uppercase block tracking-[0.2em] mb-2 opacity-60">{t('p6.surfaceVSD')}</span>
                                     <div className="text-xs font-black text-txt-main truncate leading-tight group-hover:text-secondary transition-colors">{(params as any).selectedVSD?.model || 'NOT SELECTED'}</div>
                                     <div className="text-[8px] text-txt-muted font-black uppercase mt-1 tracking-widest">{(params as any).selectedVSD?.brand} · {(params as any).selectedVSD?.manufacturer}</div>
                                 </div>
                                 <div className="text-right flex flex-col gap-2 items-end ml-4 shrink-0">
-                                    <span className="text-[10px] text-txt-main font-black block glass-surface px-4 py-1.5 rounded-xl border border-white/10 shadow-sm">{(params as any).selectedVSD?.kvaRating || 0} kVA</span>
-                                    <div className="p-3 glass-surface rounded-xl border border-white/5 text-secondary"><Monitor className="w-4 h-4" /></div>
+                                    <span className="text-[10px] text-txt-main font-black block glass-surface px-4 py-1.5 rounded-none border border-white/10 shadow-sm">{(params as any).selectedVSD?.kvaRating || 0} kVA</span>
+                                    <div className="p-3 glass-surface rounded-none border border-white/5 text-secondary"><Monitor className="w-4 h-4" /></div>
                                 </div>
                             </div>
                         </div>
@@ -1776,10 +1776,10 @@ export const Phase5: React.FC<Phase5Props> = ({ params, setParams, customPump, s
             {/* FULLSCREEN TABLE OVERLAY */}
             {isTableMaximized && (
                 <div className="fixed inset-0 z-[100] bg-canvas/80 backdrop-blur-3xl animate-fadeIn p-8 flex flex-col items-center justify-center">
-                    <div className="w-full max-w-[1400px] h-[90vh] glass-surface rounded-[2.5rem] border border-white/10 shadow-[0_0_100px_rgba(var(--color-primary),0.1)] overflow-hidden flex flex-col relative animate-scaleIn">
+                    <div className="w-full max-w-[1400px] h-[90vh] glass-surface rounded-none-[2.5rem] border border-white/10 shadow-[0_0_100px_rgba(var(--color-primary),0.1)] overflow-hidden flex flex-col relative animate-scaleIn">
                         <div className="p-8 border-b border-white/5 flex justify-between items-center bg-primary/5">
                             <div className="flex items-center gap-4">
-                                <div className="p-3 bg-primary/20 rounded-2xl shadow-glow-primary/20"><Table className="w-7 h-7 text-primary" /></div>
+                                <div className="p-3 bg-primary/20 rounded-none shadow-glow-primary/20"><Table className="w-7 h-7 text-primary" /></div>
                                 <div>
                                     <h2 className="text-xl font-black text-txt-main uppercase tracking-tighter">{t('p5.vsdAnalysis')}</h2>
                                     <p className="text-[10px] text-txt-muted font-black uppercase tracking-[0.3em] opacity-60">Complete Multi-Frequency Stability Matrix</p>
@@ -1787,7 +1787,7 @@ export const Phase5: React.FC<Phase5Props> = ({ params, setParams, customPump, s
                             </div>
                             <button
                                 onClick={() => setIsTableMaximized(false)}
-                                className="w-12 h-12 rounded-2xl glass-surface border border-white/10 flex items-center justify-center text-txt-muted hover:text-danger hover:border-danger/40 transition-all"
+                                className="w-12 h-12 rounded-none glass-surface border border-white/10 flex items-center justify-center text-txt-muted hover:text-danger hover:border-danger/40 transition-all"
                             >
                                 <X className="w-6 h-6" />
                             </button>
@@ -1839,9 +1839,9 @@ export const Phase5: React.FC<Phase5Props> = ({ params, setParams, customPump, s
                         <div className="p-6 bg-canvas/40 border-t border-white/5 flex justify-between items-center px-10">
                             <span className="text-[10px] font-black text-txt-muted uppercase tracking-[0.3em]">Stability Index Version 2.0 • Live Computation</span>
                             <div className="flex items-center gap-10">
-                                <div className="flex items-center gap-3"><div className="w-3 h-3 rounded-full bg-emerald-500"></div><span className="text-[10px] font-black text-emerald-500 uppercase">SAFE OPERATING ZONE</span></div>
-                                <div className="flex items-center gap-3"><div className="w-3 h-3 rounded-full bg-amber-400"></div><span className="text-[10px] font-black text-amber-400 uppercase">CAUTION / MONITORING</span></div>
-                                <div className="flex items-center gap-3"><div className="w-3 h-3 rounded-full bg-red-500"></div><span className="text-[10px] font-black text-red-500 uppercase">ALARM / CRITICAL</span></div>
+                                <div className="flex items-center gap-3"><div className="w-3 h-3 rounded-none bg-emerald-500"></div><span className="text-[10px] font-black text-emerald-500 uppercase">SAFE OPERATING ZONE</span></div>
+                                <div className="flex items-center gap-3"><div className="w-3 h-3 rounded-none bg-amber-400"></div><span className="text-[10px] font-black text-amber-400 uppercase">CAUTION / MONITORING</span></div>
+                                <div className="flex items-center gap-3"><div className="w-3 h-3 rounded-none bg-red-500"></div><span className="text-[10px] font-black text-red-500 uppercase">ALARM / CRITICAL</span></div>
                             </div>
                         </div>
                     </div>
@@ -1850,3 +1850,4 @@ export const Phase5: React.FC<Phase5Props> = ({ params, setParams, customPump, s
         </div>
     );
 };
+

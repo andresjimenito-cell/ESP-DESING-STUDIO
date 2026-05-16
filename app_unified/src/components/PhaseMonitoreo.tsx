@@ -408,6 +408,32 @@ const PredictiveWidget = React.memo(({ selectedWell, wellMatchParams, pump, comp
 
 // --- SUB-COMPONENTS ---
 
+const DebouncedSearchInput = React.memo(({ value, onChange, placeholder }: any) => {
+    const [localValue, setLocalValue] = useState(value);
+
+    useEffect(() => {
+        setLocalValue(value);
+    }, [value]);
+
+    useEffect(() => {
+        const t = setTimeout(() => onChange(localValue), 250);
+        return () => clearTimeout(t);
+    }, [localValue, onChange]);
+
+    return (
+        <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-txt-muted/50" />
+            <input
+                type="text"
+                placeholder={placeholder}
+                value={localValue}
+                onChange={(e) => setLocalValue(e.target.value)}
+                className="w-full bg-canvas/60 border border-surface-light rounded-none pl-10 pr-4 py-2.5 text-xs font-bold text-txt-main focus:outline-none focus:border-primary/50 uppercase tracking-wider placeholder:text-txt-muted/30"
+            />
+        </div>
+    );
+});
+
 const MetricCard = React.memo(({ label, value, unit, icon: Icon, color = 'primary', alert = false }: any) => (
     <div className={`glass-surface rounded-none border ${alert ? 'border-danger/50 shadow-glow-danger/20' : 'border-white/5'} p-4 flex flex-col justify-between h-28 relative overflow-hidden group transition-all`}>
         <div className={`absolute -right-4 -top-4 w-16 h-16 ${color === 'primary' ? 'bg-primary/5' : color === 'secondary' ? 'bg-secondary/5' : 'bg-danger/5'} blur-2xl rounded-none`}></div>
@@ -2354,16 +2380,11 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                 {isWellDropdownOpen && (
                                     <div className="absolute top-full left-0 mt-3 w-[450px] max-h-[500px] overflow-y-auto bg-surface/95 backdrop-blur-xl border border-white/10 rounded-none shadow-[0_30px_80px_rgba(0,0,0,0.5)] z-[100] animate-fadeIn custom-scrollbar">
                                         <div className="p-3 border-b border-white/5 space-y-2">
-                                            <div className="relative">
-                                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-txt-muted/50" />
-                                                <input
-                                                    type="text"
-                                                    placeholder="Buscar pozo..."
-                                                    value={searchTerm}
-                                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                                    className="w-full bg-canvas/60 border border-surface-light rounded-none pl-10 pr-4 py-2.5 text-xs font-bold text-txt-main focus:outline-none focus:border-primary/50 uppercase tracking-wider placeholder:text-txt-muted/30"
-                                                />
-                                            </div>
+                                            <DebouncedSearchInput
+                                                value={searchTerm}
+                                                onChange={setSearchTerm}
+                                                placeholder="Buscar pozo..."
+                                            />
 
                                             {/* Data filter controls inside dropdown */}
                                             <div className="flex items-center gap-1 bg-canvas/40 p-1 rounded-none border border-white/5">
@@ -2631,18 +2652,63 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
             <div className="flex gap-6 mt-6 pb-20">
                 <div className="flex-1 min-w-0 transition-all duration-500">
                     {fleet.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center p-20 glass-surface rounded-none border border-white/5 border-dashed min-h-[550px] animate-fadeIn mx-4 shadow-3xl">
-                            <div className="p-8 bg-primary/10 rounded-none mb-10 relative border border-primary/20 shadow-glow-primary/10">
-                                <Activity className="w-20 h-20 text-primary animate-pulse" />
-                                <div className="absolute -top-3 -right-3 w-10 h-10 bg-primary rounded-none animate-ping opacity-20"></div>
-                            </div>
-                            <h3 className="text-4xl font-black text-txt-main uppercase tracking-tighter mb-4 text-center">Centro de Control ALS</h3>
-                            <p className="text-txt-muted text-center max-w-xl font-medium leading-relaxed text-lg opacity-70">
-                                La flota se encuentra vacía o está inicializando. Utilice los controles en la parte superior derecha para cargar sus diseños técnicos y pruebas de producción.
-                            </p>
-                            <div className="flex items-center gap-4 mt-8">
-                                <button onClick={() => importDesignRef.current?.click()} className="h-12 px-8 bg-primary text-white rounded-none flex items-center gap-3 hover:bg-primary/80 transition-all font-black text-[10px] uppercase tracking-widest shadow-lg shadow-primary/20"><Download className="w-5 h-5" /> Cargar Diseños</button>
-                                <button onClick={() => importDbRef.current?.click()} className="h-12 px-8 bg-secondary text-white rounded-none flex items-center gap-3 hover:bg-secondary/80 transition-all font-black text-[10px] uppercase tracking-widest shadow-lg shadow-secondary/20"><Database className="w-5 h-5" /> Cargar SCADA</button>
+                        <div className="flex flex-col items-center justify-center p-20 glass-surface rounded-none border border-white/5 min-h-[600px] animate-fadeIn mx-4 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] relative overflow-hidden group">
+                            {/* Decorative Background Elements */}
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 blur-[100px] rounded-none group-hover:bg-primary/10 transition-all duration-1000"></div>
+                            <div className="absolute bottom-0 left-0 w-64 h-64 bg-secondary/5 blur-[100px] rounded-none group-hover:bg-secondary/10 transition-all duration-1000"></div>
+
+                            <div className="relative z-10 flex flex-col items-center">
+                                <div className="p-10 bg-gradient-to-br from-primary/20 to-transparent rounded-none mb-12 relative border border-primary/30 shadow-[0_0_50px_rgba(var(--color-primary),0.15)] group-hover:scale-110 transition-transform duration-700">
+                                    <Activity className="w-24 h-24 text-primary animate-[pulse_4s_ease-in-out_infinite]" />
+                                    <div className="absolute -inset-4 border border-primary/10 rounded-none animate-ping opacity-20"></div>
+
+                                    {/* Corner Accents for Icon */}
+                                    <div className="absolute -top-1 -left-1 w-4 h-4 border-t-2 border-l-2 border-primary"></div>
+                                    <div className="absolute -bottom-1 -right-1 w-4 h-4 border-b-2 border-r-2 border-primary"></div>
+                                </div>
+
+                                <div className="space-y-4 text-center mb-12">
+                                    <h3 className="text-5xl font-black text-white uppercase tracking-tighter drop-shadow-2xl italic">
+                                        Centro de Control <span className="text-primary">ALS</span>
+                                    </h3>
+                                    <div className="h-1 w-32 bg-gradient-to-r from-transparent via-primary to-transparent mx-auto"></div>
+                                    <p className="text-txt-muted text-center max-w-2xl font-medium leading-relaxed text-xl opacity-60 px-10">
+                                        Plataforma de monitoreo en tiempo real sincronizada. <br />
+                                        <span className="text-sm font-black uppercase tracking-[0.2em] mt-4 block">Esperando inicialización de nodos o carga de archivos maestros.</span>
+                                    </p>
+                                </div>
+
+                                <div className="flex items-center gap-6">
+                                    <button
+                                        onClick={() => importDesignRef.current?.click()}
+                                        className="h-14 px-10 bg-primary/10 text-primary border border-primary/30 rounded-none flex items-center gap-4 hover:bg-primary hover:text-white transition-all font-black text-xs uppercase tracking-[0.2em] shadow-lg shadow-primary/10 group/btn"
+                                    >
+                                        <Download className="w-6 h-6 group-hover:-translate-y-1 transition-transform" />
+                                        Cargar Diseños
+                                    </button>
+                                    <button
+                                        onClick={() => importDbRef.current?.click()}
+                                        className="h-14 px-10 bg-secondary/10 text-secondary border border-secondary/30 rounded-none flex items-center gap-4 hover:bg-secondary hover:text-white transition-all font-black text-xs uppercase tracking-[0.2em] shadow-lg shadow-secondary/10 group/btn"
+                                    >
+                                        <Database className="w-6 h-6 group-hover:-translate-y-1 transition-transform" />
+                                        Cargar SCADA
+                                    </button>
+                                </div>
+
+                                <div className="mt-16 flex items-center gap-12 opacity-30">
+                                    <div className="flex flex-col items-center gap-2">
+                                        <div className="w-1.5 h-1.5 bg-txt-muted rounded-none"></div>
+                                        <span className="text-[9px] font-black uppercase tracking-[0.4em]">Standby</span>
+                                    </div>
+                                    <div className="flex flex-col items-center gap-2">
+                                        <div className="w-1.5 h-1.5 bg-txt-muted rounded-none"></div>
+                                        <span className="text-[9px] font-black uppercase tracking-[0.4em]">No Data</span>
+                                    </div>
+                                    <div className="flex flex-col items-center gap-2">
+                                        <div className="w-1.5 h-1.5 bg-txt-muted rounded-none"></div>
+                                        <span className="text-[9px] font-black uppercase tracking-[0.4em]">Secure Link</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     ) : (
@@ -2653,7 +2719,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
 
             <style>{`
                 .glass-surface-light {
-                    background: rgba(var(--color-surface-light), 0.1);
+                    background: rgb(var(--color-surface-light) / 0.1);
                     backdrop-filter: blur(20px);
                 }
                 .animate-slideUp {
@@ -2734,80 +2800,76 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
             {/* FLOATING AI CHAT FOR MONITORING */}
             <FloatingAiPanel fleet={fleet} selectedWell={selectedWell} language={language} t={t} />
 
-            {/* FULL-SCREEN IMPORT PROGRESS OVERLAY */}
+            {/* FULL-SCREEN IMPORT PROGRESS OVERLAY — Simplified & Minimal */}
             {importProgress && (
-                <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-canvas/90 backdrop-blur-3xl animate-fadeIn">
-                    {/* Background Decorative Elements */}
-                    <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-20">
-                        <div style={{
-                            position: 'absolute', inset: 0,
-                            backgroundImage: `linear-gradient(rgba(var(--color-primary),0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(var(--color-primary),0.1) 1px, transparent 1px)`,
-                            backgroundSize: '60px 60px',
-                        }} />
-                        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent h-[200%] animate-[eks-scanline_10s_linear_infinite]" />
-                    </div>
+                <div
+                    className="fixed inset-0 z-[9999] flex flex-col items-center justify-center overflow-hidden"
+                    style={{
+                        backgroundColor: 'rgb(var(--color-canvas))',
+                        backgroundImage: 'linear-gradient(rgb(var(--color-canvas) / 0.85), rgb(var(--color-canvas) / 0.85)), url(/main_bg.png)',
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center'
+                    }}
+                >
+                    {/* Minimal Atmosphere */}
+                    <div className="absolute inset-0 bg-radial-gradient from-primary/5 to-transparent pointer-events-none"></div>
 
-                    <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-primary/20 rounded-none blur-[180px] animate-pulse"></div>
-                    <div className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] bg-secondary/15 rounded-none blur-[180px] animate-pulse-slow"></div>
+                    <div className="flex flex-col items-center gap-10 max-w-sm w-full relative z-10">
+                        {/* Logo - Simple & Free floating - Larger */}
+                        <div className="relative group animate-fadeIn">
+                            <img
+                                src="/LOGO.png"
+                                alt="Loading..."
+                                className="w-84 h-84 object-contain"
+                                style={{
+                                    filter: 'drop-shadow(0 0 50px rgba(var(--color-primary), 0.4))',
+                                }}
+                            />
+                        </div>
 
-                    <div className="bg-surface/60 backdrop-blur-3xl border border-white/10 rounded-none p-16 shadow-[0_0_150px_rgba(var(--color-primary),0.2)] flex flex-col items-center gap-10 max-w-2xl w-full relative overflow-hidden group">
-                        {/* Shimmer effect */}
-                        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent -translate-x-full group-hover:animate-[shimmer_3s_infinite] pointer-events-none"></div>
+                        <div className="w-full flex flex-col items-center gap-6 animate-fadeInUp">
+                            <div className="text-center space-y-1">
+                                <h3 className="text-xl font-bold text-primary uppercase tracking-[0.25em]">
+                                    {importProgress.label.replace('...', '')}
+                                </h3>
+                                <div className="flex items-center justify-center gap-2 opacity-60">
+                                    <span className="w-1 h-1 rounded-full bg-primary animate-pulse"></span>
+                                    <p className="text-[7px] font-bold text-primary uppercase tracking-[0.3em]">
+                                        Sincronizando registros
+                                    </p>
+                                </div>
+                            </div>
 
-                        <div className="relative">
-                            {/* ENLARGED VIDEO CONTAINER FOR LOADING */}
-                            <div className="relative w-[480px] h-[270px] flex items-center justify-center max-w-full">
-                                <div className="absolute inset-0 bg-primary/10 rounded-none blur-[100px] animate-pulse"></div>
+                            {/* Minimal Progress Bar */}
+                            <div className="w-full space-y-3 px-8">
+                                <div className="w-full h-[2px] bg-white/5 rounded-full overflow-hidden">
+                                    <div
+                                        className="h-full bg-primary transition-all duration-700 ease-out shadow-[0_0_8px_rgba(var(--color-primary),0.4)]"
+                                        style={{ width: `${(importProgress.current / Math.max(1, importProgress.total)) * 100}%` }}
+                                    ></div>
+                                </div>
 
-                                <div className="relative z-10 w-full h-full overflow-hidden rounded-none border border-white/10 shadow-[0_0_50px_rgba(var(--color-primary),0.2)] bg-canvas/40 backdrop-blur-md">
-                                    <video
-                                        src="/loading_mini.mp4"
-                                        autoPlay
-                                        loop
-                                        muted
-                                        playsInline
-                                        className="w-full h-full object-cover"
-                                    />
+                                <div className="flex justify-between items-end px-1">
+                                    <div className="flex flex-col gap-0.5">
+                                        <span className="text-[6px] font-bold text-txt-muted uppercase tracking-widest opacity-40">
+                                            Telemetry Stream
+                                        </span>
+                                        <span className="text-[8px] font-bold text-txt-muted/70 uppercase tracking-widest">
+                                            ID: {importProgress.current} / {importProgress.total}
+                                        </span>
+                                    </div>
+                                    <span className="text-2xl font-light text-primary tracking-tighter">
+                                        {Math.round((importProgress.current / Math.max(1, importProgress.total)) * 100)}<span className="text-[8px] text-primary/60 ml-0.5">%</span>
+                                    </span>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="flex flex-col items-center w-full relative z-10 gap-4 text-center">
-                            <div className="space-y-1">
-                                <h3 className="text-3xl font-black text-txt-main uppercase tracking-[0.3em] drop-shadow-2xl">
-                                    {importProgress.label.replace('...', '')}
-                                </h3>
-                                <div className="h-1 w-24 bg-primary mx-auto rounded-none shadow-glow-primary opacity-60"></div>
-                            </div>
-
-                            <p className="text-txt-muted text-[10px] font-black uppercase tracking-[0.5em] opacity-50 flex items-center gap-3">
-                                <RefreshCw className="w-3 h-3 animate-spin text-primary" />
-                                Synchronizing Operations Center
-                            </p>
-
-                            <div className="w-full mt-10 space-y-5">
-                                <div className="w-full h-4 bg-canvas/60 rounded-none overflow-hidden border border-white/10 shadow-inner p-[3px] relative">
-                                    <div
-                                        className="h-full bg-gradient-to-r from-primary via-secondary to-primary bg-[length:200%_100%] animate-shimmer-fast rounded-none transition-all duration-700 ease-out shadow-[0_0_20px_rgba(var(--color-primary),0.6)]"
-                                        style={{ width: `${(importProgress.current / Math.max(1, importProgress.total)) * 100}%` }}
-                                    ></div>
-                                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer pointer-events-none"></div>
-                                </div>
-
-                                <div className="flex justify-between items-end px-2">
-                                    <div className="flex flex-col items-start">
-                                        <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-1.5">System Status</span>
-                                        <span className="text-[11px] font-black text-txt-muted uppercase tracking-widest bg-white/5 px-4 py-1.5 rounded-none border border-white/10 font-mono">
-                                            {importProgress.current} / {importProgress.total} Nodes
-                                        </span>
-                                    </div>
-                                    <div className="text-right">
-                                        <span className="block text-5xl font-black text-txt-main tracking-tighter leading-none italic drop-shadow-lg">
-                                            {Math.round((importProgress.current / Math.max(1, importProgress.total)) * 100)}<small className="text-xl text-primary ml-1 not-italic">%</small>
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
+                        {/* Minimal Status Footer */}
+                        <div className="flex items-center gap-6 text-[6px] font-bold uppercase tracking-[0.4em] text-primary/40 mt-4">
+                            <span className="flex items-center gap-1.5"><Cpu className="w-2 h-2" /> System Ready</span>
+                            <span className="w-[1px] h-2 bg-primary/10"></span>
+                            <span className="flex items-center gap-1.5"><Waves className="w-2 h-2" /> Fleet Sync</span>
                         </div>
                     </div>
                 </div>
@@ -2998,7 +3060,7 @@ const FloatingAiPanel = ({ fleet, selectedWell, language, t }: { fleet: WellFlee
                     {/* CHAT HEADER */}
                     <div className="p-5 border-b border-surface-light flex items-center justify-between bg-primary/5">
                         <div className="flex items-center gap-3">
-                            <div className="p-2.5 bg-primary rounded-none shadow-[0_0_20px_rgba(var(--color-primary),0.4)] ring-4 ring-primary/20 animate-pulse">
+                            <div className="p-2.5 bg-primary rounded-none shadow-[0_0_20px_rgb(var(--color-primary)/0.4)] ring-4 ring-primary/20 animate-pulse">
                                 <Sparkles className="w-4 h-4 text-white" />
                             </div>
                             <div className="space-y-0.5">
@@ -3049,7 +3111,7 @@ const FloatingAiPanel = ({ fleet, selectedWell, language, t }: { fleet: WellFlee
                 </div>
             </div>
 
-            <button onClick={() => setIsOpen(!isOpen)} className={`relative flex items-center justify-center w-16 h-16 rounded-none shadow-[0_15px_35px_rgba(var(--color-primary),0.4)] transition-all duration-500 group border-4 border-canvas overflow-hidden ${isOpen ? 'bg-surface text-primary rotate-90 scale-90' : 'bg-primary text-white'}`}>
+            <button onClick={() => setIsOpen(!isOpen)} className={`relative flex items-center justify-center w-16 h-16 rounded-none shadow-[0_15px_35px_rgb(var(--color-primary)/0.4)] transition-all duration-500 group border-4 border-canvas overflow-hidden ${isOpen ? 'bg-surface text-primary rotate-90 scale-90' : 'bg-primary text-white'}`}>
                 {isOpen ? <X className="w-6 h-6" /> : <Sparkles className="w-7 h-7 group-hover:rotate-12 transition-transform" />}
                 <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                 {fleet.filter(w => w.status !== 'normal').length > 0 && !isOpen && (

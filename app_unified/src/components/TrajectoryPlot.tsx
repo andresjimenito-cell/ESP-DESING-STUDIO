@@ -60,7 +60,7 @@ const CustomTooltip = ({ active, payload, colorSurface, colorSurfaceLight, color
             minWidth: 180, backdropFilter: 'blur(12px)', zIndex: 1000
         }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: 6 }}>
-                <span style={{ color: zoneColor, fontSize: 9, fontWeight: 900, fontFamily: 'monospace', letterSpacing: '0.1em' }}>{zoneName}</span>
+                <span style={{ color: zoneColor, fontSize: 9, fontWeight: 900, letterSpacing: '0.1em' }}>{zoneName}</span>
                 {equipment && (
                     <span style={{ background: `${equipment.color}20`, color: equipment.color, fontSize: 8, fontWeight: 900, padding: '2px 6px', borderRadius: 4, border: `1px solid ${equipment.color}40` }}>{equipment.name}</span>
                 )}
@@ -72,8 +72,8 @@ const CustomTooltip = ({ active, payload, colorSurface, colorSurfaceLight, color
                 { label: 'Departure', value: `${Math.round(d?.departure ?? 0)} ft`, color: '#34d399' },
             ].map(({ label, value, color }) => (
                 <div key={label} style={{ display: 'flex', justifyContent: 'space-between', gap: 24, marginTop: 4 }}>
-                    <span style={{ color: colorTextMuted, fontSize: 10, fontFamily: 'monospace', fontWeight: 600 }}>{label}</span>
-                    <span style={{ color, fontSize: 10, fontWeight: 800, fontFamily: 'monospace' }}>{value}</span>
+                    <span style={{ color: colorTextMuted, fontSize: 10, fontWeight: 600 }}>{label}</span>
+                    <span style={{ color, fontSize: 10, fontWeight: 800 }}>{value}</span>
                 </div>
             ))}
         </div>
@@ -528,7 +528,7 @@ export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params }
                             type="number"
                             orientation="top"
                             domain={[-200, (max: number) => Math.max(max + 1800, 3500)]}
-                            tick={{ fill: colorTextMuted, fontSize: 10, fontFamily: 'monospace', fontWeight: 700 }}
+                            tick={{ fill: colorTextMuted, fontSize: 10, fontWeight: 700 }}
                             tickFormatter={(v) => (v < 0 ? '' : v)}
                             axisLine={{ stroke: colorSurfaceLight }}
                             tickLine={false}
@@ -538,7 +538,7 @@ export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params }
                             type="number"
                             reversed
                             domain={[-airGap, maxTVD]}
-                            tick={{ fill: colorTextMuted, fontSize: 10, fontFamily: 'monospace', fontWeight: 700 }}
+                            tick={{ fill: colorTextMuted, fontSize: 10, fontWeight: 700 }}
                             tickFormatter={(v) => (v < 0 ? '' : v)}
                             axisLine={{ stroke: colorSurfaceLight }}
                             tickLine={false}

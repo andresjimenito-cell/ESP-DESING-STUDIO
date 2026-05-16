@@ -453,8 +453,8 @@ export const BatchDesignProcessor: React.FC<BatchDesignProcessorProps> = ({
                                             onClick={() => handleSelect(row, rowKey)}
                                             disabled={!!selected}
                                             className={`w-full grid px-4 py-3 rounded-2xl text-left transition-all duration-300 border ${isChosen
-                                                    ? 'bg-primary/20 border-primary scale-[1.01] shadow-glow-primary/20'
-                                                    : 'glass-surface-light border-white/5 hover:border-primary/30 hover:bg-white/5'
+                                                ? 'bg-primary/20 border-primary scale-[1.01] shadow-glow-primary/20'
+                                                : 'glass-surface-light border-white/5 hover:border-primary/30 hover:bg-white/5'
                                                 }`}
                                             style={{ gridTemplateColumns: '56px 1fr 130px 80px 80px 85px 28px' }}
                                         >

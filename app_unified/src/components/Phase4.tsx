@@ -14,8 +14,8 @@ interface Props {
 // --- SUB-COMPONENTS ---
 
 const PressureCard = ({ label, value, unit, onChange, color = "primary", icon: Icon }: any) => (
-    <div className={`bg-surface p-4 rounded-xl border border-white/5 shadow-md relative overflow-hidden group hover:border-${color}-500/50 transition-all`}>
-        <div className={`absolute top-0 right-0 p-2 opacity-10 bg-${color}-500 rounded-bl-xl transition-opacity group-hover:opacity-20`}>
+    <div className={`bg-surface p-4 rounded-none border border-white/5 shadow-md relative overflow-hidden group hover:border-${color}-500/50 transition-all`}>
+        <div className={`absolute top-0 right-0 p-2 opacity-10 bg-${color}-500 rounded-none-bl-xl transition-opacity group-hover:opacity-20`}>
             {Icon && <Icon className={`w-6 h-6 text-${color}-400`} />}
         </div>
         <label className="text-[10px] font-black text-txt-muted uppercase tracking-widest block mb-1.5 group-hover:text-${color}-400 transition-colors">{label}</label>
@@ -40,7 +40,7 @@ const SchematicTag = ({ label, value, unit, color = "white", top, align = "right
         {align === 'right' && <div className={`w-6 h-px ${alert ? 'bg-red-500' : 'bg-surface-light group-hover:bg-' + color + '-500'} transition-colors`}></div>}
 
         {/* Tag */}
-        <div className={`bg-surface border ${alert ? 'border-red-500 animate-pulse' : 'border-white/10'} p-3 ${align === 'right' ? 'pl-4 pr-5 rounded-r-xl rounded-bl-xl border-l-0' : 'pr-4 pl-5 rounded-l-xl rounded-br-xl text-right border-r-0'} shadow-lg flex flex-col min-w-[120px] group-hover:border-${color}-500 transition-colors relative`}>
+        <div className={`bg-surface border ${alert ? 'border-red-500 animate-pulse' : 'border-white/10'} p-3 ${align === 'right' ? 'pl-4 pr-5 rounded-none-r-xl rounded-none-bl-xl border-l-0' : 'pr-4 pl-5 rounded-none-l-xl rounded-none-br-xl text-right border-r-0'} shadow-lg flex flex-col min-w-[120px] group-hover:border-${color}-500 transition-colors relative`}>
             <div className={`absolute ${align === 'right' ? 'left-0' : 'right-0'} top-0 bottom-0 w-0.5 bg-${alert ? 'red' : color}-500`}></div>
             <div className="flex items-center gap-2 justify-end mb-0.5">
                 {alert && <AlertCircle className="w-4 h-4 text-red-500" />}
@@ -84,9 +84,9 @@ export const Phase4: React.FC<Props> = ({ params, setParams, results }) => {
             <div className="lg:col-span-4 flex flex-col gap-4 h-full overflow-y-auto pr-2 custom-scrollbar">
 
                 {/* 1. MASTER CONTROL */}
-                <div className="bg-surface p-5 rounded-3xl border border-white/5 shadow-md space-y-3">
+                <div className="bg-surface p-5 rounded-none border border-white/5 shadow-md space-y-3">
                     <div className="flex items-center gap-3 mb-3">
-                        <div className="p-2.5 rounded-xl bg-primary text-white shadow-sm">
+                        <div className="p-2.5 rounded-none bg-primary text-white shadow-sm">
                             <Activity className="w-6 h-6" />
                         </div>
                         <div>
@@ -95,7 +95,7 @@ export const Phase4: React.FC<Props> = ({ params, setParams, results }) => {
                         </div>
                     </div>
 
-                    <div className="bg-canvas rounded-xl border border-white/5 p-3 flex flex-col items-center justify-center gap-1 relative group focus-within:border-primary transition-colors">
+                    <div className="bg-canvas rounded-none border border-white/5 p-3 flex flex-col items-center justify-center gap-1 relative group focus-within:border-primary transition-colors">
                         <div className="flex items-baseline justify-center gap-1 w-full">
                             <input
                                 type="number"
@@ -123,7 +123,7 @@ export const Phase4: React.FC<Props> = ({ params, setParams, results }) => {
                             min="100" max="10000" step="100"
                             value={params.pressures.totalRate || 0}
                             onChange={e => setParams({ ...params, pressures: { ...params.pressures, totalRate: parseFloat(e.target.value) } })}
-                            className="w-full h-1.5 bg-surface-light rounded-full appearance-none cursor-pointer accent-primary"
+                            className="w-full h-1.5 bg-surface-light rounded-none appearance-none cursor-pointer accent-primary"
                         />
                         <div className="flex justify-between mt-1 text-[10px] font-bold text-txt-muted font-mono">
                             <span>100</span>
@@ -153,9 +153,9 @@ export const Phase4: React.FC<Props> = ({ params, setParams, results }) => {
                 </div>
 
                 {/* 3. KEY METRICS SUMMARY */}
-                <div className="bg-canvas rounded-3xl p-5 text-white flex-1 flex flex-col justify-start relative overflow-hidden shadow-xl border border-white/5 min-h-[300px]">
+                <div className="bg-canvas rounded-none p-5 text-white flex-1 flex flex-col justify-start relative overflow-hidden shadow-xl border border-white/5 min-h-[300px]">
                     {/* Decorative Background */}
-                    <div className="absolute top-0 right-0 w-48 h-48 bg-primary/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
+                    <div className="absolute top-0 right-0 w-48 h-48 bg-primary/5 rounded-none blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
 
                     <h4 className="text-[10px] font-black text-txt-muted uppercase tracking-widest mb-4 border-b border-white/10 pb-2 z-10">{t('p4.calcMetrics')}</h4>
 
@@ -164,7 +164,7 @@ export const Phase4: React.FC<Props> = ({ params, setParams, results }) => {
                         {/* Hydraulics */}
                         <div className="flex justify-between items-center group">
                             <div className="flex items-center gap-3">
-                                <div className="p-2 rounded-xl bg-primary/10 text-primary border border-primary/20 shadow-inner">
+                                <div className="p-2 rounded-none bg-primary/10 text-primary border border-primary/20 shadow-inner">
                                     <ArrowDown className="w-5 h-5" />
                                 </div>
                                 <div>
@@ -180,7 +180,7 @@ export const Phase4: React.FC<Props> = ({ params, setParams, results }) => {
 
                         <div className="flex justify-between items-center group">
                             <div className="flex items-center gap-3">
-                                <div className="p-2 rounded-xl bg-secondary/10 text-secondary border border-secondary/20 shadow-inner">
+                                <div className="p-2 rounded-none bg-secondary/10 text-secondary border border-secondary/20 shadow-inner">
                                     <Layers className="w-5 h-5" />
                                 </div>
                                 <div>
@@ -196,7 +196,7 @@ export const Phase4: React.FC<Props> = ({ params, setParams, results }) => {
 
                         <div className="flex justify-between items-center group">
                             <div className="flex items-center gap-3">
-                                <div className="p-2 rounded-xl bg-surface-light text-txt-muted border border-surface-light shadow-inner">
+                                <div className="p-2 rounded-none bg-surface-light text-txt-muted border border-surface-light shadow-inner">
                                     <Droplets className="w-5 h-5" />
                                 </div>
                                 <div>
@@ -214,14 +214,14 @@ export const Phase4: React.FC<Props> = ({ params, setParams, results }) => {
                         <div className="border-t border-surface-light pt-4 mt-2">
                             <h5 className="text-[10px] font-black text-txt-muted uppercase tracking-widest mb-3">{t('p4.thermal')}</h5>
                             <div className="grid grid-cols-2 gap-4">
-                                <div className="bg-surface p-3 rounded-xl border border-surface-light flex items-center justify-between shadow-inner">
+                                <div className="bg-surface p-3 rounded-none border border-surface-light flex items-center justify-between shadow-inner">
                                     <div className="flex items-center gap-2">
                                         <Thermometer className="w-4 h-4 text-orange-500" />
                                         <span className="text-[10px] font-black text-txt-muted uppercase tracking-wider">{t('p4.intake')}</span>
                                     </div>
                                     <div className="font-mono text-base font-black text-white">{intakeTemp.toFixed(0)}°F</div>
                                 </div>
-                                <div className={`bg-surface p-3 rounded-xl border ${isMotorHot ? 'border-red-500/50 bg-red-900/20' : 'border-surface-light'} flex items-center justify-between transition-colors shadow-inner`}>
+                                <div className={`bg-surface p-3 rounded-none border ${isMotorHot ? 'border-red-500/50 bg-red-900/20' : 'border-surface-light'} flex items-center justify-between transition-colors shadow-inner`}>
                                     <div className="flex items-center gap-2">
                                         <Thermometer className={`w-4 h-4 ${isMotorHot ? 'text-danger animate-pulse' : 'text-danger/60'}`} />
                                         <span className="text-[10px] font-black text-txt-muted uppercase tracking-wider">{t('p4.motor')}</span>
@@ -237,15 +237,15 @@ export const Phase4: React.FC<Props> = ({ params, setParams, results }) => {
             </div>
 
             {/* RIGHT COLUMN: VISUAL WELLBORE (FIXED SCHEMATIC) */}
-            <div className="lg:col-span-8 bg-canvas rounded-[40px] border border-surface-light shadow-2xl relative overflow-hidden flex flex-col h-full">
+            <div className="lg:col-span-8 bg-canvas rounded-none-[40px] border border-surface-light shadow-2xl relative overflow-hidden flex flex-col h-full">
 
                 <div className="absolute top-0 left-0 w-full z-10 px-6 py-4 flex justify-between items-start pointer-events-none">
-                    <div className="bg-surface px-5 py-2.5 rounded-full border border-surface-light shadow-lg">
+                    <div className="bg-surface px-5 py-2.5 rounded-none border border-surface-light shadow-lg">
                         <span className="text-xs font-black text-txt-muted uppercase tracking-widest flex items-center gap-2">
                             <Activity className="w-4 h-4 text-secondary" /> {t('p4.schematic')}
                         </span>
                     </div>
-                    <div className="text-xs font-mono font-bold text-txt-muted bg-surface px-3 py-1.5 rounded border border-surface-light">
+                    <div className="text-xs font-mono font-bold text-txt-muted bg-surface px-3 py-1.5 rounded-none border border-surface-light">
                         TD: {totalDepth} ft
                     </div>
                 </div>
@@ -286,12 +286,12 @@ export const Phase4: React.FC<Props> = ({ params, setParams, results }) => {
                             className="absolute left-1/2 -translate-x-1/2 z-20 transition-all duration-700 w-16 flex items-center justify-center group"
                             style={{ top: pumpPct, transform: 'translate(-50%, -50%)' }}
                         >
-                            <div className="bg-slate-800 border border-slate-600 rounded w-6 h-16 shadow-lg flex flex-col justify-evenly items-center relative hover:border-blue-500 hover:shadow-blue-500/20 transition-all">
+                            <div className="bg-slate-800 border border-slate-600 rounded-none w-6 h-16 shadow-lg flex flex-col justify-evenly items-center relative hover:border-blue-500 hover:shadow-blue-500/20 transition-all">
                                 <div className="w-full h-px bg-slate-700"></div>
                                 <div className="w-full h-px bg-slate-700"></div>
                                 <div className="w-full h-px bg-slate-700"></div>
                                 {/* Label */}
-                                <span className="absolute left-full ml-4 text-sm font-black text-slate-500 uppercase tracking-widest whitespace-nowrap bg-surface px-3 py-1.5 rounded-xl border border-surface-light shadow-xl">ESP Pump</span>
+                                <span className="absolute left-full ml-4 text-sm font-black text-slate-500 uppercase tracking-widest whitespace-nowrap bg-surface px-3 py-1.5 rounded-none border border-surface-light shadow-xl">ESP Pump</span>
                             </div>
                         </div>
 
@@ -300,10 +300,10 @@ export const Phase4: React.FC<Props> = ({ params, setParams, results }) => {
                             className="absolute left-0 right-0 z-0 flex flex-col gap-1 px-0.5 opacity-60"
                             style={{ top: perfsPct, transform: 'translateY(-50%)' }}
                         >
-                            <div className="h-1 w-3 bg-black/50 border border-slate-600 rounded-r self-start"></div>
-                            <div className="h-1 w-3 bg-black/50 border border-slate-600 rounded-l self-end"></div>
-                            <div className="h-1 w-3 bg-black/50 border border-slate-600 rounded-r self-start"></div>
-                            <div className="h-1 w-3 bg-black/50 border border-slate-600 rounded-l self-end"></div>
+                            <div className="h-1 w-3 bg-black/50 border border-slate-600 rounded-none-r self-start"></div>
+                            <div className="h-1 w-3 bg-black/50 border border-slate-600 rounded-none-l self-end"></div>
+                            <div className="h-1 w-3 bg-black/50 border border-slate-600 rounded-none-r self-start"></div>
+                            <div className="h-1 w-3 bg-black/50 border border-slate-600 rounded-none-l self-end"></div>
                         </div>
 
                         {/* 7. TD Line (Bottom) */}
@@ -346,3 +346,4 @@ export const Phase4: React.FC<Props> = ({ params, setParams, results }) => {
         </div>
     );
 };
+

@@ -40,7 +40,7 @@ const ScenarioCard = ({ type, data, onChange, baseParams, active, onActivate, gl
     return (
         <div
             onClick={onActivate}
-            className={`group relative flex flex-col gap-4 overflow-hidden rounded-[2rem] border-2 transition-all duration-500 cursor-pointer w-full p-6 
+            className={`group relative flex flex-col gap-4 overflow-hidden rounded-none-[2rem] border-2 transition-all duration-500 cursor-pointer w-full p-6 
                 ${active
                     ? `border-primary/40 shadow-[0_0_40px_rgba(var(--color-primary),0.2)] glass-surface !bg-primary/[0.03] scale-[1.02] z-10`
                     : `border-white/5 glass-surface opacity-70 hover:opacity-100 hover:border-white/20 hover:scale-[1.01]`
@@ -50,18 +50,18 @@ const ScenarioCard = ({ type, data, onChange, baseParams, active, onActivate, gl
         >
             {/* Ambient Ambient Glow */}
             {active && (
-                <div className="absolute -top-20 -right-20 w-40 h-40 bg-primary/10 blur-[60px] rounded-full pointer-events-none"></div>
+                <div className="absolute -top-20 -right-20 w-40 h-40 bg-primary/10 blur-[60px] rounded-none pointer-events-none"></div>
             )}
 
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-500 shadow-lg border ${active ? 'bg-primary text-white border-white/20' : 'bg-white/5 text-txt-muted border-white/5'}`}>
+                    <div className={`w-12 h-12 rounded-none flex items-center justify-center transition-all duration-500 shadow-lg border ${active ? 'bg-primary text-white border-white/20' : 'bg-white/5 text-txt-muted border-white/5'}`}>
                         <Icon className="w-6 h-6" />
                     </div>
                     <div>
                         <h3 className={`text-sm font-black uppercase tracking-[0.2em] ${active ? 'text-txt-main' : 'text-txt-muted'}`}>{label}</h3>
                         <div className="flex items-center gap-2 mt-1">
-                             <div className={`w-2 h-2 rounded-full ${isImpossible ? 'bg-danger animate-pulse' : isCriticalDrawdown ? 'bg-warning animate-pulse' : 'bg-primary animate-pulse'}`}></div>
+                             <div className={`w-2 h-2 rounded-none ${isImpossible ? 'bg-danger animate-pulse' : isCriticalDrawdown ? 'bg-warning animate-pulse' : 'bg-primary animate-pulse'}`}></div>
                              <span className="text-[10px] font-black text-txt-muted opacity-60 uppercase tracking-widest">
                                 {isImpossible ? 'OUT OF RANGE' : isCriticalDrawdown ? 'CRITICAL DRAWDOWN' : 'NOMINAL RANGE'}
                              </span>
@@ -79,7 +79,7 @@ const ScenarioCard = ({ type, data, onChange, baseParams, active, onActivate, gl
 
             <div className="grid grid-cols-2 gap-4">
                 {/* PRIMARY INPUT: RATE */}
-                <div className={`flex flex-col gap-2 p-4 rounded-2xl border transition-all ${active ? 'bg-canvas/60 border-white/10 shadow-inner' : 'bg-canvas/30 border-white/5'}`}>
+                <div className={`flex flex-col gap-2 p-4 rounded-none border transition-all ${active ? 'bg-canvas/60 border-white/10 shadow-inner' : 'bg-canvas/30 border-white/5'}`}>
                     <label className="text-[9px] font-black text-txt-muted uppercase tracking-[0.2em]">{t('scen.prodRate')}</label>
                     <div className="flex items-baseline gap-2">
                         <input
@@ -90,18 +90,18 @@ const ScenarioCard = ({ type, data, onChange, baseParams, active, onActivate, gl
                         />
                         <span className="text-[10px] font-bold text-txt-muted opacity-40">BPD</span>
                     </div>
-                    <div className="h-1.5 w-full bg-surface-light/30 rounded-full overflow-hidden">
+                    <div className="h-1.5 w-full bg-surface-light/30 rounded-none overflow-hidden">
                         <div className={`h-full transition-all duration-1000 ${isImpossible ? 'bg-danger shadow-glow-danger' : 'bg-primary shadow-glow-primary'}`} style={{ width: `${Math.min(100, (data.rate / maxAOF) * 100)}%` }}></div>
                     </div>
                 </div>
 
                 {/* SCENARIO CONSTANTS */}
                 <div className="grid grid-cols-1 gap-2">
-                    <div className="flex justify-between items-center group/item hover:bg-white/5 px-4 py-2 rounded-xl transition-all border border-transparent hover:border-white/5">
+                    <div className="flex justify-between items-center group/item hover:bg-white/5 px-4 py-2 rounded-none transition-all border border-transparent hover:border-white/5">
                         <span className="text-[9px] font-black text-txt-muted uppercase tracking-widest">IP <small className="opacity-40">idx</small></span>
                         <input type="number" step="0.1" value={data.ip} onChange={(e) => onChange('ip', parseFloat(e.target.value))} className="bg-transparent w-16 text-right text-sm font-black outline-none font-mono text-secondary" />
                     </div>
-                    <div className="flex justify-between items-center group/item hover:bg-white/5 px-4 py-2 rounded-xl transition-all border border-transparent hover:border-white/5">
+                    <div className="flex justify-between items-center group/item hover:bg-white/5 px-4 py-2 rounded-none transition-all border border-transparent hover:border-white/5">
                         <span className="text-[9px] font-black text-txt-muted uppercase tracking-widest">WC <small className="opacity-40">%</small></span>
                         <input type="number" value={data.waterCut} onChange={(e) => onChange('waterCut', parseFloat(e.target.value))} className="bg-transparent w-16 text-right text-sm font-black outline-none font-mono text-txt-main" />
                     </div>
@@ -263,12 +263,12 @@ export const PhaseScenarios: React.FC<Props> = ({ params, setParams, results }) 
                 </div>
 
                 {/* RIGHT: SYSTEM VISUALIZER (55%) */}
-                <div className="flex-[0.55] glass-surface rounded-[3rem] border border-white/10 p-10 flex flex-col shadow-3xl relative overflow-hidden bg-gradient-to-br from-canvas via-canvas to-primary/[0.02]">
+                <div className="flex-[0.55] glass-surface rounded-none-[3rem] border border-white/10 p-10 flex flex-col shadow-3xl relative overflow-hidden bg-gradient-to-br from-canvas via-canvas to-primary/[0.02]">
                     <div className="absolute inset-0 bg-[linear-gradient(rgba(var(--color-primary),0.02)_2px,transparent_2px),linear-gradient(90deg,rgba(var(--color-primary),0.02)_2px,transparent_2px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_at_center,black,transparent_70%)] opacity-30 pointer-events-none"></div>
 
                     <div className="flex justify-between items-center mb-8 shrink-0 relative z-10">
                         <div className="flex items-center gap-5">
-                            <div className="w-14 h-14 glass-surface-light rounded-2xl flex items-center justify-center text-primary border border-primary/20 shadow-glow-primary shadow-[0_0_20px_rgba(var(--color-primary),0.2)]">
+                            <div className="w-14 h-14 glass-surface-light rounded-none flex items-center justify-center text-primary border border-primary/20 shadow-glow-primary shadow-[0_0_20px_rgba(var(--color-primary),0.2)]">
                                 <Activity className="w-7 h-7" />
                             </div>
                             <div>
@@ -278,12 +278,12 @@ export const PhaseScenarios: React.FC<Props> = ({ params, setParams, results }) 
                                 </h4>
                                 <div className="flex items-center gap-3">
                                     <div className="flex items-center gap-2">
-                                        <div className="w-3 h-1 bg-primary rounded-full"></div>
+                                        <div className="w-3 h-1 bg-primary rounded-none"></div>
                                         <span className="text-[9px] font-black text-txt-muted uppercase tracking-widest opacity-60">Linear-Vogel Model</span>
                                     </div>
-                                    <div className="w-1 h-1 rounded-full bg-white/20"></div>
+                                    <div className="w-1 h-1 rounded-none bg-white/20"></div>
                                     <div className="flex items-center gap-2">
-                                        <div className="w-3 h-1 bg-secondary rounded-full"></div>
+                                        <div className="w-3 h-1 bg-secondary rounded-none"></div>
                                         <span className="text-[9px] font-black text-txt-muted uppercase tracking-widest opacity-60">Stability Limit</span>
                                     </div>
                                 </div>
@@ -291,7 +291,7 @@ export const PhaseScenarios: React.FC<Props> = ({ params, setParams, results }) 
                         </div>
                         
                         <div className="flex gap-2">
-                            <div className="px-4 py-2 bg-primary/5 rounded-xl border border-primary/20 flex items-center gap-3">
+                            <div className="px-4 py-2 bg-primary/5 rounded-none border border-primary/20 flex items-center gap-3">
                                 <Gauge className="w-4 h-4 text-primary" />
                                 <span className="text-[10px] font-black text-txt-main">NOMINAL DYNAMICS</span>
                             </div>
@@ -337,9 +337,9 @@ export const PhaseScenarios: React.FC<Props> = ({ params, setParams, results }) 
                                 </YAxis>
                                 <Tooltip
                                     content={({ active, payload, label }: any) => active && payload ? (
-                                        <div className="glass-surface p-6 shadow-[0_0_50px_rgba(0,0,0,0.5)] border border-white/10 rounded-[2rem] text-sm z-50 animate-fadeIn">
+                                        <div className="glass-surface p-6 shadow-[0_0_50px_rgba(0,0,0,0.5)] border border-white/10 rounded-none-[2rem] text-sm z-50 animate-fadeIn">
                                             <div className="flex items-center gap-3 border-b border-white/5 pb-4 mb-4">
-                                                <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center border border-primary/20">
+                                                <div className="w-10 h-10 bg-primary/10 rounded-none flex items-center justify-center border border-primary/20">
                                                     <Info className="w-5 h-5 text-primary" />
                                                 </div>
                                                 <div>
@@ -351,7 +351,7 @@ export const PhaseScenarios: React.FC<Props> = ({ params, setParams, results }) 
                                                 {payload.map((e: any, i: number) => e.value !== null && (
                                                     <div key={i} className="flex justify-between gap-12 items-center">
                                                         <div className="flex items-center gap-3">
-                                                            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: e.color, boxShadow: `0 0 15px ${e.color}` }}></div>
+                                                            <div className="w-3 h-3 rounded-none" style={{ backgroundColor: e.color, boxShadow: `0 0 15px ${e.color}` }}></div>
                                                             <span className="font-black text-txt-muted uppercase text-[9px] tracking-[0.2em]">{e.name}</span>
                                                         </div>
                                                         <span className="font-mono font-black text-txt-main text-lg">{e.value} <small className="text-[10px] opacity-30 uppercase">psi</small></span>
@@ -381,11 +381,11 @@ export const PhaseScenarios: React.FC<Props> = ({ params, setParams, results }) 
                         
                         <div className="absolute bottom-4 right-8 flex items-center gap-6 opacity-40">
                              <div className="flex items-center gap-2">
-                                 <div className="w-2 h-2 rounded-full bg-primary"></div>
+                                 <div className="w-2 h-2 rounded-none bg-primary"></div>
                                  <span className="text-[8px] font-black uppercase tracking-widest text-txt-muted">Nominal Path</span>
                              </div>
                              <div className="flex items-center gap-2">
-                                 <div className="w-2 h-2 rounded-full bg-secondary"></div>
+                                 <div className="w-2 h-2 rounded-none bg-secondary"></div>
                                  <span className="text-[8px] font-black uppercase tracking-widest text-txt-muted">Limit Boundary</span>
                              </div>
                         </div>
@@ -395,3 +395,4 @@ export const PhaseScenarios: React.FC<Props> = ({ params, setParams, results }) 
         </div>
     );
 };
+

@@ -19,7 +19,7 @@ import { DesignDataImport } from './components/DesignDataImport';
 import { BatchDesignProcessor } from './components/BatchDesignProcessor';
 import { TUBING_CATALOG, CASING_CATALOG, STANDARD_PUMPS, STANDARD_MOTORS, CABLE_CATALOG, VSD_CATALOG } from '@/data';
 import {
-    Activity, RotateCcw, Ruler, Droplets, Target, Hexagon, CheckCircle2, Clock, ClipboardCheck, Maximize, Minimize, Globe, AlertCircle, Sparkles, RefreshCw, Send, ChevronDown, ChevronRight, AlertTriangle, Layers, Palette, FileSpreadsheet, Maximize2, Printer, GitCompareArrows, Zap, Settings, ArrowLeft
+    Activity, RotateCcw, Ruler, Droplets, Target, Hexagon, CheckCircle2, Clock, ClipboardCheck, Maximize, Minimize, Globe, AlertCircle, Sparkles, RefreshCw, Send, ChevronDown, ChevronRight, AlertTriangle, Layers, Palette, FileSpreadsheet, Maximize2, Minimize2, Printer, GitCompareArrows, Zap, Settings, ArrowLeft
 } from 'lucide-react';
 import { EspPump, EspMotor, SystemParams, SurveyPoint } from '@/types';
 import { useLanguage } from '@/i18n';
@@ -172,6 +172,7 @@ const App: React.FC = () => {
     const [cameFromMonitoring, setCameFromMonitoring] = useState(false);
 
     const [landingMenuLevel, setLandingMenuLevel] = useState<'main' | 'design'>('main');
+    const [globalZoom, setGlobalZoom] = useState<number>(0.8);
 
 
 
@@ -756,15 +757,16 @@ const App: React.FC = () => {
                         <h2 className="text-[11px] font-black text-txt-main uppercase tracking-[0.2em]">{steps[activeStep].label}</h2>
                     </div>
                     <div className="flex items-center gap-2">
-                        <button onClick={toggleLanguage} className="bg-surface/50 hover:bg-surface-light rounded-full w-10 h-10 flex items-center justify-center transition-all group relative cursor-pointer"><Globe className="w-4 h-4 text-txt-muted group-hover:text-primary" /></button>
-                        <button onClick={cycleTheme} className="bg-surface/50 hover:bg-surface-light rounded-full w-10 h-10 flex items-center justify-center transition-all group relative cursor-pointer"><Palette className="w-4 h-4 text-txt-muted group-hover:text-primary" /></button>
-                        <button onClick={toggleFullScreen} className="bg-surface/50 hover:bg-surface-light rounded-full w-10 h-10 flex items-center justify-center transition-all group relative cursor-pointer">{isFullscreen ? <Minimize className="w-4 h-4 text-txt-muted group-hover:text-primary" /> : <Maximize className="w-4 h-4 text-txt-muted group-hover:text-primary" />}</button>
+                        <button onClick={toggleLanguage} className="bg-surface/50 hover:bg-surface-light rounded-none w-10 h-10 flex items-center justify-center transition-all group relative cursor-pointer"><Globe className="w-4 h-4 text-txt-muted group-hover:text-primary" /></button>
+                        <button onClick={cycleTheme} className="bg-surface/50 hover:bg-surface-light rounded-none w-10 h-10 flex items-center justify-center transition-all group relative cursor-pointer"><Palette className="w-4 h-4 text-txt-muted group-hover:text-primary" /></button>
+                        <button onClick={() => setGlobalZoom(globalZoom === 1 ? 0.8 : 1)} className="bg-surface/50 hover:bg-surface-light rounded-none w-10 h-10 flex items-center justify-center transition-all group relative cursor-pointer" title={globalZoom === 1 ? "Reducir Escala (80%)" : "Aumentar Escala (100%)"}>{globalZoom === 1 ? <Minimize2 className="w-4 h-4 text-txt-muted group-hover:text-primary" /> : <Maximize2 className="w-4 h-4 text-txt-muted group-hover:text-primary" />}</button>
+                        <button onClick={toggleFullScreen} className="bg-surface/50 hover:bg-surface-light rounded-none w-10 h-10 flex items-center justify-center transition-all group relative cursor-pointer">{isFullscreen ? <Minimize className="w-4 h-4 text-txt-muted group-hover:text-primary" /> : <Maximize className="w-4 h-4 text-txt-muted group-hover:text-primary" />}</button>
                         <div className="w-px h-6 bg-surface-light mx-1"></div>
 
                         <div className="w-px h-6 bg-surface-light mx-1"></div>
                         <div className="relative group">
                             <button
-                                className="bg-surface/50 hover:bg-surface-light rounded-full w-10 h-10 flex items-center justify-center transition-all group relative cursor-pointer"
+                                className="bg-surface/50 hover:bg-surface-light rounded-none w-10 h-10 flex items-center justify-center transition-all group relative cursor-pointer"
                             >
                                 <RotateCcw className="w-4 h-4 text-txt-muted group-hover:text-primary" />
                             </button>
@@ -804,7 +806,7 @@ const App: React.FC = () => {
                 </header>
 
                 <main className="flex-1 overflow-y-auto p-4 relative">
-                    <div className="max-w-[1920px] mx-auto animate-fadeIn relative z-10 min-h-full">
+                    <div style={{ zoom: globalZoom }} className="max-w-[1920px] mx-auto animate-fadeIn relative z-10 min-h-full transition-all duration-700">
                         {activeStep === 0 && <Phase1 params={params} setParams={setParams} rawSurvey={rawSurvey} setRawSurvey={setRawSurvey} />}
                         {activeStep === 1 && <Phase2 params={params} setParams={setParams} />}
                         {activeStep === 2 && <Phase3 params={params} setParams={setParams} results={designResults} />}
