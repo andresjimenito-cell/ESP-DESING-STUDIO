@@ -1071,23 +1071,113 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                 }
             }
 
-            // Loop extract unified
+            // Resolvemos los mapeos de columnas una sola vez para máxima velocidad de análisis (evita la sobrecarga O(N) de buscar encabezados)
+            let mdKey = '';
+            let tvdKey = '';
+            let incKey = '';
+            let azimKey = '';
+            let subSeaKey = '';
+            let northingKey = '';
+            let nsKey = '';
+            let eastingKey = '';
+            let ewKey = '';
+            let northingMKey = '';
+            let eastingMKey = '';
+            let verticalSectionKey = '';
+            let doglegKey = '';
+
+            if (jsonSurvey.length > 0) {
+                const firstRow = jsonSurvey[0];
+                const keysOfRow = Object.keys(firstRow);
+                
+                // Helper rápido de resolución única
+                const resolveKey = (targets: string[]): string => {
+                    const normTargets = targets.map(norm_ext);
+                    const normRowKeys = keysOfRow.map(norm_ext);
+                    for (const t of normTargets) {
+                        const idx = normRowKeys.indexOf(t);
+                        if (idx !== -1) return keysOfRow[idx];
+                    }
+                    for (const t of normTargets) {
+                        if (t.length > 3) {
+                            const idx = normRowKeys.findIndex(r => r === t || r.startsWith(t + '_') || r.endsWith('_' + t));
+                            if (idx !== -1) return keysOfRow[idx];
+                        }
+                    }
+                    return '';
+                };
+
+                mdKey = resolveKey(['Measured Depth (ft)', 'MD (ft)', 'Measured Depth', 'MD', 'Measured Depth (m)', 'MD (m)']);
+                tvdKey = resolveKey(['Vertical Depth (ft)', 'TVD (ft)', 'Vertical Depth', 'TVD', 'Vertical Depth (m)', 'TVD (m)']);
+                incKey = resolveKey(['Inclination (deg)', 'Inc (deg)', 'Inc. (deg)', 'Inclination', 'Inc', 'INC', 'Inclination (deg.)']);
+                azimKey = resolveKey(['Azimuth (deg)', 'Azim (deg)', 'Azim. (deg)', 'Azimuth', 'Azim', 'AZIM', 'Azimuth (deg.)']);
+                subSeaKey = resolveKey(['Sub-Sea Depth (ft)', 'Sub-Sea Depth', 'SubSea Depth', 'SUBSEA', 'SubSea', 'SUB-SEA', 'Subsea (ft)', 'Subsea', 'Subsea Depth (ft)']);
+                northingKey = resolveKey(['Northings (ft) - Latitude', 'Northings (ft)', 'Northing (ft)', 'Northings', 'Northing', 'NORTHINGS', 'Latitude (ft)', 'Latitude', 'Nothings (ft) - Latitude', 'Nothings (ft)', 'Nothing (ft)', 'Nothings', 'Nothing']);
+                nsKey = resolveKey(['N/S', 'n/s', 'NS', 'ns', 'Dir N/S', 'N-S']);
+                eastingKey = resolveKey(['Eastings (ft) - Longitude', 'Eastings (ft)', 'Easting (ft)', 'Eastings', 'Easting', 'EASTINGS', 'Longitude (ft)', 'Longitude', 'Eastings (ft) - Longitude']);
+                ewKey = resolveKey(['E/W', 'e/w', 'EW', 'ew', 'Dir E/W', 'E-W']);
+                northingMKey = resolveKey(['Northings (m)', 'Northing (m)', 'Northing m', 'Northings m', 'Nothings (m)', 'Nothing (m)', 'Nothings m']);
+                eastingMKey = resolveKey(['Eastings (m)', 'Easting (m)', 'Easting m', 'Eastings m']);
+                verticalSectionKey = resolveKey(['Vertical Section (ft)', 'Vertical Section', 'VS', 'vs', 'Vert.Section', 'Vertical Section (m)', 'VS (ft)']);
+                doglegKey = resolveKey(['Dogleg Rate (deg/100ft)', 'Dogleg Rate', 'Dogleg', 'DLS', 'dls', 'Dogleg Rate (deg/30m)', 'Dogleg Rate (deg/100m)', 'Dogleg (deg/100ft)', 'Dogleg (deg/30m)']);
+            }
+
+            // Bucle para extraer de forma unificada e identificar campos de survey avanzados (en español)
             jsonSurvey.forEach((row: any) => {
-                const wellColRaw = row['POZO'] || row['WELL'] || row['Pozo'];
+                const wellColRaw = get_ext(row, ['POZO', 'WELL', 'Pozo']);
                 const wName = fuzzyWellName(wellColRaw || 'UNKNOWN');
 
-                const md = row['Measured Depth (ft)'] || row['MD (ft)'] || row['Measured Depth'] || row['MD'];
-                const tvd = row['Vertical Depth (ft)'] || row['TVD (ft)'] || row['Vertical Depth'] || row['TVD'];
-                const p = (v: any) => {
-                    const raw = typeof v === 'number' ? v : (typeof v === 'string' ? parseFloat(v.replace(',', '.')) : null);
-                    return raw !== null && !isNaN(raw) ? Number(raw.toFixed(1)) : null;
-                };
-                const fm = p(md); const ft = p(tvd);
+                // Acceso directo ultra veloz O(1)
+                const md = mdKey ? row[mdKey] : null;
+                const tvd = tvdKey ? row[tvdKey] : null;
+                const inc = incKey ? row[incKey] : null;
+                const azim = azimKey ? row[azimKey] : null;
+                const subSea = subSeaKey ? row[subSeaKey] : null;
+                const northing = northingKey ? row[northingKey] : null;
+                const nsRaw = nsKey ? row[nsKey] : null;
+                const easting = eastingKey ? row[eastingKey] : null;
+                const ewRaw = ewKey ? row[ewKey] : null;
+                const northingM = northingMKey ? row[northingMKey] : null;
+                const eastingM = eastingMKey ? row[eastingMKey] : null;
+                const verticalSection = verticalSectionKey ? row[verticalSectionKey] : null;
+                const dogleg = doglegKey ? row[doglegKey] : null;
 
-                if (fm !== null && ft !== null && !isNaN(fm)) {
+                const p = (v: any) => {
+                    if (v === null || v === undefined || v === '') return null;
+                    const raw = typeof v === 'number' ? v : (typeof v === 'string' ? parseFloat(v.replace(',', '.')) : null);
+                    return raw !== null && !isNaN(raw) ? Number(raw.toFixed(3)) : null;
+                };
+
+                const fm = p(md);
+                const ft = p(tvd);
+
+                if (fm !== null && !isNaN(fm)) {
                     if (!surveyDataByWell[wName]) surveyDataByWell[wName] = [];
-                    surveyDataByWell[wName].push({ md: fm, tvd: ft });
+                    
+                    const nsVal = nsRaw ? String(nsRaw).trim().toUpperCase().charAt(0) : undefined;
+                    const ewVal = ewRaw ? String(ewRaw).trim().toUpperCase().charAt(0) : undefined;
+
+                    surveyDataByWell[wName].push({
+                        md: fm,
+                        tvd: ft !== null && !isNaN(ft) ? ft : fm,
+                        inc: p(inc) !== null ? p(inc) : undefined,
+                        azim: p(azim) !== null ? p(azim) : undefined,
+                        subSea: p(subSea) !== null ? p(subSea) : undefined,
+                        northing: p(northing) !== null ? p(northing) : undefined,
+                        ns: (nsVal === 'N' || nsVal === 'S') ? nsVal as 'N' | 'S' : undefined,
+                        easting: p(easting) !== null ? p(easting) : undefined,
+                        ew: (ewVal === 'E' || ewVal === 'W') ? ewVal as 'E' | 'W' : undefined,
+                        northingM: p(northingM) !== null ? p(northingM) : undefined,
+                        eastingM: p(eastingM) !== null ? p(eastingM) : undefined,
+                        verticalSection: p(verticalSection) !== null ? p(verticalSection) : undefined,
+                        dogleg: p(dogleg) !== null ? p(dogleg) : undefined
+                    });
                 }
+            });
+
+            // Ordenar los puntos del survey por MD para evitar inconsistencias
+            Object.keys(surveyDataByWell).forEach(wName => {
+                surveyDataByWell[wName].sort((a, b) => a.md - b.md);
             });
 
             if (!isPrecalcJson) await new Promise(r => setTimeout(r, 100)); // YIELD before json extract

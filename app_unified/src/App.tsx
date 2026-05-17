@@ -29,6 +29,30 @@ import { useEspCopilot } from './hooks/useEspCopilot';
 
 const INITIAL_SURVEY: SurveyPoint[] = [];
 
+const formatSurveyToRaw = (survey: SurveyPoint[] | undefined) => {
+    if (!survey || survey.length === 0) return '';
+    const hasAdv = survey.some(s => s.inc !== undefined || s.dogleg !== undefined || s.azim !== undefined || s.subSea !== undefined);
+    if (hasAdv) {
+        return survey.map(s => [
+            s.md !== undefined ? s.md : '',
+            s.inc !== undefined ? s.inc : '',
+            s.azim !== undefined ? s.azim : '',
+            s.tvd !== undefined ? s.tvd : '',
+            s.subSea !== undefined ? s.subSea : '',
+            s.northing !== undefined ? s.northing : '',
+            s.ns || '',
+            s.easting !== undefined ? s.easting : '',
+            s.ew || '',
+            s.northingM !== undefined ? s.northingM : '',
+            s.eastingM !== undefined ? s.eastingM : '',
+            s.verticalSection !== undefined ? s.verticalSection : '',
+            s.dogleg !== undefined ? s.dogleg : ''
+        ].join('\t')).join('\n');
+    } else {
+        return survey.map(s => `${s.md}\t${s.tvd}`).join('\n');
+    }
+};
+
 const INITIAL_PARAMS: SystemParams = {
     metadata: {
         projectName: 'New Design 001',
@@ -409,7 +433,7 @@ const App: React.FC = () => {
         if (data.params) {
             const sanitizedParams = { ...INITIAL_PARAMS, ...data.params, metadata: data.params.metadata || INITIAL_PARAMS.metadata, simulation: data.params.simulation || INITIAL_PARAMS.simulation, targets: data.params.targets || INITIAL_PARAMS.targets };
             setParams(sanitizedParams);
-            if (data.params.survey) setRawSurvey(data.params.survey.map(s => `${s.md}\t${s.tvd}`).join('\n'));
+            if (data.params.survey) setRawSurvey(formatSurveyToRaw(data.params.survey));
         }
         if (data.customPump) {
             setCustomPump(data.customPump);
@@ -559,7 +583,7 @@ const App: React.FC = () => {
         // --- 3. APPLY STATES ---
         setParams(p);
         if (p.survey) {
-            setRawSurvey(p.survey.map(s => `${s.md}\t${s.tvd}`).join('\n'));
+            setRawSurvey(formatSurveyToRaw(p.survey));
         }
         setAppState({ appMode: 'main' });
         // Jump directly to Phase 5 (Equipment)
@@ -616,7 +640,7 @@ const App: React.FC = () => {
                         }
                     }
                     if (wellParams.survey) {
-                        setRawSurvey(wellParams.survey.map(s => `${s.md}\t${s.tvd}`).join('\n'));
+                        setRawSurvey(formatSurveyToRaw(wellParams.survey));
                     }
                     setActiveStep(4); // Phase 5 = Equipment/Design
                     setCameFromMonitoring(true);

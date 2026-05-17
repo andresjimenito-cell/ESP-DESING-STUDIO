@@ -169,6 +169,18 @@ export interface EspVSD {
 export interface SurveyPoint {
   md: number;
   tvd: number;
+  // Advanced directional survey fields (optional)
+  inc?: number;          // Inclination (deg)
+  azim?: number;         // Azimuth (deg)
+  subSea?: number;       // Sub-Sea Depth (ft)
+  northing?: number;     // Northings (ft) - Latitude
+  ns?: 'N' | 'S';       // N/S direction
+  easting?: number;      // Eastings (ft) - Longitude
+  ew?: 'E' | 'W';       // E/W direction
+  northingM?: number;    // Northings (m)
+  eastingM?: number;     // Eastings (m)
+  verticalSection?: number; // Vertical Section (ft)
+  dogleg?: number;       // Dogleg Rate (deg/100ft)
 }
 
 export interface SimulationSettings {
