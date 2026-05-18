@@ -638,7 +638,7 @@ export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params }
                             key={mode}
                             onClick={() => setColorOverlay3D(mode)}
                             style={{ borderColor: colorOverlay3D === mode ? color : 'transparent', color: colorOverlay3D === mode ? color : undefined }}
-                            className={`text-[8px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg border transition-all ${colorOverlay3D === mode ? 'bg-canvas/40' : 'text-txt-muted hover:text-txt-main glass-surface border-white/5'
+                            className={`text-[8px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg border transition-all ${colorOverlay3D === mode ? 'bg-surface-light/35' : 'text-txt-muted hover:text-txt-main glass-surface border-surface-light/25'
                                 }`}
                         >
                             {label}
@@ -650,25 +650,25 @@ export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params }
                 <div className="flex items-center gap-2">
                     <button
                         onClick={() => setIsAutoRotating(!isAutoRotating)}
-                        className="flex items-center gap-1.5 text-[8px] font-black uppercase tracking-widest px-3 py-1.5 glass-surface border border-white/5 rounded-lg hover:border-primary/30 transition-all text-txt-muted hover:text-primary"
+                        className="flex items-center gap-1.5 text-[8px] font-black uppercase tracking-widest px-3 py-1.5 glass-surface border border-surface-light/25 rounded-lg hover:border-primary/30 transition-all text-txt-muted hover:text-primary"
                     >
                         {isAutoRotating ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3 animate-pulse" />}
                         {isAutoRotating ? 'Pausar' : 'Rotar'}
                     </button>
                     <button
                         onClick={() => { setYaw(Math.PI / 4.5); setPitch(-Math.PI / 6.5); setZoom(1.05); setIsAutoRotating(false); }}
-                        className="flex items-center gap-1.5 text-[8px] font-black uppercase tracking-widest px-3 py-1.5 glass-surface border border-white/5 rounded-lg hover:border-white/10 transition-all text-txt-muted hover:text-txt-main"
+                        className="flex items-center gap-1.5 text-[8px] font-black uppercase tracking-widest px-3 py-1.5 glass-surface border border-surface-light/25 rounded-lg hover:border-surface-light/45 transition-all text-txt-muted hover:text-txt-main"
                     >
                         <RotateCw className="w-3 h-3" /> Reset
                     </button>
                 </div>
             </div>
 
-            {/* ── MAIN WORKSPACE: 3-panel unified grid ── */}
-            <div className="relative z-10 flex-1 min-h-0 grid" style={{ gridTemplateColumns: '1fr 1px 340px', gridTemplateRows: '1fr 1px 200px' }}>
+            {/* ── MAIN WORKSPACE: 4-panel symmetrical grid ── */}
+            <div className="relative z-10 flex-1 min-h-0 grid" style={{ gridTemplateColumns: '1fr 1px 1fr', gridTemplateRows: '1fr 1px 1fr' }}>
 
-                {/* ── PANEL A: 3D Canvas (top-left, spans 2 rows on left) ── */}
-                <div className="relative overflow-hidden bg-canvas/15" style={{ gridColumn: '1', gridRow: '1 / 2' }}>
+                {/* ── PANEL A: 3D Canvas (top-left) ── */}
+                <div className="relative overflow-hidden bg-surface/30" style={{ gridColumn: '1', gridRow: '1 / 2' }}>
                     <canvas
                         ref={canvasRef}
                         onMouseDown={handleMouseDown}
@@ -679,16 +679,16 @@ export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params }
                         className="w-full h-full cursor-grab active:cursor-grabbing block"
                     />
                     {/* 3D panel label */}
-                    <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-surface/60 backdrop-blur-sm px-2.5 py-1 rounded-lg border border-white/5">
+                    <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-surface/60 backdrop-blur-sm px-2.5 py-1 rounded-lg border border-surface-light/25">
                         <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
                         <span className="text-[8px] font-black text-txt-muted uppercase tracking-widest">Modelo 3D Interactivo</span>
                     </div>
-                    <div className="absolute bottom-3 left-3 text-[7px] font-bold text-txt-muted uppercase tracking-widest bg-surface/40 backdrop-blur-sm px-2.5 py-1 rounded-lg border border-white/5 pointer-events-none">
+                    <div className="absolute bottom-3 left-3 text-[7px] font-bold text-txt-muted uppercase tracking-widest bg-surface/40 backdrop-blur-sm px-2.5 py-1 rounded-lg border border-surface-light/25 pointer-events-none">
                         🖱 Arrastrar · 📜 Zoom · 👆 Hover
                     </div>
 
                     {/* Layer toggles floating in 3D panel */}
-                    <div className="absolute bottom-3 right-3 flex flex-col gap-1.5 bg-surface/55 backdrop-blur-md p-2.5 rounded-xl border border-white/5">
+                    <div className="absolute bottom-3 right-3 flex flex-col gap-1.5 bg-surface/55 backdrop-blur-md p-2.5 rounded-xl border border-surface-light/25">
                         {[
                             { key: 'rig', label: 'Torre', val: showRig3D, set: setShowRig3D },
                             { key: 'geo', label: 'Geología', val: showGeologySlices, set: setShowGeologySlices },
@@ -712,8 +712,8 @@ export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params }
                 <div className="bg-surface-light/20" style={{ gridColumn: '2', gridRow: '1 / 4' }} />
 
                 {/* ── PANEL B: 2D Litológico (top-right) ── */}
-                <div className="relative overflow-hidden bg-canvas/10" style={{ gridColumn: '3', gridRow: '1 / 2' }}>
-                    <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-surface/60 backdrop-blur-sm px-2.5 py-1 rounded-lg border border-white/5 z-10">
+                <div className="relative overflow-hidden bg-surface/30" style={{ gridColumn: '3', gridRow: '1 / 2' }}>
+                    <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-surface/60 backdrop-blur-sm px-2.5 py-1 rounded-lg border border-surface-light/25 z-10">
                         <div className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse" />
                         <span className="text-[8px] font-black text-txt-muted uppercase tracking-widest">Perfil Litológico 2D</span>
                     </div>
@@ -790,8 +790,8 @@ export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params }
                             <ReferenceLine y={params.totalDepthMD} stroke="#EF4444" strokeWidth={1.2} strokeDasharray="4 3"
                                 label={{ position: 'insideBottomRight', value: `TD: ${params.totalDepthMD}ft`, fill: '#EF4444', fontSize: 9, fontWeight: 'bold' }} />
 
-                            <Line type="linear" dataKey="tvd" stroke={isDark ? "#334155" : "#cbd5e1"} strokeWidth={16} dot={false} isAnimationActive={false} strokeOpacity={0.7} />
-                            <Line type="linear" dataKey="tvd" stroke={isDark ? "#1e293b" : "#f1f5f9"} strokeWidth={12} dot={false} isAnimationActive={false} />
+                            <Line type="linear" dataKey="tvd" stroke={colorSurfaceLight} strokeWidth={16} dot={false} isAnimationActive={false} strokeOpacity={0.7} />
+                            <Line type="linear" dataKey="tvd" stroke={colorSurface} strokeWidth={12} dot={false} isAnimationActive={false} />
                             <Line type="linear" data={tubingData} dataKey="tvd" stroke={colorPrimary} strokeWidth={2.5} dot={false} isAnimationActive={true} animationDuration={1800} filter="url(#glow2)" />
 
                             <Customized component={(props: any) => <DrillingRig {...props} theme={theme} />} />
@@ -827,12 +827,11 @@ export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params }
                 </div>
 
                 {/* Horizontal divider */}
-                <div className="bg-surface-light/20" style={{ gridColumn: '1 / 2', gridRow: '2' }} />
-                <div className="bg-surface-light/20" style={{ gridColumn: '3', gridRow: '2' }} />
+                <div className="bg-surface-light/20" style={{ gridColumn: '1 / 4', gridRow: '2' }} />
 
                 {/* ── PANEL C: Inclination curve (bottom-left) ── */}
-                <div className="relative overflow-hidden bg-canvas/10" style={{ gridColumn: '1', gridRow: '3' }}>
-                    <div className="absolute top-2 left-3 flex items-center gap-1.5 bg-surface/60 backdrop-blur-sm px-2.5 py-1 rounded-lg border border-white/5 z-10">
+                <div className="relative overflow-hidden bg-surface/30" style={{ gridColumn: '1', gridRow: '3' }}>
+                    <div className="absolute top-2 left-3 flex items-center gap-1.5 bg-surface/60 backdrop-blur-sm px-2.5 py-1 rounded-lg border border-surface-light/25 z-10">
                         <div className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse" />
                         <span className="text-[8px] font-black text-txt-muted uppercase tracking-widest">Inclinación vs MD</span>
                     </div>
@@ -862,8 +861,8 @@ export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params }
                 </div>
 
                 {/* ── PANEL D: DLS curve (bottom-right) ── */}
-                <div className="relative overflow-hidden bg-canvas/10" style={{ gridColumn: '3', gridRow: '3' }}>
-                    <div className="absolute top-2 left-3 flex items-center gap-1.5 bg-surface/60 backdrop-blur-sm px-2.5 py-1 rounded-lg border border-white/5 z-10">
+                <div className="relative overflow-hidden bg-surface/30" style={{ gridColumn: '3', gridRow: '3' }}>
+                    <div className="absolute top-2 left-3 flex items-center gap-1.5 bg-surface/60 backdrop-blur-sm px-2.5 py-1 rounded-lg border border-surface-light/25 z-10">
                         <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${isDlsCritical ? 'bg-red-400' : 'bg-amber-400'}`} />
                         <span className="text-[8px] font-black text-txt-muted uppercase tracking-widest">Severidad DLS vs MD</span>
                     </div>
