@@ -23,7 +23,7 @@ const CustomTooltip = ({ active, payload, colorSurface, colorSurfaceLight, color
     const d = payload[0]?.payload;
     const isCased = d.md <= params.wellbore.casingBottom;
     const zoneName = isCased ? 'Cased Hole' : 'Open Hole';
-    const zoneColor = isCased ? '#0040ffff' : '#fbbf24';
+    const zoneColor = isCased ? '#00185eff' : '#fbbf24';
     let equipment = null;
     if (Math.abs(d.tvd - pumpTVD) < 30) equipment = { name: 'BOMBA ESP', color: '#0ea5e9' };
     else if (Math.abs(d.tvd - perfsTVD) < 50) equipment = { name: 'PERFORACIONES', color: '#f59e0b' };
