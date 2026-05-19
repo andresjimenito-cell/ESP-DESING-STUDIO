@@ -77,8 +77,22 @@ const isWellMatchComplete = (well: WellFleetItem) => {
     return rate > 5 && (t?.pip || 0) > 0 && (t?.thp || 0) > 0 && (t?.freq || 0) > 0;
 };
 
-const buildHistoryMatchFromWell = (well: WellFleetItem, basePStatic = 0): HistoryMatchData => {
+const buildHistoryMatchFromWell = (
+    well: WellFleetItem,
+    basePStatic = 0,
+    designBase?: SystemParams | null
+): HistoryMatchData => {
     const t = well.productionTest;
+    const designHm = designBase?.historyMatch;
+    // Fecha de cotejo = última prueba SCADA / producción
+    const matchDate = t?.date || designHm?.matchDate || new Date().toISOString().split('T')[0];
+    // Fecha de arranque = columna de diseño (FECHA DE ARRANQUE), no la de la prueba
+    const startDate =
+        designHm?.startDate ||
+        (designBase as any)?.startDate ||
+        (designBase as any)?.fechaArranque ||
+        (designBase as any)?.fecha_arranque ||
+        '';
     return {
         rate: t?.rate || well.currentRate || 0,
         frequency: t?.freq || 60,
@@ -91,9 +105,9 @@ const buildHistoryMatchFromWell = (well: WellFleetItem, basePStatic = 0): Histor
         fluidLevel: 0,
         submergence: 0,
         pStatic: basePStatic > 0 ? basePStatic : 0,
-        startDate: t?.date || new Date().toISOString().split('T')[0],
-        matchDate: t?.date || new Date().toISOString().split('T')[0],
-        gor: t?.gor,
+        startDate,
+        matchDate,
+        gor: t?.gor ?? designHm?.gor,
     };
 };
 
@@ -690,7 +704,7 @@ const norm_ext = (str: string) =>
 const fuzzyWellName = (str: string) => {
     if (!str) return '';
     const n = String(str).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-    return n.replace(/0+(\d+)/g, '$1');
+    return n.replace(/(^|[^0-9])0+(\d+)/g, '$1$2');
 };
 
 const get_ext = (row: Record<string, any>, keys: string[]): any => {
@@ -1268,6 +1282,8 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                     const bht = n_ext(get_ext(row, ['BHT (°F)', 'BHT']));
                     const tht = n_ext(get_ext(row, ['THT (°F)', 'THT']));
                     const api = n_ext(get_ext(row, ['°API', 'API']));
+                    const rawStartDate = get_ext(row, ['FECHA DE ARRANQUE', 'FECHA ARRANQUE', 'START DATE', 'STARTUP DATE', 'FECHA_ARRANQUE']);
+                    const startDate = rawStartDate ? d_ext(rawStartDate) : '';
 
                     // --- PUNTO MEDIO DE PERFORADOS ---
                     const midPerfsMD = (topPerfs > 0 && basePerfs > 0) ? (topPerfs + basePerfs) / 2 : (topPerfs || (intakeMD + 200));
@@ -1312,6 +1328,10 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                     const design: SystemParams = {
                         ...INITIAL_PARAMS,
                         metadata: { ...INITIAL_PARAMS.metadata, wellName, projectName: nickName, comments: `Run: ${runNumber}` },
+                        historyMatch: {
+                            ...(INITIAL_PARAMS as any).historyMatch,
+                            startDate
+                        } as any,
                         wellbore: {
                             ...INITIAL_PARAMS.wellbore,
                             tubingBottom: intakeMD, casingBottom: fondoMD,
@@ -1793,10 +1813,11 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                 date: latest.date
                             },
                             historyMatch: {
+                                ...updated[targetKey].historyMatch,
                                 rate: latest.rate, frequency: latest.freq,
                                 thp: latest.thp, pip: latest.pip, pdp: latest.pdp,
                                 waterCut: latest.waterCut, matchDate: latest.date,
-                                startDate: latest.date, tht: latest.tht || 80,
+                                tht: latest.tht || 80,
                                 hp: 0, gor: 0, pd: latest.pdp, fluidLevel: 0,
                                 submergence: 0, pStatic: updated[targetKey].inflow.pStatic
                             }
@@ -1948,6 +1969,8 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
 
     const handleHistoryMatchChange = useCallback((hm: HistoryMatchData) => {
         if (!selectedWellId) return;
+        const selected = fleet.find(w => w.id === selectedWellId);
+        const selectedNorm = selected ? fuzzyWellName(selected.name) : '';
         setFleet(prev => prev.map(w => {
             if (w.id !== selectedWellId) return w;
             const rate = Number(hm.rate) || 0;
@@ -1968,12 +1991,28 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                     pdp: Number(hm.pd) || Number(hm.pdp) || 0,
                     hp: Number(hm.pd) || Number(hm.pdp) || 0,
                     gor: hm.gor ?? w.productionTest.gor,
-                    date: hm.matchDate || hm.startDate || w.productionTest.date,
+                    date: hm.matchDate || w.productionTest.date,
                     hasMatchData: rate > 5 || (pip > 0 && thp > 0),
                 },
             };
         }));
-    }, [selectedWellId]);
+        if (selectedNorm) {
+            setCustomDesigns(prev => {
+                const next = { ...prev };
+                const key = Object.keys(next).find(k => fuzzyWellName(k) === selectedNorm);
+                if (!key) return prev;
+                next[key] = {
+                    ...next[key],
+                    historyMatch: {
+                        ...(next[key].historyMatch || {}),
+                        startDate: hm.startDate || next[key].historyMatch?.startDate || '',
+                        matchDate: hm.matchDate || next[key].historyMatch?.matchDate || '',
+                    }
+                };
+                return next;
+            });
+        }
+    }, [selectedWellId, fleet]);
 
     const pump = useMemo(() => {
         if (!selectedWell || selectedWell.estadoActual === 'pendiente') return null;
@@ -2055,7 +2094,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                 target: { ...base.targets.target }
             },
             // Siempre disponible para entrada manual aunque no haya prueba importada
-            historyMatch: buildHistoryMatchFromWell(selectedWell, pStaticBase)
+            historyMatch: buildHistoryMatchFromWell(selectedWell, pStaticBase, base)
         };
 
         return mp; // No deep clone needed if we don't mutate. mp is fresh.
@@ -2226,7 +2265,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                         fluidLevel: 0,
                         submergence: 0,
                         pStatic: wParams.inflow?.pStatic || 0,
-                        startDate: well.productionTest.date,
+                        startDate: wParams.historyMatch?.startDate || '',
                         matchDate: well.productionTest.date,
                         gor: well.productionTest.gor
                     }
@@ -2304,6 +2343,13 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
             ? customDesign.inflow.pStatic
             : Math.max(50, (mMD * estGrad) - 1000);
 
+        const designStartDate =
+            customDesign?.historyMatch?.startDate ||
+            (customDesign as any)?.startDate ||
+            (customDesign as any)?.fechaArranque ||
+            (customDesign as any)?.fecha_arranque ||
+            '';
+
         const historyData: HistoryMatchData = {
             rate: selectedWell.productionTest.rate,
             frequency: selectedWell.productionTest.freq,
@@ -2316,7 +2362,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
             fluidLevel: 0,
             submergence: 0,
             pStatic: estPStatic,
-            startDate: selectedWell.productionTest.date,
+            startDate: designStartDate,
             matchDate: selectedWell.productionTest.date,
             gor: selectedWell.productionTest.gor
         };

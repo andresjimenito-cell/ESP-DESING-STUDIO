@@ -103,6 +103,28 @@ const PremiumField = ({ label, value, unit, icon: Icon, onChange, color = 'prima
     );
 };
 
+const normalizeDateForInput = (value: any): string => {
+    if (!value) return '';
+    const raw = String(value).trim();
+    const isoLike = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+    if (isoLike) {
+        const y = isoLike[1];
+        const m = isoLike[2].padStart(2, '0');
+        const d = isoLike[3].padStart(2, '0');
+        return `${y}-${m}-${d}`;
+    }
+    const slashLike = raw.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+    if (slashLike) {
+        const d = slashLike[1].padStart(2, '0');
+        const m = slashLike[2].padStart(2, '0');
+        const y = slashLike[3].length === 2 ? `20${slashLike[3]}` : slashLike[3];
+        return `${y}-${m}-${d}`;
+    }
+    const parsed = new Date(raw);
+    if (!isNaN(parsed.getTime())) return parsed.toISOString().split('T')[0];
+    return '';
+};
+
 const PremiumDate = ({ label, value, icon: Icon, onChange }: any) => (
     <div className="bg-surface border border-primary/20 rounded-none p-3 flex flex-col justify-between group h-20 transition-all shadow-inner relative overflow-hidden focus-within:border-white/40">
         <div className="flex justify-between items-center mb-0.5 relative z-10">
@@ -112,7 +134,7 @@ const PremiumDate = ({ label, value, icon: Icon, onChange }: any) => (
         <div className="flex items-baseline gap-2 relative z-10">
             <input
                 type="date"
-                value={value || ''}
+                value={normalizeDateForInput(value)}
                 onChange={(e) => onChange(e.target.value)}
                 className="w-full bg-transparent text-[11px] font-black text-txt-main outline-none font-mono tracking-tighter cursor-pointer"
             />
