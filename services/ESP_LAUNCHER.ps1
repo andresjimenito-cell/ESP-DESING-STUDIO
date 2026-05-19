@@ -203,7 +203,7 @@ function Show-SummaryPanel {
     Write-Host ""
     Write-Host "   $SC╔$("═"*$TW)╗$R"
 
-    $r1 = " ${OK}✔ STATUS:${R} ${WH}System Operational · http://localhost:${Port}${R}"
+    $r1 = " ${OK}✔ STATUS:${R} ${WH}System Operational · http://127.0.0.1:${Port}${R}"
     Write-Host "   $SC║${R}$(Add-VisualPadding $r1 $TW)$SC║$R"
 
     $r2 = " ${OK}✔ SYNC:${R}   ${WH}Cloud Connectivity Active (OneDrive / GitHub)${R}"
@@ -424,8 +424,8 @@ if ($nodeFound) {
     if (Test-Path "${env:ProgramFiles}\Google\Chrome\Application\chrome.exe") { $browser = "chrome" }
     elseif (Test-Path "${env:ProgramFiles(x86)}\Google\Chrome\Application\chrome.exe") { $browser = "chrome" }
     
-    Add-Log "Lanzando ventana en $browser..." "info"
-    Start-Process $browser "--app=http://localhost:3000"
+    Add-Log "Preparando ventana en $browser (esperando 2s)..." "info"
+    Start-Process powershell -ArgumentList "-NoProfile", "-Command", "Start-Sleep -Seconds 2; Start-Process $browser '--app=http://127.0.0.1:3000'" -WindowStyle Hidden
     
     npm.cmd run dev -- --logLevel silent
 
@@ -465,7 +465,7 @@ else {
     if (Test-Path "${env:ProgramFiles}\Google\Chrome\Application\chrome.exe") { $browser = "chrome" }
     elseif (Test-Path "${env:ProgramFiles(x86)}\Google\Chrome\Application\chrome.exe") { $browser = "chrome" }
     
-    Start-Process $browser "--app=http://localhost:$port"
+    Start-Process $browser "--app=http://127.0.0.1:$port"
 
     Write-Host "   ${GY}Server running · Ctrl+C para detener.${R}"
     Write-Host ""

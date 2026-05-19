@@ -6,7 +6,7 @@ import {
     Waves, HardDrive, Bell, Info, ChevronLeft, ChevronRight, Target,
     History, BarChart3, TrendingUp, Filter, Download, Droplets, Database,
     Globe, Palette, Moon, Sun, Brain, Layers, Maximize2, Minimize2, ClipboardCheck, X, Trash2,
-    Sparkles, Send, Settings, Lock as LockIcon
+    Sparkles, Send, Settings, Lock as LockIcon, Compass
 } from 'lucide-react';
 import {
     ResponsiveContainer, BarChart, Bar, XAxis, YAxis,
@@ -26,6 +26,7 @@ import { SecureWrapper } from './SecureWrapper';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { DesignDataImport } from './DesignDataImport';
 import { MatchHistorico } from './MatchHistorico';
+import { TrajectoryPlot } from './TrajectoryPlot';
 import { AiMemoryService } from '../services/AiMemoryService';
 
 // --- PERFORMANCE OPTIMIZED SUB-COMPONENTS ---
@@ -799,6 +800,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
     const { t, language, setLanguage } = useLanguage();
     const { theme, cycleTheme, toggleLightMode } = useTheme();
     const [isBhaMinimized, setIsBhaMinimized] = useState(true);
+    const [isTrajectoryMinimized, setIsTrajectoryMinimized] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const deferredSearchTerm = useDeferredValue(searchTerm);
     const [showFullMatch, setShowFullMatch] = useState(false);
@@ -2590,54 +2592,140 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
 
                         {/* COMPACT ANALYTICS SECTION: PHASE 6 + BHA SCHEME */}
                         <div className="flex gap-2 items-stretch w-full min-h-[900px] relative mt-4 lg:mt-0">
-                            {/* BHA DIGITAL TWIN ON THE LEFT */}
-                            <div className={`glass-surface rounded-none border border-white/5 overflow-hidden shadow-2xl flex flex-col relative group transition-all duration-500 ${isBhaMinimized ? 'w-20' : 'w-[400px]'}`}>
-                                {!isBhaMinimized && (
-                                    <div className="p-5 border-b border-white/5 flex justify-between items-center bg-white/5 backdrop-blur-md">
-                                        <button
-                                            onClick={() => setIsBhaMinimized(true)}
-                                            className="p-2 bg-white/5 hover:bg-white/10 rounded-sm transition-all border border-white/5 text-primary"
-                                            title="Minimizar BHA"
-                                        >
-                                            <ChevronLeft className="w-5 h-5" />
-                                        </button>
-                                        <div className="flex items-center gap-2">
-                                            <div className="p-2 bg-secondary/10 rounded-sm text-secondary border border-secondary/20"><Layers className="w-4 h-4" /></div>
-                                            <h3 className="text-xs font-black text-txt-main uppercase tracking-widest">Esquema BHA</h3>
-                                        </div>
-                                        <Activity className="w-4 h-4 text-primary" />
-                                    </div>
-                                )}
-                                <div className={`flex-1 relative bg-canvas/40 overflow-hidden flex items-center justify-center p-4 transition-all duration-500 ${isBhaMinimized ? 'opacity-0' : 'opacity-100'}`}>
-                                    <div className="absolute inset-0 opacity-10 pointer-events-none blueprint-grid"></div>
+                            {/* LEFT SIDEBAR AREA: BHA + TRAJECTORY STACKED VERTICALLY */}
+                            <div className="flex flex-col gap-2 shrink-0 transition-all duration-500">
+                                {/* BHA DIGITAL TWIN */}
+                                <div className={`glass-surface rounded-none border border-white/5 overflow-hidden shadow-2xl flex flex-col relative group transition-all duration-500 
+                                    ${isBhaMinimized 
+                                        ? (isTrajectoryMinimized ? 'flex-1 w-20' : 'h-20 w-[500px]') 
+                                        : 'flex-1 w-[500px]'
+                                    }`}
+                                >
                                     {!isBhaMinimized && (
-                                        <div className={`h-full origin-top flex items-center justify-center w-full transition-all duration-500`}>
-                                            <VisualESPStack
-                                                pump={pump}
-                                                motor={wellMatchParams.selectedMotor || undefined}
-                                                params={wellMatchParams}
-                                                results={liveBhaResults}
-                                                frequency={f}
-                                                health={physicalHealth as any}
-                                                selectedVSD={wellMatchParams.selectedVSD}
-                                            />
+                                        <div className="p-5 border-b border-white/5 flex justify-between items-center bg-white/5 backdrop-blur-md">
+                                            <button
+                                                onClick={() => setIsBhaMinimized(true)}
+                                                className="p-2 bg-white/5 hover:bg-white/10 rounded-sm transition-all border border-white/5 text-primary"
+                                                title="Minimizar BHA"
+                                            >
+                                                <ChevronLeft className="w-5 h-5" />
+                                            </button>
+                                            <div className="flex items-center gap-2">
+                                                <div className="p-2 bg-secondary/10 rounded-sm text-secondary border border-secondary/20"><Layers className="w-4 h-4" /></div>
+                                                <h3 className="text-xs font-black text-txt-main uppercase tracking-widest">Esquema BHA</h3>
+                                            </div>
+                                            <Activity className="w-4 h-4 text-primary" />
+                                        </div>
+                                    )}
+                                    <div className={`flex-1 relative bg-canvas/40 overflow-hidden flex items-center justify-center p-4 transition-all duration-500 ${isBhaMinimized ? 'opacity-0' : 'opacity-100'}`}>
+                                        <div className="absolute inset-0 opacity-10 pointer-events-none blueprint-grid"></div>
+                                        {!isBhaMinimized && (
+                                            <div className={`h-full origin-top flex items-center justify-center w-full transition-all duration-500`}>
+                                                <VisualESPStack
+                                                    pump={pump}
+                                                    motor={wellMatchParams.selectedMotor || undefined}
+                                                    params={wellMatchParams}
+                                                    results={liveBhaResults}
+                                                    frequency={f}
+                                                    health={physicalHealth as any}
+                                                    selectedVSD={wellMatchParams.selectedVSD}
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
+                                    {isBhaMinimized && (
+                                        <div
+                                            className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-canvas/80 backdrop-blur-sm cursor-pointer group-hover:bg-canvas/60 transition-all"
+                                            onClick={() => setIsBhaMinimized(false)}
+                                        >
+                                            {isTrajectoryMinimized ? (
+                                                /* Vertical layout when both are minimized */
+                                                <div className="flex flex-col items-center justify-center w-full h-full gap-6 bg-primary/10 text-primary border border-primary/20 p-4 rounded-none shadow-glow-primary group-hover:bg-primary group-hover:text-white transition-all duration-500 animate-fadeIn">
+                                                    <Layers className="w-5 h-5" />
+                                                    <div className="[writing-mode:vertical-lr] text-[12px] font-black uppercase tracking-[0.4em] transform rotate-180 whitespace-nowrap">
+                                                        VER BHA ESP
+                                                    </div>
+                                                    <Maximize2 className="w-5 h-5 mt-2" />
+                                                </div>
+                                            ) : (
+                                                /* Horizontal layout when BHA is minimized but Trajectory is expanded */
+                                                <div className="flex items-center justify-between w-full h-full px-8 bg-primary/10 text-primary border border-primary/20 shadow-glow-primary group-hover:bg-primary group-hover:text-white transition-all duration-500 animate-fadeIn">
+                                                    <div className="flex items-center gap-3">
+                                                        <Layers className="w-5 h-5" />
+                                                        <span className="text-[12px] font-black uppercase tracking-[0.4em]">VER BHA ESP</span>
+                                                    </div>
+                                                    <Maximize2 className="w-5 h-5" />
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                 </div>
-                                {isBhaMinimized && (
-                                    <div
-                                        className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-canvas/80 backdrop-blur-sm cursor-pointer group-hover:bg-canvas/60 transition-all"
-                                        onClick={() => setIsBhaMinimized(false)}
-                                    >
-                                        <div className="flex flex-col items-center gap-6 bg-primary/10 text-primary border border-primary/20 p-4 rounded-none shadow-glow-primary group-hover:bg-primary group-hover:text-white transition-all duration-500">
-                                            <Layers className="w-5 h-5" />
-                                            <div className="[writing-mode:vertical-lr] text-[12px] font-black uppercase tracking-[0.4em] transform rotate-180 whitespace-nowrap">
-                                                VER BHA ESP
+
+                                {/* COLLAPSIBLE TRAJECTORY PANEL */}
+                                <div className={`glass-surface rounded-none border border-white/5 overflow-hidden shadow-2xl flex flex-col relative group transition-all duration-500 
+                                    ${isTrajectoryMinimized 
+                                        ? (isBhaMinimized ? 'flex-1 w-20' : 'h-20 w-[500px]') 
+                                        : 'flex-1 w-[500px]'
+                                    }`}
+                                >
+                                    {!isTrajectoryMinimized && (
+                                        <div className="p-5 border-b border-white/5 flex justify-between items-center bg-white/5 backdrop-blur-md animate-fadeIn">
+                                            <button
+                                                onClick={() => setIsTrajectoryMinimized(true)}
+                                                className="p-2 bg-white/5 hover:bg-white/10 rounded-sm transition-all border border-white/5 text-primary"
+                                                title="Minimizar Trayectoria"
+                                            >
+                                                <ChevronLeft className="w-5 h-5" />
+                                            </button>
+                                            <div className="flex items-center gap-2">
+                                                <div className="p-2 bg-primary/10 rounded-sm text-primary border border-primary/20"><Compass className="w-4 h-4 animate-[spin_8s_linear_infinite]" /></div>
+                                                <h3 className="text-xs font-black text-txt-main uppercase tracking-widest font-mono">Trayectoria</h3>
                                             </div>
-                                            <Maximize2 className="w-5 h-5 mt-2" />
+                                            <Globe className="w-4 h-4 text-secondary animate-pulse" />
                                         </div>
+                                    )}
+                                    <div className={`flex-1 relative bg-canvas/40 overflow-hidden flex flex-col p-4 transition-all duration-500 ${isTrajectoryMinimized ? 'opacity-0' : 'opacity-100'}`}>
+                                        {!isTrajectoryMinimized && (
+                                            wellMatchParams.survey && wellMatchParams.survey.length > 0 ? (
+                                                <div className="flex-1 w-full h-full min-h-0">
+                                                    <TrajectoryPlot survey={wellMatchParams.survey} params={wellMatchParams} />
+                                                </div>
+                                            ) : (
+                                                <div className="h-full flex flex-col items-center justify-center text-center opacity-40 p-6 animate-fadeIn">
+                                                    <AlertTriangle className="w-12 h-12 text-warning mb-4 animate-pulse" />
+                                                    <p className="text-xs font-black uppercase tracking-widest">Sin Datos de Trayectoria</p>
+                                                    <p className="text-[10px] font-bold text-txt-muted uppercase mt-2">No se encontró una trayectoria (survey) vinculada para el pozo "{selectedWell.name}". Los cálculos utilizarán aproximación vertical.</p>
+                                                </div>
+                                            )
+                                        )}
                                     </div>
-                                )}
+                                    {isTrajectoryMinimized && (
+                                        <div
+                                            className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-canvas/80 backdrop-blur-sm cursor-pointer group-hover:bg-canvas/60 transition-all"
+                                            onClick={() => setIsTrajectoryMinimized(false)}
+                                        >
+                                            {isBhaMinimized ? (
+                                                /* Vertical layout when both are minimized */
+                                                <div className="flex flex-col items-center justify-center w-full h-full gap-6 bg-primary/10 text-primary border border-primary/20 p-4 rounded-none shadow-glow-primary group-hover:bg-primary group-hover:text-white transition-all duration-500 animate-fadeIn">
+                                                    <Compass className="w-5 h-5" />
+                                                    <div className="[writing-mode:vertical-lr] text-[12px] font-black uppercase tracking-[0.4em] transform rotate-180 whitespace-nowrap">
+                                                        VER TRAYECTORIA
+                                                    </div>
+                                                    <Maximize2 className="w-5 h-5 mt-2" />
+                                                </div>
+                                            ) : (
+                                                /* Horizontal layout when Trajectory is minimized but BHA is expanded */
+                                                <div className="flex items-center justify-between w-full h-full px-8 bg-primary/10 text-primary border border-primary/20 shadow-glow-primary group-hover:bg-primary group-hover:text-white transition-all duration-500 animate-fadeIn">
+                                                    <div className="flex items-center gap-3">
+                                                        <Compass className="w-5 h-5" />
+                                                        <span className="text-[12px] font-black uppercase tracking-[0.4em]">VER TRAYECTORIA</span>
+                                                    </div>
+                                                    <Maximize2 className="w-5 h-5" />
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
 
                             {/* MAIN PHASE 6 CANVAS ON THE RIGHT */}
