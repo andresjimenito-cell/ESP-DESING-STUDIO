@@ -2291,7 +2291,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                         <LockIcon className="w-16 h-16 text-warning" />
                     </div>
                     <div className="text-center space-y-4 max-w-2xl">
-                        <h2 className="text-4xl font-black text-white uppercase tracking-tighter">Sistema No Soportado</h2>
+                        <h2 className="text-4xl font-black text-white uppercase tracking-tighter">{language === 'es' ? 'Sistema No Soportado' : 'Unsupported System'}</h2>
                         <p className="text-lg font-medium text-txt-muted leading-relaxed">
                             El pozo ({selectedWell.name}) utiliza un sistema de levantamiento <strong className="text-warning uppercase tracking-widest text-sm">{selectedWell.als}</strong>.
                             Actualmente, el tablero de monitoreo avanzado está optimizado exclusivamente para sistemas <strong className="text-primary">ESP (Bombeo Electrosumergible)</strong>.
@@ -2400,13 +2400,13 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                         <Clock className="w-16 h-16 text-slate-400" />
                     </div>
                     <div className="text-center space-y-4 max-w-2xl">
-                        <h2 className="text-4xl font-black text-white uppercase tracking-tighter">Estado: Pendiente</h2>
+                        <h2 className="text-4xl font-black text-white uppercase tracking-tighter">{language === 'es' ? 'Estado: Pendiente' : 'Status: Pending'}</h2>
                         <p className="text-lg font-medium text-txt-muted leading-relaxed">
                             Este pozo ({selectedWell.name}) ha sido marcado como <strong className="text-primary uppercase tracking-widest text-sm">Pendiente</strong> en la base de datos de diseño.
                             Actualmente no se encuentra en operación y no cuenta con un sistema de levantamiento artificial (ESP) instalado.
                         </p>
                         <div className="flex flex-col items-center gap-2 pt-6">
-                            <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">Acciones Disponibles</span>
+                            <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">{language === 'es' ? 'Acciones Disponibles' : 'Available Actions'}</span>
                             <div className="flex gap-4">
                                 <button
                                     onClick={() => onNavigateToDesign?.(wellMatchParams, pump)}
@@ -2428,7 +2428,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                     <div className="w-full max-w-4xl grid grid-cols-3 gap-6 mt-12 opacity-40 grayscale">
                         <div className="h-32 glass-surface border border-white/5 p-6 flex flex-col justify-center items-center gap-2">
                             <Target className="w-6 h-6" />
-                            <span className="text-[10px] font-black uppercase tracking-widest">Sin Equipo</span>
+                            <span className="text-[10px] font-black uppercase tracking-widest">{language === 'es' ? 'Sin Equipo' : 'No Equipment'}</span>
                         </div>
                         <div className="h-32 glass-surface border border-white/5 p-6 flex flex-col justify-center items-center gap-2">
                             <Database className="w-6 h-6" />
@@ -2436,7 +2436,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                         </div>
                         <div className="h-32 glass-surface border border-white/5 p-6 flex flex-col justify-center items-center gap-2">
                             <Monitor className="w-6 h-6" />
-                            <span className="text-[10px] font-black uppercase tracking-widest">Sin Registro</span>
+                            <span className="text-[10px] font-black uppercase tracking-widest">{language === 'es' ? 'Sin Registro' : 'No Records'}</span>
                         </div>
                     </div>
                 </div>
@@ -2451,7 +2451,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                         <div className="flex items-center gap-8">
                             <div className="p-6 bg-danger/20 rounded-none border border-danger/20 text-danger"><AlertTriangle className="w-12 h-12" /></div>
                             <div>
-                                <h3 className="text-3xl font-black text-danger uppercase mb-2 tracking-tighter italic">Faltan Datos de Cotejo (Match)</h3>
+                                <h3 className="text-3xl font-black text-danger uppercase mb-2 tracking-tighter italic">{language === 'es' ? 'Faltan Datos de Cotejo (Match)' : 'Missing Match Data'}</h3>
                                 <p className="text-sm font-bold text-danger/70 uppercase tracking-widest leading-relaxed max-w-2xl">
                                     Complete los campos en el panel de match (tasa, frecuencia, THP, PIP) o suba un reporte Excel/CSV.
                                 </p>
@@ -2505,7 +2505,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                             <DebouncedSearchInput
                                                 value={searchTerm}
                                                 onChange={setSearchTerm}
-                                                placeholder="Buscar pozo..."
+                                                placeholder={language === 'es' ? 'Buscar pozo...' : 'Search well...'}
                                             />
 
                                             {/* Data filter controls inside dropdown */}
@@ -2689,7 +2689,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                                 <div className="flex flex-col items-center justify-center w-full h-full gap-6 bg-primary/10 text-primary border border-primary/20 p-4 rounded-none shadow-glow-primary group-hover:bg-primary group-hover:text-white transition-all duration-500 animate-fadeIn">
                                                     <Layers className="w-5 h-5" />
                                                     <div className="[writing-mode:vertical-lr] text-[12px] font-black uppercase tracking-[0.4em] transform rotate-180 whitespace-nowrap">
-                                                        VER BHA ESP
+                                                        {language === 'es' ? 'VER BHA ESP' : 'VIEW ESP BHA'}
                                                     </div>
                                                     <Maximize2 className="w-5 h-5 mt-2" />
                                                 </div>
@@ -2698,7 +2698,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                                 <div className="flex items-center justify-between w-full h-full px-8 bg-primary/10 text-primary border border-primary/20 shadow-glow-primary group-hover:bg-primary group-hover:text-white transition-all duration-500 animate-fadeIn">
                                                     <div className="flex items-center gap-3">
                                                         <Layers className="w-5 h-5" />
-                                                        <span className="text-[12px] font-black uppercase tracking-[0.4em]">VER BHA ESP</span>
+                                                        <span className="text-[12px] font-black uppercase tracking-[0.4em]">{language === 'es' ? 'VER BHA ESP' : 'VIEW ESP BHA'}</span>
                                                     </div>
                                                     <Maximize2 className="w-5 h-5" />
                                                 </div>
@@ -2755,7 +2755,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                                 <div className="flex flex-col items-center justify-center w-full h-full gap-6 bg-primary/10 text-primary border border-primary/20 p-4 rounded-none shadow-glow-primary group-hover:bg-primary group-hover:text-white transition-all duration-500 animate-fadeIn">
                                                     <Compass className="w-5 h-5" />
                                                     <div className="[writing-mode:vertical-lr] text-[12px] font-black uppercase tracking-[0.4em] transform rotate-180 whitespace-nowrap">
-                                                        VER TRAYECTORIA
+                                                        {language === 'es' ? 'VER TRAYECTORIA' : 'VIEW TRAJECTORY'}
                                                     </div>
                                                     <Maximize2 className="w-5 h-5 mt-2" />
                                                 </div>
@@ -2764,7 +2764,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                                 <div className="flex items-center justify-between w-full h-full px-8 bg-primary/10 text-primary border border-primary/20 shadow-glow-primary group-hover:bg-primary group-hover:text-white transition-all duration-500 animate-fadeIn">
                                                     <div className="flex items-center gap-3">
                                                         <Compass className="w-5 h-5" />
-                                                        <span className="text-[12px] font-black uppercase tracking-[0.4em]">VER TRAYECTORIA</span>
+                                                        <span className="text-[12px] font-black uppercase tracking-[0.4em]">{language === 'es' ? 'VER TRAYECTORIA' : 'VIEW TRAJECTORY'}</span>
                                                     </div>
                                                     <Maximize2 className="w-5 h-5" />
                                                 </div>

@@ -368,7 +368,7 @@ const buildVsdRows = (
 
 // --- REPORT COMPONENT (PRINT VIEW) ---
 const HistoryMatchReport = ({ onClose, designParams, actualParams, pump, designRes, actualRes, designFreq, actualFreq, chartData, mechanics, compareScenario, fieldData, refPoints, calculatedIP, aiAnalysis, motor, degradationPct, vsdRows }: any) => {
-    const { t } = useLanguage();
+    const { t, language } = useLanguage();
 
     const [isDownloading, setIsDownloading] = useState(false);
 
@@ -830,7 +830,7 @@ const SimulatedMetric = ({ label, value, sub, color = "primary", badge }: any) =
 };
 
 const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true, onHistoryMatchChange, pump, designFreq, trail }) => {
-    const { t } = useLanguage();
+    const { t, language } = useLanguage();
     const [showReport, setShowReport] = useState(false);
     const [isChartExpanded, setIsChartExpanded] = useState(false);
     const [compareScenario, setCompareScenario] = useState<'min' | 'target' | 'max'>('target');
@@ -1953,14 +1953,14 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
                     {/* NEW COEFFICIENTS LOCATION (HEADER) */}
                     <div className="flex items-center gap-4 mr-2 bg-surface px-5 py-1.5 rounded-none border border-surface-light shadow-lg">
                         <div className="flex flex-col items-end">
-                            <span className="text-[8px] font-black text-primary/60 uppercase tracking-widest">{chartMode === 'comparative' ? 'Kh (Proyectado)' : 'Kh (Actual)'}</span>
+                            <span className="text-[8px] font-black text-primary/60 uppercase tracking-widest">{chartMode === 'comparative' ? (language === 'es' ? 'Kh (Proyectado)' : 'Kh (Projected)') : (language === 'es' ? 'Kh (Actual)' : 'Kh (Current)')}</span>
                             <span className="text-sm font-mono text-primary font-black leading-tight drop-shadow-sm">
                                 {chartMode === 'comparative' ? khComparative.toFixed(3) : khFactor.toFixed(3)}
                             </span>
                         </div>
                         <div className="w-px h-6 bg-surface-light"></div>
                         <div className="flex flex-col items-end">
-                            <span className="text-[8px] font-black text-secondary/60 uppercase tracking-widest">Kf (Fricción)</span>
+                            <span className="text-[8px] font-black text-secondary/60 uppercase tracking-widest">{language === 'es' ? 'Kf (Fricción)' : 'Kf (Friction)'}</span>
                             <span className="text-sm font-mono text-secondary font-black leading-tight drop-shadow-sm">
                                 {chartMode === 'comparative' ? '1.000 (IP Fijo)' : actualResSummary.sysCurveFrictionMultiplier.toFixed(3)}
                             </span>
@@ -1978,7 +1978,7 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
                                 : 'text-txt-muted hover:text-txt-main'
                                 }`}
                         >
-                            Monitoreo
+                            {language === 'es' ? 'Monitoreo' : 'Monitoring'}
                         </button>
                         <button
                             onClick={() => {
@@ -1990,7 +1990,7 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
                                 : 'text-txt-muted hover:text-txt-main'
                                 }`}
                         >
-                            Comparativa
+                            {language === 'es' ? 'Comparativa' : 'Comparative'}
                         </button>
                     </div>
                     <div className="flex bg-canvas/40 p-1 rounded-none border border-white/10 shadow-inner shrink-0 relative overflow-hidden h-11 items-center px-1.5">
@@ -2222,7 +2222,7 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
                                         <div className="p-6 bg-warning/10 rounded-none border border-warning/30 animate-pulse shadow-glow-warning/20 mb-6">
                                             <AlertTriangle className="w-12 h-12 text-warning" />
                                         </div>
-                                        <h3 className="text-2xl font-black text-warning uppercase tracking-tighter mb-4">Telemetría Incompleta</h3>
+                                        <h3 className="text-2xl font-black text-warning uppercase tracking-tighter mb-4">{language === 'es' ? 'Telemetría Incompleta' : 'Incomplete Telemetry'}</h3>
                                         <p className="text-txt-main/80 text-sm font-medium max-w-md mb-6 leading-relaxed">
                                             Faltan variables críticas para ejecutar el cálculo de degradación. Por favor, <strong>ingrese los valores manualmente</strong> en el panel izquierdo (Datos de Superficie/Fondo).
                                         </p>
@@ -2326,7 +2326,7 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
                                             <TrendingUp className="w-6 h-6" />
                                         </div>
                                         <div>
-                                            <h3 className="text-lg font-black text-white uppercase tracking-widest leading-none">Análisis de Sensibilidad</h3>
+                                            <h3 className="text-lg font-black text-white uppercase tracking-widest leading-none">{language === 'es' ? 'Análisis de Sensibilidad' : 'Sensitivity Analysis'}</h3>
                                             <p className="text-[10px] text-txt-muted font-black uppercase mt-2 opacity-50 tracking-widest italic">Simulación de Reservorio y Superficie</p>
                                         </div>
                                     </div>
@@ -2389,7 +2389,7 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
                                             }}
                                             className="flex-1 bg-primary text-white text-[11px] font-black uppercase py-5 rounded-none shadow-glow-primary/30 hover:scale-[1.03] active:scale-[0.97] transition-all"
                                         >
-                                            Ejecutar Sensibilidad
+                                            {language === 'es' ? 'Ejecutar Sensibilidad' : 'Run Sensitivity'}
                                         </button>
                                     </div>
                                 </div>
@@ -2405,13 +2405,13 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
                                 onClick={() => setViewMode('telemetry')}
                                 className={`flex items-center gap-3 px-6 py-2.5 rounded-none text-[10px] font-black uppercase transition-all duration-500 ${viewMode === 'telemetry' ? 'bg-secondary text-black shadow-glow-secondary/20 scale-[1.02]' : 'text-txt-muted hover:text-white hover:bg-white/5'}`}
                             >
-                                <Monitor className="w-3.5 h-3.5" /> Telemetría
+                                <Monitor className="w-3.5 h-3.5" /> {language === 'es' ? 'Telemetría' : 'Telemetry'}
                             </button>
                             <button
                                 onClick={() => setViewMode('sensitivity')}
                                 className={`flex items-center gap-3 px-6 py-2.5 rounded-none text-[10px] font-black uppercase transition-all duration-500 ${viewMode === 'sensitivity' ? 'bg-primary text-white shadow-glow-primary/20 scale-[1.02]' : 'text-txt-muted hover:text-white hover:bg-white/5'}`}
                             >
-                                <TrendingUp className="w-3.5 h-3.5" /> Sensibilidad VSD
+                                <TrendingUp className="w-3.5 h-3.5" /> {language === 'es' ? 'Sensibilidad VSD' : 'VSD Sensitivity'}
                             </button>
 
                             <div className="w-px h-6 bg-white/10 mx-2 self-center"></div>
@@ -2421,7 +2421,7 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
                                 className={`flex items-center gap-2 px-6 py-2.5 rounded-none text-[10px] font-black uppercase transition-all duration-500 ${isVsdTableExpanded ? 'bg-warning/20 text-warning border border-warning/30 shadow-glow-warning/10' : 'text-txt-muted hover:text-txt-main hover:bg-white/5'}`}
                             >
                                 <Activity className="w-3.5 h-3.5 text-warning" />
-                                {isVsdTableExpanded ? 'Modo Simple' : 'Modo Detallado (1Hz)'}
+                                {isVsdTableExpanded ? (language === 'es' ? 'Modo Simple' : 'Simple Mode') : (language === 'es' ? 'Modo Detallado (1Hz)' : 'Detailed Mode (1Hz)')}
                             </button>
                         </div>
 
