@@ -1818,11 +1818,18 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
         const currentRate = displayRes.rate || 0;
         const flowRatio = bepAtFreq > 0 ? currentRate / bepAtFreq : 1;
         if (flowRatio > 1.15) {
+            const targetRate = bepAtFreq;
+            const requiredDrop = Math.max(0, currentRate - targetRate);
             lines.push(`Y" UPTHRUST - Operando al ${(flowRatio * 100).toFixed(0)}% del BEP (${bepAtFreq.toFixed(0)} BPD). Riesgo de fractura del eje por empuje axial ascendente.`);
-            lines.push(`ACCI"N: Reducir frecuencia o restringir valvula de superficie para acercar el caudal al BEP.`);
+            lines.push(`ACCION REQUERIDA: mover caudal hacia ~${targetRate.toFixed(0)} BPD (bajar ~${requiredDrop.toFixed(0)} BPD). Ajustar VSD en pasos de 1-2 Hz y verificar que Q/BEP entre a 0.85-1.10; si no responde, revisar aforo/IP y condiciones de superficie.`);
         } else if (flowRatio < 0.75) {
+            const targetRate = bepAtFreq * 0.9;
+            const requiredGain = Math.max(0, targetRate - currentRate);
+            const canRaiseHz = displayFreq < 80;
             lines.push(`Y" DOWNTHRUST - Operando al ${(flowRatio * 100).toFixed(0)}% del BEP. Desgaste cojinetes radiales + sobrecalentamiento del motor.`);
-            lines.push(`ACCI"N: Aumentar frecuencia del VSD o verificar caida de IP del yacimiento.`);
+            lines.push(canRaiseHz
+                ? `ACCION REQUERIDA: mover caudal hacia ~${targetRate.toFixed(0)} BPD (subir ~${requiredGain.toFixed(0)} BPD). Aumentar VSD en pasos de 1-2 Hz y validar que Q/BEP suba a 0.85-1.10; detener aumento si no hay respuesta de caudal.`
+                : `ACCION REQUERIDA: no seguir subiendo Hz (limite operativo). El problema es de inflow/sistema: revisar drawdown, PIP, pruebas de produccion y evaluar redimensionamiento si Q/BEP sigue <0.85.`);
         } else {
             lines.push(`s-ï¸ THRUST NORMAL - ${(flowRatio * 100).toFixed(0)}% del BEP. Cargas axiales dentro del rango operativo.`);
         }
@@ -1882,8 +1889,8 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
             lines.push('3. Redisenar equipo ajustado al IP actual.');
         } else if (degradationPct > 8 || flowRatio > 1.15 || flowRatio < 0.75) {
             const advice = flowRatio < 0.75
-                ? `Incrementar frecuencia gradualmente hasta ${maxOptimalHz} Hz (Limite optimo antes de alertas).`
-                : 'Reducir frecuencia para operar cerca del BEP.';
+                ? `Ajustar VSD solo hasta recuperar ventana 0.85-1.10 BEP (max ${maxOptimalHz} Hz). Si no hay respuesta de caudal, tratar como limite de inflow/sistema.`
+                : 'Reducir Hz hasta retornar a ventana 0.85-1.10 BEP y confirmar con nueva prueba.';
             lines.push(`1. Optimizacion VSD: ${advice}`);
             lines.push(`2. Nota: A partir de ${maxOptimalHz + 1} Hz se detecta: ${limitReason}.`);
             lines.push('3. Monitoreo diario de temperatura y carga motor.');
@@ -2127,11 +2134,11 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
                                             title="Use esta suite para analizar el comportamiento del sistema (caudal, PIP, Pwf) ante cambios hipoteticos en el IP del reservorio o la presion de cabezal (THP)."
                                             onClick={(e) => {
                                                 e.preventDefault();
-                                                // Reset to 0 when activating for first time, or keep current if already active
+                                                // When opening sensitivity, preload with current calibrated values
                                                 setSensScenario({
                                                     active: !sensScenario.active,
-                                                    ip: sensScenario.active ? sensScenario.ip : 0,
-                                                    thp: sensScenario.active ? sensScenario.thp : 0
+                                                    ip: sensScenario.active ? sensScenario.ip : (calculatedIP > 0 ? calculatedIP : (fieldData.ip || 0)),
+                                                    thp: sensScenario.active ? sensScenario.thp : (fieldData.thp || 0)
                                                 });
                                             }}
                                             className={`px-4 py-2 rounded-none text-[10px] font-black uppercase transition-all flex items-center gap-2.5 shadow-xl ${sensScenario.active ? 'bg-primary text-white shadow-glow-primary/50 animate-pulse-subtle scale-105' : 'bg-white/5 text-txt-muted hover:bg-white/10 hover:text-white border border-white/5'}`}

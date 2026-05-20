@@ -326,12 +326,12 @@ const getOptimizationPathLocalized = (well: WellFleetItem, capacity: any, pump: 
     let warning = '';
     if (isDownthrust) {
         warning = language === 'es'
-            ? ' [!] ACCION REQUERIDA: Comportamiento Downthrust. Se sugiere bajar frecuencia VSD o mejorar inflow del reservorio.'
-            : ' [!] ACTION REQUIRED: Downthrust behavior. Reduce VSD frequency or improve reservoir inflow.';
+            ? ' [!] ACCION REQUERIDA: Comportamiento Downthrust. Ajuste VSD para subir caudal hacia 0.85-1.10 BEP; si no responde, revisar inflow/sistema.'
+            : ' [!] ACTION REQUIRED: Downthrust behavior. Adjust VSD to raise flow toward 0.85-1.10 BEP; if no response, review inflow/system.';
     } else if (isUpthrust) {
         warning = language === 'es'
-            ? ' [!] ACCION REQUERIDA: Comportamiento Upthrust. Considere subir frecuencia VSD o aplicar contrapresion/estrangulador en superficie.'
-            : ' [!] ACTION REQUIRED: Upthrust behavior. Consider increasing VSD frequency or applying surface backpressure/choke.';
+            ? ' [!] ACCION REQUERIDA: Comportamiento Upthrust. Ajuste VSD para bajar caudal hacia 0.85-1.10 BEP; validar aforo y contrapresion.'
+            : ' [!] ACTION REQUIRED: Upthrust behavior. Adjust VSD to lower flow toward 0.85-1.10 BEP; validate test rate and backpressure.';
     }
 
     return { advice, warning };
