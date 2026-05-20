@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Activity, Gauge, Printer, Download, Droplets, ArrowDown, ClipboardCheck, X, Hammer, Thermometer, RefreshCw, Maximize2, Minimize2, Brain, Calendar, Play, Zap, TrendingDown, TrendingUp, Monitor, Layers, Repeat, Cpu, Target, Info, ShieldCheck, ChevronDown, ChevronUp, AlertTriangle, Database } from 'lucide-react';
+import { Activity, Gauge, Printer, Download, Droplets, ArrowDown, ClipboardCheck, X, Hammer, Thermometer, RefreshCw, Maximize2, Minimize2, Brain, Calendar, Play, Zap, TrendingDown, TrendingUp, Monitor, Layers, Repeat, Cpu, Target, Info, ShieldCheck, ChevronDown, ChevronUp, AlertTriangle, Database, Clock } from 'lucide-react';
 import { SystemParams, EspPump, ScenarioData, HistoryMatchData } from '../types';
 import { calculateTDH, calculateSystemResults, calculateBaseHead, calculateBasePowerPerStage, calculatePDP, calculatePIP, calculateFluidProperties, interpolateTVD, generateMultiCurveData, findIntersection, getShaftLimitHp, calculatePwf, getDownloadFilename } from '../utils';
 import { PumpChart } from './PumpChart';
@@ -138,6 +138,19 @@ const PremiumDate = ({ label, value, icon: Icon, onChange }: any) => (
                 onChange={(e) => onChange(e.target.value)}
                 className="w-full bg-transparent text-[11px] font-black text-txt-main outline-none font-mono tracking-tighter cursor-pointer"
             />
+        </div>
+    </div>
+);
+
+const RunLifeCard = ({ label, value, sub }: { label: string; value: string; sub: string }) => (
+    <div className="bg-surface border border-primary/20 rounded-none p-3 flex flex-col justify-between group h-20 transition-all shadow-inner relative overflow-hidden">
+        <div className="flex justify-between items-center mb-0.5 relative z-10">
+            <label className="text-[10px] font-black text-txt-muted uppercase tracking-[0.1em]">{label}</label>
+            <Clock className="w-3 h-3 text-primary opacity-80" />
+        </div>
+        <div className="flex flex-col relative z-10">
+            <span className="text-[12px] font-black text-txt-main tracking-tight">{value}</span>
+            <span className="text-[9px] font-black text-primary/70 uppercase tracking-widest">{sub}</span>
         </div>
     </div>
 );
@@ -475,11 +488,11 @@ const HistoryMatchReport = ({ onClose, designParams, actualParams, pump, designR
         { label: 'Amps', key: 'amps', fmt: rp1, unit: 'A' },
         { label: 'Volts', key: 'volts', fmt: rp0, unit: 'V' },
         { label: 'kW', key: 'kw', fmt: rp1, unit: 'kW' },
-        { label: 'Carga Motor', key: 'motorLoad', fmt: rp1, unit: '%' },
-        { label: 'Efic. Bomba', key: 'pumpEff', fmt: rp1, unit: '%' },
-        { label: 'Vel. Fluido', key: 'vel', fmt: rp2, unit: 'ft/s' },
-        { label: 'Temp Motor', key: 'motorT', fmt: rp0, unit: '\u00b0F' },
-        { label: 'Submergencia', key: 'submergence', fmt: rp0, unit: 'ft' },
+        { label: language === 'es' ? 'CARGA MOTOR' : 'MOTOR LOAD', key: 'motorLoad', fmt: rp1, unit: '%' },
+        { label: language === 'es' ? 'EFIC. BOMBA' : 'PUMP EFF.', key: 'pumpEff', fmt: rp1, unit: '%' },
+        { label: language === 'es' ? 'VEL. FLUIDO' : 'FLUID VEL.', key: 'vel', fmt: rp2, unit: 'ft/s' },
+        { label: language === 'es' ? 'TEMP MOTOR' : 'MOTOR TEMP', key: 'motorT', fmt: rp0, unit: '\u00b0F' },
+        { label: language === 'es' ? 'SUBMERGENCIA' : 'SUBMERGENCE', key: 'submergence', fmt: rp0, unit: 'ft' },
         { label: 'Pump Shaft', key: 'pumpShaft', fmt: rp1, unit: '%' },
     ];
 
@@ -860,6 +873,39 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
         startDate: params.historyMatch?.startDate ?? (params.historyMatch ? new Date().toISOString().split('T')[0] : ''),
         matchDate: params.historyMatch?.matchDate ?? (params.historyMatch ? new Date().toISOString().split('T')[0] : ''),
     });
+
+    const runLifeInfo = useMemo(() => {
+        const importedRunLife = String((params as any)?.historyMatch?.runLife ?? (params as any)?.runLife ?? '').trim();
+        if (importedRunLife) {
+            return {
+                label: 'RUN LIFE',
+                value: importedRunLife,
+                sub: language === 'es' ? 'VALOR IMPORTADO' : 'IMPORTED VALUE'
+            };
+        }
+        const start = fieldData.startDate ? new Date(fieldData.startDate) : null;
+        if (!start || isNaN(start.getTime())) return null;
+
+        const today = new Date();
+        const ms = today.getTime() - start.getTime();
+        const days = Math.max(0, Math.floor(ms / 86400000));
+        const years = Math.floor(days / 365);
+        const months = Math.floor((days % 365) / 30);
+
+        const es = years > 0
+            ? `${years}A ${months}M`
+            : `${days} DIAS`;
+        const en = years > 0
+            ? `${years}Y ${months}M`
+            : `${days} DAYS`;
+
+        return {
+            days,
+            label: language === 'es' ? 'RUN LIFE' : 'RUN LIFE',
+            value: language === 'es' ? es : en,
+            sub: language === 'es' ? `DESDE ARRANQUE (${days} DIAS)` : `SINCE STARTUP (${days} DAYS)`
+        };
+    }, [fieldData.startDate, params, language]);
 
     // --- SIMULATION STATE (MAXIMA CAPACIDAD) ---
     // --- SIMULATION STATE (MAXIMA CAPACIDAD) ---
@@ -1886,18 +1932,18 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
         { label: 'PIP', key: 'pip', fmt: rp0, unit: 'psi' },
         { label: 'TDH', key: 'tdh', fmt: rp0, unit: 'ft' },
         { label: 'Pwf', key: 'pwf', fmt: rp0, unit: 'psi' },
-        { label: 'DrDwn', key: 'drawdownPct', fmt: (n: number) => `${Number(n || 0).toFixed(1)}%` },
+        { label: language === 'es' ? 'ABAT.' : 'DrDwn', key: 'drawdownPct', fmt: (n: number) => `${Number(n || 0).toFixed(1)}%` },
         { label: 'PDP', key: 'pdp', fmt: rp0, unit: 'psi' },
         { label: 'Amps', key: 'amps', fmt: rp1, unit: 'A' },
         { label: 'Volts', key: 'volts', fmt: rp0, unit: 'V' },
         { label: 'kVA', key: 'kva', fmt: rp0, unit: 'kVA' },
         { label: 'kW', key: 'kw', fmt: rp1, unit: 'kW' },
-        { label: 'Carga Motor', key: 'motorLoad', fmt: rp1, unit: '%' },
-        { label: 'Efic. Bomba', key: 'pumpEff', fmt: rp1, unit: '%' },
-        { label: 'Vel. Fluido', key: 'vel', fmt: rp2, unit: 'ft/s' },
-        { label: 'Temp Motor', key: 'motorT', fmt: rp0, unit: '\u00b0F' },
-        { label: 'Submergencia', key: 'submergence', fmt: rp0, unit: 'ft' },
-        { label: 'Pump Shaft', key: 'pumpShaft', fmt: rp1, unit: '%' },
+        { label: language === 'es' ? 'CARGA MOTOR' : 'MOTOR LOAD', key: 'motorLoad', fmt: rp1, unit: '%' },
+        { label: language === 'es' ? 'EFIC. BOMBA' : 'PUMP EFF.', key: 'pumpEff', fmt: rp1, unit: '%' },
+        { label: language === 'es' ? 'VEL. FLUIDO' : 'FLUID VEL.', key: 'vel', fmt: rp2, unit: 'ft/s' },
+        { label: language === 'es' ? 'TEMP MOTOR' : 'MOTOR TEMP', key: 'motorT', fmt: rp0, unit: '\u00b0F' },
+        { label: language === 'es' ? 'SUBMERGENCIA' : 'SUBMERGENCE', key: 'submergence', fmt: rp0, unit: 'ft' },
+        { label: language === 'es' ? 'EJE BOMBA' : 'PUMP SHAFT', key: 'pumpShaft', fmt: rp1, unit: '%' },
     ];
 
 
@@ -2035,9 +2081,14 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
                                 <div className="col-span-2">
                                     <PremiumField label={t('p2.waterCut')} value={fieldData.waterCut} unit="%" icon={Droplets} onChange={(v: any) => updateField('waterCut', v)} color="secondary" />
                                 </div>
-                                <div className="col-span-2 grid grid-cols-2 gap-3 mt-2 pt-5 border-t border-white/5">
+                                <div className="col-span-2 grid grid-cols-3 gap-3 mt-2 pt-5 border-t border-white/5">
                                     <PremiumDate label={t('p6.startDate')} value={fieldData.startDate} icon={Calendar} onChange={(v: any) => updateField('startDate', v)} />
                                     <PremiumDate label={t('p6.matchDate')} value={fieldData.matchDate} icon={Calendar} onChange={(v: any) => updateField('matchDate', v)} />
+                                    {runLifeInfo ? (
+                                        <RunLifeCard label={runLifeInfo.label} value={runLifeInfo.value} sub={runLifeInfo.sub} />
+                                    ) : (
+                                        <div className="bg-surface/30 border border-white/5 rounded-none h-20" />
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -2137,7 +2188,7 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
                                         <div className={`p-2 rounded-none border transition-all ${isMaxCapActive ? 'bg-success/20 text-success border-success/40 shadow-glow-success/20' : 'bg-white/5 text-txt-muted border-white/10'}`}>
                                             <Zap className={`w-4 h-4 ${isMaxCapActive ? 'animate-pulse' : ''}`} />
                                         </div>
-                                        <h3 className="text-[10px] font-black text-txt-main uppercase tracking-[0.2em]">Cálculo Capacidad Máxima</h3>
+                                        <h3 className="text-[10px] font-black text-txt-main uppercase tracking-[0.2em]">{language === 'es' ? 'CALCULO CAPACIDAD MAXIMA' : 'MAXIMUM CAPACITY CALCULATION'}</h3>
                                     </div>
                                     <button
                                         onClick={() => setIsMaxCapActive(!isMaxCapActive)}
@@ -2479,7 +2530,7 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
                         <div className="card-solid border border-white/10 rounded-none overflow-hidden flex flex-col min-h-[500px] shadow-2xl animate-fadeIn">
                             <div className="px-5 py-3 border-b border-white/5 flex justify-between items-center bg-surface-raised/50">
                                 <div className="flex items-center gap-4">
-                                    <h3 className="text-xs font-black text-txt-main uppercase tracking-tight border-l-2 border-primary pl-3">Simulación VSD (30-80 Hz)</h3>
+                                    <h3 className="text-xs font-black text-txt-main uppercase tracking-tight border-l-2 border-primary pl-3">{language === 'es' ? 'SIMULACION VSD (30-80 HZ)' : 'VSD SIMULATION (30-80 HZ)'}</h3>
                                     <span className="text-[8px] text-txt-muted font-bold uppercase tracking-widest opacity-40 italic">Condiciones de campo actuales</span>
                                 </div>
                                 <div className="flex items-center gap-4">
@@ -2493,7 +2544,7 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
                                 <table className="w-full text-left border-separate border-spacing-0 min-w-[1200px]">
                                     <thead className="sticky top-0 z-20 table-header-fusion">
                                         <tr>
-                                            <th className="px-5 py-4 text-[12px] font-black uppercase tracking-[0.2em] sticky left-0 top-0 z-50 frequency-cell-solid shadow-[4px_0_10px_rgba(0,0,0,0.3)]">Frecuencia</th>
+                                            <th className="px-5 py-4 text-[12px] font-black uppercase tracking-[0.2em] sticky left-0 top-0 z-50 frequency-cell-solid shadow-[4px_0_10px_rgba(0,0,0,0.3)]">{language === 'es' ? 'FRECUENCIA' : 'FREQUENCY'}</th>
                                             {vsdCols.map(col => (
                                                 <th key={col.label} className="px-3 py-4 text-[11px] font-black uppercase tracking-[0.2em] text-center sticky top-0 z-20 table-header-fusion">
                                                     {col.label}
