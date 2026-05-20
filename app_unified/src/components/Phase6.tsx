@@ -14,7 +14,7 @@ interface Props {
     setParams?: React.Dispatch<React.SetStateAction<SystemParams>>;
     /** When false (monitoring/playback), field edits stay local and do not sync to parent params. */
     syncParams?: boolean;
-    /** Monitoring: persiste telemetrÃ­a editada en la flota del padre */
+    /** Monitoring: persiste telemetria editada en la flota del padre */
     onHistoryMatchChange?: (match: HistoryMatchData) => void;
     pump: EspPump | null;
     designFreq: number;
@@ -198,11 +198,11 @@ const CompPremium = ({ label, design, actual, unit, color }: any) => {
 };
 
 // --- SHARED VSD SENSITIVITY ROW CALCULATOR ---
-// Physically correct approach ï¿½?" same method as the "Capacidad MÃ¡xima" button:
+// Physically correct approach - same method as the "Capacidad Maxima" button:
 // 1. Calibrate system curve with a vertical offset so it passes through the REAL measured point.
 // 2. For each target Hz, scan flow range to find where the scaled pump curve CROSSES the system curve.
 // 3. Feed that real intersection into calculateSystemResults for all derived values.
-// Physical consistency guaranteed: higher Hz ï¿½?' more flow ï¿½?' more drawdown ï¿½?' LOWER Pwf ï¿½?' LOWER PIP ï¿½?' LESS submergence.
+// Physical consistency guaranteed: higher Hz - more flow - more drawdown - LOWER Pwf - LOWER PIP - LESS submergence.
 const buildVsdRows = (
     pump: any,
     actualParams: any,
@@ -260,7 +260,7 @@ const buildVsdRows = (
                         head: Math.max(0, prevPHead + (pHead - prevPHead) * frac),
                     };
                 }
-                if (d2 < 0) break; // Pump fell below system ï¿½?" no higher intersection
+                if (d2 < 0) break; // Pump fell below system - no higher intersection
             }
             prevPHead = pHead;
             prevSHead = sHead;
@@ -284,10 +284,10 @@ const buildVsdRows = (
         const slVal = pumpShaft;
 
         let limitingFactor = "";
-        if (sub < 500) limitingFactor = `Sumergencia de ProtecciÃ³n (>500 ft)`;
-        else if (!motorMissing && ml >= 75) limitingFactor = `Reserva TÃ©rmica Motor (LÃ­mite 75%)`;
-        else if (slVal >= 70) limitingFactor = `Reserva MecÃ¡nica Eje (LÃ­mite 70%)`;
-        else if (pipVal < 300) limitingFactor = `ProtecciÃ³n PIP (>300 psi)`;
+        if (sub < 500) limitingFactor = `Sumergencia de Proteccion (>500 ft)`;
+        else if (!motorMissing && ml >= 75) limitingFactor = `Reserva Termica Motor (Limite 75%)`;
+        else if (slVal >= 70) limitingFactor = `Reserva Mecanica Eje (Limite 70%)`;
+        else if (pipVal < 300) limitingFactor = `Proteccion PIP (>300 psi)`;
 
         // Submergence derived from fluidLevel (pumpDepth - fluid level MD from surface)
         const fluidLevel = res?.fluidLevel ?? 0;
@@ -315,13 +315,13 @@ const buildVsdRows = (
             else if (motorLoad >= 80) violations.push({ field: 'motorLoad', type: 'warning', reason: 'Carga Alta' });
         }
 
-        if (pumpShaft >= 95) violations.push({ field: 'pumpShaft', type: 'danger', reason: 'LÃ­mite Eje' });
+        if (pumpShaft >= 95) violations.push({ field: 'pumpShaft', type: 'danger', reason: 'Limite Eje' });
         else if (pumpShaft >= 85) violations.push({ field: 'pumpShaft', type: 'warning', reason: 'Torque Alto' });
 
         if (pumpDepthMD > 0 && submergence < 250) violations.push({ field: 'submergence', type: 'danger', reason: 'Baja Sumerg.' });
-        else if (pumpDepthMD > 0 && submergence < 500) violations.push({ field: 'submergence', type: 'warning', reason: 'Sumerg. CrÃ­tica' });
+        else if (pumpDepthMD > 0 && submergence < 500) violations.push({ field: 'submergence', type: 'warning', reason: 'Sumerg. Critica' });
 
-        if (pip > 0 && pip < 120) violations.push({ field: 'pip', type: 'danger', reason: 'LÃ­mite PIP' });
+        if (pip > 0 && pip < 120) violations.push({ field: 'pip', type: 'danger', reason: 'Limite PIP' });
         else if (pip > 0 && pip < 200) violations.push({ field: 'pip', type: 'warning', reason: 'Bajo PIP' });
 
         const isDanger = violations.some(v => v.type === 'danger');
@@ -448,7 +448,7 @@ const HistoryMatchReport = ({ onClose, designParams, actualParams, pump, designR
         { label: 'P Descarga (PDP)', unit: 'psi', dv: designRes?.pdp ?? 0, av: actualRes?.pdp ?? 0 },
         { label: 'Pwf (Fondo)', unit: 'psi', dv: designRes?.pwf ?? 0, av: actualRes?.pwf ?? 0 },
         { label: 'THP Superficie', unit: 'psi', dv: designParams?.pressures?.pht ?? 0, av: fieldData.thp },
-        { label: 'P EstÃ¡tica (Pr)', unit: 'psi', dv: designParams?.inflow?.pStatic ?? 0, av: actualParams?.inflow?.pStatic ?? 0, noD: true },
+        { label: 'P Estatica (Pr)', unit: 'psi', dv: designParams?.inflow?.pStatic ?? 0, av: actualParams?.inflow?.pStatic ?? 0, noD: true },
         { label: 'Drawdown (psi)', unit: 'psi', dv: Math.max(0, (designParams?.inflow?.pStatic ?? 0) - (designRes?.pwf ?? 0)), av: Math.max(0, (actualParams?.inflow?.pStatic ?? 0) - (actualRes?.pwf ?? 0)) },
         { label: 'Drawdown (%)', unit: '%', dv: ((designParams?.inflow?.pStatic - designRes?.pwf) / (designParams?.inflow?.pStatic || 1) * 100), av: ((actualParams?.inflow?.pStatic - actualRes?.pwf) / (actualParams?.inflow?.pStatic || 1) * 100), dec: 1 },
         { label: 'IP del Yacimiento', unit: 'bpd/psi', dv: designParams?.inflow?.ip ?? 0, av: calculatedIP, dec: 2 },
@@ -506,7 +506,7 @@ const HistoryMatchReport = ({ onClose, designParams, actualParams, pump, designR
                 <div className="flex items-center gap-4">
                     <div className="bg-primary p-2 rounded-none text-white"><ClipboardCheck className="w-5 h-5" /></div>
                     <div>
-                        <h3 className="text-sm font-black text-txt-main uppercase tracking-wider">HISTORY MATCH REPORT ï¿½?" Diagn\u00f3stico Integral</h3>
+                        <h3 className="text-sm font-black text-txt-main uppercase tracking-wider">HISTORY MATCH REPORT - Diagn\u00f3stico Integral</h3>
                         <p className="text-xs text-txt-muted font-bold uppercase opacity-60">Escenario: {compareScenario.toUpperCase()} | Pozo: {designParams?.metadata?.wellName || designParams?.wellName || '-'} | {new Date().toLocaleDateString()}</p>
                     </div>
                 </div>
@@ -572,7 +572,7 @@ const HistoryMatchReport = ({ onClose, designParams, actualParams, pump, designR
                             </div>
                             <div>
                                 <h1 className="text-4xl font-black text-slate-900 tracking-tighter uppercase mb-1">REPORTE ESP <span className="text-secondary">DESIGN PRO</span></h1>
-                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.5em] opacity-70">SISTEMA DE DISEï¿½'O Y ANÃLISIS DE RENDIMIENTO</p>
+                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.5em] opacity-70">SISTEMA DE DISE'O Y ANALISIS DE RENDIMIENTO</p>
                             </div>
                         </div>
                         <div className="text-right text-[9px] text-slate-500">
@@ -609,7 +609,7 @@ const HistoryMatchReport = ({ onClose, designParams, actualParams, pump, designR
                     {/* ===== ROW 2: AI DIAGNOSTICS & STATUS ===== */}
                     <div className="break-inside-avoid mt-4">
                         <h3 className="font-black text-[9px] uppercase tracking-[0.2em] text-blue-800 mb-2 pb-1 border-b-2 border-slate-900 flex items-center gap-1">
-                            <Brain className="w-3.5 h-3.5" /> Motor IA ï¿½?" Diagn\u00f3stico Integral & Pr\u00f3ximos Pasos Predictivos
+                            <Brain className="w-3.5 h-3.5" /> Motor IA - Diagn\u00f3stico Integral & Pr\u00f3ximos Pasos Predictivos
                         </h3>
                         <div className="bg-slate-50 rounded-none border-2 border-slate-100 p-4 space-y-2">
                             {aiLines.map((line: string, i: number) => {
@@ -623,7 +623,7 @@ const HistoryMatchReport = ({ onClose, designParams, actualParams, pump, designR
                     <div className="portrait-grid mt-4 pt-2 border-t border-slate-200 overflow-visible break-inside-avoid">
                         <div className="flex flex-col">
                             <h3 className="font-black text-[9px] uppercase tracking-[0.2em] text-slate-800 mb-2 pb-1 border-b-2 border-slate-900 flex items-center gap-1">
-                                <Activity className="w-3 h-3" /> Curva OperaciÃ³n ({actualFreq} Hz)
+                                <Activity className="w-3 h-3" /> Curva Operacion ({actualFreq} Hz)
                             </h3>
                             <div className="h-[600px] print-graph-container graph-force-height border-2 border-slate-200 rounded-none overflow-visible bg-white relative w-full flex-1">
                                 <PerformanceCurveMultiAxis data={chartData} frequency={actualFreq} currentFlow={fieldData.rate} pump={pump} minHeight={580} className="w-full h-full !bg-transparent !p-4" />
@@ -649,11 +649,11 @@ const HistoryMatchReport = ({ onClose, designParams, actualParams, pump, designR
                             <table className="w-full text-[10px]">
                                 <thead className="bg-slate-50">
                                     <tr className="border-b border-slate-200">
-                                        <th className="py-3 px-4 text-left font-black uppercase tracking-widest text-slate-900 border-r border-slate-200">ParÃ¡metro</th>
+                                        <th className="py-3 px-4 text-left font-black uppercase tracking-widest text-slate-900 border-r border-slate-200">Parametro</th>
                                         <th className="py-3 px-2 text-center font-black uppercase text-slate-500">Ud.</th>
-                                        <th className="py-3 px-4 text-center font-black uppercase bg-slate-900 text-white shadow-lg">ï¿½-ï¿½ DISEï¿½'O</th>
-                                        <th className="py-3 px-4 text-center font-black uppercase bg-secondary text-slate-900 shadow-lg">ï¿½-ï¿½ ACTUAL CAMPO</th>
-                                        <th className="py-3 px-2 text-center font-black uppercase text-slate-500">ï¿½"%</th>
+                                        <th className="py-3 px-4 text-center font-black uppercase bg-slate-900 text-white shadow-lg">- DISE'O</th>
+                                        <th className="py-3 px-4 text-center font-black uppercase bg-secondary text-slate-900 shadow-lg">- ACTUAL CAMPO</th>
+                                        <th className="py-3 px-2 text-center font-black uppercase text-slate-500">"%</th>
                                         <th className="py-3 px-2 text-center font-black uppercase text-slate-500">Estado</th>
                                     </tr>
                                 </thead>
@@ -718,7 +718,7 @@ const HistoryMatchReport = ({ onClose, designParams, actualParams, pump, designR
                                                 <td className={`${tdClass} p-1.5 border-r border-slate-100 font-mono font-bold sticky left-0 z-10 bg-inherit shadow-[1px_0_3px_rgba(0,0,0,0.05)]`}>
                                                     {row.hz} Hz
                                                     {row.isActual && <span className="ml-1 text-[7px] bg-blue-500 text-white px-1 rounded shadow-lg shadow-blue-500/20">FRECUENCIA ACTUAL</span>}
-                                                    {row.isDanger && !row.isActual && <span className="ml-1 text-[7px] bg-danger text-white px-1 rounded animate-pulse">CRÃTICO</span>}
+                                                    {row.isDanger && !row.isActual && <span className="ml-1 text-[7px] bg-danger text-white px-1 rounded animate-pulse">CRITICO</span>}
                                                     {row.isWarning && !row.isActual && <span className="ml-1 text-[7px] bg-amber-500 text-white px-1 rounded">AVISO</span>}
                                                 </td>
                                                 {vsdCols.map(col => (
@@ -984,7 +984,7 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
         const q = Math.max(0, Number(fieldData.rate) || 0);
 
         // A. TDH the pump is ACTUALLY DELIVERING at this Q and frequency
-        //    This is derived from the pump affinity curve ï¿½?" this is the ground truth.
+        //    This is derived from the pump affinity curve - this is the ground truth.
         let pumpTDH = 0;
         if (pump && q > 0) {
             const ratio = freq / baseFreq;
@@ -1070,7 +1070,7 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
         return Math.round(pdp);
     }, [fieldData.rate, fieldData.pip, fieldData.thp, fieldData.waterCut, fieldData.frequency, fieldData.pStatic, fieldData.ip, isIpManual, actualParams]);
 
-    // Persist fieldData to global params (design mode only) ï¿½?" after derivedPd to avoid read-back flicker
+    // Persist fieldData to global params (design mode only) - after derivedPd to avoid read-back flicker
     useEffect(() => {
         if (!syncParams) return;
         const apply = setParamsRef.current;
@@ -1150,12 +1150,12 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
     // --- CALCULATE DEGRADATION % ---
     // PHYSICAL LOGIC:
     // - hTheoretical = head the FRESH pump curve says it should deliver at (Q_actual, freq_actual)
-    //   This is independent of field conditions ï¿½?" it's pure pump affinity curve.
+    //   This is independent of field conditions - it's pure pump affinity curve.
     // - rawSystemTDH = TDH derived purely from field measurements (PIP, THP, Q)
     //   calculated BEFORE the offset correction, via calculateTDH(Q, actualParams).
     //   This tells us what head the system observed the pump delivering.
     //
-    // When pump is healthy: hTheoretical ï¿½?^ rawSystemTDH ï¿½?' ~0%
+    // When pump is healthy: hTheoretical ?^ rawSystemTDH - ~0%
     // If hTheoretical > rawSystemTDH (delivers less): positive % (Degradation)
     // If hTheoretical < rawSystemTDH (delivers more): 0% (Healthy)
     const degradationPct = useMemo(() => {
@@ -1212,7 +1212,7 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
 
         const { sysCurveFrictionMultiplier, actualParams } = actualResSummary;
 
-        // Helper para escalar el TDH preservando la forma de la fricciÃ³n intacta al % de error
+        // Helper para escalar el TDH preservando la forma de la friccion intacta al % de error
         const hStatSim = calculateTDH(0.1, actualParams);
         const getAdjustedSystemHead = (flowRate: number) => {
             const rawH = calculateTDH(flowRate, actualParams);
@@ -1349,7 +1349,7 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
         }
         : actualResSummary.actualParams;
 
-    // VSD Sensitivity table ï¿½?" full affinity-law calculation for all frequencies
+    // VSD Sensitivity table - full affinity-law calculation for all frequencies
     const vsdRows = useMemo(() => {
         const paramsWithMulti = { ...effectiveParams, multiplier: actualResSummary.sysCurveFrictionMultiplier };
         return buildVsdRows(pump, paramsWithMulti, displayFreq, fieldData, displayRes, sensScenario.active, motorMissing);
@@ -1371,17 +1371,17 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
         // 2. Shaft Load (Mechanical Stress): Red >= 95, Yellow >= 85
         const sLimit = getShaftLimitHp(pump?.series);
         const sl = (displayRes.hpTotal / sLimit) * 100;
-        if (sl >= 95) alerts.push({ type: 'danger', message: 'CARGA EJE CRÃTICA', value: `${sl.toFixed(0)}%`, field: 'Eje' });
+        if (sl >= 95) alerts.push({ type: 'danger', message: 'CARGA EJE CRITICA', value: `${sl.toFixed(0)}%`, field: 'Eje' });
         else if (sl >= 85) alerts.push({ type: 'warning', message: 'ALTA CARGA EJE', value: `${sl.toFixed(0)}%`, field: 'Eje' });
 
         // 3. VSD Limitation (Electrical Capacity)
         const vsdKva = (params as any).selectedVSD?.kvaRating || 350;
         const totalKva = displayRes.electrical?.systemKva || 0;
-        if (totalKva > vsdKva) alerts.push({ type: 'danger', message: 'LÃMITE VSD EXCEDIDO', value: `${totalKva.toFixed(0)} kVA`, field: 'VSD' });
+        if (totalKva > vsdKva) alerts.push({ type: 'danger', message: 'LIMITE VSD EXCEDIDO', value: `${totalKva.toFixed(0)} kVA`, field: 'VSD' });
 
         // 4. Cooling Velocity (Motor Integrity): Red < 0.5, Yellow < 1.0
         const vel = displayRes.fluidVelocity || 0;
-        if (vel < 0.5) alerts.push({ type: 'danger', message: 'ENFRIAMIENTO CRÃTICO', value: `${vel.toFixed(2)} ft/s`, field: 'Cooling' });
+        if (vel < 0.5) alerts.push({ type: 'danger', message: 'ENFRIAMIENTO CRITICO', value: `${vel.toFixed(2)} ft/s`, field: 'Cooling' });
         else if (vel < 1.0) alerts.push({ type: 'warning', message: 'BAJO ENFRIAMIENTO', value: `${vel.toFixed(2)} ft/s`, field: 'Cooling' });
 
         // 5. Submergence: Red < 250, Yellow < 500
@@ -1391,7 +1391,7 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
 
         // 6. Efficiency: Red < 20, Yellow < 35
         const eff = displayRes.efficiency || 0;
-        if (eff < 20) alerts.push({ type: 'danger', message: 'EFICIENCIA CRÃTICA', value: `${eff.toFixed(1)}%`, field: 'Eff' });
+        if (eff < 20) alerts.push({ type: 'danger', message: 'EFICIENCIA CRITICA', value: `${eff.toFixed(1)}%`, field: 'Eff' });
         else if (eff < 35) alerts.push({ type: 'warning', message: 'BAJA EFICIENCIA', value: `${eff.toFixed(1)}%`, field: 'Eff' });
 
         return alerts;
@@ -1736,7 +1736,7 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
             refPoints.push({
                 flow: designMatch.flow,
                 head: designMatch.head,
-                label: 'TEï¿½"RICO',
+                label: 'TE"RICO',
                 color: '#009a17ff'
             });
         }
@@ -1795,67 +1795,67 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
 
     // --- AI ANALYSIS GENERATION (ADVANCED) ---
     const aiAnalysisText = useMemo(() => {
-        if (!pump) return 'Sin diagnÃ³stico. Seleccione equipo primero.';
+        if (!pump) return 'Sin diagnostico. Seleccione equipo primero.';
         const lines: string[] = [];
 
-        // 1. DegradaciÃ³n hidrÃ¡ulica
+        // 1. Degradacion hidraulica
         if (degradationPct > 15) {
-            lines.push(`ï¿½sï¿½ï¸ CRÃTICO ï¿½?" DegradaciÃ³n hidrÃ¡ulica severa: ${degradationPct.toFixed(1)}% bajo la curva original.`);
-            lines.push(`Causas: desgaste abrasivo, erosiÃ³n por arena, incrustaciones o rotura de impulsores. Se requiere workover/pull para inspecciÃ³n.`);
+            lines.push(`sï¸ CRITICO - Degradacion hidraulica severa: ${degradationPct.toFixed(1)}% bajo la curva original.`);
+            lines.push(`Causas: desgaste abrasivo, erosion por arena, incrustaciones o rotura de impulsores. Se requiere workover/pull para inspeccion.`);
         } else if (degradationPct > 8) {
-            lines.push(`ï¿½sï¿½ PRECAUCIï¿½"N ï¿½?" DegradaciÃ³n moderada: ${degradationPct.toFixed(1)}%. Tendencia de desgaste acelerado.`);
-            lines.push(`Registrar lecturas semanales. Verificar IP del yacimiento antes de concluir desgaste mecÃ¡nico.`);
+            lines.push(`s PRECAUCI"N - Degradacion moderada: ${degradationPct.toFixed(1)}%. Tendencia de desgaste acelerado.`);
+            lines.push(`Registrar lecturas semanales. Verificar IP del yacimiento antes de concluir desgaste mecanico.`);
         } else if (degradationPct > 3) {
-            lines.push(`ï¿½Y"ï¿½ AVISO ï¿½?" DesviaciÃ³n leve (${degradationPct.toFixed(1)}%). Dentro del margen de incertidumbre de mediciÃ³n.`);
-            lines.push(`Monitoreo mensual recomendado. Sin acciÃ³n correctiva inmediata.`);
+            lines.push(`Y" AVISO - Desviacion leve (${degradationPct.toFixed(1)}%). Dentro del margen de incertidumbre de medicion.`);
+            lines.push(`Monitoreo mensual recomendado. Sin accion correctiva inmediata.`);
         } else {
-            lines.push(`ï¿½o. ï¿½"PTIMO ï¿½?" Bomba dentro del ${degradationPct.toFixed(1)}% de su curva original de diseÃ±o.`);
-            lines.push(`Sistema alineado con la predicciÃ³n teÃ³rica. Mantener condiciones actuales.`);
+            lines.push(`o. "PTIMO - Bomba dentro del ${degradationPct.toFixed(1)}% de su curva original de diseno.`);
+            lines.push(`Sistema alineado con la prediccion teorica. Mantener condiciones actuales.`);
         }
 
-        // 2. CondiciÃ³n de empuje (Upthrust / Downthrust)
+        // 2. Condicion de empuje (Upthrust / Downthrust)
         const bepAtFreq = (pump.bepRate || 1000) * (displayFreq / (pump.nameplateFrequency || 60));
         const currentRate = displayRes.rate || 0;
         const flowRatio = bepAtFreq > 0 ? currentRate / bepAtFreq : 1;
         if (flowRatio > 1.15) {
-            lines.push(`ï¿½Y"ï¿½ UPTHRUST ï¿½?" Operando al ${(flowRatio * 100).toFixed(0)}% del BEP (${bepAtFreq.toFixed(0)} BPD). Riesgo de fractura del eje por empuje axial ascendente.`);
-            lines.push(`ACCIï¿½"N: Reducir frecuencia o restringir vÃ¡lvula de superficie para acercar el caudal al BEP.`);
+            lines.push(`Y" UPTHRUST - Operando al ${(flowRatio * 100).toFixed(0)}% del BEP (${bepAtFreq.toFixed(0)} BPD). Riesgo de fractura del eje por empuje axial ascendente.`);
+            lines.push(`ACCI"N: Reducir frecuencia o restringir valvula de superficie para acercar el caudal al BEP.`);
         } else if (flowRatio < 0.75) {
-            lines.push(`ï¿½Y"ï¿½ DOWNTHRUST ï¿½?" Operando al ${(flowRatio * 100).toFixed(0)}% del BEP. Desgaste cojinetes radiales + sobrecalentamiento del motor.`);
-            lines.push(`ACCIï¿½"N: Aumentar frecuencia del VSD o verificar caÃ­da de IP del yacimiento.`);
+            lines.push(`Y" DOWNTHRUST - Operando al ${(flowRatio * 100).toFixed(0)}% del BEP. Desgaste cojinetes radiales + sobrecalentamiento del motor.`);
+            lines.push(`ACCI"N: Aumentar frecuencia del VSD o verificar caida de IP del yacimiento.`);
         } else {
-            lines.push(`ï¿½s-ï¸ THRUST NORMAL ï¿½?" ${(flowRatio * 100).toFixed(0)}% del BEP. Cargas axiales dentro del rango operativo.`);
+            lines.push(`s-ï¸ THRUST NORMAL - ${(flowRatio * 100).toFixed(0)}% del BEP. Cargas axiales dentro del rango operativo.`);
         }
 
         // 3. Motor
         const ml = displayRes.motorLoad || 0;
         if (!motorMissing) {
-            if (ml >= 95) lines.push(`ï¿½Y"ï¿½ MOTOR SOBRECARGADO al ${ml.toFixed(0)}%. ACCIï¿½"N INMEDIATA: Reducir frecuencia.`);
-            else if (ml >= 80) lines.push(`ï¿½sï¿½ï¸ Motor al lÃ­mite (${ml.toFixed(0)}%). Monitorear temperatura diariamente.`);
-            else if (ml < 40) lines.push(`ï¿½"ï¸ Motor subexigido (${ml.toFixed(0)}%). Riesgo de bajo enfriamiento.`);
+            if (ml >= 95) lines.push(`Y" MOTOR SOBRECARGADO al ${ml.toFixed(0)}%. ACCI"N INMEDIATA: Reducir frecuencia.`);
+            else if (ml >= 80) lines.push(`sï¸ Motor al limite (${ml.toFixed(0)}%). Monitorear temperatura diariamente.`);
+            else if (ml < 40) lines.push(`"ï¸ Motor subexigido (${ml.toFixed(0)}%). Riesgo de bajo enfriamiento.`);
         } else {
-            lines.push(language === 'es' ? 'ï¿½"ï¿½ï¸ MOTOR NO ENCONTRADO: sin evaluaciÃ³n elÃ©ctrica.' : 'ï¿½"ï¿½ï¸ MOTOR NOT FOUND: electrical evaluation disabled.');
+            lines.push(language === 'es' ? '"ï¸ MOTOR NO ENCONTRADO: sin evaluacion electrica.' : '"ï¸ MOTOR NOT FOUND: electrical evaluation disabled.');
         }
 
         // 4. PIP / Gas
         const currentPip = displayRes.pip || 0;
         const pb = effectiveParams?.fluids?.pb || 0;
         if (pb > 0 && currentPip > 0 && currentPip < pb * 1.15) {
-            lines.push(`ï¿½Y'ï¿½ GAS EN INTAKE ï¿½?" PIP=${currentPip.toFixed(0)} psi cerca de Pb=${pb.toFixed(0)} psi. Riesgo bloqueo.`);
+            lines.push(`Y' GAS EN INTAKE - PIP=${currentPip.toFixed(0)} psi cerca de Pb=${pb.toFixed(0)} psi. Riesgo bloqueo.`);
         } else if (currentPip > 0 && currentPip < 120) {
-            lines.push(`ï¿½sï¿½ PIP BAJO (${currentPip.toFixed(0)} psi). Riesgo cavitaciÃ³n.`);
+            lines.push(`s PIP BAJO (${currentPip.toFixed(0)} psi). Riesgo cavitacion.`);
         }
 
-        // 5. IP ComparaciÃ³n
+        // 5. IP Comparacion
         const dIP = designParams?.inflow?.ip || 0;
         const ipDiff = dIP > 0 ? ((calculatedIP - dIP) / dIP) * 100 : 0;
         if (Math.abs(ipDiff) > 15) {
             lines.push(ipDiff < 0
-                ? `ï¿½Y"? IP REDUCIDO: ${dIP.toFixed(2)} ï¿½?' ${calculatedIP.toFixed(2)} bpd/psi (${Math.abs(ipDiff).toFixed(0)}% menor). El yacimiento perdiÃ³ productividad. CAUSA PRINCIPAL de bajo caudal ï¿½?" no necesariamente desgaste de bomba.`
-                : `ï¿½Y"^ IP MAYOR AL DISEï¿½'O: ${calculatedIP.toFixed(2)} vs ${dIP.toFixed(2)} bpd/psi (+${ipDiff.toFixed(0)}%). Verificar riesgo de upthrust.`);
+                ? `Y"? IP REDUCIDO: ${dIP.toFixed(2)} - ${calculatedIP.toFixed(2)} bpd/psi (${Math.abs(ipDiff).toFixed(0)}% menor). El yacimiento perdio productividad. CAUSA PRINCIPAL de bajo caudal - no necesariamente desgaste de bomba.`
+                : `Y"^ IP MAYOR AL DISE'O: ${calculatedIP.toFixed(2)} vs ${dIP.toFixed(2)} bpd/psi (+${ipDiff.toFixed(0)}%). Verificar riesgo de upthrust.`);
         }
 
-        // 6. PrÃ³ximos pasos (HIGH PROTECTION MODE - Strict Margins)
+        // 6. Proximos pasos (HIGH PROTECTION MODE - Strict Margins)
         const successRows = [...vsdRows].filter(r => {
             if (!r.isSuccess) return false;
             // Additional 'High Protection' guards for AI recommendation
@@ -1873,43 +1873,43 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
 
         // Identify the first row that presents any violation to info the user why
         const firstLimitedRow = vsdRows.find(r => !r.isSuccess && r.hz > fieldData.frequency);
-        const limitReason = firstLimitedRow?.violations[0]?.reason || "LÃ­mite tÃ©cnico general";
+        const limitReason = firstLimitedRow?.violations[0]?.reason || "Limite tecnico general";
 
-        lines.push('ï¿½"ï¿½ï¿½"ï¿½ï¿½"ï¿½ PRï¿½"XIMOS PASOS ï¿½"ï¿½ï¿½"ï¿½ï¿½"ï¿½');
+        lines.push('""" PR"XIMOS PASOS """');
         if (degradationPct > 15 || ml >= 95) {
             lines.push('1. Programar workover/pull for inspection inmediata del equipo de fondo.');
             lines.push('2. Descargar historial de amperaje/voltaje para identificar el inicio de la falla.');
-            lines.push('3. RediseÃ±ar equipo ajustado al IP actual.');
+            lines.push('3. Redisenar equipo ajustado al IP actual.');
         } else if (degradationPct > 8 || flowRatio > 1.15 || flowRatio < 0.75) {
             const advice = flowRatio < 0.75
-                ? `Incrementar frecuencia gradualmente hasta ${maxOptimalHz} Hz (LÃ­mite Ã³ptimo antes de alertas).`
+                ? `Incrementar frecuencia gradualmente hasta ${maxOptimalHz} Hz (Limite optimo antes de alertas).`
                 : 'Reducir frecuencia para operar cerca del BEP.';
-            lines.push(`1. OptimizaciÃ³n VSD: ${advice}`);
+            lines.push(`1. Optimizacion VSD: ${advice}`);
             lines.push(`2. Nota: A partir de ${maxOptimalHz + 1} Hz se detecta: ${limitReason}.`);
             lines.push('3. Monitoreo diario de temperatura y carga motor.');
         } else {
-            lines.push(`1. Margen Operativo: El sistema opera de forma Ã³ptima hasta ${maxOptimalHz} Hz.`);
-            lines.push(`2. RestricciÃ³n: No se recomienda exceder este lÃ­mite debido a: ${limitReason}.`);
-            lines.push(`3. Punto de Corte: El riesgo crÃ­tico de falla (DANGER) comienza a los ${firstDangerHz} Hz.`);
+            lines.push(`1. Margen Operativo: El sistema opera de forma optima hasta ${maxOptimalHz} Hz.`);
+            lines.push(`2. Restriccion: No se recomienda exceder este limite debido a: ${limitReason}.`);
+            lines.push(`3. Punto de Corte: El riesgo critico de falla (DANGER) comienza a los ${firstDangerHz} Hz.`);
         }
 
-        // 7. SimulaciÃ³n de Capacidad (Maximum Capacity Section)
+        // 7. Simulacion de Capacidad (Maximum Capacity Section)
         if (isMaxCapActive && simResult) {
-            lines.push('\nï¿½"ï¿½ï¿½"ï¿½ï¿½"ï¿½ ANÃLISIS DE CAPACIDAD ï¿½"ï¿½ï¿½"ï¿½ï¿½"ï¿½');
+            lines.push('\n""" ANALISIS DE CAPACIDAD """');
             const gain = simResult.rate - fieldData.rate;
             if (gain > 5) {
-                lines.push(`ï¿½Y"^ POTENCIAL: Incrementar a ${simFreq} Hz genera +${gain.toFixed(0)} BPD adicionales.`);
+                lines.push(`Y"^ POTENCIAL: Incrementar a ${simFreq} Hz genera +${gain.toFixed(0)} BPD adicionales.`);
             } else if (gain < -5) {
-                lines.push(`ï¿½Y"? REDUCCIï¿½"N: Operar a ${simFreq} Hz bajarÃ­a la producciÃ³n en ${Math.abs(gain).toFixed(0)} BPD.`);
+                lines.push(`Y"? REDUCCI"N: Operar a ${simFreq} Hz bajaria la produccion en ${Math.abs(gain).toFixed(0)} BPD.`);
             }
 
             if (simAlerts.length > 0) {
-                lines.push('ï¿½sï¿½ï¸ RESTRICCIONES DE SIMULACIï¿½"N:');
+                lines.push('sï¸ RESTRICCIONES DE SIMULACI"N:');
                 simAlerts.forEach(a => lines.push(`  - ${a.message} (${a.value})`));
-                lines.push(`RECOMENDACIï¿½"N: El punto de 65 Hz NO es recomendable. Ajustar mÃ¡ximo a ${maxOptimalHz} Hz.`);
+                lines.push(`RECOMENDACI"N: El punto de 65 Hz NO es recomendable. Ajustar maximo a ${maxOptimalHz} Hz.`);
             } else if (Math.abs(gain) > 5) {
-                lines.push('ï¿½o. FACTIBILIDAD: El cambio de frecuencia es seguro mecÃ¡nica y elÃ©ctricamente.');
-                lines.push(`RECOMENDACIï¿½"N: Ajustar VSD a ${simFreq} Hz para capturar el potencial de ${simResult.rate.toFixed(0)} BPD.`);
+                lines.push('o. FACTIBILIDAD: El cambio de frecuencia es seguro mecanica y electricamente.');
+                lines.push(`RECOMENDACI"N: Ajustar VSD a ${simFreq} Hz para capturar el potencial de ${simResult.rate.toFixed(0)} BPD.`);
             }
         }
 
@@ -2087,7 +2087,7 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
                                     color={isMaxCapActive ? 'success' : 'secondary'}
                                 />
                                 <PremiumField label={t('p6.measThp')} value={fieldData.thp} unit="psi" icon={Gauge} onChange={(v: any) => updateField('thp', v)} color="secondary" />
-                                <PremiumField label={t('p6.measTht')} value={fieldData.tht} unit="Â°F" icon={Thermometer} onChange={(v: any) => updateField('tht', v)} color="secondary" />
+                                <PremiumField label={t('p6.measTht')} value={fieldData.tht} unit="°F" icon={Thermometer} onChange={(v: any) => updateField('tht', v)} color="secondary" />
                                 <div className="col-span-2">
                                     <PremiumField label={t('p2.waterCut')} value={fieldData.waterCut} unit="%" icon={Droplets} onChange={(v: any) => updateField('waterCut', v)} color="secondary" />
                                 </div>
@@ -2110,7 +2110,7 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
                             </div>
                             <div className="grid grid-cols-2 gap-3 mt-4">
                                 <div className="col-span-2 grid grid-cols-2 gap-3">
-                                    <PremiumField label="P. EstÃ¡tica" value={(fieldData.pStatic > 0) ? fieldData.pStatic : (params.inflow.pStatic || 0)} unit="psi" icon={Layers} onChange={(v: any) => updateField('pStatic', v)} color="primary" />
+                                    <PremiumField label="P. Estatica" value={(fieldData.pStatic > 0) ? fieldData.pStatic : (params.inflow.pStatic || 0)} unit="psi" icon={Layers} onChange={(v: any) => updateField('pStatic', v)} color="primary" />
                                     <PremiumField label={t('p6.measPip')} value={fieldData.pip} unit="psi" icon={Gauge} onChange={(v: any) => updateField('pip', v)} color="primary" />
                                 </div>
                                 <div className={`col-span-2 rounded-none p-4 flex flex-col justify-between group transition-all duration-500 shadow-2xl relative overflow-hidden ${sensScenario.active ? 'bg-primary/20 border-2 border-primary/40 ring-1 ring-primary/20' : 'bg-surface/50 border border-white/10'}`}>
@@ -2124,7 +2124,7 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
                                         </div>
                                         <button
                                             type="button"
-                                            title="Use esta suite para analizar el comportamiento del sistema (caudal, PIP, Pwf) ante cambios hipotÃ©ticos en el IP del reservorio o la presiÃ³n de cabezal (THP)."
+                                            title="Use esta suite para analizar el comportamiento del sistema (caudal, PIP, Pwf) ante cambios hipoteticos en el IP del reservorio o la presion de cabezal (THP)."
                                             onClick={(e) => {
                                                 e.preventDefault();
                                                 // Reset to 0 when activating for first time, or keep current if already active
@@ -2137,7 +2137,7 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
                                             className={`px-4 py-2 rounded-none text-[10px] font-black uppercase transition-all flex items-center gap-2.5 shadow-xl ${sensScenario.active ? 'bg-primary text-white shadow-glow-primary/50 animate-pulse-subtle scale-105' : 'bg-white/5 text-txt-muted hover:bg-white/10 hover:text-white border border-white/5'}`}
                                         >
                                             <TrendingUp className={`w-3.5 h-3.5 ${sensScenario.active ? 'animate-bounce' : ''}`} />
-                                            {sensScenario.active ? "En SesiÃ³n" : "Sensibilizar"}
+                                            {sensScenario.active ? "En Sesion" : "Sensibilizar"}
                                         </button>
                                     </div>
 
@@ -2177,7 +2177,7 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
                                             </div>
                                             <div className="mt-1 p-2 bg-primary/20 rounded-none border border-primary/30 shadow-glow-primary/10">
                                                 <p className="text-[7px] font-black text-primary uppercase leading-tight text-center tracking-widest animate-pulse">
-                                                    PROYECCIï¿½"N NODAL ACTIVA
+                                                    PROYECCI"N NODAL ACTIVA
                                                 </p>
                                             </div>
                                         </div>
@@ -2211,7 +2211,7 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
                                 {isMaxCapActive && (
                                     <div className="bg-success/5 rounded-none p-4 border border-success/20 animate-fadeIn">
                                         <p className="text-[9px] font-medium text-success/80 leading-relaxed uppercase tracking-wider">
-                                            Modo SimulaciÃ³n Activo. Ajuste la frecuencia para predecir el comportamiento del pozo y la bomba basÃ¡ndose en el IP y sistema calibrados.
+                                            Modo Simulacion Activo. Ajuste la frecuencia para predecir el comportamiento del pozo y la bomba basandose en el IP y sistema calibrados.
                                         </p>
                                     </div>
                                 )}
@@ -2232,7 +2232,7 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
                                 </div>
                                 <div>
                                     <h3 className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">{t('p6.designRef')}</h3>
-                                    <div className="text-[10px] font-black text-primary mt-0.5 uppercase tracking-tighter opacity-80">{compareScenario.toUpperCase()} ï¿½?" {t('p5.preview')}</div>
+                                    <div className="text-[10px] font-black text-primary mt-0.5 uppercase tracking-tighter opacity-80">{compareScenario.toUpperCase()} - {t('p5.preview')}</div>
                                 </div>
                             </div>
                             <div className="flex items-center gap-2">
@@ -2283,9 +2283,9 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
                                         <div className="p-6 bg-warning/10 rounded-none border border-warning/30 animate-pulse shadow-glow-warning/20 mb-6">
                                             <AlertTriangle className="w-12 h-12 text-warning" />
                                         </div>
-                                        <h3 className="text-2xl font-black text-warning uppercase tracking-tighter mb-4">{language === 'es' ? 'TelemetrÃ­a Incompleta' : 'Incomplete Telemetry'}</h3>
+                                        <h3 className="text-2xl font-black text-warning uppercase tracking-tighter mb-4">{language === 'es' ? 'Telemetria Incompleta' : 'Incomplete Telemetry'}</h3>
                                         <p className="text-txt-main/80 text-sm font-medium max-w-md mb-6 leading-relaxed">
-                                            Faltan variables crÃ­ticas para ejecutar el cÃ¡lculo de degradaciÃ³n. Por favor, <strong>ingrese los valores manualmente</strong> en el panel izquierdo (Datos de Superficie/Fondo).
+                                            Faltan variables criticas para ejecutar el calculo de degradacion. Por favor, <strong>ingrese los valores manualmente</strong> en el panel izquierdo (Datos de Superficie/Fondo).
                                         </p>
                                         <div className="flex flex-wrap justify-center gap-3">
                                             {(!fieldData.pip || fieldData.pip <= 0) && (
@@ -2349,7 +2349,7 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
                                 <div className="bg-surface/90 border border-success/40 rounded-none p-4 shadow-glow-success/10 flex items-center justify-between gap-6 relative overflow-hidden">
                                     <div className="absolute inset-0 bg-success/5 animate-pulse"></div>
                                     <div className="flex flex-col relative z-10">
-                                        <span className="text-[8px] font-black text-success uppercase tracking-widest mb-1">Frecuencia SimulaciÃ³n</span>
+                                        <span className="text-[8px] font-black text-success uppercase tracking-widest mb-1">Frecuencia Simulacion</span>
                                         <span className="text-lg font-black text-txt-main font-mono">{simFreq} Hz</span>
                                     </div>
                                     <input
@@ -2387,8 +2387,8 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
                                             <TrendingUp className="w-6 h-6" />
                                         </div>
                                         <div>
-                                            <h3 className="text-lg font-black text-white uppercase tracking-widest leading-none">{language === 'es' ? 'AnÃ¡lisis de Sensibilidad' : 'Sensitivity Analysis'}</h3>
-                                            <p className="text-[10px] text-txt-muted font-black uppercase mt-2 opacity-50 tracking-widest italic">SimulaciÃ³n de Reservorio y Superficie</p>
+                                            <h3 className="text-lg font-black text-white uppercase tracking-widest leading-none">{language === 'es' ? 'Analisis de Sensibilidad' : 'Sensitivity Analysis'}</h3>
+                                            <p className="text-[10px] text-txt-muted font-black uppercase mt-2 opacity-50 tracking-widest italic">Simulacion de Reservorio y Superficie</p>
                                         </div>
                                     </div>
                                     <button onClick={() => setShowSensModal(false)} className="p-2 hover:bg-white/5 rounded-none transition-colors">
@@ -2466,7 +2466,7 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
                                 onClick={() => setViewMode('telemetry')}
                                 className={`flex items-center gap-3 px-6 py-2.5 rounded-none text-[10px] font-black uppercase transition-all duration-500 ${viewMode === 'telemetry' ? 'bg-secondary text-black shadow-glow-secondary/20 scale-[1.02]' : 'text-txt-muted hover:text-white hover:bg-white/5'}`}
                             >
-                                <Monitor className="w-3.5 h-3.5" /> {language === 'es' ? 'TelemetrÃ­a' : 'Telemetry'}
+                                <Monitor className="w-3.5 h-3.5" /> {language === 'es' ? 'Telemetria' : 'Telemetry'}
                             </button>
                             <button
                                 onClick={() => setViewMode('sensitivity')}
@@ -2609,7 +2609,7 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
                                                     </td>
                                                     {row.noIntersection ? (
                                                         <td colSpan={vsdCols.length} className="px-3 py-4 text-center text-[11px] text-txt-muted opacity-40 italic font-medium uppercase tracking-widest">
-                                                            Conflicto de Sistema ï¿½?" No se encontrÃ³ ajuste de fluido
+                                                            Conflicto de Sistema - No se encontro ajuste de fluido
                                                         </td>
                                                     ) : vsdCols.map(col => {
                                                         const motorDependentCols = ['amps', 'volts', 'kva', 'kw', 'motorLoad', 'motorT'];
@@ -2646,7 +2646,7 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
                             </div>
                             <div className="p-4 bg-white/5 border-t border-white/5 text-right">
                                 <span className="text-[9px] font-black text-txt-muted uppercase tracking-[0.2em] opacity-40">
-                                    ï¿½~. Los valores mostrados son proyecciones del gemelo digital basadas en el IPR (IP: {(sensScenario.active && sensScenario.ip > 0 ? sensScenario.ip : calculatedIP).toFixed(2)}) {sensScenario.active ? 'Simulado' : 'Calibrado'}.
+                                    ~. Los valores mostrados son proyecciones del gemelo digital basadas en el IPR (IP: {(sensScenario.active && sensScenario.ip > 0 ? sensScenario.ip : calculatedIP).toFixed(2)}) {sensScenario.active ? 'Simulado' : 'Calibrado'}.
                                 </span>
                             </div>
                         </div>

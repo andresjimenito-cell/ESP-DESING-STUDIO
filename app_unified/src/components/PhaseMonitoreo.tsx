@@ -56,7 +56,7 @@ const WellListItem = React.memo(({ well, health, isActive, isMechVerified, onSel
                     )}
                     {well.als && (
                         <span className={`${isESP ? 'bg-primary/10 text-primary border-primary/30' : 'bg-warning/10 text-warning border-warning/30'} border px-1.5 py-0.5 rounded text-[7px] font-black uppercase tracking-widest`}>
-                            {well.als} {!isESP && 'ï¿½?ï¿½ NO SOPORTADO'}
+                            {well.als} {!isESP && '- NO SOPORTADO'}
                         </span>
                     )}
                 </div>
@@ -84,9 +84,9 @@ const buildHistoryMatchFromWell = (
 ): HistoryMatchData => {
     const t = well.productionTest;
     const designHm = designBase?.historyMatch;
-    // Fecha de cotejo = Ãºltima prueba SCADA / producciÃ³n
+    // Fecha de cotejo = ultima prueba SCADA / produccion
     const matchDate = t?.date || designHm?.matchDate || new Date().toISOString().split('T')[0];
-    // Fecha de arranque = columna de diseÃ±o (FECHA DE ARRANQUE), no la de la prueba
+    // Fecha de arranque = columna de diseno (FECHA DE ARRANQUE), no la de la prueba
     const startDate =
         designHm?.startDate ||
         (designBase as any)?.startDate ||
@@ -176,12 +176,12 @@ interface Props {
 // --- MOCK DATA FOR DEMO ---
 const MOCK_FLEET: WellFleetItem[] = [];
 
-// ï¿½"?ï¿½"? MODULE-LEVEL CACHE (survives component unmount/remount) ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?
+// "?"? MODULE-LEVEL CACHE (survives component unmount/remount) "?"?"?"?"?"?"?"?"?"?
 let _cachedFleet: WellFleetItem[] = [];
 let _cachedDesigns: Record<string, SystemParams> = {};
 let _cachedHistoricalData: Record<string, ProductionTest[]> = {};
 let _dataLoaded = false;
-// ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?
+// "?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?
 
 // --- CAPACITY SIMULATION HELPER ---
 // --- CAPACITY SIMULATION HELPER (Optimized with basic memoization logic) ---
@@ -227,11 +227,11 @@ const computeWellCapacity = (well: WellFleetItem, wellMatchParams: SystemParams,
     if (rawSysTDH > 0) sysCurveOffset = actualPumpTDH - rawSysTDH;
 
     let maxAllowedFreq = currentFreq;
-    let limitingFactor = 'OperaciÃ³n en Punto de DiseÃ±o';
+    let limitingFactor = 'Operacion en Punto de Diseno';
     let estimatedMaxRate = test.rate;
 
-    // OPTIMIZACIï¿½"N AGRESIVA: Saltamos de a 5 Hz para reducir carga computacional en un 80%
-    // Esto es suficiente para una estimaciÃ³n predictiva de monitoreo.
+    // OPTIMIZACI"N AGRESIVA: Saltamos de a 5 Hz para reducir carga computacional en un 80%
+    // Esto es suficiente para una estimacion predictiva de monitoreo.
     for (let simFreq = currentFreq + 5; simFreq <= 85; simFreq += 5) {
         const ratio = simFreq / baseFreq;
         const maxExpectedFlow = (pump.maxGraphRate || 6000) * ratio;
@@ -266,15 +266,15 @@ const computeWellCapacity = (well: WellFleetItem, wellMatchParams: SystemParams,
         const totalKva = res?.electrical?.systemKva || 0;
         const vsdKva = (wellMatchParams as any).selectedVSD?.kvaRating || 350;
 
-        if (sub < 400) { limitingFactor = `Sumergencia CrÃ­tica (<400 ft)`; break; }
-        if (ml >= 85) { limitingFactor = `LÃ­mite TÃ©rmico Motor (85%)`; break; }
-        if (sl >= 80) { limitingFactor = `LÃ­mite MecÃ¡nico Eje (80%)`; break; }
-        if (res?.pip < 250) { limitingFactor = `ProtecciÃ³n PIP (<250 psi)`; break; }
+        if (sub < 400) { limitingFactor = `Sumergencia Critica (<400 ft)`; break; }
+        if (ml >= 85) { limitingFactor = `Limite Termico Motor (85%)`; break; }
+        if (sl >= 80) { limitingFactor = `Limite Mecanico Eje (80%)`; break; }
+        if (res?.pip < 250) { limitingFactor = `Proteccion PIP (<250 psi)`; break; }
         if (totalKva >= (vsdKva * 0.95)) { limitingFactor = `Capacidad VSD (${totalKva.toFixed(0)} kVA)`; break; }
 
         maxAllowedFreq = simFreq;
         estimatedMaxRate = bestRate;
-        if (simFreq >= 80) limitingFactor = 'Optimizado (LÃ­mite VSD)';
+        if (simFreq >= 80) limitingFactor = 'Optimizado (Limite VSD)';
     }
 
     const potentialGain = Math.max(0, estimatedMaxRate - test.rate);
@@ -347,7 +347,7 @@ const PredictiveWidget = React.memo(({ selectedWell, wellMatchParams, pump, comp
     const { language } = useLanguage();
     const [isMinimized, setIsMinimized] = useState(false);
 
-    // Solo calculamos si el widget estÃ¡ expandido para ahorrar CPU
+    // Solo calculamos si el widget esta expandido para ahorrar CPU
     const analysisData = useMemo(() => {
         if (isMinimized || !selectedWell || !pump) return null;
 
@@ -429,7 +429,7 @@ const PredictiveWidget = React.memo(({ selectedWell, wellMatchParams, pump, comp
 
                 <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/5 bg-canvas/30 -mx-6 -mb-6 p-5 rounded-b-[2rem]">
                     <div className="flex flex-col">
-                        <span className="text-[10px] uppercase tracking-widest text-txt-muted font-black opacity-60">LÃ­mite Seguro VSD</span>
+                        <span className="text-[10px] uppercase tracking-widest text-txt-muted font-black opacity-60">Limite Seguro VSD</span>
                         <div className="text-2xl font-black text-white leading-none mt-1.5">{Math.round(capacity?.maxRate || 0)} <span className="text-[11px] text-txt-muted font-bold">BPD @ {Math.round(capacity?.maxFreq || 60)}Hz</span></div>
                     </div>
                     <div className="flex flex-col text-right">
@@ -486,7 +486,7 @@ const MetricCard = React.memo(({ label, value, unit, icon: Icon, color = 'primar
 const HealthTagLabels: any = {
     normal: 'Operativo',
     caution: 'Advertencia',
-    alert: 'CrÃ­tico',
+    alert: 'Critico',
     failure: 'Falla',
     active: 'Activo',
     inactive: 'Inactivo',
@@ -736,7 +736,7 @@ const get_ext = (row: Record<string, any>, keys: string[]): any => {
         const idxExact = normRowKeys.indexOf(nk);
         if (idxExact !== -1) return row[rowKeys[idxExact]];
 
-        // 2. Intento Parcial (Solo si el nombre es largo y no es una columna de presiÃ³n crÃ­tica)
+        // 2. Intento Parcial (Solo si el nombre es largo y no es una columna de presion critica)
         const isCritical = nk.includes('PIP') || nk.includes('THP') || nk.includes('PDP');
         if (nk.length > 3 && !isCritical) {
             const idxPartial = normRowKeys.findIndex(nk2 => nk2 === nk || nk2.startsWith(nk + '_') || nk2.endsWith('_' + nk));
@@ -857,7 +857,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
     const [importProgress, setImportProgress] = useState<{ current: number, total: number, label: string } | null>(null);
     const [zoomLevel, setZoomLevel] = useState<number>(0.8);
 
-    // ï¿½"?ï¿½"? Sync module cache whenever state changes ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?
+    // "?"? Sync module cache whenever state changes "?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?
     useEffect(() => { _cachedFleet = fleet; }, [fleet]);
     useEffect(() => { _cachedDesigns = customDesigns; }, [customDesigns]);
     useEffect(() => { _cachedHistoricalData = wellsHistoricalData; }, [wellsHistoricalData]);
@@ -970,7 +970,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
     const importDbRef = React.useRef<HTMLInputElement>(null);
     const importWellHistoryRef = React.useRef<HTMLInputElement>(null);
 
-    // ï¿½"?ï¿½"?ï¿½"?ï¿½"? AUTO-LOAD INITIAL FILES ON MOUNT ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?
+    // "?"?"?"? AUTO-LOAD INITIAL FILES ON MOUNT "?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?
     useEffect(() => {
         // Skip if data was already loaded (cached from previous mount)
         if (_dataLoaded || fleet.length > 0) return;
@@ -988,7 +988,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                     const payload = await resDesigns.json();
                     await processExcelDesignsBuffer(payload, true, true);
                 } else if (mounted) {
-                    setImportProgress({ current: 15, total: 100, label: 'Leyendo Registro de DiseÃ±os (XLSX)...' });
+                    setImportProgress({ current: 15, total: 100, label: 'Leyendo Registro de Disenos (XLSX)...' });
                     const resExcel = await fetch('/DATAS%20DE%20DISE%C3%91O.xlsx');
                     if (resExcel.ok) {
                         const buf = await resExcel.arrayBuffer();
@@ -998,14 +998,14 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
 
                 await new Promise(r => setTimeout(r, 100));
 
-                // 2. Cargar Pruebas de ProducciÃ³n SCADA
-                setImportProgress({ current: 50, total: 100, label: 'Recuperando TelemetrÃ­a SCADA...' });
+                // 2. Cargar Pruebas de Produccion SCADA
+                setImportProgress({ current: 50, total: 100, label: 'Recuperando Telemetria SCADA...' });
                 const resScada = await fetch('/scada_precalc.json').catch(() => null);
                 if (resScada && resScada.ok && mounted) {
                     const payload = await resScada.json();
                     await processScadaBuffer(payload, true, true);
                 } else if (mounted) {
-                    setImportProgress({ current: 60, total: 100, label: 'Procesando Reportes de ProducciÃ³n...' });
+                    setImportProgress({ current: 60, total: 100, label: 'Procesando Reportes de Produccion...' });
                     const resExcel = await fetch('/PRUEBAS DE PRODUCCION.xlsx');
                     if (resExcel.ok) {
                         const buf = await resExcel.arrayBuffer();
@@ -1025,12 +1025,12 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
             }
         };
 
-        // Delay inicial para suavizar la transiciÃ³n
+        // Delay inicial para suavizar la transicion
         setTimeout(loadAutoFiles, 300);
 
         return () => { mounted = false; };
     }, []);
-    // ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?
+    // "?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?
 
     const processExcelDesignsBuffer = async (data: any, isAutoLoad = false, isPrecalcJson = false) => {
         try {
@@ -1096,7 +1096,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
 
                 const surveySheetName = workbook.SheetNames.find(s => {
                     const sn = String(s).toUpperCase();
-                    return sn.includes('SURVEY') || sn.includes('TRAYEC') || sn.includes('DESVIACIï¿½"N');
+                    return sn.includes('SURVEY') || sn.includes('TRAYEC') || sn.includes('DESVIACI"N');
                 });
 
                 if (surveySheetName) {
@@ -1112,7 +1112,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                 }
             }
 
-            // Resolvemos los mapeos de columnas una sola vez para mÃ¡xima velocidad de anÃ¡lisis (evita la sobrecarga O(N) de buscar encabezados)
+            // Resolvemos los mapeos de columnas una sola vez para maxima velocidad de analisis (evita la sobrecarga O(N) de buscar encabezados)
             let mdKey = '';
             let tvdKey = '';
             let incKey = '';
@@ -1131,7 +1131,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                 const firstRow = jsonSurvey[0];
                 const keysOfRow = Object.keys(firstRow);
                 
-                // Helper rÃ¡pido de resoluciÃ³n Ãºnica
+                // Helper rapido de resolucion unica
                 const resolveKey = (targets: string[]): string => {
                     const normTargets = targets.map(norm_ext);
                     const normRowKeys = keysOfRow.map(norm_ext);
@@ -1163,7 +1163,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                 doglegKey = resolveKey(['Dogleg Rate (deg/100ft)', 'Dogleg Rate', 'Dogleg', 'DLS', 'dls', 'Dogleg Rate (deg/30m)', 'Dogleg Rate (deg/100m)', 'Dogleg (deg/100ft)', 'Dogleg (deg/30m)']);
             }
 
-            // Bucle para extraer de forma unificada e identificar campos de survey avanzados (en espaÃ±ol)
+            // Bucle para extraer de forma unificada e identificar campos de survey avanzados (en espanol)
             jsonSurvey.forEach((row: any) => {
                 const wellColRaw = get_ext(row, ['POZO', 'WELL', 'Pozo']);
                 const wName = fuzzyWellName(wellColRaw || 'UNKNOWN');
@@ -1230,9 +1230,9 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
             let mechFoundCount = 0;
             let mechMissingCount = 0;
 
-            setImportProgress({ current: 0, total: json.length, label: 'Iniciando anÃ¡lisis de flota...' });
+            setImportProgress({ current: 0, total: json.length, label: 'Iniciando analisis de flota...' });
 
-            // Reducimos el chunkSize de 15 a 8 para mÃ¡xima fluidez en la UI
+            // Reducimos el chunkSize de 15 a 8 para maxima fluidez en la UI
             const chunkSize = 8;
             for (let i = 0; i < json.length; i += chunkSize) {
                 const chunk = json.slice(i, i + chunkSize);
@@ -1250,7 +1250,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                     const wellName = String(get_ext(row, ['POZO', 'WELL']) || `WELL-${i + idx}`).toUpperCase().trim();
                     if (!wellName) return;
 
-                    // --- Lï¿½"GICA DE RUNS (NICK) ---
+                    // --- L"GICA DE RUNS (NICK) ---
                     const nickName = String(get_ext(row, ['NICK', 'NOMBRE_NICK']) || wellName).toUpperCase().trim();
                     let runNumber = 0;
                     if (nickName.includes('#')) {
@@ -1264,22 +1264,22 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                     const mechRow = mechDataMap[norm_ext(nickName)];
                     if (mechRow) {
                         mechFoundCount++;
-                        console.log(`%c[Mechanical Status] Â¡MATCH EXITOSO! "${nickName}"`, "color: #22d3ee; font-weight: bold; border-left: 4px solid #22d3ee; padding-left: 8px;");
+                        console.log(`%c[Mechanical Status] ¡MATCH EXITOSO! "${nickName}"`, "color: #22d3ee; font-weight: bold; border-left: 4px solid #22d3ee; padding-left: 8px;");
                     } else {
                         mechMissingCount++;
                         if (nickName.includes('AVISPA')) {
-                            console.warn(`[Mechanical Status] No se encontrÃ³ informaciÃ³n para "${nickName}" en ESTADOS MECANICOS. Disponibles:`, Object.keys(mechDataMap).slice(0, 5));
+                            console.warn(`[Mechanical Status] No se encontro informacion para "${nickName}" en ESTADOS MECANICOS. Disponibles:`, Object.keys(mechDataMap).slice(0, 5));
                         }
                     }
 
-                    // --- VALORES BASE DE LA HOJA DE DISEï¿½'O ---
+                    // --- VALORES BASE DE LA HOJA DE DISE'O ---
                     let pStatic = n_ext(get_ext(row, ['P ESTATICA (PSI)', 'P ESTATICA', 'STATIC PRESSURE', 'PESTATICA']));
                     let intakeMD = n_ext(get_ext(row, ['PROFUNDIDAD DE INTAKE MD (FT)', 'INTAKE MD', 'INTAKEMD']));
                     let fondoMD = n_ext(get_ext(row, ['PROFUNDIDAD TOTAL MD (FT)', 'PROFUNDIDAD TOTAL MD', 'FONDO MD', 'TOTAL DEPTH', 'PROFUNDIDADTOTALMD', 'PROFUNDIDAD TOTAL', 'PROFUNDIDAD TOTAL (FT)'])) || (intakeMD + 1000);
                     let topPerfs = n_ext(get_ext(row, ['TOPE DE PERFORADOS MD (FT)', 'TOPE DE PERFORADOS MD', 'TOPEDEPERFORADOS', 'TOPE DE PERFORADOS']));
                     let basePerfs = 0;
 
-                    // --- PRIORIZAR ESTADOS MECÃNICOS SI EL VALOR ES VÃLIDO (> 0) ---
+                    // --- PRIORIZAR ESTADOS MECANICOS SI EL VALOR ES VALIDO (> 0) ---
                     if (mechRow) {
                         const mPest = n_ext(get_ext(mechRow, ['PEST', 'Pest', 'P ESTATICA']));
                         if (mPest > 0) pStatic = mPest;
@@ -1297,16 +1297,16 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                     }
                     const pipMin = n_ext(get_ext(row, ['PIP MINIMA (PSI)', 'PIP MINIMA', 'PIPMINIMA', 'MIN PIP']));
                     const ip = n_ext(get_ext(row, ['IP (BFPD/PSI)', 'IP (BFP/PSI)', 'PRODUCTIVITY INDEX', 'PI (BFPD/PSI)']));
-                    const ipMin = n_ext(get_ext(row, ['IP MÃN (BFPD/PSI)', 'IP MIN (BFPD/PSI)', 'IP MIN', 'IP MÃN', 'MIN IP']));
+                    const ipMin = n_ext(get_ext(row, ['IP MIN (BFPD/PSI)', 'IP MIN (BFPD/PSI)', 'IP MIN', 'IP MIN', 'MIN IP']));
                     const bsw_raw = get_ext(row, ['BSW (%)', 'WATER CUT (%)', 'BSW', 'CORTE DE AGUA', 'BSW PRUEBA', 'BSW_PRUEBA', 'CORTE AGUA', 'CORTE_AGUA']);
                     let bsw = n_ext(bsw_raw);
-                    // NormalizaciÃ³n: Si el dato viene como decimal (0.98) lo convertimos a porcentaje (98)
+                    // Normalizacion: Si el dato viene como decimal (0.98) lo convertimos a porcentaje (98)
                     if (bsw > 0 && bsw <= 1.0) bsw = bsw * 100;
                     const gor = n_ext(get_ext(row, ['GOR (SCF/STB)', 'GOR (SCFSTB)', 'GOR']));
 
-                    const bht = n_ext(get_ext(row, ['BHT (Â°F)', 'BHT']));
-                    const tht = n_ext(get_ext(row, ['THT (Â°F)', 'THT']));
-                    const api = n_ext(get_ext(row, ['Â°API', 'API']));
+                    const bht = n_ext(get_ext(row, ['BHT (°F)', 'BHT']));
+                    const tht = n_ext(get_ext(row, ['THT (°F)', 'THT']));
+                    const api = n_ext(get_ext(row, ['°API', 'API']));
                     const rawStartDate = get_ext(row, ['FECHA DE ARRANQUE', 'FECHA ARRANQUE', 'START DATE', 'STARTUP DATE', 'FECHA_ARRANQUE']);
                     const startDate = rawStartDate ? d_ext(rawStartDate) : '';
 
@@ -1436,13 +1436,13 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                 });
             }
 
-            setImportProgress({ current: json.length, total: json.length, label: 'Finalizando actualizaciÃ³n de interfaz...' });
+            setImportProgress({ current: json.length, total: json.length, label: 'Finalizando actualizacion de interfaz...' });
 
             setCustomDesigns(prev => ({ ...prev, ...newDesigns }));
             setFleet(prev => {
                 const merged = [...prev];
                 wellsToAdd.forEach(nw => {
-                    // Usamos el nick completo para la bÃºsqueda exacta en la flota
+                    // Usamos el nick completo para la busqueda exacta en la flota
                     const idx = merged.findIndex(w => w.name.toUpperCase() === nw.name.toUpperCase());
                     if (idx !== -1) merged[idx] = { ...merged[idx], ...nw };
                     else merged.push(nw);
@@ -1453,15 +1453,15 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
             setImportProgress(null);
             setImportProgress(null);
             if (!isAutoLoad) {
-                const summaryMsg = `ï¿½?xito: Se procesaron ${json.length} pozos correctamente.\n\n` +
-                    `- ${mechFoundCount} con Estado MecÃ¡nico preciso.\n` +
-                    `- ${mechMissingCount} usando datos de diseÃ±o original.`;
+                const summaryMsg = `?xito: Se procesaron ${json.length} pozos correctamente.\n\n` +
+                    `- ${mechFoundCount} con Estado Mecanico preciso.\n` +
+                    `- ${mechMissingCount} usando datos de diseno original.`;
                 alert(summaryMsg);
             }
 
         } catch (err) {
             console.error("Error importing designs from Excel:", err);
-            if (!isAutoLoad) alert("Error al procesar el archivo Excel de diseÃ±os.");
+            if (!isAutoLoad) alert("Error al procesar el archivo Excel de disenos.");
             setImportProgress(null);
         }
     };
@@ -1620,7 +1620,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
     const processScadaBuffer = async (data: any, isAutoLoad = false, isPrecalcJson = false) => {
         try {
             if (isAutoLoad && !isPrecalcJson) {
-                setImportProgress({ current: 15, total: 100, label: 'Descomprimiendo HistÃ³ricos... Lento...' });
+                setImportProgress({ current: 15, total: 100, label: 'Descomprimiendo Historicos... Lento...' });
                 await new Promise(r => setTimeout(r, 500));
             }
 
@@ -1638,13 +1638,13 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                 });
                 await new Promise(r => setTimeout(r, 100));
 
-                setImportProgress({ current: 20, total: 100, label: 'Extrayendo hojas de telemetrÃ­a...' });
+                setImportProgress({ current: 20, total: 100, label: 'Extrayendo hojas de telemetria...' });
                 await new Promise(r => setTimeout(r, 50));
 
                 for (const sheetName of workbook.SheetNames) {
                     const sheet = workbook.Sheets[sheetName];
 
-                    // --- BUSCADOR DINÃMICO DE ENCABEZADOS ---
+                    // --- BUSCADOR DINAMICO DE ENCABEZADOS ---
                     const previewRows = XLSX.utils.sheet_to_json(sheet, { header: 1, range: 0, blankrows: false }) as any[][];
                     let headerRowIdx = -1;
                     let dualHeaderRow: string[] = [];
@@ -1657,7 +1657,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
 
                         if (hasPozo && (hasFecha || hasRate)) {
                             headerRowIdx = i;
-                            // Intentamos capturar la fila superior si parece ser un tÃ­tulo de categorÃ­a (Dual Header)
+                            // Intentamos capturar la fila superior si parece ser un titulo de categoria (Dual Header)
                             if (i > 0) {
                                 dualHeaderRow = (previewRows[i - 1] || []).map(c => String(c || '').toUpperCase().trim());
                             }
@@ -1666,9 +1666,9 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                     }
 
                     if (headerRowIdx !== -1) {
-                        // Si detectamos un dual header, combinamos las columnas para no perder informaciÃ³n (ej: THP sobre psi)
+                        // Si detectamos un dual header, combinamos las columnas para no perder informacion (ej: THP sobre psi)
                         const rowsRaw = XLSX.utils.sheet_to_json(sheet, { range: headerRowIdx, header: 1 }) as any[][];
-                        // LÃ³gica de "Forward Fill" inteligente y combinada
+                        // Logica de "Forward Fill" inteligente y combinada
                         let lastTopHeader = '';
                         const headers = (rowsRaw[0] || []).map((h, idx) => {
                             const sub = String(h || '').toUpperCase().trim();
@@ -1677,10 +1677,10 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                             if (top) lastTopHeader = top;
                             const currentTop = top || lastTopHeader;
 
-                            // Casos de combinaciÃ³n:
+                            // Casos de combinacion:
                             if (sub && currentTop) {
-                                // Si sub es una unidad o genÃ©rico, usamos el top
-                                if (['PSI', 'Â°F', 'HZ', 'DIA', 'OPER', 'UNIT'].includes(sub)) return currentTop;
+                                // Si sub es una unidad o generico, usamos el top
+                                if (['PSI', '°F', 'HZ', 'DIA', 'OPER', 'UNIT'].includes(sub)) return currentTop;
                                 // Si son nombres distintos, los combinamos para evitar duplicados (ej: PRUEBA_BFPD)
                                 if (sub !== currentTop) return `${currentTop}_${sub}`;
                                 return sub;
@@ -1705,11 +1705,11 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
 
             if (json.length === 0) {
                 setImportProgress(null);
-                alert('El archivo Excel parece estar vacÃ­o o no se detectaron los encabezados (POZO, FECHA).');
+                alert('El archivo Excel parece estar vacio o no se detectaron los encabezados (POZO, FECHA).');
                 return;
             }
 
-            setImportProgress({ current: 0, total: json.length, label: 'Sincronizando telemetrÃ­a en tiempo real...' });
+            setImportProgress({ current: 0, total: json.length, label: 'Sincronizando telemetria en tiempo real...' });
             const newProductionData: Record<string, ProductionTest[]> = {};
 
             const lastValidPipMap: Record<string, number> = {};
@@ -1718,7 +1718,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
             const chunkSize = 100;
             for (let i = 0; i < json.length; i += chunkSize) {
                 const chunk = json.slice(i, i + chunkSize);
-                setImportProgress({ current: i, total: json.length, label: `Vinculando registros histÃ³ricos: ${i} / ${json.length}...` });
+                setImportProgress({ current: i, total: json.length, label: `Vinculando registros historicos: ${i} / ${json.length}...` });
                 await new Promise(r => setTimeout(r, 5));
 
                 chunk.forEach((row) => {
@@ -1730,19 +1730,19 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                     const rate = n_ext(get_ext(row, ['BFPD', 'GROSS RATE', 'RATE', 'CAUDAL', 'TASA DE PRUEBA', 'TASAPRUEBA', 'BFPD TEST']));
                     const bsw_raw = get_ext(row, ['BSW PRUEBA', 'BSW_PRUEBA', 'BSW_DIA', 'BSW', 'WATER CUT', 'WATERCUT', 'CORTE DE AGUA', 'B S W', 'CORTE AGUA', 'CORTE_AGUA', 'WATER_CUT']);
                     let bsw = n_ext(bsw_raw);
-                    // NormalizaciÃ³n: Si el dato viene como decimal (0.98) lo convertimos a porcentaje (98)
+                    // Normalizacion: Si el dato viene como decimal (0.98) lo convertimos a porcentaje (98)
                     if (bsw > 0 && bsw <= 1.0) bsw = bsw * 100;
 
                     // Mapeo exacto para THP/THT usando los encabezados combinados
                     const thp = n_ext(get_ext(row, ['THP_PSI', 'THP', 'PRESION CABEZA', 'P-SURFACE', 'PHT']));
-                    const tht = n_ext(get_ext(row, ['THT_Â°F', 'THT', 'TEMP CABEZA', 'T-SURFACE']));
+                    const tht = n_ext(get_ext(row, ['THT_°F', 'THT', 'TEMP CABEZA', 'T-SURFACE']));
 
-                    // NormalizaciÃ³n de Frecuencia (Hz) con LÃ³gica PMM
+                    // Normalizacion de Frecuencia (Hz) con Logica PMM
                     const freqRaw = get_ext(row, ['FREC DE_OPER', 'FREC DE_DIA', 'FREC.PRUEBA', 'FRECUENCIA', 'FREQUENCY', 'H Z', 'HZ']);
                     let freq = n_ext(freqRaw) || 60;
-                    if (freq > 80) freq = freq / 2; // NormalizaciÃ³n PMM
+                    if (freq > 80) freq = freq / 2; // Normalizacion PMM
 
-                    // --- Lï¿½"GICA PIP PERSISTENTE ---
+                    // --- L"GICA PIP PERSISTENTE ---
                     let pip = n_ext(get_ext(row, ['PIP_PSI', 'PIP', 'INTAKE PRESSURE', 'PI P', 'PRESION SUCCION']));
                     if (pip <= 0) {
                         pip = lastValidPipMap[normName] || 0;
@@ -1777,7 +1777,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                     const latest = tests[tests.length - 1];
                     const normKey = fuzzyWellName(wellName);
 
-                    // --- Lï¿½"GICA DE RUTEO INTELIGENTE (RUN ACTUAL) ---
+                    // --- L"GICA DE RUTEO INTELIGENTE (RUN ACTUAL) ---
                     // Buscamos todos los candidatos que compartan el nombre base del pozo
                     const candidates = merged.filter(w => {
                         const baseName = w.name.split('#')[0].trim();
@@ -1785,7 +1785,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                     });
 
                     if (candidates.length > 0) {
-                        // El "Run Actual" es aquel cuyo nick tiene el nÃºmero mÃ¡s alto despuÃ©s del #
+                        // El "Run Actual" es aquel cuyo nick tiene el numero mas alto despues del #
                         let targetWell = candidates[0];
                         let maxRun = -1;
 
@@ -1820,7 +1820,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                     const latest = tests[tests.length - 1];
                     const normKey = fuzzyWellName(wellName);
 
-                    // Identificar el Run Actual en el diccionario de diseÃ±os
+                    // Identificar el Run Actual en el diccionario de disenos
                     const allDesignKeys = Object.keys(updated);
                     const candidates = allDesignKeys.filter(k => fuzzyWellName(k.split('#')[0].trim()) === normKey);
 
@@ -1868,10 +1868,10 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
 
             if (!isAutoLoad) {
                 if (matchCount > 0) {
-                    alert(`ï¿½?xito: Se sincronizaron datos para ${matchCount} pozos de la flota.`);
+                    alert(`?xito: Se sincronizaron datos para ${matchCount} pozos de la flota.`);
                 } else {
                     const firstFound = Object.keys(newProductionData)[0] || 'Desconocido';
-                    alert(`AtenciÃ³n: No se encontraron coincidencias. El Excel tiene ${Object.keys(newProductionData).length} pozos (ej: "${firstFound}"), pero ninguno coincide con la flota actual. Verifique nombres.`);
+                    alert(`Atencion: No se encontraron coincidencias. El Excel tiene ${Object.keys(newProductionData).length} pozos (ej: "${firstFound}"), pero ninguno coincide con la flota actual. Verifique nombres.`);
                 }
             }
 
@@ -1879,7 +1879,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
 
         } catch (err) {
             console.error("[SCADA Import] Error fatal:", err);
-            if (!isAutoLoad) alert("Error tÃ©cnico al procesar el archivo SCADA. Revise la consola.");
+            if (!isAutoLoad) alert("Error tecnico al procesar el archivo SCADA. Revise la consola.");
             setImportProgress(null);
         }
     };
@@ -1896,7 +1896,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
         reader.readAsArrayBuffer(file);
     };
 
-    // ï¿½"?ï¿½"? GESTIï¿½"N DE HISTORIAL DE PRODUCCIï¿½"N (MATCH HISTORICO) ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?
+    // "?"? GESTI"N DE HISTORIAL DE PRODUCCI"N (MATCH HISTORICO) "?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?
     const handleImportWellHistory = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file || !selectedWellId) return;
@@ -1925,7 +1925,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                 }
 
                 if (json.length === 0) {
-                    alert("Archivo vacÃ­o o sin datos suficientes.");
+                    alert("Archivo vacio o sin datos suficientes.");
                     return;
                 }
 
@@ -1940,7 +1940,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                     const rate = n_ext(get_ext(row, ['BFPD', 'GROSS RATE', 'RATE', 'CAUDAL', 'TASA DE PRUEBA', 'TASAPRUEBA', 'BFPD TEST']));
                     const bsw_raw = get_ext(row, ['BSW PRUEBA', 'BSW_PRUEBA', 'BSW', 'WATER CUT', 'WATERCUT', 'CORTE DE AGUA', 'B S W', 'CORTE AGUA', 'CORTE_AGUA', 'WATER_CUT']);
                     let bsw = n_ext(bsw_raw);
-                    // NormalizaciÃ³n: Si el dato viene como decimal (0.98) lo convertimos a porcentaje (98)
+                    // Normalizacion: Si el dato viene como decimal (0.98) lo convertimos a porcentaje (98)
                     if (bsw > 0 && bsw <= 1.0) bsw = bsw * 100;
                     const thp = n_ext(get_ext(row, ['THP', 'P-SURFACE', 'PHT', 'FHP', 'WHFP', 'PRESION CABEZA']));
                     const tht = n_ext(get_ext(row, ['THT', 'T-SURFACE', 'THT', 'WHT', 'TEMP CABEZA']));
@@ -1976,10 +1976,10 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                     } : w));
 
                     setWellViewMode('history');
-                    alert(`ï¿½?xito: Se cargaron ${rawTests.length} registros histÃ³ricos para ${activeWell.name}.`);
+                    alert(`?xito: Se cargaron ${rawTests.length} registros historicos para ${activeWell.name}.`);
                 } else {
                     console.log("[History Import] No matches found for:", activeWell.name);
-                    alert(`AtenciÃ³n: No se encontraron registros para el pozo "${activeWell.name}". Verifique que los nombres coincidan.`);
+                    alert(`Atencion: No se encontraron registros para el pozo "${activeWell.name}". Verifique que los nombres coincidan.`);
                 }
             } catch (err) {
                 console.error("Error cargando historial:", err);
@@ -2119,7 +2119,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                 wellName: selectedWell.name,
                 date: test.date
             },
-            // Preservamos el caudal de diseÃ±o original del JSON
+            // Preservamos el caudal de diseno original del JSON
             targets: {
                 ...base.targets,
                 target: { ...base.targets.target }
@@ -2325,10 +2325,10 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                         <h2 className="text-4xl font-black text-white uppercase tracking-tighter">{language === 'es' ? 'Sistema No Soportado' : 'Unsupported System'}</h2>
                         <p className="text-lg font-medium text-txt-muted leading-relaxed">
                             El pozo ({selectedWell.name}) utiliza un sistema de levantamiento <strong className="text-warning uppercase tracking-widest text-sm">{selectedWell.als}</strong>.
-                            Actualmente, el tablero de monitoreo avanzado estÃ¡ optimizado exclusivamente para sistemas <strong className="text-primary">ESP (Bombeo Electrosumergible)</strong>.
+                            Actualmente, el tablero de monitoreo avanzado esta optimizado exclusivamente para sistemas <strong className="text-primary">ESP (Bombeo Electrosumergible)</strong>.
                         </p>
                         <div className="pt-6">
-                            <p className="text-[10px] font-black text-txt-muted uppercase tracking-[0.4em]">MÃ³dulos para otros sistemas en desarrollo</p>
+                            <p className="text-[10px] font-black text-txt-muted uppercase tracking-[0.4em]">Modulos para otros sistemas en desarrollo</p>
                         </div>
                     </div>
                 </div>
@@ -2441,8 +2441,8 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                     <div className="text-center space-y-4 max-w-2xl">
                         <h2 className="text-4xl font-black text-white uppercase tracking-tighter">{language === 'es' ? 'Estado: Pendiente' : 'Status: Pending'}</h2>
                         <p className="text-lg font-medium text-txt-muted leading-relaxed">
-                            Este pozo ({selectedWell.name}) ha sido marcado como <strong className="text-primary uppercase tracking-widest text-sm">Pendiente</strong> en la base de datos de diseÃ±o.
-                            Actualmente no se encuentra en operaciÃ³n y no cuenta con un sistema de levantamiento artificial (ESP) instalado.
+                            Este pozo ({selectedWell.name}) ha sido marcado como <strong className="text-primary uppercase tracking-widest text-sm">Pendiente</strong> en la base de datos de diseno.
+                            Actualmente no se encuentra en operacion y no cuenta con un sistema de levantamiento artificial (ESP) instalado.
                         </p>
                         <div className="flex flex-col items-center gap-2 pt-6">
                             <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">{language === 'es' ? 'Acciones Disponibles' : 'Available Actions'}</span>
@@ -2451,7 +2451,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                     onClick={() => onNavigateToDesign?.(wellMatchParams, pump)}
                                     className="px-8 py-3 bg-primary text-white font-black uppercase tracking-widest text-[11px] shadow-glow-primary/40 hover:scale-105 transition-all"
                                 >
-                                    Ver DiseÃ±o Planificado
+                                    Ver Diseno Planificado
                                 </button>
                                 <button
                                     onClick={() => setWellViewMode('history')}
@@ -2471,7 +2471,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                         </div>
                         <div className="h-32 glass-surface border border-white/5 p-6 flex flex-col justify-center items-center gap-2">
                             <Database className="w-6 h-6" />
-                            <span className="text-[10px] font-black uppercase tracking-widest">Sin TelemetrÃ­a</span>
+                            <span className="text-[10px] font-black uppercase tracking-widest">Sin Telemetria</span>
                         </div>
                         <div className="h-32 glass-surface border border-white/5 p-6 flex flex-col justify-center items-center gap-2">
                             <Monitor className="w-6 h-6" />
@@ -2514,7 +2514,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                             <div className="p-4 bg-warning/20 rounded-none border border-warning/20 text-warning"><Globe className="w-8 h-8" /></div>
                             <div>
                                 <h3 className="text-xl font-black text-warning uppercase mb-1 tracking-tighter">Trayectoria (Survey) No Encontrada</h3>
-                                <p className="text-[10px] font-bold text-warning/70 uppercase tracking-widest leading-relaxed max-w-xl">No se pudo vincular automÃ¡ticamente una trayectoria direccional para el pozo "{selectedWell.name}". Los cÃ¡lculos de TVD y presiones de fondo utilizarÃ¡n aproximaciones verticales hasta que se cargue el survey correspondiente.</p>
+                                <p className="text-[10px] font-bold text-warning/70 uppercase tracking-widest leading-relaxed max-w-xl">No se pudo vincular automaticamente una trayectoria direccional para el pozo "{selectedWell.name}". Los calculos de TVD y presiones de fondo utilizaran aproximaciones verticales hasta que se cargue el survey correspondiente.</p>
                             </div>
                         </div>
                     </div>
@@ -2597,20 +2597,20 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                             <button
                                 onClick={() => importDbRef.current?.click()}
                                 className="flex items-center gap-2.5 px-4 py-2.5 rounded-none text-[9px] font-black uppercase tracking-widest transition-all border bg-secondary/10 text-secondary border-secondary/20 hover:bg-secondary/20 hover:shadow-glow-secondary/20"
-                                title="Subir prueba de producciÃ³n puntual (CSV/Excel)"
+                                title="Subir prueba de produccion puntual (CSV/Excel)"
                             >
                                 <Database className="w-4 h-4" />
                                 {language === 'es' ? 'SUBIR PRUEBA' : 'UPLOAD TEST'}
                             </button>
 
                             {onNavigateToDesign && (
-                                <SecureWrapper isLocked={true} tooltip="MÃ³dulo de DiseÃ±o Restringido">
+                                <SecureWrapper isLocked={true} tooltip="Modulo de Diseno Restringido">
                                     <button
                                         onClick={() => {
                                             onNavigateToDesign(wellMatchParams, pump);
                                         }}
                                         className="flex items-center gap-2.5 px-4 py-2.5 rounded-none text-[9px] font-black uppercase tracking-widest transition-all border bg-primary/10 text-primary border-primary/20 hover:bg-primary hover:text-white hover:shadow-glow-primary/40 relative"
-                                        title="Ir a DiseÃ±o (Phase 5)"
+                                        title="Ir a Diseno (Phase 5)"
                                     >
                                         <Settings className="w-4 h-4" />
                                         {language === 'es' ? 'DISENO' : 'DESIGN'}
@@ -2618,7 +2618,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                 </SecureWrapper>
                             )}
 
-                            <SecureWrapper isLocked={true} tooltip="MÃ³dulo de Ajuste HistÃ³rico Restringido">
+                            <SecureWrapper isLocked={true} tooltip="Modulo de Ajuste Historico Restringido">
                                 <button
                                     onClick={() => setWellViewMode(wellViewMode === 'history' ? 'monitoring' : 'history')}
                                     className={`flex items-center gap-2.5 px-4 py-2.5 rounded-none text-[9px] font-black uppercase tracking-widest transition-all border ${wellViewMode === 'history' ? 'bg-primary text-white border-primary shadow-glow-primary/40' : 'bg-success/10 text-success border-success/20 hover:bg-success/20 hover:shadow-glow-success/20'}`}
@@ -2793,7 +2793,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                                 <div className="h-full flex flex-col items-center justify-center text-center opacity-40 p-6 animate-fadeIn">
                                                     <AlertTriangle className="w-12 h-12 text-warning mb-4 animate-pulse" />
                                                     <p className="text-xs font-black uppercase tracking-widest">Sin Datos de Trayectoria</p>
-                                                    <p className="text-[10px] font-bold text-txt-muted uppercase mt-2">No se encontrÃ³ una trayectoria (survey) vinculada para el pozo "{selectedWell.name}". Los cÃ¡lculos utilizarÃ¡n aproximaciÃ³n vertical.</p>
+                                                    <p className="text-[10px] font-bold text-txt-muted uppercase mt-2">No se encontro una trayectoria (survey) vinculada para el pozo "{selectedWell.name}". Los calculos utilizaran aproximacion vertical.</p>
                                                 </div>
                                             )
                                         )}
@@ -2884,17 +2884,17 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                     <div className="flex items-center justify-between mb-4 relative z-10 pl-2">
                                         <div className="flex items-center gap-3">
                                             <div className="w-2 h-2 rounded-none bg-danger"></div>
-                                            <span className="text-[10px] font-black text-danger uppercase italic tracking-[0.2em]">Salud CrÃ­tica</span>
+                                            <span className="text-[10px] font-black text-danger uppercase italic tracking-[0.2em]">Salud Critica</span>
                                         </div>
                                         <span className="text-[10px] font-mono text-txt-muted opacity-40">{(new Date(w.lastUpdate)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                     </div>
                                     <h5 className="text-xl font-black text-txt-main uppercase tracking-tighter mb-2 relative z-10 pl-2">{w.name}</h5>
                                     <p className="text-[10px] font-bold text-txt-muted leading-relaxed uppercase opacity-60 tracking-tight pl-2 mb-6">
-                                        AnÃ¡lisis predictivo detecta degradaciÃ³n acelerada del {100 - getWellHealthScore(w)}%. Posible interferencia de gas o desgaste mecÃ¡nico.
+                                        Analisis predictivo detecta degradacion acelerada del {100 - getWellHealthScore(w)}%. Posible interferencia de gas o desgaste mecanico.
                                     </p>
                                     <div className="flex justify-end relative z-10">
                                         <button className="px-6 py-2.5 bg-danger/10 text-danger text-[10px] font-black rounded-none border border-danger/20 group-hover/item:bg-danger group-hover/item:text-white transition-all tracking-widest uppercase shadow-lg shadow-danger/5">
-                                            Ver DiagnÃ³stico
+                                            Ver Diagnostico
                                         </button>
                                     </div>
                                 </div>
@@ -2935,7 +2935,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                     <div className="h-1 w-32 bg-gradient-to-r from-transparent via-primary to-transparent mx-auto"></div>
                                     <p className="text-txt-muted text-center max-w-2xl font-medium leading-relaxed text-xl opacity-60 px-10">
                                         Plataforma de monitoreo en tiempo real sincronizada. <br />
-                                        <span className="text-sm font-black uppercase tracking-[0.2em] mt-4 block">Esperando inicializaciÃ³n de nodos o carga de archivos maestros.</span>
+                                        <span className="text-sm font-black uppercase tracking-[0.2em] mt-4 block">Esperando inicializacion de nodos o carga de archivos maestros.</span>
                                     </p>
                                 </div>
 
@@ -2945,7 +2945,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                         className="h-14 px-10 bg-primary/10 text-primary border border-primary/30 rounded-none flex items-center gap-4 hover:bg-primary hover:text-white transition-all font-black text-xs uppercase tracking-[0.2em] shadow-lg shadow-primary/10 group/btn"
                                     >
                                         <Download className="w-6 h-6 group-hover:-translate-y-1 transition-transform" />
-                                        Cargar DiseÃ±os
+                                        Cargar Disenos
                                     </button>
                                     <button
                                         onClick={() => importDbRef.current?.click()}
@@ -3013,7 +3013,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                     className="flex items-center gap-2.5 px-5 py-2.5 bg-primary/10 hover:bg-primary text-primary hover:text-white border border-primary/20 rounded-none font-black text-[10px] uppercase tracking-widest transition-all hover:shadow-glow-primary/20"
                                 >
                                     <Database className="w-4 h-4" />
-                                    Importar DiseÃ±os (Excel)
+                                    Importar Disenos (Excel)
                                 </button>
                                 <button
                                     onClick={() => importDesignRef.current?.click()}
@@ -3036,7 +3036,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
 
                             <div>
                                 <h3 className="text-sm font-black text-txt-main uppercase tracking-[0.2em]">{t('p5.analyzeMatch')}</h3>
-                                <p className="text-[10px] font-black text-primary uppercase tracking-[0.3em] opacity-60">Digital Twin ï¿½?ï¿½ {selectedWell.name}</p>
+                                <p className="text-[10px] font-black text-primary uppercase tracking-[0.3em] opacity-60">Digital Twin - {selectedWell.name}</p>
                             </div>
                         </div>
                         <button onClick={() => setShowFullMatch(false)} className="p-3 bg-white/5 hover:bg-danger/20 text-txt-muted hover:text-danger rounded-none border border-white/10 transition-all">
@@ -3061,7 +3061,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
             {/* FLOATING AI CHAT FOR MONITORING */}
             <FloatingAiPanel fleet={fleet} selectedWell={selectedWell} language={language} t={t} />
 
-            {/* FULL-SCREEN IMPORT PROGRESS OVERLAY ï¿½?" Simplified & Minimal */}
+            {/* FULL-SCREEN IMPORT PROGRESS OVERLAY - Simplified & Minimal */}
             {importProgress && (
                 <div
                     className="fixed inset-0 z-[9999] flex flex-col items-center justify-center overflow-hidden"
@@ -3204,7 +3204,7 @@ const DiagnosticRow = React.memo(({ label, unit, theoretical, real, lowIsBad = f
     );
 });
 
-// ï¿½"?ï¿½"? FLOATING AI PANEL FOR MONITORING ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?ï¿½"?
+// "?"? FLOATING AI PANEL FOR MONITORING "?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?
 const FloatingAiPanel = ({ fleet, selectedWell, language, t }: { fleet: WellFleetItem[], selectedWell?: WellFleetItem, language: string, t: any }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [msgs, setMsgs] = useState<{ role: string; text: string }[]>([]);
@@ -3228,7 +3228,7 @@ const FloatingAiPanel = ({ fleet, selectedWell, language, t }: { fleet: WellFlee
         const apiKey = getApiKey();
         if (!apiKey) {
             console.warn("Antigravity AI: No API Key found.");
-            setMsgs([{ role: 'model', text: language === 'es' ? "ï¿½O Error: No se encontrÃ³ la clave de API (GEMINI_API_KEY)." : "ï¿½O Error: No API Key found (GEMINI_API_KEY)." }]);
+            setMsgs([{ role: 'model', text: language === 'es' ? "O Error: No se encontro la clave de API (GEMINI_API_KEY)." : "O Error: No API Key found (GEMINI_API_KEY)." }]);
             return;
         }
 
@@ -3263,13 +3263,13 @@ const FloatingAiPanel = ({ fleet, selectedWell, language, t }: { fleet: WellFlee
             setSession(s);
 
             const greet = selectedWell
-                ? (language === 'es' ? `Listo. Analizando **${selectedWell.name}**. Â¿QuÃ© revisamos?` : `Ready. Analyzing **${selectedWell.name}**. What's next?`)
-                : (language === 'es' ? `Hola. Monitoreando **${fleet.length}** pozos. Â¿CÃ³mo puedo ayudarte hoy?` : `Hello. Monitoring **${fleet.length}** wells. How can I help?`);
+                ? (language === 'es' ? `Listo. Analizando **${selectedWell.name}**. ¿Que revisamos?` : `Ready. Analyzing **${selectedWell.name}**. What's next?`)
+                : (language === 'es' ? `Hola. Monitoreando **${fleet.length}** pozos. ¿Como puedo ayudarte hoy?` : `Hello. Monitoring **${fleet.length}** wells. How can I help?`);
 
             setMsgs([{ role: 'model', text: greet }]);
         } catch (err: any) {
             console.error("AI Init Error:", err);
-            setMsgs([{ role: 'model', text: "ï¿½sï¿½ï¸ Antigravity en modo offline o error de conexiÃ³n. (Revisa tu API Key)" }]);
+            setMsgs([{ role: 'model', text: "sï¸ Antigravity en modo offline o error de conexion. (Revisa tu API Key)" }]);
         }
     }, [selectedWell?.id, language]);
 
@@ -3284,7 +3284,7 @@ const FloatingAiPanel = ({ fleet, selectedWell, language, t }: { fleet: WellFlee
             setMsgs(p => [...p, { role: 'model', text: res.response.text() }]);
         } catch (err: any) {
             console.error("Antigravity AI Send Error:", err);
-            setMsgs(p => [...p, { role: 'model', text: `ï¿½O Connection error: ${err.message || 'Unknown issue'}` }]);
+            setMsgs(p => [...p, { role: 'model', text: `O Connection error: ${err.message || 'Unknown issue'}` }]);
         }
         setLoading(false);
 
