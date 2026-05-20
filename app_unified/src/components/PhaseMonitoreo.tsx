@@ -829,6 +829,11 @@ const smartMatchExt = (catalog: any[], searchString: string, isMotor: boolean = 
     }
     return maxScore > 40 ? bestMatch : null;
 };
+const exactMatchExt = (catalog: any[], searchString: string) => {
+    if (!searchString || !catalog?.length) return null;
+    const needle = norm_ext(String(searchString));
+    return catalog.find(item => norm_ext(String(item?.model || '')) === needle) || null;
+};
 
 export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ params, pump: providedPump, pumpCatalog = [], motorCatalog = [], vsdCatalog = [], onBack, onNavigateToDesign }) => {
     const { t, language, setLanguage } = useLanguage();
@@ -1391,14 +1396,17 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
 
                     const als = s_ext(get_ext(row, ['ALS', 'SISTEMA', 'SISTEMA DE LEVANTAMIENTO', 'TIPO']));
 
-                    const foundPump = smartMatchExt(pumpCatalog, pumpName, false);
+                    const foundPump = exactMatchExt(pumpCatalog, pumpName);
                     if (foundPump) {
                         (design as any).customPump = { ...foundPump, stages: stages || foundPump.stages || 100 };
                     }
-                    const foundMotor = smartMatchExt(motorCatalog, motorName, true, motorHp, motorVolts, motorAmps);
+                    const foundMotor = exactMatchExt(motorCatalog, motorName);
                     if (foundMotor) {
                         design.selectedMotor = foundMotor;
                         design.motorHp = foundMotor.hp;
+                        (design as any).motorExactFound = true;
+                    } else {
+                        (design as any).motorExactFound = false;
                     }
                     const foundVsd = smartMatchExt(vsdCatalog, vsdName, false);
                     if (foundVsd) {
@@ -2067,7 +2075,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
             const p = findPump(design);
             if (p) return p;
         }
-        return providedPump || FALLBACK_PUMP;
+        return providedPump || null;
     }, [selectedWell, customDesigns, providedPump]);
 
     const wellMatchParams = useMemo(() => {
@@ -2350,7 +2358,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
             pump = findPump(customDesign) || pump;
         }
         if (!isPendiente) {
-            pump = pump || FALLBACK_PUMP;
+            pump = pump || null;
         }
 
 
@@ -2395,9 +2403,11 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
 
         const wellMatchParams: SystemParams = customDesign ? {
             ...customDesign,
+            motorExactFound: (customDesign as any)?.motorExactFound ?? !!customDesign?.selectedMotor,
             historyMatch: historyData
         } : {
             ...INITIAL_PARAMS,
+            motorExactFound: false,
             metadata: { ...INITIAL_PARAMS.metadata, wellName: selectedWell.name },
             pressures: { ...INITIAL_PARAMS.pressures, totalRate: q, pumpDepthMD: pMD, pht: selectedWell.productionTest.thp || 80 },
             wellbore: { ...INITIAL_PARAMS.wellbore, tubingBottom: pMD, midPerfsMD: mMD },
@@ -2413,11 +2423,14 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
             vsd: (selectedWell.predictive.vsdStatus === 'alert') ? 'alert' : (selectedWell.predictive.vsdStatus === 'caution' ? 'caution' : 'normal') as any
         };
 
+        const hasPumpExact = !!pump;
         const baseFreq = pump?.nameplateFrequency || 60;
         const ratio = f / baseFreq;
-        const head = calculateBaseHead(q / ratio, pump) * Math.pow(ratio, 2);
-
-        const liveBhaResults = calculateSystemResults(q, head, wellMatchParams, pump, f) || { pip: selectedWell.productionTest.pip, motorLoad: Math.abs(selectedWell.consumptionReal) };
+        const head = hasPumpExact ? calculateBaseHead(q / ratio, pump) * Math.pow(ratio, 2) : 0;
+        const liveBhaResults = hasPumpExact
+            ? (calculateSystemResults(q, head, wellMatchParams, pump, f) || { pip: selectedWell.productionTest.pip, motorLoad: Math.abs(selectedWell.consumptionReal) })
+            : null;
+        const safeBhaResults = liveBhaResults || { fluidLevel: 0, fluidLevelMD: 0, submergenceFt: 0, pumpIntakePressure: 0, motorLoad: 0, pip: 0 };
 
         if (isPendiente) {
             return (
@@ -2693,15 +2706,29 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                         <div className="absolute inset-0 opacity-10 pointer-events-none blueprint-grid"></div>
                                         {!isBhaMinimized && (
                                             <div className={`h-full origin-top flex items-center justify-center w-full transition-all duration-500`}>
-                                                <VisualESPStack
-                                                    pump={pump}
-                                                    motor={wellMatchParams.selectedMotor || undefined}
-                                                    params={wellMatchParams}
-                                                    results={liveBhaResults}
-                                                    frequency={f}
-                                                    health={physicalHealth as any}
-                                                    selectedVSD={wellMatchParams.selectedVSD}
-                                                />
+                                                {hasPumpExact ? (
+                                                    <VisualESPStack
+                                                        pump={pump}
+                                                        motor={wellMatchParams.selectedMotor || undefined}
+                                                        params={wellMatchParams}
+                                                        results={safeBhaResults}
+                                                        frequency={f}
+                                                        health={physicalHealth as any}
+                                                        selectedVSD={wellMatchParams.selectedVSD}
+                                                    />
+                                                ) : (
+                                                    <div className="w-full h-full flex flex-col items-center justify-center text-center p-8 bg-danger/5 border border-danger/20">
+                                                        <AlertTriangle className="w-10 h-10 text-danger mb-4" />
+                                                        <h4 className="text-sm font-black uppercase tracking-widest text-danger">
+                                                            {language === 'es' ? 'BOMBA NO ENCONTRADA' : 'PUMP NOT FOUND'}
+                                                        </h4>
+                                                        <p className="text-[11px] font-bold text-txt-muted mt-3 max-w-md leading-relaxed">
+                                                            {language === 'es'
+                                                                ? 'No encontramos datos o coeficientes de la bomba. Agregue coeficientes en PUMPS (1).xlsx.'
+                                                                : 'Pump data/coefficients not found. Add coefficients in PUMPS (1).xlsx.'}
+                                                        </p>
+                                                    </div>
+                                                )}
                                             </div>
                                         )}
                                     </div>
