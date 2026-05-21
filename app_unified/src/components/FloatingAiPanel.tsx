@@ -45,14 +45,44 @@ export const FloatingAiPanel = ({ fleet, selectedWell, language, t }: { fleet: W
             if (selectedWell) {
                 const healthScore = getWellHealthScore(selectedWell);
                 contextData = `ANALYSIS FOR SPECIFIC WELL: ${selectedWell.name}
-                - Status: ${selectedWell.status.toUpperCase()} (${healthScore.toFixed(0)}/100)
-                - Data: PIP=${selectedWell.productionTest.pip || 0} psi, Rate=${selectedWell.productionTest.rate || 0} BPD`;
+                - General Status: ${selectedWell.status.toUpperCase()} (Health Score: ${healthScore.toFixed(0)}/100, Estado Actual: ${selectedWell.estadoActual || 'N/A'})
+                - System/ALS: ${selectedWell.als || 'ESP'}
+                - Measured Production Test Data:
+                  * Frequency (Frecuencia): ${selectedWell.productionTest?.freq || 0} Hz
+                  * Total Flow Rate (Caudal Total): ${selectedWell.productionTest?.rate || selectedWell.currentRate || 0} BPD
+                  * Target Flow Rate (Caudal Objetivo): ${selectedWell.targetRate || 0} BPD
+                  * Water Cut / BS&W: ${selectedWell.productionTest?.waterCut || 0}%
+                  * GOR (Gas Oil Ratio): ${selectedWell.productionTest?.gor || 0} scf/stb
+                  * PIP (Intake Pressure / Presión de Entrada): ${selectedWell.productionTest?.pip || 0} psi
+                  * PDP (Discharge Pressure / Presión de Descarga): ${selectedWell.productionTest?.pdp || 0} psi
+                  * THP (Tubing Head Pressure / Presión de Cabezal): ${selectedWell.productionTest?.thp || 0} psi
+                  * Operating Motor Power: ${selectedWell.productionTest?.hp || 0} HP
+                  * Operating Current (Amperaje): ${selectedWell.productionTest?.amps || 0} A
+                  * Operating Voltage (Voltaje): ${selectedWell.productionTest?.volts || 0} V
+                  * Pump Efficiency (Eficiencia Bomba): ${selectedWell.productionTest?.efficiency || 0}%
+                - Well depth (MD): ${selectedWell.depthMD || 0} ft
+                - Component Health:
+                  * Pump: ${selectedWell.health?.pump || 'normal'}
+                  * Motor: ${selectedWell.health?.motor || 'normal'}
+                  * Seal: ${selectedWell.health?.seal || 'normal'}
+                  * Sensor: ${selectedWell.health?.sensor || 'active'}
+                  * Cable: ${selectedWell.health?.cable || 'normal'}
+                - Predictive Indicators:
+                  * Time to Failure (TTF): ${selectedWell.predictive?.ttf || 'N/A'} days
+                  * VSD Status: ${selectedWell.predictive?.vsdStatus || 'optimal'} (${selectedWell.predictive?.vsdAnalysis || 'N/A'})
+                  * Transformer Status: ${selectedWell.predictive?.transformerStatus || 'optimal'} (${selectedWell.predictive?.transformerAnalysis || 'N/A'})
+                  * Vent Box Status: ${selectedWell.predictive?.ventBoxStatus || 'optimal'} (${selectedWell.predictive?.ventBoxAnalysis || 'N/A'})`;
             } else {
-                contextData = `FLEET OVERVIEW: ${fleet.length} wells. Issues: ${fleet.filter(w => w.status !== 'normal').length}`;
+                contextData = `FLEET OVERVIEW:
+                - Total Wells: ${fleet.length}
+                - Wells with Issues/Alerts: ${fleet.filter(w => w.status !== 'normal').length}
+                - Fleet List:
+                ${fleet.map(w => `  * ${w.name}: Status=${w.status.toUpperCase()}, Rate=${w.currentRate} BPD, Target=${w.targetRate} BPD, Freq=${w.productionTest?.freq} Hz, BS&W=${w.productionTest?.waterCut}%`).join('\n')}`;
             }
 
             const systemInstruction = `You are "Antigravity AI Co-Pilot", a Senior ESP Reliability Engineer.
-            Provide diagnostics in ${language === 'es' ? 'SPANISH' : 'ENGLISH'}.
+            Provide diagnostics and answer user questions in ${language === 'es' ? 'SPANISH (ESPAÑOL)' : 'ENGLISH'}.
+            Do not request information from the user (such as pump curves, BS&W, frequency, or pressures) if it is already present in the CONTEXT below. Use the CONTEXT data directly to answer and make predictions.
             CONTEXT:\n${contextData}`.trim();
 
             const apiMessages = [

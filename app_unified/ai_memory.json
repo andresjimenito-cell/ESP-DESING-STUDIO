@@ -1,6 +1,56 @@
 [
   {
     "category": "diagnosis",
+    "wellName": "QF-1062H#1",
+    "technicalSignature": "normal|Q:3120|PIP:520|F:47",
+    "context": {
+      "id": "EXCEL-QF-1062H#1-1779397097137-0",
+      "name": "QF-1062H#1",
+      "status": "normal",
+      "estadoActual": "operativo",
+      "als": "ESP",
+      "health": {
+        "pump": "normal",
+        "motor": "normal",
+        "seal": "normal",
+        "sensor": "active",
+        "cable": "normal"
+      },
+      "predictive": {
+        "ttf": 365,
+        "vsdStatus": "optimal",
+        "vsdAnalysis": "Excel Import",
+        "transformerStatus": "optimal",
+        "transformerAnalysis": "Normal",
+        "ventBoxStatus": "optimal",
+        "ventBoxAnalysis": "Normal"
+      },
+      "lastUpdate": "2026-05-17",
+      "currentRate": 3115,
+      "targetRate": 4719.6,
+      "consumptionReal": 0,
+      "consumptionTheo": 0,
+      "depthMD": 2796,
+      "productionTest": {
+        "date": "2026-05-17",
+        "rate": 3115,
+        "freq": 47,
+        "pip": 518,
+        "thp": 142,
+        "tht": 144,
+        "waterCut": 94.51,
+        "gor": 0,
+        "hp": 1301,
+        "pdp": 1301,
+        "hasMatchData": true
+      }
+    },
+    "recommendation": "¡Hola! ¿En qué puedo ayudarte con el análisis del pozo QF-1062H#1?",
+    "id": "f021c0b0-2fee-4482-93fb-8494855627ad",
+    "timestamp": "2026-05-21T22:18:57.014Z"
+  },
+  {
+    "category": "diagnosis",
     "wellName": "YAGUAZO-3#5",
     "technicalSignature": "normal|Q:930|PIP:0|F:60",
     "context": {

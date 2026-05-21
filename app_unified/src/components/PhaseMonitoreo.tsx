@@ -38,7 +38,7 @@ import {
 
 // Helpers
 import {
-  isWellMatchComplete, buildHistoryMatchFromWell, genAI,
+  isWellMatchComplete, buildHistoryMatchFromWell,
   computeWellCapacity, getPhase6Diagnosis, getOptimizationPathLocalized,
   getOptimizationPath, getWellHealthScore,
   s_ext, d_ext, n_ext, norm_ext, fuzzyWellName, get_ext,

@@ -2,6 +2,12 @@ import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { SystemParams, EspPump } from '../types';
 import { useLanguage } from '../i18n';
 import { AiMemoryService } from '../services/AiMemoryService';
+import {
+    generateMultiCurveData,
+    findIntersection,
+    calculateSystemResults,
+    getShaftLimitHp
+} from '../utils';
 
 export interface ChatMessage {
     id: string;
@@ -163,33 +169,166 @@ export const useEspCopilot = (params: SystemParams, results: any, activeStep: nu
                     ROL: Eres "ESP-Core", la Máxima Autoridad Técnica en Sistemas ESP.
                     
                     **REGLA DE ORO (CRÍTICA):**
-                    Tu análisis debe basarse EXCLUSIVAMENTE en los datos matemáticos proporcionados en el contexto "pumpPhysicsStatus".
+                    Tu análisis debe basarse EXCLUSIVAMENTE en los datos matemáticos proporcionados en el contexto "GLOBAL SYSTEM DESIGN CONTEXT" y "PHASE AUDIT CONTEXT".
                     - Si el estado dice "OPTIMAL" o "IN_RANGE", **PROHIBIDO** decir que hay Downthrust, Upthrust o problemas de flujo.
                     - Si el usuario dice que ve el punto en el centro de la curva, y tus datos lo confirman, valida esa observación.
-                    - NO uses conocimiento general de bombas para contradecir los datos específicos de la curva calculada que se te envían.
+                    - NO uses conocimiento general de bombas para contradecir los datos específicos del diseño y las curvas calculadas que se te envían.
+                    - Usa los datos de la simulación de variador (VSD Sensitivity Summary) para responder predicciones precisas de frecuencia y caudal/BSW en lugar de pedir curvas al usuario.
 
                     IDIOMA: Responde SIEMPRE en ${language === 'es' ? 'ESPAÑOL' : 'INGLÉS'}.
 
                     ESTRUCTURA DE RESPUESTA:
-                    1. **Estado Operativo:** (Basado estrictamente en el % BEP calculado).
-                    2. **Análisis Hidráulico:** Presiones y Cabezal.
-                    3. **Recomendación:** Directa y técnica.
+                    - Para preguntas generales de auditoría, organiza tu respuesta en:
+                      1. **Estado Operativo:** (Basado estrictamente en el % BEP calculado u operando).
+                      2. **Análisis Hidráulico:** Presiones, Cabezal y caudales.
+                      3. **Recomendación:** Directa y técnica.
+                    - Para preguntas directas (por ejemplo: predicciones de cambio de frecuencia, cálculos específicos de BSW, o datos puntuales del sistema), responde de forma directa, técnica y justificada utilizando los datos provistos en el contexto, sin necesidad de seguir la estructura rígida de auditoría si no aplica.
             `.trim();
 
             const langInstruction = language === 'es'
-                ? "[SYSTEM: RESPONDE EN ESPAÑOL. Confía estrictamente en 'pumpPhysicsStatus'. Si dice IN_RANGE, el diseño es correcto.] "
-                : "[SYSTEM: RESPOND IN ENGLISH. Strictly trust 'pumpPhysicsStatus'.] ";
+                ? "[SYSTEM: RESPONDE EN ESPAÑOL. Confía estrictamente en los datos del sistema. Responde de forma directa al usuario si es una consulta específica.] "
+                : "[SYSTEM: RESPOND IN ENGLISH. Trust strictly the system data. Respond directly if it is a specific query.] ";
 
             let currentContext = contextOverride;
-            if (!currentContext && activeStep === 4) {
-                const ctx = getContextForPhase(4, 'target');
+            if (!currentContext && activeStep !== undefined) {
+                const ctx = getContextForPhase(activeStep, 'target');
                 currentContext = ctx.data;
             }
+
+            // Build a comprehensive global system design context
+            let vsdSensitivitySummary: any[] = [];
+            if (customPump) {
+                try {
+                    const freqsToSimulate = [30, 40, 50, 60, 70, 80];
+                    const currentFreq = params.targets?.[params.activeScenario || 'target']?.frequency || 60;
+                    if (currentFreq && !freqsToSimulate.includes(currentFreq)) {
+                        freqsToSimulate.push(currentFreq);
+                    }
+                    freqsToSimulate.sort((a, b) => a - b);
+
+                    vsdSensitivitySummary = freqsToSimulate.map(hz => {
+                        const cData = generateMultiCurveData(customPump, params, hz, 60);
+                        const m = findIntersection(cData);
+                        let flow = m ? m.flow : 0;
+                        let head = m ? m.head : 0;
+                        if (flow <= 0) {
+                            return { frequency_Hz: hz, status: "No intersection / Pump cannot overcome system head" };
+                        }
+                        const res = calculateSystemResults(flow, head, params, customPump, hz);
+                        const shaftLimit = getShaftLimitHp(customPump?.series || '');
+                        const bhp = res.hpTotal || 0;
+                        const pumpShaftLoad = shaftLimit > 0 ? (bhp / shaftLimit) * 100 : 0;
+                        const motorT = (params.bottomholeTemp || 150) + (res.motorLoad || 0) * 0.8;
+                        const bopd = flow * (1 - (params.fluids?.waterCut || 0) / 100);
+                        const bwpd = flow * ((params.fluids?.waterCut || 0) / 100);
+
+                        return {
+                            frequency_Hz: hz,
+                            flowRate_BPD: Math.round(flow),
+                            bopd: Math.round(bopd),
+                            bwpd: Math.round(bwpd),
+                            waterCut_BSW_pct: params.fluids?.waterCut,
+                            pip_psi: Math.round(res.pip || 0),
+                            pdp_psi: Math.round(res.pdp || 0),
+                            pwf_psi: Math.round(res.pwf || 0),
+                            tdh_ft: Math.round(res.tdh || 0),
+                            amps: Number((res.electrical?.amps || 0).toFixed(1)),
+                            motorLoad_pct: Math.round(res.motorLoad || 0),
+                            pumpShaftLoad_pct: Math.round(pumpShaftLoad),
+                            motorTemp_F: Math.round(motorT)
+                        };
+                    });
+                } catch (e) {
+                    console.error("Error generating VSD summary for context:", e);
+                }
+            }
+
+            const globalContext = {
+                projectInfo: {
+                    projectName: params.metadata?.projectName || 'ESP Project',
+                    wellName: params.metadata?.wellName || (params as any).wellName || 'ESP Well',
+                    engineer: params.metadata?.engineer || '',
+                    company: params.metadata?.company || '',
+                    activeStepIndex: activeStep
+                },
+                wellbore: {
+                    casingOD_in: params.wellbore?.casing?.od,
+                    casingID_in: params.wellbore?.casing?.id,
+                    tubingOD_in: params.wellbore?.tubing?.od,
+                    tubingID_in: params.wellbore?.tubing?.id,
+                    pumpDepthMD_ft: params.pressures?.pumpDepthMD,
+                    totalDepthMD_ft: params.totalDepthMD
+                },
+                fluidsPVT: {
+                    apiOil: params.fluids?.apiOil,
+                    waterCut_BSW_pct: params.fluids?.waterCut,
+                    gasGravity: params.fluids?.geGas,
+                    waterGravity: params.fluids?.geWater,
+                    gor_scf_stb: params.fluids?.gor,
+                    pb_bubblePoint_psi: params.fluids?.pb,
+                    salinity_ppm: params.fluids?.salinity,
+                    isDeadOil: params.fluids?.isDeadOil
+                },
+                inflowIPR: {
+                    model: params.inflow?.model,
+                    staticPressure_pStatic_psi: params.inflow?.pStatic,
+                    productivityIndex_IP_bpd_psi: params.inflow?.ip,
+                    calculatedPwf_psi: results?.pwf
+                },
+                operatingScenarios: {
+                    activeScenario: params.activeScenario,
+                    min: params.targets?.min,
+                    target: params.targets?.target,
+                    max: params.targets?.max
+                },
+                equipmentSelected: {
+                    pump: customPump ? {
+                        manufacturer: customPump.manufacturer,
+                        model: customPump.model,
+                        stages: customPump.stages,
+                        nameplateFrequency: customPump.nameplateFrequency,
+                        stableFlowRange_BPD: `${customPump.minRate} - ${customPump.maxRate} @ ${customPump.nameplateFrequency}Hz`
+                    } : "None",
+                    motor: params.selectedMotor ? {
+                        manufacturer: params.selectedMotor.manufacturer,
+                        model: params.selectedMotor.model,
+                        hp: params.selectedMotor.hp,
+                        voltage: params.selectedMotor.voltage,
+                        amps: params.selectedMotor.amps
+                    } : "None",
+                    cable: params.selectedCable ? {
+                        manufacturer: params.selectedCable.manufacturer,
+                        model: params.selectedCable.model,
+                        type: params.selectedCable.type,
+                        awg: params.selectedCable.awg
+                    } : "None",
+                    vsd: params.selectedVSD ? {
+                        manufacturer: params.selectedVSD.manufacturer,
+                        model: params.selectedVSD.model,
+                        kvaRating: params.selectedVSD.kvaRating
+                    } : "None"
+                },
+                resultsAtCurrentOperatingScenario: results ? {
+                    totalFlowRate_BPD: results.flow || params.pressures?.totalRate,
+                    intakePressure_PIP_psi: results.pip,
+                    dischargePressure_PDP_psi: results.pdp,
+                    flowingBHP_Pwf_psi: results.pwf,
+                    tdh_ft: results.tdh,
+                    fluidVelocityAtIntake_fts: results.fluidVelocity,
+                    motorLoad_pct: results.motorLoad,
+                    pumpEfficiency_pct: results.effEstimated || results.efficiency,
+                    submergence_ft: params.pressures?.pumpDepthMD && results.fluidLevel ? Math.max(0, params.pressures.pumpDepthMD - results.fluidLevel) : results.submergenceFt
+                } : null,
+                vsdSensitivitySimulationSummary: vsdSensitivitySummary
+            };
 
             let finalPrompt = langInstruction + userText;
 
             if (currentContext) {
-                finalPrompt += `\n\n[LIVE SYSTEM DATA]:\n${JSON.stringify(currentContext, null, 2)}`;
+                finalPrompt += `\n\n[PHASE AUDIT CONTEXT]:\n${JSON.stringify(currentContext, null, 2)}`;
+            }
+            if (globalContext) {
+                finalPrompt += `\n\n[GLOBAL SYSTEM DESIGN CONTEXT]:\n${JSON.stringify(globalContext, null, 2)}`;
             }
 
             // Map current messages to OpenRouter history API structure
