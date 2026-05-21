@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Sparkles, X, Send, RefreshCw, Download } from 'lucide-react';
+import { Sparkles, X, Send, RefreshCw, Download, Settings } from 'lucide-react';
 import { WellFleetItem } from '@/types';
-import { getApiKey, genAI, getWellHealthScore } from './PhaseMonitoreo.helpers';
+import { getWellHealthScore } from './PhaseMonitoreo.helpers';
 import { AiMemoryService } from '../services/AiMemoryService';
+import { MarkdownRenderer } from './MarkdownRenderer';
 
 // "?"? FLOATING AI PANEL FOR MONITORING "?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?
 export const FloatingAiPanel = ({ fleet, selectedWell, language, t }: { fleet: WellFleetItem[], selectedWell?: WellFleetItem, language: string, t: any }) => {
@@ -10,7 +11,8 @@ export const FloatingAiPanel = ({ fleet, selectedWell, language, t }: { fleet: W
     const [msgs, setMsgs] = useState<{ role: string; text: string }[]>([]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
-    const [session, setSession] = useState<any>(null);
+    const [showKeyInput, setShowKeyInput] = useState(false);
+    const [apiKeyInput, setApiKeyInput] = useState(() => localStorage.getItem('openrouter_api_key') || '');
     const endRef = useRef<HTMLDivElement>(null);
 
     const lastInteractionRef = useRef(Date.now());
@@ -25,17 +27,20 @@ export const FloatingAiPanel = ({ fleet, selectedWell, language, t }: { fleet: W
     }, [isOpen]);
 
     useEffect(() => {
-        const apiKey = getApiKey();
-        if (!apiKey) {
-            console.warn("Antigravity AI: No API Key found.");
-            setMsgs([{ role: 'model', text: language === 'es' ? "O Error: No se encontro la clave de API (GEMINI_API_KEY)." : "O Error: No API Key found (GEMINI_API_KEY)." }]);
-            return;
-        }
+        const greet = selectedWell
+            ? (language === 'es' ? `Listo. Analizando **${selectedWell.name}**. ¿Qué revisamos?` : `Ready. Analyzing **${selectedWell.name}**. What's next?`)
+            : (language === 'es' ? `Hola. Monitoreando **${fleet.length}** pozos. ¿Cómo puedo ayudarte hoy?` : `Hello. Monitoring **${fleet.length}** wells. How can I help?`);
 
+        setMsgs([{ role: 'model', text: greet }]);
+    }, [selectedWell?.id, language]);
+
+    useEffect(() => { if (isOpen) endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [msgs, isOpen]);
+
+    const send = async () => {
+        if (!input.trim() || loading) return;
+        const txt = input; setInput(''); setLoading(true);
+        setMsgs(p => [...p, { role: 'user', text: txt }]);
         try {
-            const apiKey = getApiKey();
-            if (!apiKey) throw new Error("API Key missing");
-
             let contextData = "";
             if (selectedWell) {
                 const healthScore = getWellHealthScore(selectedWell);
@@ -46,50 +51,66 @@ export const FloatingAiPanel = ({ fleet, selectedWell, language, t }: { fleet: W
                 contextData = `FLEET OVERVIEW: ${fleet.length} wells. Issues: ${fleet.filter(w => w.status !== 'normal').length}`;
             }
 
-            const model = genAI.getGenerativeModel({
-                model: 'gemini-1.5-flash-latest',
-                generationConfig: {
-                    temperature: 0.7,
-                    topP: 0.8,
-                    topK: 40,
-                },
-                wait_for_model: true,
-                systemInstruction: `You are "Antigravity AI Co-Pilot", a Senior ESP Reliability Engineer.
-                Provide diagnostics in ${language === 'es' ? 'SPANISH' : 'ENGLISH'}.
-                CONTEXT:\n${contextData}`
-            } as any);
+            const systemInstruction = `You are "Antigravity AI Co-Pilot", a Senior ESP Reliability Engineer.
+            Provide diagnostics in ${language === 'es' ? 'SPANISH' : 'ENGLISH'}.
+            CONTEXT:\n${contextData}`.trim();
 
-            const s = model.startChat({ history: [] });
-            setSession(s);
+            const apiMessages = [
+                ...msgs.map(m => ({
+                    role: m.role === 'model' ? 'assistant' : m.role,
+                    content: m.text
+                })),
+                {
+                    role: 'user',
+                    content: txt
+                }
+            ];
 
-            const greet = selectedWell
-                ? (language === 'es' ? `Listo. Analizando **${selectedWell.name}**. ¿Que revisamos?` : `Ready. Analyzing **${selectedWell.name}**. What's next?`)
-                : (language === 'es' ? `Hola. Monitoreando **${fleet.length}** pozos. ¿Como puedo ayudarte hoy?` : `Hello. Monitoring **${fleet.length}** wells. How can I help?`);
+            const userKey = localStorage.getItem('openrouter_api_key') || '';
+            const headers: Record<string, string> = {
+                "Content-Type": "application/json"
+            };
+            if (userKey && userKey !== 'null' && userKey !== 'undefined') {
+                headers["Authorization"] = `Bearer ${userKey}`;
+            }
 
-            setMsgs([{ role: 'model', text: greet }]);
-        } catch (err: any) {
-            console.error("AI Init Error:", err);
-            setMsgs([{ role: 'model', text: "\u26A0\uFE0F Antigravity en modo offline o error de conexi\u00f3n. (Revisa tu API Key)" }]);
-        }
-    }, [selectedWell?.id, language]);
+            const res = await fetch("http://localhost:4000/api/copilot/stream", {
+                method: "POST",
+                headers,
+                body: JSON.stringify({
+                    systemInstruction,
+                    messages: apiMessages
+                })
+            });
 
-    useEffect(() => { if (isOpen) endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [msgs, isOpen]);
+            if (!res.ok) {
+                throw new Error(`OpenRouter Proxy Error: ${res.statusText}`);
+            }
 
-    const send = async () => {
-        if (!input.trim() || !session || loading) return;
-        const txt = input; setInput(''); setLoading(true);
-        setMsgs(p => [...p, { role: 'user', text: txt }]);
-        try {
-            const res = await session.sendMessage(txt);
-            setMsgs(p => [...p, { role: 'model', text: res.response.text() }]);
-        } catch (err: any) {
-            console.error("Antigravity AI Send Error:", err);
-            setMsgs(p => [...p, { role: 'model', text: `O Connection error: ${err.message || 'Unknown issue'}` }]);
-        }
-        setLoading(false);
+            const reader = res.body?.getReader();
+            if (!reader) throw new Error("No reader");
 
-        // --- NEW: SAVE TO AI MEMORY ---
-        if (session && input && msgs.length > 0) {
+            const decoder = new TextDecoder();
+            let done = false;
+            let streamText = "";
+            
+            setMsgs(p => [...p, { role: 'model', text: '' }]);
+
+            while (!done) {
+                const { value, done: doneReading } = await reader.read();
+                done = doneReading;
+                const chunk = decoder.decode(value || new Uint8Array(), { stream: !done });
+                streamText += chunk;
+                
+                setMsgs(p => {
+                    const next = [...p];
+                    if (next.length > 0) {
+                        next[next.length - 1] = { role: 'model', text: streamText };
+                    }
+                    return next;
+                });
+            }
+
             const signature = AiMemoryService.generateSignature(selectedWell ? {
                 rate: selectedWell.currentRate,
                 pip: selectedWell.productionTest.pip,
@@ -97,16 +118,18 @@ export const FloatingAiPanel = ({ fleet, selectedWell, language, t }: { fleet: W
                 model: selectedWell.status
             } : { fleetCount: fleet.length });
 
-            const lastMsg = msgs[msgs.length - 1];
-            if (lastMsg.role === 'model') {
-                AiMemoryService.saveCase({
-                    category: 'diagnosis',
-                    wellName: selectedWell?.name,
-                    technicalSignature: signature,
-                    context: selectedWell || { fleetCount: fleet.length },
-                    recommendation: lastMsg.text
-                });
-            }
+            AiMemoryService.saveCase({
+                category: 'diagnosis',
+                wellName: selectedWell?.name,
+                technicalSignature: signature,
+                context: selectedWell || { fleetCount: fleet.length },
+                recommendation: streamText
+            });
+        } catch (err: any) {
+            console.error("Antigravity AI Send Error:", err);
+            setMsgs(p => [...p, { role: 'model', text: `⚠️ Connection error: ${err.message || 'Unknown issue'}` }]);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -140,19 +163,64 @@ export const FloatingAiPanel = ({ fleet, selectedWell, language, t }: { fleet: W
                             >
                                 <Download className="w-4 h-4 text-txt-muted group-hover:text-primary" />
                             </button>
+                            <button
+                                onClick={() => setShowKeyInput(!showKeyInput)}
+                                className={`p-2 hover:bg-white/10 rounded-none transition-all group ${showKeyInput ? 'text-primary' : 'text-txt-muted'}`}
+                                title={language === 'es' ? 'Configurar API Key' : 'Configure API Key'}
+                            >
+                                <Settings className="w-4 h-4 text-txt-muted group-hover:text-primary" />
+                            </button>
                             <button onClick={() => setIsOpen(false)} className="p-2 hover:bg-surface-light rounded-none transition-colors">
                                 <X className="w-4 h-4 text-txt-muted" />
                             </button>
                         </div>
                     </div>
 
+                    {/* SETTINGS PANEL OVERLAY */}
+                    {showKeyInput && (
+                        <div className="p-4 bg-surface-light/40 border-b border-surface-light backdrop-blur-sm animate-fadeIn text-[10px] space-y-2 shrink-0">
+                            <label className="block font-black text-txt-muted uppercase tracking-widest">
+                                {language === 'es' ? 'CLAVE API OPENROUTER (OPCIONAL)' : 'OPENROUTER API KEY (OPTIONAL)'}
+                            </label>
+                            <div className="flex gap-2">
+                                <input
+                                    type="password"
+                                    value={apiKeyInput}
+                                    onChange={(e) => {
+                                        setApiKeyInput(e.target.value);
+                                        localStorage.setItem('openrouter_api_key', e.target.value);
+                                    }}
+                                    placeholder="sk-or-v1-..."
+                                    className="flex-1 bg-canvas border border-surface-light px-3 py-2 text-[11px] text-txt-main outline-none focus:border-primary/50 transition-all font-semibold"
+                                />
+                                {apiKeyInput && (
+                                    <button
+                                        onClick={() => {
+                                            setApiKeyInput('');
+                                            localStorage.removeItem('openrouter_api_key');
+                                        }}
+                                        className="px-2.5 bg-danger/10 hover:bg-danger text-danger hover:text-white transition-all text-[9px] font-black uppercase"
+                                    >
+                                        {language === 'es' ? 'Borrar' : 'Clear'}
+                                    </button>
+                                )}
+                            </div>
+                            <p className="text-[9px] text-txt-muted/80 leading-normal">
+                                {language === 'es' 
+                                    ? 'Si no ingresas una clave, se usará la clave gratuita por defecto del servidor.'
+                                    : 'If blank, the default free server key will be used.'}
+                            </p>
+                        </div>
+                    )}
+
                     {/* MESSAGES */}
                     <div className="flex-1 overflow-y-auto p-5 space-y-4 custom-scrollbar bg-canvas/30">
                         {msgs.map((m, i) => (
                             <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                                 <div className={`max-w-[85%] px-4 py-3 rounded-none text-[11px] leading-relaxed font-medium ${m.role === 'user' ? 'bg-primary text-white shadow-lg rounded-none' : 'bg-surface border border-surface-light text-txt-main shadow-sm rounded-none'}`}>
-                                    {/* Optional markdown parsing could be added here similar to App.tsx */}
-                                    <div className="whitespace-pre-wrap">{m.text}</div>
+                                    <div className="markdown-content">
+                                        <MarkdownRenderer content={m.text} isStreaming={loading && m.role === 'model' && i === msgs.length - 1} />
+                                    </div>
                                 </div>
                             </div>
                         ))}

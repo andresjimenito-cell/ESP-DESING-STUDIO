@@ -1,13 +1,7 @@
-
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { SystemParams, EspPump } from '../types';
 import { useLanguage } from '../i18n';
 import { AiMemoryService } from '../services/AiMemoryService';
-
-// Initialize Gemini Client
-// Initialize Gemini Client
-const genAI = new GoogleGenerativeAI(process.env.API_KEY || "");
 
 export interface ChatMessage {
     id: string;
@@ -22,49 +16,17 @@ export const useEspCopilot = (params: SystemParams, results: any, activeStep: nu
     const [loading, setLoading] = useState(false);
     const [messages, setMessages] = useState<ChatMessage[]>([]);
 
-    // Persistent Chat Session (Memory)
-    // Persistent Chat Session (Memory)
-    const chatSession = useRef<any>(null);
     const alertCache = useRef<Set<string>>(new Set());
 
-    // Initialize Chat Session
+    // Initialize Chat Session with welcome message
     useEffect(() => {
-        if (!chatSession.current && process.env.API_KEY && process.env.API_KEY !== "PLACEHOLDER_API_KEY") {
-            const model = genAI.getGenerativeModel({
-                model: 'gemini-1.5-pro',
-                systemInstruction: `
-                    ROL: Eres "ESP-Core", la Máxima Autoridad Técnica en Sistemas ESP.
-                    
-                    **REGLA DE ORO (CRÍTICA):**
-                    Tu análisis debe basarse EXCLUSIVAMENTE en los datos matemáticos proporcionados en el contexto "pumpPhysicsStatus".
-                    - Si el estado dice "OPTIMAL" o "IN_RANGE", **PROHIBIDO** decir que hay Downthrust, Upthrust o problemas de flujo.
-                    - Si el usuario dice que ve el punto en el centro de la curva, y tus datos lo confirman, valida esa observación.
-                    - NO uses conocimiento general de bombas para contradecir los datos específicos de la curva calculada que se te envían.
+        const welcomeMsg = language === 'es'
+            ? "Ingeniería en línea. Mis cálculos están sincronizados con tu curva de rendimiento."
+            : "Engineering Online. My calculations are synced with your performance curve.";
 
-                    IDIOMA: Responde SIEMPRE en ${language === 'es' ? 'ESPAÑOL' : 'INGLÉS'}.
-
-                    ESTRUCTURA DE RESPUESTA:
-                    1. **Estado Operativo:** (Basado estrictamente en el % BEP calculado).
-                    2. **Análisis Hidráulico:** Presiones y Cabezal.
-                    3. **Recomendación:** Directa y técnica.
-                `,
-            });
-            chatSession.current = model.startChat({
-                history: [],
-                generationConfig: {
-                    temperature: 0.1,
-                    maxOutputTokens: 4096,
-                },
-            });
-
-            const welcomeMsg = language === 'es'
-                ? "Ingeniería en línea. Mis cálculos están sincronizados con tu curva de rendimiento."
-                : "Engineering Online. My calculations are synced with your performance curve.";
-
-            setMessages([{
-                id: 'init', role: 'model', text: welcomeMsg, timestamp: new Date(), type: 'tip'
-            }]);
-        }
+        setMessages([{
+            id: 'init', role: 'model', text: welcomeMsg, timestamp: new Date(), type: 'tip'
+        }]);
     }, [language]);
 
     // --- CONTEXT EXTRACTOR HELPER ---
@@ -146,7 +108,7 @@ export const useEspCopilot = (params: SystemParams, results: any, activeStep: nu
 
     // --- AUTOMATIC MONITORING (Watchdog) ---
     useEffect(() => {
-        if (!results || !chatSession.current) return;
+        if (!results) return;
 
         const checkAndAlert = async (condition: boolean, code: string, messageEn: string, messageEs: string) => {
             if (condition && !alertCache.current.has(code)) {
@@ -187,23 +149,37 @@ export const useEspCopilot = (params: SystemParams, results: any, activeStep: nu
             }
         }
 
-        if (!chatSession.current) return;
-
         setLoading(true);
+        const userMsgId = crypto.randomUUID();
         setMessages(prev => [...prev, {
-            id: crypto.randomUUID(),
+            id: userMsgId,
             role: 'user',
             text: userText,
             timestamp: new Date()
         }]);
 
         try {
+            const systemInstruction = `
+                    ROL: Eres "ESP-Core", la Máxima Autoridad Técnica en Sistemas ESP.
+                    
+                    **REGLA DE ORO (CRÍTICA):**
+                    Tu análisis debe basarse EXCLUSIVAMENTE en los datos matemáticos proporcionados en el contexto "pumpPhysicsStatus".
+                    - Si el estado dice "OPTIMAL" o "IN_RANGE", **PROHIBIDO** decir que hay Downthrust, Upthrust o problemas de flujo.
+                    - Si el usuario dice que ve el punto en el centro de la curva, y tus datos lo confirman, valida esa observación.
+                    - NO uses conocimiento general de bombas para contradecir los datos específicos de la curva calculada que se te envían.
+
+                    IDIOMA: Responde SIEMPRE en ${language === 'es' ? 'ESPAÑOL' : 'INGLÉS'}.
+
+                    ESTRUCTURA DE RESPUESTA:
+                    1. **Estado Operativo:** (Basado estrictamente en el % BEP calculado).
+                    2. **Análisis Hidráulico:** Presiones y Cabezal.
+                    3. **Recomendación:** Directa y técnica.
+            `.trim();
+
             const langInstruction = language === 'es'
                 ? "[SYSTEM: RESPONDE EN ESPAÑOL. Confía estrictamente en 'pumpPhysicsStatus'. Si dice IN_RANGE, el diseño es correcto.] "
                 : "[SYSTEM: RESPOND IN ENGLISH. Strictly trust 'pumpPhysicsStatus'.] ";
 
-            // Always inject the CURRENT phase context if not explicitly provided
-            // This ensures Gemini always knows the current pump status even if the user just asks "Is this okay?"
             let currentContext = contextOverride;
             if (!currentContext && activeStep === 4) {
                 const ctx = getContextForPhase(4, 'target');
@@ -216,25 +192,75 @@ export const useEspCopilot = (params: SystemParams, results: any, activeStep: nu
                 finalPrompt += `\n\n[LIVE SYSTEM DATA]:\n${JSON.stringify(currentContext, null, 2)}`;
             }
 
-            const result = await chatSession.current.sendMessage(finalPrompt);
-            const response = await result.response;
-            const text = response.text();
+            // Map current messages to OpenRouter history API structure
+            const apiMessages = [
+                ...messages.map(m => ({
+                    role: m.role === 'model' ? 'assistant' : m.role,
+                    content: m.text
+                })),
+                {
+                    role: 'user',
+                    content: finalPrompt
+                }
+            ];
+
+            const userKey = localStorage.getItem('openrouter_api_key') || '';
+            const headers: Record<string, string> = {
+                "Content-Type": "application/json"
+            };
+            if (userKey && userKey !== 'null' && userKey !== 'undefined') {
+                headers["Authorization"] = `Bearer ${userKey}`;
+            }
+
+            const res = await fetch("http://localhost:4000/api/copilot/stream", {
+                method: "POST",
+                headers,
+                body: JSON.stringify({
+                    systemInstruction,
+                    messages: apiMessages
+                })
+            });
+
+            if (!res.ok) {
+                throw new Error(`OpenRouter Proxy Error: ${res.statusText}`);
+            }
+
+            const reader = res.body?.getReader();
+            if (!reader) {
+                throw new Error("No reader found on response body");
+            }
+
+            const decoder = new TextDecoder();
+            let done = false;
+            let completeText = "";
+            const modelMessageId = crypto.randomUUID();
 
             setMessages(prev => [...prev, {
-                id: crypto.randomUUID(),
+                id: modelMessageId,
                 role: 'model',
-                text: text || "...",
+                text: '',
                 timestamp: new Date(),
                 type: 'analysis'
             }]);
 
+            while (!done) {
+                const { value, done: doneReading } = await reader.read();
+                done = doneReading;
+                const chunk = decoder.decode(value || new Uint8Array(), { stream: !done });
+                completeText += chunk;
+                
+                setMessages(prev => prev.map(m => 
+                    m.id === modelMessageId ? { ...m, text: completeText } : m
+                ));
+            }
+
             // 2. Guardar en memoria para el futuro
-            if (text) {
+            if (completeText) {
                 AiMemoryService.saveCase({
                     category: 'design',
                     technicalSignature: signature,
                     context: currentContext,
-                    recommendation: text
+                    recommendation: completeText
                 });
             }
 
@@ -243,14 +269,14 @@ export const useEspCopilot = (params: SystemParams, results: any, activeStep: nu
             setMessages(prev => [...prev, {
                 id: crypto.randomUUID(),
                 role: 'model',
-                text: "❌ Error de conexión.",
+                text: language === 'es' ? "❌ Error de conexión al servidor de IA." : "❌ IA Server Connection Error.",
                 timestamp: new Date(),
                 type: 'alert'
             }]);
         } finally {
             setLoading(false);
         }
-    }, [language, activeStep, customPump, params, results]); // Added deps to ensure context is fresh
+    }, [language, activeStep, customPump, params, results, messages]); // Added deps to ensure context is fresh
 
     // Wrapper for the Phase Analysis Button
     const analyzePhase = (phaseIdx: number, scenarioScope: 'min' | 'target' | 'max' | 'all' = 'target') => {

@@ -98,89 +98,7 @@ const INITIAL_PARAMS: SystemParams = {
     simulation: { annualWearPercent: 5, simulationMonths: 60, costPerKwh: 0.1, ipType: 'fixed', ipTarget: 0, qInitial: undefined, qGrowthRate: 0 }
 };
 
-// --- ADVANCED MARKDOWN RENDERER ---
-const MarkdownRenderer = ({ content }: { content: string }) => {
-    const processInline = (text: string) => {
-        const parts = text.split(/(\*\*.*?\*\*|\$.*?\$|`.*?`)/g);
-        return parts.map((part, i) => {
-            if (part.startsWith('**') && part.endsWith('**')) return <strong key={i} className="text-txt-main font-black">{part.slice(2, -2)}</strong>;
-            if (part.startsWith('$') && part.endsWith('$')) return <span key={i} className="text-secondary font-mono bg-secondary/10 px-1 rounded mx-1">{part.slice(1, -1)}</span>;
-            if (part.startsWith('`') && part.endsWith('`')) return <code key={i} className="text-primary font-mono bg-surface-light px-1 rounded">{part.slice(1, -1)}</code>;
-            return <span key={i}>{part}</span>;
-        });
-    };
-
-    const lines = content.split('\n');
-    const elements: React.ReactNode[] = [];
-    let tableBuffer: string[] = [];
-    let inTable = false;
-
-    const flushTable = (keyPrefix: string) => {
-        if (tableBuffer.length === 0) return null;
-        const rows = tableBuffer.map(row => row.split('|').filter(c => c.trim() !== '').map(c => c.trim()));
-        const header = rows[0];
-        const body = rows.slice(1).filter(r => r.length > 0 && !r.every(c => c.includes('---')));
-
-        const table = (
-            <div key={keyPrefix} className="my-6 overflow-hidden rounded-2xl border border-surface-light shadow-md">
-                <table className="w-full text-sm text-left">
-                    <thead className="bg-surface-light text-txt-muted uppercase font-black tracking-widest">
-                        <tr>{header.map((h, i) => <th key={i} className="px-5 py-4">{processInline(h)}</th>)}</tr>
-                    </thead>
-                    <tbody className="divide-y divide-surface-light bg-surface">
-                        {body.map((row, i) => (
-                            <tr key={i} className="hover:bg-surface-light/50 transition-colors">
-                                {row.map((cell, j) => (
-                                    <td key={j} className={`px-5 py-3 font-medium ${j === 0 ? 'text-primary font-black' : 'text-txt-muted'}`}>
-                                        {processInline(cell)}
-                                    </td>
-                                ))}
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-        );
-        tableBuffer = [];
-        inTable = false;
-        return table;
-    };
-
-    lines.forEach((line, index) => {
-        const trimmed = line.trim();
-        if (trimmed.startsWith('|')) {
-            inTable = true;
-            tableBuffer.push(trimmed);
-            if (index === lines.length - 1) elements.push(flushTable(`tbl-${index}`));
-            return;
-        } else if (inTable) {
-            elements.push(flushTable(`tbl-${index}`));
-        }
-
-        if (trimmed.startsWith('###')) {
-            elements.push(<h4 key={index} className="text-base font-black text-primary uppercase tracking-widest mt-8 mb-3 border-b-2 border-surface-light pb-2">{trimmed.replace(/^###\s*/, '')}</h4>);
-        } else if (trimmed.startsWith('##')) {
-            elements.push(<h3 key={index} className="text-lg font-black text-txt-main mt-10 mb-4 flex items-center gap-3"><div className="w-1.5 h-6 bg-primary rounded-full"></div>{trimmed.replace(/^##\s*/, '')}</h3>);
-        } else if (trimmed.startsWith('#')) {
-            elements.push(<h2 key={index} className="text-2xl font-black text-txt-main mt-6 mb-6 tracking-tighter">{trimmed.replace(/^#\s*/, '')}</h2>);
-        }
-        else if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
-            elements.push(<div key={index} className="flex gap-3 ml-2 mb-1 text-txt-muted"><span className="text-primary font-bold mt-1.5">â€¢</span><span className="leading-relaxed">{processInline(trimmed.substring(2))}</span></div>);
-        }
-        else if (/^\d+\./.test(trimmed)) {
-            elements.push(<div key={index} className="flex gap-3 ml-2 mb-1 text-txt-muted"><span className="text-secondary font-bold mt-0.5 min-w-[20px]">{trimmed.split('.')[0]}.</span><span className="leading-relaxed">{processInline(trimmed.replace(/^\d+\.\s*/, ''))}</span></div>);
-        }
-        else if (trimmed === '') {
-            elements.push(<div key={index} className="h-2"></div>);
-        }
-        else {
-            elements.push(<p key={index} className="text-txt-muted leading-relaxed mb-2 text-sm font-medium">{processInline(trimmed)}</p>);
-        }
-    });
-
-    if (inTable) elements.push(flushTable(`tbl-end`));
-    return <div className="space-y-1">{elements}</div>;
-};
+import { MarkdownRenderer } from './components/MarkdownRenderer';
 
 const App: React.FC = () => {
     const { t, language, setLanguage } = useLanguage();
@@ -206,6 +124,8 @@ const App: React.FC = () => {
     const [aiScope, setAiScope] = useState<number | 'current'>('current');
     const [userInput, setUserInput] = useState('');
     const chatEndRef = useRef<HTMLDivElement>(null);
+    const [showAiSettings, setShowAiSettings] = useState(false);
+    const [aiApiKeyInput, setAiApiKeyInput] = useState(() => localStorage.getItem('openrouter_api_key') || '');
 
     const [params, setParams] = useState<SystemParams>(INITIAL_PARAMS);
     const [customPump, setCustomPump] = useState<EspPump | null>(null);
@@ -857,7 +777,7 @@ const App: React.FC = () => {
             <aside className={`${isChatMinimized ? 'w-[64px]' : 'w-[400px]'} flex-none glass-surface flex flex-col overflow-hidden relative border-l border-surface-light/30 transition-all duration-500 ease-in-out shadow-glow-primary z-10`}>
                 <div className="p-4 bg-gradient-to-b from-surface/40 to-transparent border-b border-surface-light/20 shadow-lg z-10 space-y-3 backdrop-blur-md shrink-0">
                     {isChatMinimized ? (
-                        /* â”€â”€ MINIMIZED: vertical icon + expand button â”€â”€ */
+                        /* ── MINIMIZED: vertical icon + expand button ── */
                         <div className="flex flex-col items-center gap-3 py-1">
                             <div className="p-2.5 bg-gradient-to-br from-primary via-primary to-secondary rounded-[10px] shadow-glow-primary ring-2 ring-white/5">
                                 <Sparkles className="w-5 h-5 text-white" />
@@ -871,7 +791,7 @@ const App: React.FC = () => {
                             </button>
                         </div>
                     ) : (
-                        /* â”€â”€ EXPANDED: full header â”€â”€ */
+                        /* ── EXPANDED: full header ── */
                         <>
                             <div className="flex justify-between items-center">
                                 <div className="flex items-center gap-2">
@@ -881,11 +801,55 @@ const App: React.FC = () => {
                                         <p className="text-xs font-black text-primary tracking-widest opacity-80 uppercase leading-none">{t('ai.copilot')}</p>
                                     </div>
                                 </div>
-                                <button onClick={() => setIsChatMinimized(true)} className="p-2 hover:bg-surface-light rounded-xl text-txt-muted hover:text-primary transition-all active:scale-95"><ChevronDown className="w-5 h-5" /></button>
+                                <div className="flex items-center gap-1">
+                                    <button
+                                        onClick={() => setShowAiSettings(!showAiSettings)}
+                                        title={language === 'es' ? 'Configurar API Key' : 'Configure API Key'}
+                                        className={`p-2 hover:bg-surface-light rounded-xl transition-all active:scale-95 ${showAiSettings ? 'text-primary' : 'text-txt-muted hover:text-primary'}`}
+                                    >
+                                        <Settings className="w-5 h-5" />
+                                    </button>
+                                    <button onClick={() => setIsChatMinimized(true)} className="p-2 hover:bg-surface-light rounded-xl text-txt-muted hover:text-primary transition-all active:scale-95"><ChevronDown className="w-5 h-5" /></button>
+                                </div>
                             </div>
+                            {showAiSettings && (
+                                <div className="p-4 bg-surface-light/20 border border-surface-light/40 rounded-xl animate-fadeIn text-[10px] space-y-2">
+                                    <label className="block font-black text-txt-muted uppercase tracking-widest">
+                                        {language === 'es' ? 'Clave API OpenRouter (Opcional)' : 'OpenRouter API Key (Optional)'}
+                                    </label>
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="password"
+                                            value={aiApiKeyInput}
+                                            onChange={(e) => {
+                                                setAiApiKeyInput(e.target.value);
+                                                localStorage.setItem('openrouter_api_key', e.target.value);
+                                            }}
+                                            placeholder="sk-or-v1-..."
+                                            className="flex-1 bg-canvas border border-surface-light px-3 py-2 text-[11px] text-txt-main outline-none focus:border-primary/50 transition-all font-semibold rounded-lg"
+                                        />
+                                        {aiApiKeyInput && (
+                                            <button
+                                                onClick={() => {
+                                                    setAiApiKeyInput('');
+                                                    localStorage.removeItem('openrouter_api_key');
+                                                }}
+                                                className="px-2.5 bg-danger/10 hover:bg-danger text-danger hover:text-white transition-all text-[9px] font-black uppercase rounded-lg"
+                                            >
+                                                {language === 'es' ? 'Borrar' : 'Clear'}
+                                            </button>
+                                        )}
+                                    </div>
+                                    <p className="text-[9px] text-txt-muted/80 leading-normal">
+                                        {language === 'es'
+                                            ? 'Si se deja en blanco, se utilizará la clave gratuita por defecto configurada en el servidor.'
+                                            : 'If left blank, the default free server key will be used.'}
+                                    </p>
+                                </div>
+                            )}
                             <div className="relative group">
                                 <select value={aiScope} onChange={(e) => setAiScope(e.target.value === 'current' ? 'current' : parseInt(e.target.value))} className="w-full bg-surface/50 text-sm font-black text-txt-main border border-surface-light rounded-xl py-3 pl-4 pr-10 outline-none focus:border-primary/50 appearance-none cursor-pointer hover:bg-surface-light transition-all uppercase tracking-widest">
-                                    <option value="current">âš¡ Current Phase</option>
+                                    <option value="current">⚡ Current Phase</option>
                                     <hr />
                                     {steps.map((s, i) => <option key={s.id} value={i}>Phase {i + 1}: {s.label}</option>)}
                                 </select>
@@ -903,9 +867,9 @@ const App: React.FC = () => {
                             {messages.map((msg) => (
                                 <div key={msg.id} className={`flex flex-col gap-1.5 animate-fadeIn ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
                                     <div className={`max-w-[95%] p-4 rounded-2xl text-sm font-medium leading-relaxed shadow-sm border ${msg.role === 'user' ? 'bg-primary text-white border-primary/20 rounded-br-none' : 'bg-surface text-txt-main border-surface-light rounded-bl-none'}`}>
-                                        <div className="markdown-content"><MarkdownRenderer content={msg.text} /></div>
+                                        <div className="markdown-content"><MarkdownRenderer content={msg.text} isStreaming={aiLoading && msg.id === messages[messages.length - 1]?.id} /></div>
                                     </div>
-                                    <span className="text-[10px] font-black text-txt-muted px-3 uppercase opacity-60 tracking-widest">{msg.role === 'user' ? t('ai.user') : t('ai.ai')} â€¢ {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                    <span className="text-[10px] font-black text-txt-muted px-3 uppercase opacity-60 tracking-widest">{msg.role === 'user' ? t('ai.user') : t('ai.ai')} • {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                 </div>
                             ))}
                             <div ref={chatEndRef}></div>

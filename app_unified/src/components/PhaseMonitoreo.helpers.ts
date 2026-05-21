@@ -1,6 +1,5 @@
 import { SystemParams, EspPump, WellFleetItem, HistoryMatchData, ProductionTest, SurveyPoint } from '@/types';
 import { calculateBaseHead, calculateTDH, calculateSystemResults, getShaftLimitHp, interpolateTVD, calculateFluidProperties } from '@/utils';
-import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export const isWellMatchComplete = (well: WellFleetItem) => {
     const t = well.productionTest;
@@ -41,13 +40,6 @@ export const buildHistoryMatchFromWell = (
         gor: t?.gor ?? designHm?.gor,
     };
 };
-
-export const getApiKey = () => {
-    // Nueva clave nivel gratuito proporcionada por el usuario
-    return "AIzaSyALOKJDFF6JHthsRq_25lcoZJXGAZYebWM";
-};
-
-export const genAI = new GoogleGenerativeAI(getApiKey());
 
 export const computeWellCapacity = (well: WellFleetItem, wellMatchParams: SystemParams, pump: EspPump) => {
     // Si no hay datos de match, no perdemos tiempo calculando

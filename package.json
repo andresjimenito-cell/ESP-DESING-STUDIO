@@ -1,0 +1,17 @@
+{
+  "name": "esp-design-studio-workspace",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "app_unified",
+    "backend"
+  ],
+  "scripts": {
+    "dev:frontend": "npm run dev --workspace=app_unified",
+    "dev:backend": "node --watch backend/server.js",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
