@@ -110,10 +110,10 @@ export const useEspCopilot = (params: SystemParams, results: any, activeStep: nu
                     let status = "OPTIMAL_RANGE";
                     let issue = "None";
 
-                    if (currentRate < minRateAtFreq) {
+                    if (currentRate < minRateAtFreq * 0.95) {
                         status = "CRITICAL_DOWNTHRUST";
                         issue = "Flow is below Minimum Stable Rate. Risk of recirculation.";
-                    } else if (currentRate > maxRateAtFreq) {
+                    } else if (currentRate > maxRateAtFreq * 1.05) {
                         status = "CRITICAL_UPTHRUST";
                         issue = "Flow is above Maximum Stable Rate. Risk of cavitation/floating.";
                     } else {

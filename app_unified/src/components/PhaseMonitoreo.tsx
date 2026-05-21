@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo, useEffect, useRef, useDeferredValue, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useDeferredValue, useCallback } from 'react';
 import {
     Activity, Gauge, Thermometer, Zap, AlertTriangle, ShieldCheck,
     Monitor, Clock, LayoutGrid, List, Search, ArrowUpRight,
@@ -29,139 +29,36 @@ import { MatchHistorico } from './MatchHistorico';
 import { TrajectoryPlot } from './TrajectoryPlot';
 import { AiMemoryService } from '../services/AiMemoryService';
 
+// Constantes
+import {
+  INITIAL_PARAMS, MOCK_FLEET, FALLBACK_PUMP, HealthTagLabels,
+  _cachedFleet, _cachedDesigns, _cachedHistoricalData, _dataLoaded,
+  setCachedFleet, setCachedDesigns, setCachedHistoricalData, setDataLoaded
+} from './PhaseMonitoreo.constants';
+
+// Helpers
+import {
+  isWellMatchComplete, buildHistoryMatchFromWell, genAI,
+  computeWellCapacity, getPhase6Diagnosis, getOptimizationPathLocalized,
+  getOptimizationPath, getWellHealthScore,
+  s_ext, d_ext, n_ext, norm_ext, fuzzyWellName, get_ext,
+  smartMatchExt, exactMatchExt
+} from './PhaseMonitoreo.helpers';
+
+// Sub-componentes
+import {
+  WellListItem, DebouncedSearchInput, MetricCard, HealthTag,
+  MetricSummaryCard, DiagnosticBadge, PredictiveWidget,
+  PredictiveMiniWidget, CompValueCard, DiagnosticRow
+} from './PhaseMonitoreo.subcomponents';
+
+// FloatingAiPanel
+import { FloatingAiPanel } from './FloatingAiPanel';
+
+// Custom Hook de importacion
+import { usePhaseMonitoreoImport } from './usePhaseMonitoreoImport';
+
 // --- PERFORMANCE OPTIMIZED SUB-COMPONENTS ---
-const WellListItem = React.memo(({ well, health, isActive, isMechVerified, onSelect }: any) => {
-    const isPendiente = well.estadoActual === 'pendiente';
-    const isESP = !well.als || well.als.toUpperCase() === 'ESP';
-
-    // Status mapping based on tiered health score
-    const statusColor = isPendiente ? 'bg-slate-500' : (health >= 90 ? 'bg-success shadow-glow-success' : health >= 60 ? 'bg-warning' : 'bg-danger shadow-glow-danger');
-    const statusLabel = isPendiente ? 'PENDIENTE' : (health >= 90 ? 'OPTIMAL' : health >= 60 ? 'CAUTION' : 'CRITICAL');
-
-    return (
-        <button
-            onClick={() => isESP && onSelect(well.id)}
-            disabled={!isESP}
-            className={`w-full flex items-center gap-4 px-4 py-3 rounded-none transition-all text-left mb-1 ${!isESP ? 'opacity-40 grayscale cursor-not-allowed' : (isActive
-                ? 'bg-primary/20 border border-primary/30'
-                : 'hover:bg-white/5 border border-transparent'
-            )}`}
-        >
-            <div className={`w-2.5 h-2.5 rounded-none shrink-0 ${statusColor}`}></div>
-            <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                    <span className={`text-sm font-black uppercase tracking-tight truncate ${isActive ? 'text-primary' : 'text-txt-main'}`}>{well.name}</span>
-                    {isMechVerified && (
-                        <span className="bg-cyan-500/10 text-cyan-500 border border-cyan-500/30 px-1.5 py-0.5 rounded text-[7px] font-black uppercase tracking-widest">MECH</span>
-                    )}
-                    {well.als && (
-                        <span className={`${isESP ? 'bg-primary/10 text-primary border-primary/30' : 'bg-warning/10 text-warning border-warning/30'} border px-1.5 py-0.5 rounded text-[7px] font-black uppercase tracking-widest`}>
-                            {well.als} {!isESP && '- NO SOPORTADO'}
-                        </span>
-                    )}
-                </div>
-                <span className="text-[9px] font-bold text-txt-muted uppercase tracking-widest">
-                    {isPendiente ? 'Pendiente por Instalacion' : `${Math.round(well.currentRate)} BPD - ${well.productionTest.freq || 0} Hz`}
-                </span>
-            </div>
-            <span className={`text-[9px] font-black tracking-widest px-2 py-1 ${isPendiente ? 'text-txt-muted' : (health >= 90 ? 'text-success' : health >= 60 ? 'text-warning' : 'text-danger')}`}>{statusLabel}</span>
-        </button>
-    );
-});
-
-
-
-const isWellMatchComplete = (well: WellFleetItem) => {
-    const t = well.productionTest;
-    const rate = Math.max(well.currentRate || 0, t?.rate || 0);
-    return rate > 5 && (t?.pip || 0) > 0 && (t?.thp || 0) > 0 && (t?.freq || 0) > 0;
-};
-
-const buildHistoryMatchFromWell = (
-    well: WellFleetItem,
-    basePStatic = 0,
-    designBase?: SystemParams | null
-): HistoryMatchData => {
-    const t = well.productionTest;
-    const designHm = designBase?.historyMatch;
-    // Fecha de cotejo = ultima prueba SCADA / produccion
-    const matchDate = t?.date || designHm?.matchDate || new Date().toISOString().split('T')[0];
-    // Fecha de arranque = columna de diseno (FECHA DE ARRANQUE), no la de la prueba
-    const startDate =
-        designHm?.startDate ||
-        (designBase as any)?.startDate ||
-        (designBase as any)?.fechaArranque ||
-        (designBase as any)?.fecha_arranque ||
-        '';
-    return {
-        rate: t?.rate || well.currentRate || 0,
-        frequency: t?.freq || 60,
-        waterCut: t?.waterCut || 0,
-        thp: t?.thp || 0,
-        tht: t?.tht || 80,
-        pip: t?.pip || 0,
-        pd: t?.pdp || t?.hp || 0,
-        pdp: t?.pdp,
-        fluidLevel: 0,
-        submergence: 0,
-        pStatic: basePStatic > 0 ? basePStatic : 0,
-        startDate,
-        matchDate,
-        gor: t?.gor ?? designHm?.gor,
-    };
-};
-
-const getApiKey = () => {
-    // Nueva clave nivel gratuito proporcionada por el usuario
-    return "AIzaSyALOKJDFF6JHthsRq_25lcoZJXGAZYebWM";
-};
-
-const genAI = new GoogleGenerativeAI(getApiKey());
-
-const INITIAL_PARAMS: SystemParams = {
-    metadata: {
-        projectName: 'New Design 001',
-        wellName: 'Well-X',
-        engineer: '',
-        company: '',
-        date: new Date().toISOString().split('T')[0],
-        comments: ''
-    },
-    wellbore: {
-        correlation: 'Hagedorn-Brown',
-        casing: CASING_CATALOG[0],
-        tubing: TUBING_CATALOG[0],
-        casingTop: 0, casingBottom: 0,
-        tubingTop: 0, tubingBottom: 0,
-        midPerfsMD: 0
-    },
-    fluids: {
-        apiOil: 0, geGas: 0, waterCut: 0, geWater: 1.0, salinity: 0, pb: 0, gor: 0, glr: 0,
-        isDeadOil: false, co2: 0, h2s: 0, n2: 0, sandCut: 0, sandDensity: 2.65,
-        pvtCorrelation: 'Lasater', viscosityModel: 'Total Fluid',
-        correlations: {
-            viscDeadOil: 'Beggs-Robinson', viscSatOil: 'Beggs-Robinson', viscUnsatOil: 'Vasquez-Beggs',
-            viscGas: 'Lee', viscWater: 'Matthews & Russell', oilDensity: 'Katz',
-            gasDensity: 'Beggs', waterDensity: 'Beggs', pbRs: 'Lasater',
-            oilComp: 'Vasquez-Beggs', oilFvf: 'Vasquez-Beggs', waterFvf: 'HP41C',
-            zFactor: 'Dranchuk-Purvis', surfaceTensionOil: 'Baker-Swerdloff', surfaceTensionWater: 'Hough'
-        }
-    },
-    inflow: {
-        model: 'Productivity Index', staticSource: 'BHP', pStatic: 0, staticLevel: 0, ip: 0
-    },
-    pressures: { totalRate: 0, pht: 0, phc: 0, pumpDepthMD: 0 },
-    targets: {
-        min: { rate: 0, ip: 0, waterCut: 0, gor: 0, frequency: 50 },
-        target: { rate: 0, ip: 0, waterCut: 0, gor: 0, frequency: 60 },
-        max: { rate: 0, ip: 0, waterCut: 0, gor: 0, frequency: 60 }
-    },
-    activeScenario: 'target',
-    surfaceTemp: 0, bottomholeTemp: 0,
-    motorHp: 0,
-    totalDepthMD: 0, survey: [],
-    simulation: { annualWearPercent: 0, simulationMonths: 36, costPerKwh: 0, ipType: 'fixed', ipTarget: 0 }
-};
 
 interface Props {
     params: SystemParams;
@@ -174,666 +71,10 @@ interface Props {
 }
 
 // --- MOCK DATA FOR DEMO ---
-const MOCK_FLEET: WellFleetItem[] = [];
-
-// "?"? MODULE-LEVEL CACHE (survives component unmount/remount) "?"?"?"?"?"?"?"?"?"?
-let _cachedFleet: WellFleetItem[] = [];
-let _cachedDesigns: Record<string, SystemParams> = {};
-let _cachedHistoricalData: Record<string, ProductionTest[]> = {};
-let _dataLoaded = false;
 // "?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?
 
 // --- CAPACITY SIMULATION HELPER ---
 // --- CAPACITY SIMULATION HELPER (Optimized with basic memoization logic) ---
-const computeWellCapacity = (well: WellFleetItem, wellMatchParams: SystemParams, pump: EspPump) => {
-    // Si no hay datos de match, no perdemos tiempo calculando
-    if (!wellMatchParams?.historyMatch || !pump) return null;
-
-    const test = well.productionTest;
-    const q = Math.max(0.1, test.rate);
-    const baseFreq = pump.nameplateFrequency || 60;
-    const currentFreq = test.freq || 60;
-    const ratioActual = Math.max(0.01, currentFreq / baseFreq);
-
-    const qBaseActual = q / ratioActual;
-    const hBaseAtQ = calculateBaseHead(qBaseActual, pump);
-    const actualPumpTDH = Math.max(0, hBaseAtQ * Math.pow(ratioActual, 2));
-
-    const pipMeasured = test.pip > 0 ? test.pip : 10;
-    const pumpMD = well.depthMD || wellMatchParams.pressures?.pumpDepthMD || 5000;
-    const perfsMD = well.depthMD > 0 ? well.depthMD + 100 : (wellMatchParams.wellbore?.midPerfsMD || 5100);
-    const pumpTVD = interpolateTVD(pumpMD, wellMatchParams.survey);
-    const perfsTVD = interpolateTVD(perfsMD, wellMatchParams.survey);
-    const deltaTVD = Math.max(0, perfsTVD - pumpTVD);
-
-    const fluidProps = calculateFluidProperties(pipMeasured, wellMatchParams.bottomholeTemp, wellMatchParams);
-    const currentGrad = fluidProps.gradMix || 0.35;
-    const pwfActual = pipMeasured + (deltaTVD * currentGrad);
-
-    const existingPStatic = wellMatchParams.inflow?.pStatic || 0;
-    const baseDrawdown = existingPStatic > pwfActual ? (existingPStatic - pwfActual) : Math.max(500, q / 1.5);
-    const validPStatic = pwfActual + baseDrawdown;
-    const calculatedIP = q / baseDrawdown;
-
-    const actualParams = {
-        ...wellMatchParams,
-        inflow: { ...wellMatchParams.inflow, ip: calculatedIP, pStatic: validPStatic },
-        fluids: { ...wellMatchParams.fluids, waterCut: test.waterCut },
-        pressures: { ...wellMatchParams.pressures, pht: test.thp, phc: 0, totalRate: q, pumpDepthMD: pumpMD }
-    };
-
-    let sysCurveOffset = 0;
-    const rawSysTDH = calculateTDH(q, actualParams);
-    if (rawSysTDH > 0) sysCurveOffset = actualPumpTDH - rawSysTDH;
-
-    let maxAllowedFreq = currentFreq;
-    let limitingFactor = 'Operacion en Punto de Diseno';
-    let estimatedMaxRate = test.rate;
-
-    // OPTIMIZACI"N AGRESIVA: Saltamos de a 5 Hz para reducir carga computacional en un 80%
-    // Esto es suficiente para una estimacion predictiva de monitoreo.
-    for (let simFreq = currentFreq + 5; simFreq <= 85; simFreq += 5) {
-        const ratio = simFreq / baseFreq;
-        const maxExpectedFlow = (pump.maxGraphRate || 6000) * ratio;
-        const steps = 20; // Reducido de 30 a 20 (Suficiente para tendencia predictiva)
-        const stepSize = maxExpectedFlow / steps;
-
-        let bestRate = 0;
-        let bestHead = 0;
-
-        for (let i = 0; i < steps; i++) {
-            const testQ = i * stepSize;
-            if (testQ === 0) continue;
-            const qB = testQ / ratio;
-            const pHead = calculateBaseHead(qB, pump) * Math.pow(ratio, 2);
-            const sHead = calculateTDH(testQ, actualParams) + sysCurveOffset;
-
-            if (pHead < sHead) {
-                const prevQ = (i - 1) * stepSize;
-                bestRate = prevQ + (testQ - prevQ) * 0.5;
-                bestHead = pHead;
-                break;
-            }
-        }
-
-        if (bestRate === 0) { limitingFactor = 'Altura de Bombeo Agotada (TDH Max)'; break; }
-
-        const res = calculateSystemResults(bestRate, bestHead, actualParams, pump, simFreq);
-        const ml = res?.motorLoad || 0;
-        const sLimit = getShaftLimitHp(pump?.series);
-        const sl = sLimit > 0 ? ((res?.hpTotal || 0) / sLimit) * 100 : 0;
-        const sub = Math.max(0, pumpMD - (res?.fluidLevel || 0));
-        const totalKva = res?.electrical?.systemKva || 0;
-        const vsdKva = (wellMatchParams as any).selectedVSD?.kvaRating || 350;
-
-        if (sub < 400) { limitingFactor = `Sumergencia Critica (<400 ft)`; break; }
-        if (ml >= 85) { limitingFactor = `Limite Termico Motor (85%)`; break; }
-        if (sl >= 80) { limitingFactor = `Limite Mecanico Eje (80%)`; break; }
-        if (res?.pip < 250) { limitingFactor = `Proteccion PIP (<250 psi)`; break; }
-        if (totalKva >= (vsdKva * 0.95)) { limitingFactor = `Capacidad VSD (${totalKva.toFixed(0)} kVA)`; break; }
-
-        maxAllowedFreq = simFreq;
-        estimatedMaxRate = bestRate;
-        if (simFreq >= 80) limitingFactor = 'Optimizado (Limite VSD)';
-    }
-
-    const potentialGain = Math.max(0, estimatedMaxRate - test.rate);
-    return { maxFreq: maxAllowedFreq, maxRate: estimatedMaxRate, limitingFactor, potentialGain };
-};
-
-// --- AI DIAGNOSTIC HELPERS ---
-const getPhase6Diagnosis = (well: WellFleetItem, params: SystemParams, pump: EspPump | null) => {
-    if (!well || !params || !pump) return null;
-    const freq = well.productionTest.freq || 60;
-    const ratio = freq / (pump.nameplateFrequency || 60);
-    const qRaw = well.productionTest.rate || 0.1;
-    const qBase = qRaw / ratio;
-
-    const minQ = pump.minRate * ratio;
-    const maxQ = pump.maxRate * ratio;
-
-    let thrustStatus: 'optimal' | 'upthrust' | 'downthrust' = 'optimal';
-    if (qRaw < minQ * 0.95) thrustStatus = 'downthrust';
-    else if (qRaw > maxQ * 1.05) thrustStatus = 'upthrust';
-
-    return { thrustStatus, minQ, maxQ, ratio };
-};
-
-
-const getOptimizationPathLocalized = (well: WellFleetItem, capacity: any, pump: EspPump | null, language: string) => {
-    if (!well || !capacity) {
-        return {
-            advice: language === 'es' ? 'Calculando optimizacion...' : 'Calculating optimization...',
-            warning: ''
-        };
-    }
-
-    const freq = well.productionTest.freq || 60;
-    const isDownthrust = (well.productionTest.rate || 0) < (pump?.minRate || 0) * (freq / (pump?.nameplateFrequency || 60));
-    const isUpthrust = (well.productionTest.rate || 0) > (pump?.maxRate || 2000) * (freq / (pump?.nameplateFrequency || 60));
-
-    let advice = '';
-    if (capacity.potentialGain > 5) {
-        advice = language === 'es'
-            ? `Recomendacion: SUBIR LA FRECUENCIA hasta ${capacity.maxFreq} Hz para ganar +${Math.round(capacity.potentialGain)} BPD extras. Este aumento es seguro hasta el limite tecnico (${capacity.limitingFactor}).`
-            : `Recommendation: INCREASE FREQUENCY up to ${capacity.maxFreq} Hz to gain +${Math.round(capacity.potentialGain)} extra BPD. This increase is safe up to the technical limit (${capacity.limitingFactor}).`;
-    } else {
-        advice = language === 'es'
-            ? `Recomendacion: MANTENER LA FRECUENCIA ACTUAL de ${freq} Hz. El sistema alcanzo el limite operativo por ${capacity.limitingFactor || 'restricciones fisicas'}.`
-            : `Recommendation: MAINTAIN CURRENT FREQUENCY at ${freq} Hz. The system reached its operating limit due to ${capacity.limitingFactor || 'physical constraints'}.`;
-    }
-
-    let warning = '';
-    if (isDownthrust) {
-        warning = language === 'es'
-            ? ' [!] ACCION REQUERIDA: Comportamiento Downthrust. Ajuste VSD para subir caudal hacia 0.85-1.10 BEP; si no responde, revisar inflow/sistema.'
-            : ' [!] ACTION REQUIRED: Downthrust behavior. Adjust VSD to raise flow toward 0.85-1.10 BEP; if no response, review inflow/system.';
-    } else if (isUpthrust) {
-        warning = language === 'es'
-            ? ' [!] ACCION REQUERIDA: Comportamiento Upthrust. Ajuste VSD para bajar caudal hacia 0.85-1.10 BEP; validar aforo y contrapresion.'
-            : ' [!] ACTION REQUIRED: Upthrust behavior. Adjust VSD to lower flow toward 0.85-1.10 BEP; validate test rate and backpressure.';
-    }
-
-    return { advice, warning };
-};
-
-// Backward-compatible default (Spanish) for existing call sites.
-const getOptimizationPath = (well: WellFleetItem, capacity: any, pump: EspPump | null) => {
-    return getOptimizationPathLocalized(well, capacity, pump, 'es');
-};
-// --- AI PREDICTIVE WIDGET ---
-// --- AI PREDICTIVE WIDGET (Optimized with useMemo) ---
-const PredictiveWidget = React.memo(({ selectedWell, wellMatchParams, pump, computeWellCapacity, getOptimizationPath }: any) => {
-    const { language } = useLanguage();
-    const [isMinimized, setIsMinimized] = useState(false);
-
-    // Solo calculamos si el widget esta expandido para ahorrar CPU
-    const analysisData = useMemo(() => {
-        if (isMinimized || !selectedWell || !pump) return null;
-
-        const mp: SystemParams = {
-            ...wellMatchParams,
-            historyMatch: {
-                ...wellMatchParams.historyMatch,
-                rate: selectedWell.productionTest.rate || 0.1,
-                frequency: selectedWell.productionTest.freq || 60,
-                pip: selectedWell.productionTest.pip || 0,
-                waterCut: selectedWell.productionTest.waterCut || 0,
-                pStatic: wellMatchParams.inflow?.pStatic || 0,
-            } as any
-        };
-
-        const capacity = computeWellCapacity(selectedWell, mp, pump);
-        const { advice, warning } = getOptimizationPathLocalized(selectedWell, capacity, pump, language);
-
-        const currentRate = selectedWell.productionTest.rate || 0.1;
-        const currentFreq = selectedWell.productionTest.freq || 60;
-        const ratio = currentFreq / (pump?.nameplateFrequency || 60);
-        const isDownthrust = currentRate < (pump?.minRate || 0) * ratio * 0.95;
-        const isUpthrust = currentRate > (pump?.maxRate || 2000) * ratio * 1.05;
-
-        return { capacity, advice, warning, isDownthrust, isUpthrust };
-    }, [isMinimized, selectedWell?.id, pump?.id, wellMatchParams?.inflow?.pStatic, language]);
-
-    useEffect(() => {
-        setIsMinimized(false);
-        const timer = setTimeout(() => setIsMinimized(true), 10000);
-        return () => clearTimeout(timer);
-    }, [selectedWell?.id]);
-
-    if (isMinimized) {
-        return (
-            <div className="absolute top-24 right-8 z-50 pointer-events-auto">
-                <button
-                    onClick={() => setIsMinimized(false)}
-                    className="glass-surface border border-primary/30 bg-gradient-to-tr from-primary/20 to-transparent rounded-none p-4 shadow-[0_20px_40px_rgba(34,211,238,0.4)] hover:bg-primary/20 transition-all flex items-center justify-center animate-pulse"
-                >
-                    <Brain className="w-6 h-6 text-primary drop-shadow-[0_0_5px_rgba(34,211,238,0.8)]" />
-                </button>
-            </div>
-        );
-    }
-
-    if (!analysisData) return null;
-
-    const { capacity, advice, warning, isDownthrust, isUpthrust } = analysisData;
-    const thrustMsg = (!isDownthrust && !isUpthrust) ? (language === 'es' ? 'en su Ventana Operativa' : 'within its Operating Window') : (isDownthrust ? (language === 'es' ? 'en Zona de Downthrust' : 'in Downthrust Zone') : (language === 'es' ? 'en Zona de Upthrust' : 'in Upthrust Zone'));
-
-    return (
-        <div className="absolute top-24 right-8 z-40 pointer-events-none animate-slideUp">
-            <div className="glass-surface border border-primary/30 bg-gradient-to-br from-primary/10 via-surface to-surface rounded-none rounded-none p-6 shadow-[0_30px_50px_-10px_rgba(34,211,238,0.4)] w-[420px] flex flex-col gap-4 group transition-all backdrop-blur-3xl relative pointer-events-auto">
-                <button onClick={() => setIsMinimized(true)} className="absolute top-5 right-5 p-2 rounded-none hover:bg-white/10 text-primary border border-primary/20 bg-primary/5 transition-all z-10">
-                    <Minimize2 className="w-4 h-4" />
-                </button>
-                <div className="flex items-center gap-4 border-b border-white/5 pb-4 pr-10">
-                    <div className="p-3 bg-primary/20 rounded-none ring-1 ring-primary/40 animate-[pulse_3s_ease-in-out_infinite]">
-                        <Brain className="w-6 h-6 text-primary drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]" />
-                    </div>
-                    <div>
-                        <h3 className="text-[13px] font-black text-primary tracking-[0.2em] uppercase">{language === 'es' ? 'ANALISIS PREDICTIVO IA' : 'AI PREDICTIVE ANALYSIS'}</h3>
-                        <div className="flex gap-2 mt-1">
-                            {isDownthrust && <span className="px-2 py-0.5 bg-warning/20 border border-warning/40 rounded text-[10px] font-black text-warning tracking-widest uppercase animate-pulse">DOWNTHRUST</span>}
-                            {isUpthrust && <span className="px-2 py-0.5 bg-danger/20 border border-danger/40 rounded text-[10px] font-black text-danger tracking-widest uppercase animate-pulse">UPTHRUST</span>}
-                            <span className={`px-2 py-0.5 border rounded text-[10px] font-black tracking-widest uppercase ${(!isDownthrust && !isUpthrust) ? 'bg-success/20 border-success/40 text-success' : 'bg-white/5 border-white/10 text-txt-muted'}`}>
-                                {(!isDownthrust && !isUpthrust) ? (language === 'es' ? 'OPTIMO' : 'OPTIMAL') : (language === 'es' ? 'ALERTA' : 'ALERT')}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="text-[13px] text-txt-main/90 font-medium leading-relaxed">
-                    {language === 'es' ? 'Bomba' : 'Pump'} <strong>{pump?.model}</strong> {language === 'es' ? 'opera' : 'operates'} <strong>{thrustMsg}</strong>.
-                    <span className="block mt-2 text-primary/90 font-black text-sm">{advice}</span>
-                    {warning && <span className="block mt-2.5 font-bold text-warning border-l-2 border-warning/40 pl-3 bg-warning/5 py-1.5 rounded-r-md">{warning}</span>}
-                </div>
-
-                <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/5 bg-canvas/30 -mx-6 -mb-6 p-5 rounded-b-[2rem]">
-                    <div className="flex flex-col">
-                        <span className="text-[10px] uppercase tracking-widest text-txt-muted font-black opacity-60">Limite Seguro VSD</span>
-                        <div className="text-2xl font-black text-white leading-none mt-1.5">{Math.round(capacity?.maxRate || 0)} <span className="text-[11px] text-txt-muted font-bold">BPD @ {Math.round(capacity?.maxFreq || 60)}Hz</span></div>
-                    </div>
-                    <div className="flex flex-col text-right">
-                        <span className="text-[10px] uppercase tracking-widest text-txt-muted font-black opacity-60">Opt. Potencial</span>
-                        <div className="text-2xl font-black text-success leading-none mt-1.5">+{Math.round(capacity?.potentialGain || 0)} <span className="text-[11px] text-success/60 font-bold">BPD</span></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-});
-
-// --- SUB-COMPONENTS ---
-
-const DebouncedSearchInput = React.memo(({ value, onChange, placeholder }: any) => {
-    const [localValue, setLocalValue] = useState(value);
-
-    useEffect(() => {
-        setLocalValue(value);
-    }, [value]);
-
-    useEffect(() => {
-        const t = setTimeout(() => onChange(localValue), 250);
-        return () => clearTimeout(t);
-    }, [localValue, onChange]);
-
-    return (
-        <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-txt-muted/50" />
-            <input
-                type="text"
-                placeholder={placeholder}
-                value={localValue}
-                onChange={(e) => setLocalValue(e.target.value)}
-                className="w-full bg-canvas/60 border border-surface-light rounded-none pl-10 pr-4 py-2.5 text-xs font-bold text-txt-main focus:outline-none focus:border-primary/50 uppercase tracking-wider placeholder:text-txt-muted/30"
-            />
-        </div>
-    );
-});
-
-const MetricCard = React.memo(({ label, value, unit, icon: Icon, color = 'primary', alert = false }: any) => (
-    <div className={`glass-surface rounded-none border ${alert ? 'border-danger/50 shadow-glow-danger/20' : 'border-white/5'} p-4 flex flex-col justify-between h-28 relative overflow-hidden group transition-all`}>
-        <div className={`absolute -right-4 -top-4 w-16 h-16 ${color === 'primary' ? 'bg-primary/5' : color === 'secondary' ? 'bg-secondary/5' : 'bg-danger/5'} blur-2xl rounded-none`}></div>
-        <div className="flex justify-between items-start z-10">
-            <span className="text-[10px] font-black text-txt-muted uppercase tracking-widest opacity-60">{label}</span>
-            <Icon className={`w-4 h-4 ${color === 'primary' ? 'text-primary' : color === 'secondary' ? 'text-secondary' : 'text-danger'} ${alert ? 'animate-pulse' : ''}`} />
-        </div>
-        <div className="mt-auto z-10">
-            <div className={`text-2xl font-black ${alert ? 'text-danger' : 'text-txt-main'} tracking-tighter`}>{value} <small className="text-[10px] text-txt-muted uppercase">{unit}</small></div>
-        </div>
-    </div>
-));
-
-const HealthTagLabels: any = {
-    normal: 'Operativo',
-    caution: 'Advertencia',
-    alert: 'Critico',
-    failure: 'Falla',
-    active: 'Activo',
-    inactive: 'Inactivo',
-    'ground-fault': 'Falla Tierra',
-    error: 'Error Sensor'
-};
-
-const HealthTag = React.memo(({ status, label }: { status: string, label: string }) => {
-    const colors: any = {
-        normal: 'bg-success/20 text-success border-success/30 shadow-glow-success/10',
-        caution: 'bg-warning/20 text-warning border-warning/30',
-        alert: 'bg-danger/20 text-danger border-danger/30 shadow-glow-danger/10',
-        failure: 'bg-magenta/20 text-magenta border-magenta/30',
-        active: 'bg-primary/20 text-primary border-primary/30',
-        inactive: 'bg-slate-500/20 text-slate-400 border-slate-500/30',
-        'ground-fault': 'bg-danger/40 text-danger border-danger/50 animate-pulse',
-        error: 'bg-magenta/40 text-magenta border-magenta/50'
-    };
-    const displayLabel = HealthTagLabels[status] || status.toUpperCase();
-    return (
-        <div className="flex items-center justify-between gap-12 w-full">
-            <span className="text-[9px] font-black text-txt-muted uppercase tracking-widest opacity-60">{label}</span>
-            <span className={`px-2 py-0.5 rounded-none text-[8px] font-black uppercase tracking-widest border ${colors[status] || colors.inactive}`}>
-                {displayLabel}
-            </span>
-        </div>
-    );
-});
-
-// --- HEALTH CALCULATION UTILITY ---
-// --- RIGOROUS HEALTH CALCULATION UTILITY ---
-const getWellHealthScore = (well: WellFleetItem, design?: SystemParams | null, defaultPump?: any) => {
-    const hasMatch = well.productionTest.hasMatchData && (well.currentRate > 5 || well.productionTest.pip > 0 || well.productionTest.thp > 0);
-    if (!hasMatch) return 0;
-
-    // --- 1. CRITICAL STATUS (Sensor Alarms & Immediate Risk) ---
-    const criticalFailure = [well.health.pump, well.health.motor, well.health.cable, well.health.seal]
-        .some(s => s === 'alert' || s === 'failure' || s === 'ground-fault');
-
-    if (criticalFailure) return 30; // CRITICAL
-
-    // --- 2. OPERATIONAL LIMITS ANALYSIS ---
-    let finalStatus: 'optimal' | 'caution' | 'critical' = 'optimal';
-
-    if (defaultPump) {
-        let pump = defaultPump;
-        let motor: any = null;
-
-        if (design) {
-            const findPump = (obj: any): any => {
-                if (!obj || typeof obj !== 'object') return null;
-                if (obj.stages && (obj.h0 || obj.h1)) return obj;
-                for (let k in obj) { const found = findPump(obj[k]); if (found) return found; }
-                return null;
-            }
-            pump = findPump(design) || pump;
-
-            const findMotor = (obj: any): any => {
-                if (!obj || typeof obj !== 'object') return null;
-                if (obj.hp !== undefined && obj.npAmps !== undefined) return obj;
-                for (let k in obj) { const found = findMotor(obj[k]); if (found) return found; }
-                return null;
-            }
-            motor = findMotor(design);
-        }
-
-        const currentRate = well.currentRate || well.productionTest.rate || 0.1;
-        const currentFreq = well.productionTest.freq || 60;
-        const ratio = currentFreq / (pump.nameplateFrequency || 60);
-        const minQ = (pump.minRate || 0) * ratio;
-        const maxQ = (pump.maxRate || 2000) * ratio;
-
-        // --- Flow Limits (Cone) ---
-        if (currentRate < minQ || currentRate > maxQ) {
-            finalStatus = 'caution'; // Exceeding range is Caution (per user preference)
-        } else if (currentRate < minQ * 1.15 || currentRate > maxQ * 0.85) {
-            finalStatus = 'caution'; // Approaching range limit (within 15%) -> Caution
-        }
-
-        // --- Motor Load Limits ---
-        if (motor && motor.hp) {
-            const depth = well.depthMD || 8000;
-            const bhpEst = (currentRate * (depth * 0.433) * 0.9) / (135770 * 0.65);
-            const motorLimit = motor.hp * (currentFreq / 60);
-
-            if (motorLimit > 0) {
-                const loadPct = (bhpEst / motorLimit) * 100;
-                if (loadPct > 105) return 30; // CRITICAL OVERLOAD
-                else if (loadPct > 90) finalStatus = 'caution'; // Approaching limit -> Caution
-            }
-        }
-    }
-
-    // --- PIP Limits ---
-    const pip = well.productionTest.pip || 0;
-    if (pip > 0) {
-        if (pip < 100) return 30; // CRITICAL PIP
-        if (pip < 300) finalStatus = 'caution'; // Approaching/Low PIP -> Caution
-    }
-
-    // --- 3. RETURN TIERED SCORE ---
-    if (finalStatus === 'caution') return 70;
-    return 100; // OPTIMAL
-};
-
-
-// --- FALLBACK EQUIPMENT FOR DEMO ---
-
-const FALLBACK_PUMP: EspPump = {
-    id: 'DEMO-PUMP', manufacturer: 'REDA', series: '538', model: 'DN1200', stages: 120,
-    minRate: 800, bepRate: 1200, maxRate: 1600, maxEfficiency: 72, maxHead: 50, maxGraphRate: 2000,
-    nameplateFrequency: 60,
-    h0: 51.5, h1: -0.002, h2: -0.000018, h3: 0, h4: 0, h5: 0, h6: 0,
-    p0: 0.15, p1: 0.0001, p2: 0, p3: 0, p4: 0, p5: 0, p6: 0,
-    maxFlow: 1600
-};
-
-const MetricSummaryCard = React.memo(({ label, value, unit, icon: Icon, color = 'primary' }: any) => {
-    const glowClass = color === 'primary' ? 'group-hover:shadow-glow-primary/40' : color === 'secondary' ? 'group-hover:shadow-glow-secondary/40' : 'group-hover:shadow-glow-danger/40';
-    const borderHover = color === 'primary' ? 'group-hover:border-primary/50' : color === 'secondary' ? 'group-hover:border-secondary/50' : 'group-hover:border-danger/50';
-
-    return (
-        <div className={`glass-surface rounded-none border border-white/5 p-6 flex items-center gap-6 shadow-2xl transition-all duration-700 flex-1 min-w-[220px] relative overflow-hidden group ${glowClass} ${borderHover}`}>
-            {/* Ambient Background Gradient Glows */}
-            <div className={`absolute -right-8 -top-8 w-40 h-40 ${color === 'primary' ? 'bg-primary/25' : color === 'secondary' ? 'bg-secondary/25' : 'bg-danger/25'} blur-[60px] rounded-none opacity-0 group-hover:opacity-100 transition-all duration-1000`}></div>
-            <div className={`absolute -left-12 -bottom-12 w-32 h-32 ${color === 'primary' ? 'bg-primary/15' : color === 'secondary' ? 'bg-secondary/15' : 'bg-danger/15'} blur-[40px] rounded-none opacity-30 transition-transform duration-1000 delay-150`}></div>
-
-            {/* Themed Internal Overlay Gradient */}
-            <div className={`absolute inset-0 bg-gradient-to-tr ${color === 'primary' ? 'from-primary/5 via-transparent to-primary/5' : color === 'secondary' ? 'from-secondary/5 via-transparent to-secondary/5' : 'from-danger/5 via-transparent to-danger/5'} opacity-0 group-hover:opacity-100 transition-opacity duration-700`}></div>
-
-            {/* Icon Container with Dynamic Theme Ring */}
-            <div className={`p-4 rounded-none ${color === 'primary' ? 'bg-primary/15 text-primary border-primary/30 shadow-glow-primary/20' : color === 'secondary' ? 'bg-secondary/15 text-secondary border-secondary/30 shadow-glow-secondary/20' : 'bg-danger/15 text-danger border-danger/30 shadow-glow-danger/20'} border relative z-10 transition-all duration-500 group-hover:rotate-6`}>
-                <Icon className="w-7 h-7" />
-                {/* Micro pulse effect on icon ring */}
-                <div className={`absolute inset-0 rounded-none border-2 ${color === 'primary' ? 'border-primary' : color === 'secondary' ? 'border-secondary' : 'border-danger'} opacity-0 group-hover:animate-ping opacity-20`}></div>
-            </div>
-
-            <div className="flex flex-col relative z-20">
-                <span className={`text-[10px] font-black uppercase tracking-[0.25em] mb-1.5 transition-colors duration-500 ${color === 'primary' ? 'text-primary/70 group-hover:text-primary' : color === 'secondary' ? 'text-secondary/70 group-hover:text-secondary' : 'text-danger/70 group-hover:text-danger'}`}>{label}</span>
-                <div className="flex items-baseline gap-2">
-                    <span className="text-4xl font-black text-txt-main tracking-tighter leading-none drop-shadow-sm">{value}</span>
-                    <span className="text-[10px] font-black text-txt-muted uppercase tracking-widest opacity-40 leading-none group-hover:opacity-100 group-hover:text-txt-main transition-all">{unit}</span>
-                </div>
-            </div>
-
-            {/* Bottom Shine Line */}
-            <div className={`absolute bottom-0 left-10 right-10 h-[2px] ${color === 'primary' ? 'bg-gradient-to-r from-transparent via-primary/60 to-transparent' : color === 'secondary' ? 'bg-gradient-to-r from-transparent via-secondary/60 to-transparent' : 'bg-gradient-to-r from-transparent via-danger/60 to-transparent'} opacity-0 group-hover:opacity-100 transition-opacity duration-700`}></div>
-        </div>
-    );
-});
-
-const DiagnosticBadge = ({ well, health, normalWellCapacity }: { well: WellFleetItem, health: number, normalWellCapacity?: any }) => {
-    const isRunning = well.currentRate > 5;
-    if (!isRunning) return <div className="flex items-center gap-2 bg-surface-light/50 px-3 py-1 rounded-none text-txt-muted opacity-40 font-black text-[8px] uppercase tracking-widest border border-surface-light"><Clock className="w-2.5 h-2.5" /> Standby</div>;
-
-    if (health >= 85) return <div className="flex items-center gap-2 bg-success/10 px-3 py-1 rounded-none text-success font-black text-[8px] uppercase tracking-widest border border-success/20 shadow-glow-success/5"><ShieldCheck className="w-2.5 h-2.5" /> Optimized</div>;
-
-    // Identify Cause
-    let cause = "Investigate";
-    if (well.health.pump !== 'normal') cause = `Pump: ${well.health.pump.toUpperCase()}`;
-    else if (well.health.motor !== 'normal') cause = `Motor: ${well.health.motor.toUpperCase()}`;
-    else if (well.health.cable !== 'normal') cause = `Cable: ${well.health.cable.toUpperCase()}`;
-    else if (well.productionTest.pip < 100) cause = "CRITICAL: PIP < 100";
-    else if (well.productionTest.pip < 300) cause = "Approaching PIP Limit";
-    else if (well.consumptionReal > well.consumptionTheo * 1.25) cause = "Overload";
-    else if (well.currentRate < (well as any).minQ * 1.1) cause = "Near Downthrust";
-    else if (well.currentRate > (well as any).maxQ * 0.9) cause = "Near Upthrust";
-
-    return <div className={`flex items-center gap-2 ${health < 40 ? 'bg-danger/10 text-danger border-danger/20' : 'bg-warning/10 text-warning border-warning/20'} px-3 py-1 rounded-none font-black text-[8px] uppercase tracking-widest border animate-pulse`}>
-        <AlertTriangle className="w-2.5 h-2.5" /> {cause}
-    </div>;
-};
-
-// --- MAIN COMPONENT ---
-const s_ext = (val: any): string => (val == null ? '' : String(val).trim());
-const d_ext = (val: any): string => {
-    if (val == null || val === '') return new Date().toISOString().split('T')[0];
-    if (val instanceof Date) return val.toISOString().split('T')[0];
-    if (typeof val === 'number' && val > 30000 && val < 60000) {
-        const d = new Date(Math.round((val - 25569) * 86400 * 1000));
-        return d.toISOString().split('T')[0];
-    }
-    let s = String(val).trim().toLowerCase();
-    const esMonths: Record<string, string> = {
-        'ene': '01', 'feb': '02', 'mar': '03', 'abr': '04', 'may': '05', 'jun': '06',
-        'jul': '07', 'ago': '08', 'sep': '09', 'oct': '10', 'nov': '11', 'dic': '12'
-    };
-    s = s.replace(/\./g, '');
-    for (const [abbr, num] of Object.entries(esMonths)) {
-        if (s.includes(abbr)) { s = s.replace(abbr, num); break; }
-    }
-    s = s.replace(/[\/\s]/g, '-');
-    const parts = s.split('-').filter(p => p.length > 0);
-    if (parts.length === 3 && parts[0].length <= 2) {
-        let day = parts[0], month = parts[1], year = parts[2];
-        if (year.length === 2) year = '20' + year;
-        if (day.length === 1) day = '0' + day;
-        if (month.length === 1) month = '0' + month;
-        const iso = `${year}-${month}-${day}`;
-        if (!isNaN(new Date(iso).getTime())) return iso;
-    }
-    const finalD = new Date(s);
-    return isNaN(finalD.getTime()) ? new Date().toISOString().split('T')[0] : finalD.toISOString().split('T')[0];
-};
-const n_ext = (v: any): number => {
-    if (v == null || v === '') return 0;
-    if (typeof v === 'number') return isNaN(v) ? 0 : v;
-    let s = String(v).trim().replace(/\s+/g, ' ');
-
-    // Handle fractions like 3 1/2 or 3-1/2
-    if (s.includes('/')) {
-        const match = s.match(/(\d+)?[\s-]?(\d+)\/(\d+)/);
-        if (match) {
-            const whole = parseFloat(match[1] || '0');
-            const num = parseFloat(match[2]);
-            const den = parseFloat(match[3]);
-            return Number((whole + (num / den)).toFixed(3));
-        }
-    }
-
-    let clean = s.replace(/[^*0-9.,-]/g, '').replace(/\*.*$/, '');
-    if (clean.includes(',') && clean.includes('.')) {
-        if (clean.indexOf(',') > clean.indexOf('.')) clean = clean.replace(/\./g, '').replace(',', '.');
-        else clean = clean.replace(/,/g, '');
-    } else if (clean.includes(',')) {
-        if (clean.split(',').pop()?.length === 3 && clean.split(',').length > 1) clean = clean.replace(/,/g, '');
-        else clean = clean.replace(',', '.');
-    }
-    const res = parseFloat(clean);
-    return isNaN(res) ? 0 : Number(res.toFixed(3));
-};
-const norm_ext = (str: string) =>
-    String(str).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/[^A-Z0-9_]/g, '');
-
-const fuzzyWellName = (str: string) => {
-    if (!str) return '';
-    const n = String(str).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-    return n.replace(/(^|[^0-9])0+(\d+)/g, '$1$2');
-};
-
-const get_ext = (row: Record<string, any>, keys: string[]): any => {
-    const rowKeys = Object.keys(row);
-    const normRowKeys = rowKeys.map(norm_ext);
-    for (const key of keys) {
-        const nk = norm_ext(key);
-        // 1. Intento Exacto
-        const idxExact = normRowKeys.indexOf(nk);
-        if (idxExact !== -1) return row[rowKeys[idxExact]];
-
-        // 2. Intento Parcial (Solo si el nombre es largo y no es una columna de presion critica)
-        const isCritical = nk.includes('PIP') || nk.includes('THP') || nk.includes('PDP');
-        if (nk.length > 3 && !isCritical) {
-            const idxPartial = normRowKeys.findIndex(nk2 => nk2 === nk || nk2.startsWith(nk + '_') || nk2.endsWith('_' + nk));
-            if (idxPartial !== -1) return row[rowKeys[idxPartial]];
-        }
-    }
-    return null;
-};
-
-const smartMatchExt = (catalog: any[], searchString: string, isMotor: boolean = false, targetHp: number = 0, targetVolts: number = 0, targetAmps: number = 0) => {
-    if ((!searchString || catalog.length === 0) && targetHp === 0 && targetVolts === 0 && targetAmps === 0) return null;
-    const rawSearch = String(searchString || '').toUpperCase();
-    const tokens = rawSearch.split(/[\s\-_,;()\u00A0]/).filter(t => t.length > 0);
-    if (tokens.length === 0 && targetHp === 0 && targetVolts === 0 && targetAmps === 0) return null;
-
-    let bestMatch = null; let maxScore = -999;
-    let searchHp = isMotor ? (rawSearch.match(/(\d+)\s*HP/)?.[1] ? parseInt(rawSearch.match(/(\d+)\s*HP/)![1], 10) : 0) : 0;
-
-    // Attempt to identify a 3-digit series number common in ESP equipment (e.g. 512 from N512PM235)
-    let expectedSeries = '';
-    const seriesMatch = rawSearch.match(/(?:N|S|M|TR)?(3\d{2}|4\d{2}|5\d{2}|6\d{2}|7\d{2})(?:PM|E|S|-|\s)/);
-    if (seriesMatch) expectedSeries = seriesMatch[1];
-    else {
-        const fallBackMatch = rawSearch.match(/(3\d{2}|4\d{2}|5\d{2}|6\d{2}|7\d{2})/);
-        if (fallBackMatch) expectedSeries = fallBackMatch[1];
-    }
-
-    const hpToMatch = targetHp > 0 ? targetHp : searchHp;
-
-    for (const item of catalog) {
-        let score = 0;
-        const itemModel = String(item.model || '').toUpperCase();
-        const itemSeries = String(item.series || '').toUpperCase();
-        const itemTokens = [itemModel, itemSeries, String(item.manufacturer || ''), String(item.brand || ''), String(item.id || '')].map(s => String(s).split(/[\s\-_,;()\u00A0]/)).flat().filter(t => String(t).length > 2);
-        const itemStr = itemTokens.join(' ').toUpperCase();
-
-        if (expectedSeries) {
-            if (itemSeries.includes(expectedSeries) || itemModel.includes(expectedSeries)) {
-                score += 300;
-            }
-        }
-
-        if (isMotor) {
-            if (item.hp) {
-                if (hpToMatch > 0) {
-                    if (item.hp === hpToMatch) {
-                        score += 500;
-                    } else if (item.hp > hpToMatch) {
-                        // Prefer higher HP, closer is better. (e.g. need 235, found 295 -> diff 60 -> score 140)
-                        const diff = item.hp - hpToMatch;
-                        if (diff <= 200) {
-                            score += 200 - diff;
-                        }
-                    } else {
-                        // Penalty for underpowered motors
-                        const diff = hpToMatch - item.hp;
-                        if (diff <= 20) {
-                            score += 50 - diff; // Slight leniency for very minor deficits
-                        } else {
-                            score -= 300; // Strong penalty for significantly low HP
-                        }
-                    }
-                } else if (itemStr.includes(String(item.hp)) || rawSearch.includes(String(item.hp))) {
-                    score += 100;
-                }
-            }
-            if (targetVolts > 0 && item.voltage) {
-                const voltDiff = Math.abs(item.voltage - targetVolts);
-                if (voltDiff === 0) score += 300;
-                else if (voltDiff < 100) score += 150;
-            }
-            if (targetAmps > 0 && (item.npAmps || item.amps)) {
-                const iAmps = item.npAmps || item.amps;
-                const ampDiff = Math.abs(iAmps - targetAmps);
-                if (ampDiff === 0) score += 300;
-                else if (ampDiff < 5) score += 150;
-            }
-        }
-
-        for (const t of tokens) {
-            if (t.length < 3) continue;
-            const ut = t.toUpperCase();
-            if (itemTokens.some(it => it === ut)) score += 80;
-            else if (itemModel.includes(ut) || ut.includes(itemModel)) score += 60;
-            else if (itemStr.includes(ut)) score += 30;
-        }
-        if (itemModel === rawSearch) score += 500;
-
-        if (score > maxScore) { maxScore = score; bestMatch = item; }
-    }
-    return maxScore > 40 ? bestMatch : null;
-};
-const exactMatchExt = (catalog: any[], searchString: string) => {
-    if (!searchString || !catalog?.length) return null;
-    const needle = norm_ext(String(searchString));
-    return catalog.find(item => norm_ext(String(item?.model || '')) === needle) || null;
-};
 
 export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ params, pump: providedPump, pumpCatalog = [], motorCatalog = [], vsdCatalog = [], onBack, onNavigateToDesign }) => {
     const { t, language, setLanguage } = useLanguage();
@@ -858,9 +99,9 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
     const [zoomLevel, setZoomLevel] = useState<number>(0.8);
 
     // "?"? Sync module cache whenever state changes "?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?
-    useEffect(() => { _cachedFleet = fleet; }, [fleet]);
-    useEffect(() => { _cachedDesigns = customDesigns; }, [customDesigns]);
-    useEffect(() => { _cachedHistoricalData = wellsHistoricalData; }, [wellsHistoricalData]);
+    useEffect(() => { setCachedFleet(fleet); }, [fleet]);
+    useEffect(() => { setCachedDesigns(customDesigns); }, [customDesigns]);
+    useEffect(() => { setCachedHistoricalData(wellsHistoricalData); }, [wellsHistoricalData]);
 
     // --- PERFORMANCE OPTIMIZATIONS: PRE-CALCULATED DATA ---
     // Pre-index designs for O(1) lookup in health calculations
@@ -959,16 +200,29 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
         setCustomDesigns({});
         setSelectedWellId(null);
         setWellsHistoricalData({});
-        _cachedFleet = [];
-        _cachedDesigns = {};
-        _cachedHistoricalData = {};
-        _dataLoaded = false;
+        setCachedFleet([]);
+        setCachedDesigns({});
+        setCachedHistoricalData({});
+        setDataLoaded(false);
     };
 
     const importDesignRef = React.useRef<HTMLInputElement>(null);
     const importExcelDesignRef = React.useRef<HTMLInputElement>(null);
     const importDbRef = React.useRef<HTMLInputElement>(null);
     const importWellHistoryRef = React.useRef<HTMLInputElement>(null);
+
+    const { processExcelDesignsBuffer, processScadaBuffer, handleImportDesign, handleImportDb, handleImportWellHistory } = usePhaseMonitoreoImport(
+        setFleet,
+        setCustomDesigns,
+        setWellsHistoricalData,
+        setImportProgress,
+        setWellViewMode,
+        fleet,
+        selectedWellId,
+        pumpCatalog,
+        motorCatalog,
+        vsdCatalog
+    );
 
     // "?"?"?"? AUTO-LOAD INITIAL FILES ON MOUNT "?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?
     useEffect(() => {
@@ -1017,7 +271,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                     setImportProgress({ current: 100, total: 100, label: 'Sistema Listo.' });
                     await new Promise(r => setTimeout(r, 400));
                     setImportProgress(null);
-                    _dataLoaded = true;
+                    setDataLoaded(true);
                 }
             } catch (err) {
                 console.error("Error auto-loading standard files:", err);
@@ -1032,969 +286,6 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
     }, []);
     // "?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?
 
-    const processExcelDesignsBuffer = async (data: any, isAutoLoad = false, isPrecalcJson = false) => {
-        try {
-            if (isAutoLoad && !isPrecalcJson) {
-                setImportProgress({ current: 5, total: 100, label: 'Conectando Base de Datos Lenta (XLSX)...' });
-                await new Promise(r => setTimeout(r, 500));
-            }
-
-            let json: any[] = [];
-            let jsonSurvey: any[] = [];
-            const surveyDataByWell: Record<string, SurveyPoint[]> = {};
-            const mechDataMap: Record<string, any> = {};
-
-            if (isPrecalcJson) {
-                json = data.data || [];
-                jsonSurvey = data.survey || [];
-                // Support mechanical data in JSON
-                const mechData = data.mech || [];
-                (mechData as any[]).forEach(row => {
-                    const n = norm_ext(String(get_ext(row, ['NICK', 'POZO', 'WELL']) || ''));
-                    if (n) mechDataMap[n] = row;
-                });
-            } else {
-                const workbook = XLSX.read(data, {
-                    type: 'array',
-                    cellFormula: false,
-                    cellHTML: false,
-                    cellText: false,
-                    cellStyles: false
-                });
-                await new Promise(r => setTimeout(r, 200));
-
-                const mainSheetName = workbook.SheetNames[0];
-                const sheet = workbook.Sheets[mainSheetName];
-                json = XLSX.utils.sheet_to_json(sheet) as any[];
-
-                // --- NEW: Process Mechanical Status Sheet (ESTADOS MECANICOS) ---
-                const mechSheetName = workbook.SheetNames.find(s => norm_ext(s) === 'ESTADOSMECANICOS');
-                if (mechSheetName) {
-                    const mechSheet = workbook.Sheets[mechSheetName];
-
-                    // Robust header detection for mechanical sheet
-                    const rows = XLSX.utils.sheet_to_json(mechSheet, { header: 1 }) as any[][];
-                    let headerRowIdx = -1;
-                    for (let r = 0; r < Math.min(20, rows.length); r++) {
-                        const rowArr = (rows[r] || []).map(c => norm_ext(String(c || '')));
-                        if (rowArr.includes('NICK') || rowArr.includes('INTAKEMD') || rowArr.includes('PEST') || rowArr.includes('INTAKE')) {
-                            headerRowIdx = r;
-                            break;
-                        }
-                    }
-
-                    const mechJson = (headerRowIdx !== -1)
-                        ? (XLSX.utils.sheet_to_json(mechSheet, { range: headerRowIdx }) as any[])
-                        : (XLSX.utils.sheet_to_json(mechSheet) as any[]);
-
-                    mechJson.forEach(row => {
-                        const n = norm_ext(String(get_ext(row, ['NICK', 'POZO', 'WELL']) || ''));
-                        if (n) mechDataMap[n] = row;
-                    });
-                    console.log("[Mechanical Status] Pozos indexados:", Object.keys(mechDataMap));
-                }
-
-                const surveySheetName = workbook.SheetNames.find(s => {
-                    const sn = String(s).toUpperCase();
-                    return sn.includes('SURVEY') || sn.includes('TRAYEC') || sn.includes('DESVIACI"N');
-                });
-
-                if (surveySheetName) {
-                    const surveySheet = workbook.Sheets[surveySheetName];
-                    let headerRow = 0;
-                    for (let i = 0; i < 20; i++) {
-                        const temp = XLSX.utils.sheet_to_json(surveySheet, { range: i, header: 1 }) as any[][];
-                        if (temp.length > 0 && temp[0].some(c => String(c || '').toUpperCase().includes('DEPTH'))) {
-                            headerRow = i; break;
-                        }
-                    }
-                    jsonSurvey = XLSX.utils.sheet_to_json(surveySheet, { range: headerRow }) as any[];
-                }
-            }
-
-            // Resolvemos los mapeos de columnas una sola vez para maxima velocidad de analisis (evita la sobrecarga O(N) de buscar encabezados)
-            let mdKey = '';
-            let tvdKey = '';
-            let incKey = '';
-            let azimKey = '';
-            let subSeaKey = '';
-            let northingKey = '';
-            let nsKey = '';
-            let eastingKey = '';
-            let ewKey = '';
-            let northingMKey = '';
-            let eastingMKey = '';
-            let verticalSectionKey = '';
-            let doglegKey = '';
-
-            if (jsonSurvey.length > 0) {
-                const firstRow = jsonSurvey[0];
-                const keysOfRow = Object.keys(firstRow);
-                
-                // Helper rapido de resolucion unica
-                const resolveKey = (targets: string[]): string => {
-                    const normTargets = targets.map(norm_ext);
-                    const normRowKeys = keysOfRow.map(norm_ext);
-                    for (const t of normTargets) {
-                        const idx = normRowKeys.indexOf(t);
-                        if (idx !== -1) return keysOfRow[idx];
-                    }
-                    for (const t of normTargets) {
-                        if (t.length > 3) {
-                            const idx = normRowKeys.findIndex(r => r === t || r.startsWith(t + '_') || r.endsWith('_' + t));
-                            if (idx !== -1) return keysOfRow[idx];
-                        }
-                    }
-                    return '';
-                };
-
-                mdKey = resolveKey(['Measured Depth (ft)', 'MD (ft)', 'Measured Depth', 'MD', 'Measured Depth (m)', 'MD (m)']);
-                tvdKey = resolveKey(['Vertical Depth (ft)', 'TVD (ft)', 'Vertical Depth', 'TVD', 'Vertical Depth (m)', 'TVD (m)']);
-                incKey = resolveKey(['Inclination (deg)', 'Inc (deg)', 'Inc. (deg)', 'Inclination', 'Inc', 'INC', 'Inclination (deg.)']);
-                azimKey = resolveKey(['Azimuth (deg)', 'Azim (deg)', 'Azim. (deg)', 'Azimuth', 'Azim', 'AZIM', 'Azimuth (deg.)']);
-                subSeaKey = resolveKey(['Sub-Sea Depth (ft)', 'Sub-Sea Depth', 'SubSea Depth', 'SUBSEA', 'SubSea', 'SUB-SEA', 'Subsea (ft)', 'Subsea', 'Subsea Depth (ft)']);
-                northingKey = resolveKey(['Northings (ft) - Latitude', 'Northings (ft)', 'Northing (ft)', 'Northings', 'Northing', 'NORTHINGS', 'Latitude (ft)', 'Latitude', 'Nothings (ft) - Latitude', 'Nothings (ft)', 'Nothing (ft)', 'Nothings', 'Nothing']);
-                nsKey = resolveKey(['N/S', 'n/s', 'NS', 'ns', 'Dir N/S', 'N-S']);
-                eastingKey = resolveKey(['Eastings (ft) - Longitude', 'Eastings (ft)', 'Easting (ft)', 'Eastings', 'Easting', 'EASTINGS', 'Longitude (ft)', 'Longitude', 'Eastings (ft) - Longitude']);
-                ewKey = resolveKey(['E/W', 'e/w', 'EW', 'ew', 'Dir E/W', 'E-W']);
-                northingMKey = resolveKey(['Northings (m)', 'Northing (m)', 'Northing m', 'Northings m', 'Nothings (m)', 'Nothing (m)', 'Nothings m']);
-                eastingMKey = resolveKey(['Eastings (m)', 'Easting (m)', 'Easting m', 'Eastings m']);
-                verticalSectionKey = resolveKey(['Vertical Section (ft)', 'Vertical Section', 'VS', 'vs', 'Vert.Section', 'Vertical Section (m)', 'VS (ft)']);
-                doglegKey = resolveKey(['Dogleg Rate (deg/100ft)', 'Dogleg Rate', 'Dogleg', 'DLS', 'dls', 'Dogleg Rate (deg/30m)', 'Dogleg Rate (deg/100m)', 'Dogleg (deg/100ft)', 'Dogleg (deg/30m)']);
-            }
-
-            // Bucle para extraer de forma unificada e identificar campos de survey avanzados (en espanol)
-            jsonSurvey.forEach((row: any) => {
-                const wellColRaw = get_ext(row, ['POZO', 'WELL', 'Pozo']);
-                const wName = fuzzyWellName(wellColRaw || 'UNKNOWN');
-
-                // Acceso directo ultra veloz O(1)
-                const md = mdKey ? row[mdKey] : null;
-                const tvd = tvdKey ? row[tvdKey] : null;
-                const inc = incKey ? row[incKey] : null;
-                const azim = azimKey ? row[azimKey] : null;
-                const subSea = subSeaKey ? row[subSeaKey] : null;
-                const northing = northingKey ? row[northingKey] : null;
-                const nsRaw = nsKey ? row[nsKey] : null;
-                const easting = eastingKey ? row[eastingKey] : null;
-                const ewRaw = ewKey ? row[ewKey] : null;
-                const northingM = northingMKey ? row[northingMKey] : null;
-                const eastingM = eastingMKey ? row[eastingMKey] : null;
-                const verticalSection = verticalSectionKey ? row[verticalSectionKey] : null;
-                const dogleg = doglegKey ? row[doglegKey] : null;
-
-                const p = (v: any) => {
-                    if (v === null || v === undefined || v === '') return null;
-                    const raw = typeof v === 'number' ? v : (typeof v === 'string' ? parseFloat(v.replace(',', '.')) : null);
-                    return raw !== null && !isNaN(raw) ? Number(raw.toFixed(3)) : null;
-                };
-
-                const fm = p(md);
-                const ft = p(tvd);
-
-                if (fm !== null && !isNaN(fm)) {
-                    if (!surveyDataByWell[wName]) surveyDataByWell[wName] = [];
-                    
-                    const nsVal = nsRaw ? String(nsRaw).trim().toUpperCase().charAt(0) : undefined;
-                    const ewVal = ewRaw ? String(ewRaw).trim().toUpperCase().charAt(0) : undefined;
-
-                    surveyDataByWell[wName].push({
-                        md: fm,
-                        tvd: ft !== null && !isNaN(ft) ? ft : fm,
-                        inc: p(inc) !== null ? p(inc) : undefined,
-                        azim: p(azim) !== null ? p(azim) : undefined,
-                        subSea: p(subSea) !== null ? p(subSea) : undefined,
-                        northing: p(northing) !== null ? p(northing) : undefined,
-                        ns: (nsVal === 'N' || nsVal === 'S') ? nsVal as 'N' | 'S' : undefined,
-                        easting: p(easting) !== null ? p(easting) : undefined,
-                        ew: (ewVal === 'E' || ewVal === 'W') ? ewVal as 'E' | 'W' : undefined,
-                        northingM: p(northingM) !== null ? p(northingM) : undefined,
-                        eastingM: p(eastingM) !== null ? p(eastingM) : undefined,
-                        verticalSection: p(verticalSection) !== null ? p(verticalSection) : undefined,
-                        dogleg: p(dogleg) !== null ? p(dogleg) : undefined
-                    });
-                }
-            });
-
-            // Ordenar los puntos del survey por MD para evitar inconsistencias
-            Object.keys(surveyDataByWell).forEach(wName => {
-                surveyDataByWell[wName].sort((a, b) => a.md - b.md);
-            });
-
-            if (!isPrecalcJson) await new Promise(r => setTimeout(r, 100)); // YIELD before json extract
-
-            if (json.length === 0) return;
-
-            const newDesigns: Record<string, SystemParams> = {};
-            const wellsToAdd: WellFleetItem[] = [];
-            let mechFoundCount = 0;
-            let mechMissingCount = 0;
-
-            setImportProgress({ current: 0, total: json.length, label: 'Iniciando analisis de flota...' });
-
-            // Reducimos el chunkSize de 15 a 8 para maxima fluidez en la UI
-            const chunkSize = 8;
-            for (let i = 0; i < json.length; i += chunkSize) {
-                const chunk = json.slice(i, i + chunkSize);
-
-                setImportProgress({
-                    current: i,
-                    total: json.length,
-                    label: `Analizando configuraciones: ${i} de ${json.length} pozos...`
-                });
-
-                // Aumentamos ligeramente el delay para asegurar repintado del navegador
-                await new Promise(resolve => setTimeout(resolve, 5));
-
-                chunk.forEach((row, idx) => {
-                    const wellName = String(get_ext(row, ['POZO', 'WELL']) || `WELL-${i + idx}`).toUpperCase().trim();
-                    if (!wellName) return;
-
-                    // --- L"GICA DE RUNS (NICK) ---
-                    const nickName = String(get_ext(row, ['NICK', 'NOMBRE_NICK']) || wellName).toUpperCase().trim();
-                    let runNumber = 0;
-                    if (nickName.includes('#')) {
-                        const parts = nickName.split('#');
-                        runNumber = parseInt(parts[parts.length - 1], 10) || 0;
-                    } else if (wellName === nickName) {
-                        // Si el Nick es igual al pozo y no tiene #, asumimos Run 0 o 1
-                        runNumber = 1;
-                    }
-
-                    const mechRow = mechDataMap[norm_ext(nickName)];
-                    if (mechRow) {
-                        mechFoundCount++;
-                        console.log(`%c[Mechanical Status] ¡MATCH EXITOSO! "${nickName}"`, "color: #22d3ee; font-weight: bold; border-left: 4px solid #22d3ee; padding-left: 8px;");
-                    } else {
-                        mechMissingCount++;
-                        if (nickName.includes('AVISPA')) {
-                            console.warn(`[Mechanical Status] No se encontro informacion para "${nickName}" en ESTADOS MECANICOS. Disponibles:`, Object.keys(mechDataMap).slice(0, 5));
-                        }
-                    }
-
-                    // --- VALORES BASE DE LA HOJA DE DISE'O ---
-                    let pStatic = n_ext(get_ext(row, ['P ESTATICA (PSI)', 'P ESTATICA', 'STATIC PRESSURE', 'PESTATICA']));
-                    let intakeMD = n_ext(get_ext(row, ['PROFUNDIDAD DE INTAKE MD (FT)', 'INTAKE MD', 'INTAKEMD']));
-                    let fondoMD = n_ext(get_ext(row, ['PROFUNDIDAD TOTAL MD (FT)', 'PROFUNDIDAD TOTAL MD', 'FONDO MD', 'TOTAL DEPTH', 'PROFUNDIDADTOTALMD', 'PROFUNDIDAD TOTAL', 'PROFUNDIDAD TOTAL (FT)'])) || (intakeMD + 1000);
-                    let topPerfs = n_ext(get_ext(row, ['TOPE DE PERFORADOS MD (FT)', 'TOPE DE PERFORADOS MD', 'TOPEDEPERFORADOS', 'TOPE DE PERFORADOS']));
-                    let basePerfs = 0;
-
-                    // --- PRIORIZAR ESTADOS MECANICOS SI EL VALOR ES VALIDO (> 0) ---
-                    if (mechRow) {
-                        const mPest = n_ext(get_ext(mechRow, ['PEST', 'Pest', 'P ESTATICA']));
-                        if (mPest > 0) pStatic = mPest;
-
-                        const mIntake = n_ext(get_ext(mechRow, ['INTAKE (MD)', 'Intake (MD)', 'INTAKEMD']));
-                        if (mIntake > 0) intakeMD = mIntake;
-
-                        const mFondo = n_ext(get_ext(mechRow, ['FONDO POZO (MD)', 'Fondo pozo (MD)', 'FONDOMD']));
-                        if (mFondo > 0) fondoMD = mFondo;
-
-                        const mTop = n_ext(get_ext(mechRow, ['TOPE PERF (MD)', 'Tope Perf (MD)']));
-                        const mBase = n_ext(get_ext(mechRow, ['BASE PERF (MD)', 'Base Perf (MD)']));
-                        if (mTop > 0) topPerfs = mTop;
-                        if (mBase > 0) basePerfs = mBase;
-                    }
-                    const pipMin = n_ext(get_ext(row, ['PIP MINIMA (PSI)', 'PIP MINIMA', 'PIPMINIMA', 'MIN PIP']));
-                    const ip = n_ext(get_ext(row, ['IP (BFPD/PSI)', 'IP (BFP/PSI)', 'PRODUCTIVITY INDEX', 'PI (BFPD/PSI)']));
-                    const ipMin = n_ext(get_ext(row, ['IP MIN (BFPD/PSI)', 'IP MIN (BFPD/PSI)', 'IP MIN', 'IP MIN', 'MIN IP']));
-                    const bsw_raw = get_ext(row, ['BSW (%)', 'WATER CUT (%)', 'BSW', 'CORTE DE AGUA', 'BSW PRUEBA', 'BSW_PRUEBA', 'CORTE AGUA', 'CORTE_AGUA']);
-                    let bsw = n_ext(bsw_raw);
-                    // Normalizacion: Si el dato viene como decimal (0.98) lo convertimos a porcentaje (98)
-                    if (bsw > 0 && bsw <= 1.0) bsw = bsw * 100;
-                    const gor = n_ext(get_ext(row, ['GOR (SCF/STB)', 'GOR (SCFSTB)', 'GOR']));
-
-                    const bht = n_ext(get_ext(row, ['BHT (°F)', 'BHT']));
-                    const tht = n_ext(get_ext(row, ['THT (°F)', 'THT']));
-                    const api = n_ext(get_ext(row, ['°API', 'API']));
-                    const rawStartDate = get_ext(row, ['FECHA DE ARRANQUE', 'FECHA ARRANQUE', 'START DATE', 'STARTUP DATE', 'FECHA_ARRANQUE']);
-                    const startDate = rawStartDate ? d_ext(rawStartDate) : '';
-
-                    // --- PUNTO MEDIO DE PERFORADOS ---
-                    const midPerfsMD = (topPerfs > 0 && basePerfs > 0) ? (topPerfs + basePerfs) / 2 : (topPerfs || (intakeMD + 200));
-
-                    const pbValue = n_ext(get_ext(row, ['P BURBUJA (PSI)', 'PBURBUJA', 'P BURBUJA', 'PB']));
-                    const runLifeRaw = get_ext(row, ['RUN LIFE', 'RUNLIFE', 'RUN_LIFE', 'RUNTIME']);
-                    const runLifeText = String(runLifeRaw ?? '').trim();
-
-                    const rate = (ipv: number) => Number((Math.max(0, ipv * Math.max(0, pStatic - pipMin) * 0.60)).toFixed(1));
-                    const cleanIp = (v: number) => Number((v).toFixed(1));
-
-                    const mapPipe = (r: any, catalog: any[], descLabels: string[], odLabels: string[], defaultOD: number): PipeData => {
-                        let odVal = n_ext(get_ext(r, odLabels));
-                        if (odVal === 0) odVal = defaultOD;
-                        const rawDesc = String(get_ext(r, descLabels) || '').toUpperCase();
-
-                        const options = catalog.filter(p => Math.abs(p.od - odVal) < 0.05);
-                        let selected = options.length > 0 ? options[0] : catalog.find(c => Math.abs(c.od - defaultOD) < 0.05) || catalog[0];
-
-                        if (options.length > 1) {
-                            let extractedWeight = 0;
-                            const weightMatch = rawDesc.match(/(?:X|\s|#|^)(\d+(?:\.\d+)?)\s*(?:#|LB|LBS)/i) || rawDesc.match(/X\s*(\d+(?:\.\d+)?)/i);
-                            if (weightMatch) extractedWeight = parseFloat(weightMatch[1]);
-
-                            const grades = ['K55', 'J55', 'N80', 'L80', 'P110', 'C95', 'K-55', 'J-55', 'N-80', 'L-80', 'P-110', 'C-95'];
-                            const foundGrade = grades.find(g => rawDesc.replace(/[-\s]/g, '').includes(g.replace(/[-\s]/g, '')));
-
-                            let bestScore = -1;
-                            let bestMatch = selected;
-                            for (const opt of options) {
-                                let score = 0;
-                                if (extractedWeight > 0 && Math.abs(opt.weight - extractedWeight) < 0.2) score += 500;
-                                if (foundGrade && opt.description.replace(/[-\s]/g, '').includes(foundGrade.replace(/[-\s]/g, ''))) score += 300;
-                                if (score > bestScore) { bestScore = score; bestMatch = opt; }
-                            }
-                            selected = bestMatch;
-                        }
-                        return selected;
-                    };
-
-                    const casing = mapPipe(mechRow || row, CASING_CATALOG, ['DESCRIPCION CSG', 'CSG DESC', 'ID CSG'], ['CSG OD', 'CSG OD (IN)', 'ID CSG'], 7);
-                    const tubing = mapPipe(mechRow || row, TUBING_CATALOG, ['DESCRIPCION TBG', 'TBG DESC', 'ID TBG'], ['TBG OD', 'TBG OD (IN)', 'ID TBG'], 3.5);
-
-                    const design: SystemParams = {
-                        ...INITIAL_PARAMS,
-                        metadata: { ...INITIAL_PARAMS.metadata, wellName, projectName: nickName, comments: `Run: ${runNumber}` },
-                        historyMatch: {
-                            ...(INITIAL_PARAMS as any).historyMatch,
-                            startDate,
-                            runLife: runLifeText
-                        } as any,
-                        wellbore: {
-                            ...INITIAL_PARAMS.wellbore,
-                            tubingBottom: intakeMD, casingBottom: fondoMD,
-                            midPerfsMD,
-                            casing, tubing
-                        },
-                        fluids: { ...INITIAL_PARAMS.fluids, apiOil: api || 30, waterCut: bsw, gor, pb: pbValue, isDeadOil: pbValue <= 0 },
-                        inflow: { ...INITIAL_PARAMS.inflow, pStatic, ip },
-                        pressures: { ...INITIAL_PARAMS.pressures, totalRate: rate(ip), pumpDepthMD: intakeMD, pht: 80 },
-                        survey: surveyDataByWell[fuzzyWellName(wellName)] || surveyDataByWell['UNKNOWN'] || [],
-                        isMechVerified: !!mechRow,
-                        targets: {
-                            min: { rate: rate(ipMin || ip * 0.8), ip: cleanIp(ipMin || ip * 0.8), waterCut: bsw, gor, frequency: 50 },
-                            target: { rate: rate(ip), ip: cleanIp(ip), waterCut: bsw, gor, frequency: 60 },
-                            max: { rate: rate(ip * 1.25), ip: cleanIp(ip * 1.25), waterCut: bsw, gor, frequency: 70 }
-                        },
-                        bottomholeTemp: bht || 200, surfaceTemp: tht || 80
-                    };
-
-                    const pumpName = s_ext(get_ext(row, ['BOMBA', 'PUMP']));
-                    const stages = n_ext(get_ext(row, ['ETAPAS']));
-                    const motorName = s_ext(get_ext(row, ['MOTOR']));
-                    const motorHp = n_ext(get_ext(row, ['MOTOR HP', 'HP MOTOR', 'HP']));
-                    const motorVolts = n_ext(get_ext(row, ['VOL', 'VOLTAGE', 'VOLTS', 'V', 'VOLTIOS', 'MOTOR VOL', 'MOTOR VOLTAGE']));
-                    const motorAmps = n_ext(get_ext(row, ['AMP', 'AMPERAGE', 'AMPERIOS', 'A', 'MOTOR AMP', 'MOTOR AMPERAGE']));
-                    const vsdName = s_ext(get_ext(row, ['VARIADOR', 'VFD', 'VSD', 'VARIABLE SPEED DRIVE']));
-
-                    // --- NEW: Estado Actual y ALS ---
-                    const estadoActualRaw = s_ext(get_ext(row, ['ESTADO ACTUAL', 'ESTADOACTUAL', 'STATUS', 'CURRENT STATUS'])).toLowerCase();
-                    let estadoActual: any = 'operativo';
-                    if (estadoActualRaw.includes('falla') || estadoActualRaw.includes('fallado')) estadoActual = 'fallado';
-                    else if (estadoActualRaw.includes('pull')) estadoActual = 'pull';
-                    else if (estadoActualRaw.includes('pendiente')) estadoActual = 'pendiente';
-
-                    const als = s_ext(get_ext(row, ['ALS', 'SISTEMA', 'SISTEMA DE LEVANTAMIENTO', 'TIPO']));
-
-                    const foundPump = exactMatchExt(pumpCatalog, pumpName);
-                    if (foundPump) {
-                        (design as any).customPump = { ...foundPump, stages: stages || foundPump.stages || 100 };
-                    }
-                    const foundMotor = exactMatchExt(motorCatalog, motorName);
-                    if (foundMotor) {
-                        design.selectedMotor = foundMotor;
-                        design.motorHp = foundMotor.hp;
-                        (design as any).motorExactFound = true;
-                    } else {
-                        (design as any).motorExactFound = false;
-                    }
-                    const foundVsd = smartMatchExt(vsdCatalog, vsdName, false);
-                    if (foundVsd) {
-                        design.selectedVSD = foundVsd;
-                    }
-
-                    // Usamos nickName como llave primaria para evitar sobreescritura entre runs
-                    newDesigns[nickName] = design;
-                    wellsToAdd.push({
-                        id: `EXCEL-${nickName}-${Date.now()}-${i + idx}`,
-                        name: nickName,
-                        status: estadoActual === 'fallado' ? 'failure' : (estadoActual === 'pendiente' ? 'caution' : 'normal'),
-                        estadoActual,
-                        als,
-                        health: { pump: 'normal', motor: 'normal', seal: 'normal', sensor: 'active', cable: 'normal' },
-                        predictive: { ttf: 365, vsdStatus: 'optimal', vsdAnalysis: 'Excel Import', transformerStatus: 'optimal', transformerAnalysis: 'Normal', ventBoxStatus: 'optimal', ventBoxAnalysis: 'Normal' },
-                        lastUpdate: new Date().toISOString(),
-                        currentRate: 0,
-                        targetRate: design.targets.target.rate,
-                        consumptionReal: 0, consumptionTheo: 0,
-                        depthMD: intakeMD,
-                        productionTest: {
-                            date: new Date().toISOString().split('T')[0],
-                            rate: 0, freq: 0, thp: 0, tht: 0, waterCut: 0, pip: 0, pdp: 0, gor: 0, hp: 0, hasMatchData: false
-                        }
-                    });
-                });
-            }
-
-            setImportProgress({ current: json.length, total: json.length, label: 'Finalizando actualizacion de interfaz...' });
-
-            setCustomDesigns(prev => ({ ...prev, ...newDesigns }));
-            setFleet(prev => {
-                const merged = [...prev];
-                wellsToAdd.forEach(nw => {
-                    // Usamos el nick completo para la busqueda exacta en la flota
-                    const idx = merged.findIndex(w => w.name.toUpperCase() === nw.name.toUpperCase());
-                    if (idx !== -1) merged[idx] = { ...merged[idx], ...nw };
-                    else merged.push(nw);
-                });
-                return merged;
-            });
-
-            setImportProgress(null);
-            setImportProgress(null);
-            if (!isAutoLoad) {
-                const summaryMsg = `?xito: Se procesaron ${json.length} pozos correctamente.\n\n` +
-                    `- ${mechFoundCount} con Estado Mecanico preciso.\n` +
-                    `- ${mechMissingCount} usando datos de diseno original.`;
-                alert(summaryMsg);
-            }
-
-        } catch (err) {
-            console.error("Error importing designs from Excel:", err);
-            if (!isAutoLoad) alert("Error al procesar el archivo Excel de disenos.");
-            setImportProgress(null);
-        }
-    };
-
-    const handleImportExcelDesigns = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = async (event) => {
-            const data = new Uint8Array(event.target?.result as ArrayBuffer);
-            await processExcelDesignsBuffer(data);
-        };
-        reader.readAsArrayBuffer(file);
-    };
-
-    const handleImportDesign = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const files = e.target.files;
-        if (!files) return;
-
-        const fileList = Array.from(files);
-        if (fileList.length === 1 && (fileList[0].name.endsWith('.xlsx') || fileList[0].name.endsWith('.xls'))) {
-            handleImportExcelDesigns(e);
-            return;
-        }
-
-        const newDesigns: Record<string, SystemParams> = {};
-        const wellsToAdd: WellFleetItem[] = [];
-
-        let processed = 0;
-        fileList.forEach(file => {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                try {
-                    const content = event.target?.result as string;
-                    if (!content) throw new Error("File empty");
-                    const rawData = JSON.parse(content) as any;
-                    if (!rawData || (typeof rawData !== 'object')) throw new Error("Invalid structure: Not an object");
-
-                    let itemsToProcess: any[] = [];
-                    if (Array.isArray(rawData)) {
-                        itemsToProcess = rawData;
-                    } else if (rawData.fleet && Array.isArray(rawData.fleet)) {
-                        itemsToProcess = rawData.fleet;
-                    } else if (rawData.data && Array.isArray(rawData.data)) {
-                        itemsToProcess = rawData.data;
-                    } else {
-                        itemsToProcess = [rawData];
-                    }
-
-                    itemsToProcess.forEach((item, index) => {
-                        const isProject = item.type === 'esp-studio-project';
-                        const designPart = isProject && item.data?.params ? item.data.params : (item.params || item);
-                        const pumpPart = isProject && item.data?.customPump ? item.data.customPump : (designPart.pump || item.pump || item.customPump);
-
-                        // Extract well name safely and attempt deduplication using file.name
-                        let rawName = designPart.metadata?.wellName || designPart.wellName || item.name;
-
-                        // Fallbacks for default/empty names
-                        if (!rawName || String(rawName).toUpperCase().includes('NUEVO_POZO') || rawName === 'WELL_NAME') {
-                            rawName = file.name.replace('.json', '');
-                        }
-
-                        // If array inside a single file, append index
-                        if (itemsToProcess.length > 1) {
-                            rawName = `${rawName} (${index + 1})`;
-                        }
-
-                        let wellName = String(rawName).toUpperCase().trim();
-
-                        // Deduplicate against other uploads in the same batch
-                        let dedupCounter = 1;
-                        let originalWellName = wellName;
-                        while (newDesigns[wellName]) {
-                            wellName = `${originalWellName}_${dedupCounter}`;
-                            rawName = `${rawName} (${dedupCounter})`;
-                            dedupCounter++;
-                        }
-
-                        const design: any = {
-                            ...INITIAL_PARAMS,
-                            ...designPart,
-                            wellName: rawName
-                        };
-                        if (pumpPart) design.pump = pumpPart;
-
-                        newDesigns[wellName] = design;
-
-                        wellsToAdd.push({
-                            id: `JSON-${wellName}-${Date.now()}-${processed}-${index}`,
-                            name: rawName,
-                            status: (design.historyMatch?.rate > 5) ? (design.healthStatus || 'normal') : 'inactive',
-                            estadoActual: design.estadoActual || (design.historyMatch?.rate > 5 ? 'operativo' : 'fallado'),
-                            als: design.als || 'ESP',
-                            health: design.health || { pump: 'normal', motor: 'normal', seal: 'normal', sensor: 'active', cable: 'normal' },
-                            predictive: design.predictive || { ttf: 365, vsdStatus: 'optimal', vsdAnalysis: 'Manual Import', transformerStatus: 'optimal', transformerAnalysis: 'Normal', ventBoxStatus: 'optimal', ventBoxAnalysis: 'Normal' },
-                            lastUpdate: new Date(design.metadata?.date || Date.now()).toISOString(),
-                            currentRate: design.historyMatch?.rate || 0,
-                            targetRate: design.targets?.target?.rate || 0,
-                            consumptionReal: design.powerReal || 0,
-                            consumptionTheo: design.powerTheo || 0,
-                            depthMD: design.pressures?.pumpDepthMD || design.wellbore?.midPerfsMD || design.depthMD || 0,
-
-                            productionTest: {
-                                date: design.historyMatch?.matchDate || new Date().toISOString().split('T')[0],
-                                rate: design.historyMatch?.rate || 0,
-                                freq: design.historyMatch?.frequency || 0,
-                                pip: design.historyMatch?.pip || 0,
-                                thp: design.historyMatch?.thp || 0,
-                                waterCut: design.historyMatch?.waterCut || 0,
-                                gor: design.historyMatch?.gor || 0,
-                                hp: 0,
-                                pdp: design.historyMatch?.pdp || 0,
-                                tht: design.historyMatch?.tht || 0,
-                                hasMatchData: !!(design.historyMatch?.rate > 5 || (design.historyMatch?.pip > 0 && design.historyMatch?.thp > 0))
-                            }
-                        });
-                    });
-
-                } catch (err) {
-                    console.error("Error parsing design:", file.name, err);
-                } finally {
-
-                    processed++;
-                    if (processed === fileList.length) {
-                        setCustomDesigns(prev => ({ ...prev, ...newDesigns }));
-                        setFleet(prev => {
-                            const merged = [...prev];
-
-                            wellsToAdd.forEach(nw => {
-                                const normalizedNw = fuzzyWellName(nw.name);
-                                const idx = merged.findIndex(w => fuzzyWellName(w.name) === normalizedNw);
-                                if (idx !== -1) {
-                                    // Update existing design
-                                    merged[idx] = { ...merged[idx], ...nw };
-                                } else {
-                                    merged.push(nw);
-                                }
-                            });
-
-                            // Silent update, no alert
-                            return [...merged];
-                        });
-
-                        if (wellsToAdd.length > 0) {
-                            // Non-blocking upload: don't automatically select the first one
-                            // setSelectedWellId(wellsToAdd[0].id);
-                        }
-
-                    }
-                }
-            };
-            reader.readAsText(file);
-        });
-    };
-
-    const processScadaBuffer = async (data: any, isAutoLoad = false, isPrecalcJson = false) => {
-        try {
-            if (isAutoLoad && !isPrecalcJson) {
-                setImportProgress({ current: 15, total: 100, label: 'Descomprimiendo Historicos... Lento...' });
-                await new Promise(r => setTimeout(r, 500));
-            }
-
-            let json: any[] = [];
-
-            if (isPrecalcJson) {
-                json = data;
-            } else {
-                const workbook = XLSX.read(data as Uint8Array, {
-                    type: 'array',
-                    cellFormula: false,
-                    cellHTML: false,
-                    cellText: false,
-                    cellStyles: false
-                });
-                await new Promise(r => setTimeout(r, 100));
-
-                setImportProgress({ current: 20, total: 100, label: 'Extrayendo hojas de telemetria...' });
-                await new Promise(r => setTimeout(r, 50));
-
-                for (const sheetName of workbook.SheetNames) {
-                    const sheet = workbook.Sheets[sheetName];
-
-                    // --- BUSCADOR DINAMICO DE ENCABEZADOS ---
-                    const previewRows = XLSX.utils.sheet_to_json(sheet, { header: 1, range: 0, blankrows: false }) as any[][];
-                    let headerRowIdx = -1;
-                    let dualHeaderRow: string[] = [];
-
-                    for (let i = 0; i < Math.min(40, previewRows.length); i++) {
-                        const row = (previewRows[i] || []).map(c => String(c || '').toUpperCase().trim());
-                        const hasPozo = row.includes('POZO') || row.includes('WELL');
-                        const hasFecha = row.includes('FECHA') || row.includes('DATE');
-                        const hasRate = row.includes('BFPD') || row.includes('BOPD') || row.includes('PRODUCCION');
-
-                        if (hasPozo && (hasFecha || hasRate)) {
-                            headerRowIdx = i;
-                            // Intentamos capturar la fila superior si parece ser un titulo de categoria (Dual Header)
-                            if (i > 0) {
-                                dualHeaderRow = (previewRows[i - 1] || []).map(c => String(c || '').toUpperCase().trim());
-                            }
-                            break;
-                        }
-                    }
-
-                    if (headerRowIdx !== -1) {
-                        // Si detectamos un dual header, combinamos las columnas para no perder informacion (ej: THP sobre psi)
-                        const rowsRaw = XLSX.utils.sheet_to_json(sheet, { range: headerRowIdx, header: 1 }) as any[][];
-                        // Logica de "Forward Fill" inteligente y combinada
-                        let lastTopHeader = '';
-                        const headers = (rowsRaw[0] || []).map((h, idx) => {
-                            const sub = String(h || '').toUpperCase().trim();
-                            const top = String(dualHeaderRow[idx] || '').toUpperCase().trim();
-
-                            if (top) lastTopHeader = top;
-                            const currentTop = top || lastTopHeader;
-
-                            // Casos de combinacion:
-                            if (sub && currentTop) {
-                                // Si sub es una unidad o generico, usamos el top
-                                if (['PSI', '°F', 'HZ', 'DIA', 'OPER', 'UNIT'].includes(sub)) return currentTop;
-                                // Si son nombres distintos, los combinamos para evitar duplicados (ej: PRUEBA_BFPD)
-                                if (sub !== currentTop) return `${currentTop}_${sub}`;
-                                return sub;
-                            }
-
-                            return sub || currentTop || `COL_${idx}`;
-                        });
-
-                        console.log("[Excel Mapping] Encabezados Finales:", headers);
-
-                        // Convertimos el resto de filas a objetos usando los nuevos encabezados
-                        json = rowsRaw.slice(1).map(row => {
-                            const obj: any = {};
-                            headers.forEach((h, idx) => { obj[h] = row[idx]; });
-                            return obj;
-                        });
-
-                        if (json.length > 0) break;
-                    }
-                }
-            }
-
-            if (json.length === 0) {
-                setImportProgress(null);
-                alert('El archivo Excel parece estar vacio o no se detectaron los encabezados (POZO, FECHA).');
-                return;
-            }
-
-            setImportProgress({ current: 0, total: json.length, label: 'Sincronizando telemetria en tiempo real...' });
-            const newProductionData: Record<string, ProductionTest[]> = {};
-
-            const lastValidPipMap: Record<string, number> = {};
-
-            // Bajamos chunkSize de 200 a 100 para evitar tirones
-            const chunkSize = 100;
-            for (let i = 0; i < json.length; i += chunkSize) {
-                const chunk = json.slice(i, i + chunkSize);
-                setImportProgress({ current: i, total: json.length, label: `Vinculando registros historicos: ${i} / ${json.length}...` });
-                await new Promise(r => setTimeout(r, 5));
-
-                chunk.forEach((row) => {
-                    const name = String(get_ext(row, ['POZO', 'WELL', 'NAME', 'ID']) || '').trim();
-                    if (!name) return;
-                    const normName = fuzzyWellName(name);
-
-                    const date = d_ext(get_ext(row, ['FECHA', 'DATE', 'DATE OF TEST', 'TIMESTAMP']));
-                    const rate = n_ext(get_ext(row, ['BFPD', 'GROSS RATE', 'RATE', 'CAUDAL', 'TASA DE PRUEBA', 'TASAPRUEBA', 'BFPD TEST']));
-                    const bsw_raw = get_ext(row, ['BSW PRUEBA', 'BSW_PRUEBA', 'BSW_DIA', 'BSW', 'WATER CUT', 'WATERCUT', 'CORTE DE AGUA', 'B S W', 'CORTE AGUA', 'CORTE_AGUA', 'WATER_CUT']);
-                    let bsw = n_ext(bsw_raw);
-                    // Normalizacion: Si el dato viene como decimal (0.98) lo convertimos a porcentaje (98)
-                    if (bsw > 0 && bsw <= 1.0) bsw = bsw * 100;
-
-                    // Mapeo exacto para THP/THT usando los encabezados combinados
-                    const thp = n_ext(get_ext(row, ['THP_PSI', 'THP', 'PRESION CABEZA', 'P-SURFACE', 'PHT']));
-                    const tht = n_ext(get_ext(row, ['THT_°F', 'THT', 'TEMP CABEZA', 'T-SURFACE']));
-
-                    // Normalizacion de Frecuencia (Hz) con Logica PMM
-                    const freqRaw = get_ext(row, ['FREC DE_OPER', 'FREC DE_DIA', 'FREC.PRUEBA', 'FRECUENCIA', 'FREQUENCY', 'H Z', 'HZ']);
-                    let freq = n_ext(freqRaw) || 60;
-                    if (freq > 80) freq = freq / 2; // Normalizacion PMM
-
-                    // --- L"GICA PIP PERSISTENTE ---
-                    let pip = n_ext(get_ext(row, ['PIP_PSI', 'PIP', 'INTAKE PRESSURE', 'PI P', 'PRESION SUCCION']));
-                    if (pip <= 0) {
-                        pip = lastValidPipMap[normName] || 0;
-                    } else {
-                        lastValidPipMap[normName] = pip;
-                    }
-
-                    const pdp = n_ext(get_ext(row, ['PDESC', 'DISCHARGE PRESSURE', 'PDP', 'P-DISCHARGE', 'PD']));
-
-                    const pt: ProductionTest = {
-                        date: date || new Date().toISOString().split('T')[0],
-                        rate,
-                        freq,
-                        pip, thp,
-                        tht: tht || 80,
-                        waterCut: bsw,
-                        gor: 0, hp: 0, pdp,
-                        hasMatchData: rate > 5 || (pip > 0 && thp > 0)
-                    };
-
-                    if (!newProductionData[normName]) newProductionData[normName] = [];
-                    newProductionData[normName].push(pt);
-                });
-            }
-
-            console.log("[SCADA Import] Distinct wells found in Excel:", Object.keys(newProductionData).length);
-
-            let matchCount = 0;
-            setFleet(prev => {
-                const merged = [...prev];
-                Object.entries(newProductionData).forEach(([wellName, tests]) => {
-                    const latest = tests[tests.length - 1];
-                    const normKey = fuzzyWellName(wellName);
-
-                    // --- L"GICA DE RUTEO INTELIGENTE (RUN ACTUAL) ---
-                    // Buscamos todos los candidatos que compartan el nombre base del pozo
-                    const candidates = merged.filter(w => {
-                        const baseName = w.name.split('#')[0].trim();
-                        return fuzzyWellName(baseName) === normKey;
-                    });
-
-                    if (candidates.length > 0) {
-                        // El "Run Actual" es aquel cuyo nick tiene el numero mas alto despues del #
-                        let targetWell = candidates[0];
-                        let maxRun = -1;
-
-                        candidates.forEach(c => {
-                            const parts = c.name.split('#');
-                            const run = parts.length > 1 ? parseInt(parts[parts.length - 1], 10) || 0 : 0;
-                            if (run > maxRun) {
-                                maxRun = run;
-                                targetWell = c;
-                            }
-                        });
-
-                        const idx = merged.findIndex(w => w.id === targetWell.id);
-                        if (idx !== -1) {
-                            merged[idx] = {
-                                ...merged[idx],
-                                currentRate: latest.rate,
-                                productionTest: latest,
-                                lastUpdate: latest.date
-                            };
-                            matchCount++;
-                        }
-                    }
-                });
-                console.log("[SCADA Import] Total fleet matches updated (Latest Run Only):", matchCount);
-                return merged;
-            });
-
-            setCustomDesigns(prev => {
-                const updated = { ...prev };
-                Object.entries(newProductionData).forEach(([wellName, tests]) => {
-                    const latest = tests[tests.length - 1];
-                    const normKey = fuzzyWellName(wellName);
-
-                    // Identificar el Run Actual en el diccionario de disenos
-                    const allDesignKeys = Object.keys(updated);
-                    const candidates = allDesignKeys.filter(k => fuzzyWellName(k.split('#')[0].trim()) === normKey);
-
-                    if (candidates.length > 0) {
-                        let targetKey = candidates[0];
-                        let maxRun = -1;
-
-                        candidates.forEach(k => {
-                            const parts = k.split('#');
-                            const run = parts.length > 1 ? parseInt(parts[parts.length - 1], 10) || 0 : 0;
-                            if (run > maxRun) {
-                                maxRun = run;
-                                targetKey = k;
-                            }
-                        });
-
-                        updated[targetKey] = {
-                            ...updated[targetKey],
-                            metadata: {
-                                ...updated[targetKey].metadata,
-                                date: latest.date
-                            },
-                            historyMatch: {
-                                ...updated[targetKey].historyMatch,
-                                rate: latest.rate, frequency: latest.freq,
-                                thp: latest.thp, pip: latest.pip, pdp: latest.pdp,
-                                waterCut: latest.waterCut, matchDate: latest.date,
-                                tht: latest.tht || 80,
-                                hp: 0, gor: 0, pd: latest.pdp, fluidLevel: 0,
-                                submergence: 0, pStatic: updated[targetKey].inflow.pStatic
-                            }
-                        };
-                    }
-                });
-                return updated;
-            });
-
-            setWellsHistoricalData(prev => {
-                const updated = { ...prev };
-                Object.entries(newProductionData).forEach(([wellName, tests]) => {
-                    updated[fuzzyWellName(wellName)] = tests;
-                });
-                return updated;
-            });
-
-            if (!isAutoLoad) {
-                if (matchCount > 0) {
-                    alert(`?xito: Se sincronizaron datos para ${matchCount} pozos de la flota.`);
-                } else {
-                    const firstFound = Object.keys(newProductionData)[0] || 'Desconocido';
-                    alert(`Atencion: No se encontraron coincidencias. El Excel tiene ${Object.keys(newProductionData).length} pozos (ej: "${firstFound}"), pero ninguno coincide con la flota actual. Verifique nombres.`);
-                }
-            }
-
-            setImportProgress(null);
-
-        } catch (err) {
-            console.error("[SCADA Import] Error fatal:", err);
-            if (!isAutoLoad) alert("Error tecnico al procesar el archivo SCADA. Revise la consola.");
-            setImportProgress(null);
-        }
-    };
-
-    const handleImportDb = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = async (event) => {
-            const data = new Uint8Array(event.target?.result as ArrayBuffer);
-            await processScadaBuffer(data);
-            e.target.value = '';
-        };
-        reader.readAsArrayBuffer(file);
-    };
-
-    // "?"? GESTI"N DE HISTORIAL DE PRODUCCI"N (MATCH HISTORICO) "?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?
-    const handleImportWellHistory = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file || !selectedWellId) return;
-
-        console.log("[History Import] Process initiated for file:", file.name);
-        const reader = new FileReader();
-        const activeWell = fleet.find(w => w.id === selectedWellId);
-        if (!activeWell) return;
-        const normActiveName = norm_ext(activeWell.name);
-
-        reader.onload = (event) => {
-            const data = event.target?.result;
-            let lines: string[] = [];
-
-            try {
-                let json: any[] = [];
-                if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
-                    const workbook = XLSX.read(data, { type: 'array', cellFormula: false, cellHTML: false, cellText: false, cellStyles: false });
-                    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-                    json = XLSX.utils.sheet_to_json(sheet);
-                } else {
-                    const content = new TextDecoder().decode(data as ArrayBuffer);
-                    const workbook = XLSX.read(content, { type: 'string', cellFormula: false, cellHTML: false, cellText: false, cellStyles: false });
-                    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-                    json = XLSX.utils.sheet_to_json(sheet);
-                }
-
-                if (json.length === 0) {
-                    alert("Archivo vacio o sin datos suficientes.");
-                    return;
-                }
-
-                const rawTests: ProductionTest[] = json.map((row, i) => {
-                    const rowWellNameRaw = get_ext(row, ['POZO', 'WELL', 'NOMBRES', 'NAME']);
-                    const rowWellName = rowWellNameRaw ? String(rowWellNameRaw).trim() : '';
-
-                    // If a well name is provided, it must match. If it's empty, we assume it belongs to the active well.
-                    if (rowWellName && norm_ext(rowWellName) !== normActiveName) return null;
-
-                    const date = d_ext(get_ext(row, ['FECHA', 'DATE', 'DATE OF TEST']));
-                    const rate = n_ext(get_ext(row, ['BFPD', 'GROSS RATE', 'RATE', 'CAUDAL', 'TASA DE PRUEBA', 'TASAPRUEBA', 'BFPD TEST']));
-                    const bsw_raw = get_ext(row, ['BSW PRUEBA', 'BSW_PRUEBA', 'BSW', 'WATER CUT', 'WATERCUT', 'CORTE DE AGUA', 'B S W', 'CORTE AGUA', 'CORTE_AGUA', 'WATER_CUT']);
-                    let bsw = n_ext(bsw_raw);
-                    // Normalizacion: Si el dato viene como decimal (0.98) lo convertimos a porcentaje (98)
-                    if (bsw > 0 && bsw <= 1.0) bsw = bsw * 100;
-                    const thp = n_ext(get_ext(row, ['THP', 'P-SURFACE', 'PHT', 'FHP', 'WHFP', 'PRESION CABEZA']));
-                    const tht = n_ext(get_ext(row, ['THT', 'T-SURFACE', 'THT', 'WHT', 'TEMP CABEZA']));
-                    const freq = n_ext(get_ext(row, ['FRECUENCIA', 'FREQUENCY', 'H Z', 'HZ', 'Hz']));
-                    const pip = n_ext(get_ext(row, ['PIP', 'INTAKE PRESSURE', 'PI P', 'PRESION SUCCION', 'PIN']));
-                    const pdp = n_ext(get_ext(row, ['PDESC', 'DISCHARGE PRESSURE', 'PDP', 'P-DISCHARGE', 'PD']));
-
-                    return {
-                        date: date || 'Unknown',
-                        rate,
-                        freq: freq || 60,
-                        thp,
-                        tht: tht || 80,
-                        waterCut: bsw,
-                        pip,
-                        pdp,
-                        gor: 0, hp: 0,
-                        hasMatchData: rate > 5 || (pip > 0 && thp > 0)
-                    } as ProductionTest;
-                }).filter(t => t !== null) as ProductionTest[];
-
-                if (rawTests.length > 0) {
-                    // Update historical records
-                    setWellsHistoricalData(prev => ({ ...prev, [norm_ext(activeWell.name)]: rawTests }));
-
-                    // Automatically sync the fleet item and design with the LATEST record in the history file
-                    const latest = rawTests[rawTests.length - 1];
-                    setFleet(prev => prev.map(w => w.id === selectedWellId ? {
-                        ...w,
-                        currentRate: latest.rate,
-                        productionTest: latest,
-                        lastUpdate: new Date().toISOString()
-                    } : w));
-
-                    setWellViewMode('history');
-                    alert(`?xito: Se cargaron ${rawTests.length} registros historicos para ${activeWell.name}.`);
-                } else {
-                    console.log("[History Import] No matches found for:", activeWell.name);
-                    alert(`Atencion: No se encontraron registros para el pozo "${activeWell.name}". Verifique que los nombres coincidan.`);
-                }
-            } catch (err) {
-                console.error("Error cargando historial:", err);
-                alert("Error al procesar el archivo. Verifique el formato.");
-            }
-            // Reset input value to allow re-loading the same file
-            e.target.value = '';
-        };
-
-        if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
-            reader.readAsArrayBuffer(file);
-        } else {
-            reader.readAsText(file);
-        }
-    };
 
     const selectedWell = useMemo(() => fleet.find(w => w.id === selectedWellId), [selectedWellId, fleet]);
 
@@ -2038,7 +329,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                         ...(next[key].historyMatch || {}),
                         startDate: hm.startDate || next[key].historyMatch?.startDate || '',
                         matchDate: hm.matchDate || next[key].historyMatch?.matchDate || '',
-                    }
+                    } as HistoryMatchData
                 };
                 return next;
             });
@@ -2143,11 +434,21 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
         const bepAtFreq = (pump.bepRate || 1000) * freqRatio;
         const flowRatio = bepAtFreq > 0 ? test.rate / bepAtFreq : 1;
 
+        const minQ = (pump.minRate || 0) * freqRatio;
+        const maxQ = (pump.maxRate || 2000) * freqRatio;
+
         let thrustStatus: 'optimal' | 'caution' | 'alert' = 'optimal';
         let thrustLabel = 'Normal (Stable)';
-        if (flowRatio > 1.15) { thrustStatus = 'alert'; thrustLabel = 'UPTHRUST (High Risk)'; }
-        else if (flowRatio < 0.70) { thrustStatus = 'alert'; thrustLabel = 'DOWNTHRUST (Instability)'; }
-        else if (flowRatio > 1.08 || flowRatio < 0.85) { thrustStatus = 'caution'; thrustLabel = 'Marginal (Observe)'; }
+        if (test.rate > maxQ * 1.05) {
+            thrustStatus = 'alert';
+            thrustLabel = 'UPTHRUST (High Risk)';
+        } else if (test.rate < minQ * 0.95) {
+            thrustStatus = 'alert';
+            thrustLabel = 'DOWNTHRUST (Instability)';
+        } else if (test.rate > maxQ || test.rate < minQ) {
+            thrustStatus = 'caution';
+            thrustLabel = 'Marginal (Observe)';
+        }
 
         // 2. Power & Loading (Estimated)
         // Corrected heuristic: BHP scales with frequency^2.5 (avg) or ^3 (theoretical)
@@ -2677,155 +978,136 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
 
                         {/* COMPACT ANALYTICS SECTION: PHASE 6 + BHA SCHEME */}
                         <div className="flex gap-2 items-stretch w-full min-h-[900px] relative mt-4 lg:mt-0">
-                            {/* LEFT SIDEBAR AREA: BHA + TRAJECTORY STACKED VERTICALLY */}
-                            <div className="flex flex-col gap-2 shrink-0 transition-all duration-500">
-                                {/* BHA DIGITAL TWIN */}
-                                <div className={`glass-surface rounded-none border border-white/5 overflow-hidden shadow-2xl flex flex-col relative group transition-all duration-500 
-                                    ${isBhaMinimized 
-                                        ? (isTrajectoryMinimized ? 'flex-1 w-20' : 'h-20 w-[500px]') 
-                                        : 'flex-1 w-[500px]'
+                            {/* NARROW SIDEBAR CONTROL AREA */}
+                            <div className="flex flex-col gap-3 shrink-0 w-16 bg-surface/40 border border-white/5 backdrop-blur-md p-2 justify-start items-center relative z-50">
+                                {/* TAB: BHA */}
+                                <button
+                                    onClick={() => {
+                                        setIsBhaMinimized(!isBhaMinimized);
+                                        if (isBhaMinimized) setIsTrajectoryMinimized(true); // Exclusión mutua
+                                    }}
+                                    className={`w-12 rounded-none flex flex-col items-center justify-center gap-3 transition-all duration-300 border ${
+                                        !isBhaMinimized
+                                            ? 'bg-primary border-primary shadow-glow-primary'
+                                            : 'bg-primary/5 text-txt-muted border-primary/10 hover:bg-primary/15 hover:text-primary hover:border-primary/25'
                                     }`}
+                                    style={{
+                                        height: '350px',
+                                        color: !isBhaMinimized ? 'rgb(var(--color-canvas))' : undefined
+                                    }}
+                                    title={language === 'es' ? 'Ver BHA ESP' : 'View ESP BHA'}
                                 >
-                                    {!isBhaMinimized && (
-                                        <div className="p-5 border-b border-white/5 flex justify-between items-center bg-white/5 backdrop-blur-md">
-                                            <button
-                                                onClick={() => setIsBhaMinimized(true)}
-                                                className="p-2 bg-white/5 hover:bg-white/10 rounded-sm transition-all border border-white/5 text-primary"
-                                                title="Minimizar BHA"
-                                            >
-                                                <ChevronLeft className="w-5 h-5" />
-                                            </button>
-                                            <div className="flex items-center gap-2">
-                                                <div className="p-2 bg-secondary/10 rounded-sm text-secondary border border-secondary/20"><Layers className="w-4 h-4" /></div>
-                                                <h3 className="text-xs font-black text-txt-main uppercase tracking-widest">Esquema BHA</h3>
-                                            </div>
-                                            <Activity className="w-4 h-4 text-primary" />
-                                        </div>
-                                    )}
-                                    <div className={`flex-1 relative bg-canvas/40 overflow-hidden flex items-center justify-center p-4 transition-all duration-500 ${isBhaMinimized ? 'opacity-0' : 'opacity-100'}`}>
-                                        <div className="absolute inset-0 opacity-10 pointer-events-none blueprint-grid"></div>
-                                        {!isBhaMinimized && (
-                                            <div className={`h-full origin-top flex items-center justify-center w-full transition-all duration-500`}>
-                                                {hasPumpExact ? (
-                                                    <VisualESPStack
-                                                        pump={pump}
-                                                        motor={wellMatchParams.selectedMotor || undefined}
-                                                        params={wellMatchParams}
-                                                        results={safeBhaResults}
-                                                        frequency={f}
-                                                        health={physicalHealth as any}
-                                                        selectedVSD={wellMatchParams.selectedVSD}
-                                                    />
-                                                ) : (
-                                                    <div className="w-full h-full flex flex-col items-center justify-center text-center p-8 bg-danger/5 border border-danger/20">
-                                                        <AlertTriangle className="w-10 h-10 text-danger mb-4" />
-                                                        <h4 className="text-sm font-black uppercase tracking-widest text-danger">
-                                                            {language === 'es' ? 'BOMBA NO ENCONTRADA' : 'PUMP NOT FOUND'}
-                                                        </h4>
-                                                        <p className="text-[11px] font-bold text-txt-muted mt-3 max-w-md leading-relaxed">
-                                                            {language === 'es'
-                                                                ? 'No encontramos datos o coeficientes de la bomba. Agregue coeficientes en COEF.'
-                                                                : 'Pump data/coefficients not found. Add coefficients in COEF.'}
-                                                        </p>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )}
-                                    </div>
-                                    {isBhaMinimized && (
-                                        <div
-                                            className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-canvas/80 backdrop-blur-sm cursor-pointer group-hover:bg-canvas/60 transition-all"
-                                            onClick={() => setIsBhaMinimized(false)}
-                                        >
-                                            {isTrajectoryMinimized ? (
-                                                /* Vertical layout when both are minimized */
-                                                <div className="flex flex-col items-center justify-center w-full h-full gap-6 bg-primary/10 text-primary border border-primary/20 p-4 rounded-none shadow-glow-primary group-hover:bg-primary group-hover:text-white transition-all duration-500 animate-fadeIn">
-                                                    <Layers className="w-5 h-5" />
-                                                    <div className="[writing-mode:vertical-lr] text-[12px] font-black uppercase tracking-[0.4em] transform rotate-180 whitespace-nowrap">
-                                                        {language === 'es' ? 'VER BHA ESP' : 'VIEW ESP BHA'}
-                                                    </div>
-                                                    <Maximize2 className="w-5 h-5 mt-2" />
-                                                </div>
-                                            ) : (
-                                                /* Horizontal layout when BHA is minimized but Trajectory is expanded */
-                                                <div className="flex items-center justify-between w-full h-full px-8 bg-primary/10 text-primary border border-primary/20 shadow-glow-primary group-hover:bg-primary group-hover:text-white transition-all duration-500 animate-fadeIn">
-                                                    <div className="flex items-center gap-3">
-                                                        <Layers className="w-5 h-5" />
-                                                        <span className="text-[12px] font-black uppercase tracking-[0.4em]">{language === 'es' ? 'VER BHA ESP' : 'VIEW ESP BHA'}</span>
-                                                    </div>
-                                                    <Maximize2 className="w-5 h-5" />
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
+                                    <Layers className="w-4 h-4" />
+                                    <span className="[writing-mode:vertical-lr] text-[9px] font-black uppercase tracking-[0.2em] transform rotate-180 whitespace-nowrap">
+                                        {language === 'es' ? 'VER BHA ESP' : 'VIEW ESP BHA'}
+                                    </span>
+                                </button>
 
-                                {/* COLLAPSIBLE TRAJECTORY PANEL */}
-                                <div className={`glass-surface rounded-none border border-white/5 overflow-hidden shadow-2xl flex flex-col relative group transition-all duration-500 
-                                    ${isTrajectoryMinimized 
-                                        ? (isBhaMinimized ? 'flex-1 w-20' : 'h-20 w-[500px]') 
-                                        : 'flex-1 w-[500px]'
+                                {/* TAB: TRAYECTORIA */}
+                                <button
+                                    onClick={() => {
+                                        setIsTrajectoryMinimized(!isTrajectoryMinimized);
+                                        if (isTrajectoryMinimized) setIsBhaMinimized(true); // Exclusión mutua
+                                    }}
+                                    className={`w-12 rounded-none flex flex-col items-center justify-center gap-3 transition-all duration-300 border ${
+                                        !isTrajectoryMinimized
+                                            ? 'bg-primary border-primary shadow-glow-primary'
+                                            : 'bg-primary/5 text-txt-muted border-primary/10 hover:bg-primary/15 hover:text-primary hover:border-primary/25'
                                     }`}
+                                    style={{
+                                        height: '350px',
+                                        color: !isTrajectoryMinimized ? 'rgb(var(--color-canvas))' : undefined
+                                    }}
+                                    title={language === 'es' ? 'Ver Trayectoria' : 'View Trajectory'}
                                 >
-                                    {!isTrajectoryMinimized && (
-                                        <div className="p-5 border-b border-white/5 flex justify-between items-center bg-white/5 backdrop-blur-md animate-fadeIn">
-                                            <button
-                                                onClick={() => setIsTrajectoryMinimized(true)}
-                                                className="p-2 bg-white/5 hover:bg-white/10 rounded-sm transition-all border border-white/5 text-primary"
-                                                title="Minimizar Trayectoria"
-                                            >
-                                                <ChevronLeft className="w-5 h-5" />
-                                            </button>
-                                            <div className="flex items-center gap-2">
-                                                <div className="p-2 bg-primary/10 rounded-sm text-primary border border-primary/20"><Compass className="w-4 h-4 animate-[spin_8s_linear_infinite]" /></div>
-                                                <h3 className="text-xs font-black text-txt-main uppercase tracking-widest font-mono">Trayectoria</h3>
-                                            </div>
-                                            <Globe className="w-4 h-4 text-secondary animate-pulse" />
-                                        </div>
-                                    )}
-                                    <div className={`flex-1 relative bg-canvas/40 overflow-hidden flex flex-col p-4 transition-all duration-500 ${isTrajectoryMinimized ? 'opacity-0' : 'opacity-100'}`}>
-                                        {!isTrajectoryMinimized && (
-                                            wellMatchParams.survey && wellMatchParams.survey.length > 0 ? (
-                                                <div className="flex-1 w-full h-full min-h-0">
-                                                    <TrajectoryPlot survey={wellMatchParams.survey} params={wellMatchParams} />
-                                                </div>
-                                            ) : (
-                                                <div className="h-full flex flex-col items-center justify-center text-center opacity-40 p-6 animate-fadeIn">
-                                                    <AlertTriangle className="w-12 h-12 text-warning mb-4 animate-pulse" />
-                                                    <p className="text-xs font-black uppercase tracking-widest">Sin Datos de Trayectoria</p>
-                                                    <p className="text-[10px] font-bold text-txt-muted uppercase mt-2">No se encontro una trayectoria (survey) vinculada para el pozo "{selectedWell.name}". Los calculos utilizaran aproximacion vertical.</p>
-                                                </div>
-                                            )
-                                        )}
-                                    </div>
-                                    {isTrajectoryMinimized && (
-                                        <div
-                                            className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-canvas/80 backdrop-blur-sm cursor-pointer group-hover:bg-canvas/60 transition-all"
-                                            onClick={() => setIsTrajectoryMinimized(false)}
+                                    <Compass className="w-4 h-4 animate-[spin_12s_linear_infinite]" />
+                                    <span className="[writing-mode:vertical-lr] text-[9px] font-black uppercase tracking-[0.2em] transform rotate-180 whitespace-nowrap">
+                                        {language === 'es' ? 'TRAYECTORIA' : 'TRAJECTORY'}
+                                    </span>
+                                </button>
+                            </div>
+
+                            {/* OVERLAY: BHA DIGITAL TWIN */}
+                            {!isBhaMinimized && (
+                                <div className="absolute left-[72px] top-0 bottom-0 w-[540px] max-w-[calc(100vw-120px)] z-40 glass-surface border border-white/10 shadow-3xl flex flex-col animate-slideRight">
+                                    <div className="p-5 border-b border-white/5 flex justify-between items-center bg-white/5 backdrop-blur-md">
+                                        <button
+                                            onClick={() => setIsBhaMinimized(true)}
+                                            className="p-2 bg-white/5 hover:bg-white/10 rounded-sm transition-all border border-white/5 text-primary"
+                                            title="Minimizar BHA"
                                         >
-                                            {isBhaMinimized ? (
-                                                /* Vertical layout when both are minimized */
-                                                <div className="flex flex-col items-center justify-center w-full h-full gap-6 bg-primary/10 text-primary border border-primary/20 p-4 rounded-none shadow-glow-primary group-hover:bg-primary group-hover:text-white transition-all duration-500 animate-fadeIn">
-                                                    <Compass className="w-5 h-5" />
-                                                    <div className="[writing-mode:vertical-lr] text-[12px] font-black uppercase tracking-[0.4em] transform rotate-180 whitespace-nowrap">
-                                                        {language === 'es' ? 'VER TRAYECTORIA' : 'VIEW TRAJECTORY'}
-                                                    </div>
-                                                    <Maximize2 className="w-5 h-5 mt-2" />
-                                                </div>
+                                            <ChevronLeft className="w-5 h-5" />
+                                        </button>
+                                        <div className="flex items-center gap-2">
+                                            <div className="p-2 bg-secondary/10 rounded-sm text-secondary border border-secondary/20"><Layers className="w-4 h-4" /></div>
+                                            <h3 className="text-xs font-black text-txt-main uppercase tracking-widest">Esquema BHA</h3>
+                                        </div>
+                                        <Activity className="w-4 h-4 text-primary" />
+                                    </div>
+                                    <div className="flex-1 relative bg-canvas/40 overflow-hidden flex items-center justify-center p-4">
+                                        <div className="absolute inset-0 opacity-10 pointer-events-none blueprint-grid"></div>
+                                        <div className="h-full origin-top flex items-center justify-center w-full">
+                                            {hasPumpExact ? (
+                                                <VisualESPStack
+                                                    pump={pump}
+                                                    motor={wellMatchParams.selectedMotor || undefined}
+                                                    params={wellMatchParams}
+                                                    results={safeBhaResults}
+                                                    frequency={f}
+                                                    health={physicalHealth as any}
+                                                    selectedVSD={wellMatchParams.selectedVSD}
+                                                />
                                             ) : (
-                                                /* Horizontal layout when Trajectory is minimized but BHA is expanded */
-                                                <div className="flex items-center justify-between w-full h-full px-8 bg-primary/10 text-primary border border-primary/20 shadow-glow-primary group-hover:bg-primary group-hover:text-white transition-all duration-500 animate-fadeIn">
-                                                    <div className="flex items-center gap-3">
-                                                        <Compass className="w-5 h-5" />
-                                                        <span className="text-[12px] font-black uppercase tracking-[0.4em]">{language === 'es' ? 'VER TRAYECTORIA' : 'VIEW TRAJECTORY'}</span>
-                                                    </div>
-                                                    <Maximize2 className="w-5 h-5" />
+                                                <div className="w-full h-full flex flex-col items-center justify-center text-center p-8 bg-danger/5 border border-danger/20">
+                                                    <AlertTriangle className="w-10 h-10 text-danger mb-4" />
+                                                    <h4 className="text-sm font-black uppercase tracking-widest text-danger">
+                                                        {language === 'es' ? 'BOMBA NO ENCONTRADA' : 'PUMP NOT FOUND'}
+                                                    </h4>
+                                                    <p className="text-[11px] font-bold text-txt-muted mt-3 max-w-md leading-relaxed">
+                                                        {language === 'es'
+                                                            ? 'No encontramos datos o coeficientes de la bomba. Agregue coeficientes en COEF.'
+                                                            : 'Pump data/coefficients not found. Add coefficients in COEF.'}
+                                                    </p>
                                                 </div>
                                             )}
                                         </div>
-                                    )}
+                                    </div>
                                 </div>
-                            </div>
+                            )}
+
+                            {/* OVERLAY: TRAYECTORIA */}
+                            {!isTrajectoryMinimized && (
+                                <div className="absolute left-[72px] top-0 bottom-0 w-[1100px] max-w-[calc(100vw-120px)] z-40 glass-surface border border-white/10 shadow-3xl flex flex-col animate-slideRight animate-fadeIn">
+                                    <div className="p-5 border-b border-white/5 flex justify-between items-center bg-white/5 backdrop-blur-md">
+                                        <button
+                                            onClick={() => setIsTrajectoryMinimized(true)}
+                                            className="p-2 bg-white/5 hover:bg-white/10 rounded-sm transition-all border border-white/5 text-primary"
+                                            title="Minimizar Trayectoria"
+                                        >
+                                            <ChevronLeft className="w-5 h-5" />
+                                        </button>
+                                        <div className="flex items-center gap-2">
+                                            <div className="p-2 bg-primary/10 rounded-sm text-primary border border-primary/20"><Compass className="w-4 h-4 animate-[spin_8s_linear_infinite]" /></div>
+                                            <h3 className="text-xs font-black text-txt-main uppercase tracking-widest font-mono">Trayectoria</h3>
+                                        </div>
+                                        <Globe className="w-4 h-4 text-secondary animate-pulse" />
+                                    </div>
+                                    <div className="flex-1 relative bg-canvas/40 overflow-hidden flex flex-col p-4">
+                                        {wellMatchParams.survey && wellMatchParams.survey.length > 0 ? (
+                                            <div className="flex-1 w-full h-full min-h-0">
+                                                {/* Se pasa isSidebar={false} para usar la versión ancha de doble columna */}
+                                                <TrajectoryPlot survey={wellMatchParams.survey} params={wellMatchParams} isSidebar={false} />
+                                            </div>
+                                        ) : (
+                                            <div className="h-full flex flex-col items-center justify-center text-center opacity-40 p-6 animate-fadeIn">
+                                                <AlertTriangle className="w-12 h-12 text-warning mb-4 animate-pulse" />
+                                                <p className="text-xs font-black uppercase tracking-widest">Sin Datos de Trayectoria</p>
+                                                <p className="text-[10px] font-bold text-txt-muted uppercase mt-2">No se encontro una trayectoria (survey) vinculada para el pozo "{selectedWell.name}". Los calculos utilizaran aproximacion vertical.</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
 
                             {/* MAIN PHASE 6 CANVAS ON THE RIGHT */}
                             <div className="flex-1 glass-surface rounded-none border border-white/5 shadow-3xl overflow-y-auto custom-scrollbar relative z-30" style={{ minHeight: '900px' }}>
@@ -2990,6 +1272,13 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                     from { transform: translateY(30px); opacity: 0; }
                     to { transform: translateY(0); opacity: 1; }
                 }
+                .animate-slideRight {
+                    animation: slideRight 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+                }
+                @keyframes slideRight {
+                    from { transform: translateX(-30px); opacity: 0; }
+                    to { transform: translateX(0); opacity: 1; }
+                }
                 .shadow-glow-danger {
                     box-shadow: 0 0 30px -5px rgba(239, 68, 68, 0.4);
                 }
@@ -3139,249 +1428,6 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
     );
 };
 
-const PredictiveMiniWidget = React.memo(({ label, status, desc }: any) => {
-    const statusConfig: any = {
-        optimal: { color: 'text-success', bg: 'bg-success', glow: 'shadow-glow-success' },
-        caution: { color: 'text-warning', bg: 'bg-warning', glow: 'shadow-glow-warning/30' },
-        alert: { color: 'text-danger', bg: 'bg-danger', glow: 'shadow-glow-danger' }
-    };
-    const config = statusConfig[status] || statusConfig.optimal;
-    return (
-        <div className="flex items-center justify-between p-5 bg-canvas/40 backdrop-blur-md rounded-none border border-white/5 hover:border-primary/30 transition-all group cursor-default shadow-lg relative overflow-hidden">
-            <div className={`absolute left-0 top-0 bottom-0 w-1 ${config.bg} opacity-50`}></div>
-            <div className="flex items-center gap-5 relative z-10">
-                <div className={`w-3 h-3 rounded-none ${config.bg} ${config.glow} shadow-sm transition-transform`}></div>
-                <div>
-                    <span className="text-[11px] font-black text-txt-main uppercase tracking-widest opacity-90">{label}</span>
-                    <p className="text-[10px] font-bold text-txt-muted uppercase opacity-40 tracking-tighter mt-0.5 group-hover:opacity-80 transition-opacity">{desc}</p>
-                </div>
-            </div>
-            <span className={`text-[9px] font-black uppercase tracking-widest ${config.color} opacity-80 bg-white/5 px-3 py-1 rounded-lg border border-white/5`}>{status}</span>
-        </div>
-    );
-});
-
-const CompValueCard = React.memo(({ label, design, actual, unit }: any) => {
-    const diff = design !== 0 ? ((actual - design) / design) * 100 : 0;
-    const isGood = Math.abs(diff) < 10;
-    return (
-        <div className="glass-surface p-7 rounded-none border border-white/5 group hover:border-primary/40 transition-all relative overflow-hidden shadow-2xl">
-            <div className={`absolute top-0 right-0 w-24 h-24 ${isGood ? 'bg-success/5' : 'bg-danger/5'} blur-[30px] rounded-none`}></div>
-            <div className="flex justify-between items-start mb-5 relative z-10">
-                <span className="text-[11px] font-black text-txt-muted uppercase tracking-[0.2em] opacity-50">{label}</span>
-                <div className={`px-3 py-1 rounded-none text-[9px] font-black border ${isGood ? 'bg-success/10 text-success border-success/20 shadow-glow-success/10' : 'bg-danger/10 text-danger border-danger/20 shadow-glow-danger/10'}`}>
-                    {Math.abs(diff).toFixed(1)}% {diff > 0 ? 'UP' : 'DN'}
-                </div>
-            </div>
-            <div className="flex items-baseline gap-3 relative z-10">
-                <span className="text-3xl font-black text-txt-main tracking-tighter drop-shadow-sm">{actual?.toFixed(0)}</span>
-                <span className="text-[10px] font-black text-txt-muted uppercase opacity-40">{unit}</span>
-            </div>
-            <div className="mt-4 flex items-center gap-3 relative z-10 bg-canvas/40 p-2.5 rounded-none border border-white/5 w-fit">
-                <span className="text-[9px] font-black text-txt-muted uppercase tracking-widest opacity-30">Goal:</span>
-                <span className="text-[11px] font-black text-primary font-mono">{design?.toFixed(0)}</span>
-            </div>
-        </div>
-    );
-});
-
-const DiagnosticRow = React.memo(({ label, unit, theoretical, real, lowIsBad = false, noDiff = false }: any) => {
-    const diff = noDiff ? 0 : theoretical > 0 ? ((real - theoretical) / theoretical) * 100 : 0;
-    const isBad = noDiff ? false : lowIsBad ? diff < -10 : Math.abs(diff) > 10;
-    return (
-        <tr className="border-b border-white/5 group hover:bg-white/5 transition-all relative">
-            <td className="py-6 px-4 font-black text-txt-main tracking-tight opacity-80 group-hover:opacity-100 group-hover:text-primary transition-colors">{label}</td>
-            <td className="py-6 px-4 text-txt-muted uppercase text-[9px] font-bold opacity-40">{unit}</td>
-            <td className="py-6 px-4 font-mono text-txt-muted opacity-60">{(theoretical || 0).toFixed(0)}</td>
-            <td className={`py-6 px-4 font-mono font-black ${isBad ? 'text-danger' : 'text-primary'} text-lg`}>{(real || 0).toFixed(0)}</td>
-            <td className={`py-6 px-4 font-mono ${isBad ? 'text-danger' : 'text-success'} font-bold opacity-80`}>
-                {noDiff ? '-' : `${diff > 0 ? '+' : ''}${diff.toFixed(1)}%`}
-            </td>
-            <td className="py-6 px-4 text-right">
-                <div className={`inline-block w-4 h-4 rounded-none ${isBad ? 'bg-danger shadow-glow-danger/60 animate-pulse' : 'bg-success shadow-glow-success/40'} border-2 border-white/10 shadow-lg`}></div>
-            </td>
-        </tr>
-    );
-});
-
-// "?"? FLOATING AI PANEL FOR MONITORING "?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?
-const FloatingAiPanel = ({ fleet, selectedWell, language, t }: { fleet: WellFleetItem[], selectedWell?: WellFleetItem, language: string, t: any }) => {
-    const [isOpen, setIsOpen] = useState(false);
-    const [msgs, setMsgs] = useState<{ role: string; text: string }[]>([]);
-    const [input, setInput] = useState('');
-    const [loading, setLoading] = useState(false);
-    const [session, setSession] = useState<any>(null);
-    const endRef = useRef<HTMLDivElement>(null);
-
-    const lastInteractionRef = useRef(Date.now());
-    const touchActivity = () => { lastInteractionRef.current = Date.now(); };
-
-    useEffect(() => {
-        if (!isOpen) return;
-        const interval = setInterval(() => {
-            if (Date.now() - lastInteractionRef.current >= 30000) setIsOpen(false);
-        }, 5000);
-        return () => clearInterval(interval);
-    }, [isOpen]);
-
-    useEffect(() => {
-        const apiKey = getApiKey();
-        if (!apiKey) {
-            console.warn("Antigravity AI: No API Key found.");
-            setMsgs([{ role: 'model', text: language === 'es' ? "O Error: No se encontro la clave de API (GEMINI_API_KEY)." : "O Error: No API Key found (GEMINI_API_KEY)." }]);
-            return;
-        }
-
-        try {
-            const apiKey = getApiKey();
-            if (!apiKey) throw new Error("API Key missing");
-
-            let contextData = "";
-            if (selectedWell) {
-                const healthScore = getWellHealthScore(selectedWell);
-                contextData = `ANALYSIS FOR SPECIFIC WELL: ${selectedWell.name}
-                - Status: ${selectedWell.status.toUpperCase()} (${healthScore.toFixed(0)}/100)
-                - Data: PIP=${selectedWell.productionTest.pip || 0} psi, Rate=${selectedWell.productionTest.rate || 0} BPD`;
-            } else {
-                contextData = `FLEET OVERVIEW: ${fleet.length} wells. Issues: ${fleet.filter(w => w.status !== 'normal').length}`;
-            }
-
-            const model = genAI.getGenerativeModel({
-                model: 'gemini-1.5-flash-latest',
-                generationConfig: {
-                    temperature: 0.7,
-                    topP: 0.8,
-                    topK: 40,
-                },
-                wait_for_model: true,
-                systemInstruction: `You are "Antigravity AI Co-Pilot", a Senior ESP Reliability Engineer.
-                Provide diagnostics in ${language === 'es' ? 'SPANISH' : 'ENGLISH'}.
-                CONTEXT:\n${contextData}`
-            } as any);
-
-            const s = model.startChat({ history: [] });
-            setSession(s);
-
-            const greet = selectedWell
-                ? (language === 'es' ? `Listo. Analizando **${selectedWell.name}**. ¿Que revisamos?` : `Ready. Analyzing **${selectedWell.name}**. What's next?`)
-                : (language === 'es' ? `Hola. Monitoreando **${fleet.length}** pozos. ¿Como puedo ayudarte hoy?` : `Hello. Monitoring **${fleet.length}** wells. How can I help?`);
-
-            setMsgs([{ role: 'model', text: greet }]);
-        } catch (err: any) {
-            console.error("AI Init Error:", err);
-            setMsgs([{ role: 'model', text: "sï¸ Antigravity en modo offline o error de conexion. (Revisa tu API Key)" }]);
-        }
-    }, [selectedWell?.id, language]);
-
-    useEffect(() => { if (isOpen) endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [msgs, isOpen]);
-
-    const send = async () => {
-        if (!input.trim() || !session || loading) return;
-        const txt = input; setInput(''); setLoading(true);
-        setMsgs(p => [...p, { role: 'user', text: txt }]);
-        try {
-            const res = await session.sendMessage(txt);
-            setMsgs(p => [...p, { role: 'model', text: res.response.text() }]);
-        } catch (err: any) {
-            console.error("Antigravity AI Send Error:", err);
-            setMsgs(p => [...p, { role: 'model', text: `O Connection error: ${err.message || 'Unknown issue'}` }]);
-        }
-        setLoading(false);
-
-        // --- NEW: SAVE TO AI MEMORY ---
-        if (session && input && msgs.length > 0) {
-            const signature = AiMemoryService.generateSignature(selectedWell ? {
-                rate: selectedWell.currentRate,
-                pip: selectedWell.productionTest.pip,
-                frequency: selectedWell.productionTest.freq,
-                model: selectedWell.status
-            } : { fleetCount: fleet.length });
-
-            const lastMsg = msgs[msgs.length - 1];
-            if (lastMsg.role === 'model') {
-                AiMemoryService.saveCase({
-                    category: 'diagnosis',
-                    wellName: selectedWell?.name,
-                    technicalSignature: signature,
-                    context: selectedWell || { fleetCount: fleet.length },
-                    recommendation: lastMsg.text
-                });
-            }
-        }
-    };
-
-    return (
-        <div className="fixed bottom-8 right-8 z-[100] flex flex-col items-end">
-            <div className={`transition-all duration-500 transform origin-bottom-right mb-4 ${isOpen ? 'scale-100 opacity-100 translate-y-0' : 'scale-90 opacity-0 translate-y-10 pointer-events-none'}`}>
-                <div
-                    onMouseMove={touchActivity}
-                    onKeyDown={touchActivity}
-                    className="w-[380px] h-[520px] glass-surface border-primary/30 rounded-[32px] shadow-[0_30px_60px_rgba(0,0,0,0.4)] flex flex-col overflow-hidden"
-                >
-                    {/* CHAT HEADER */}
-                    <div className="p-5 border-b border-surface-light flex items-center justify-between bg-primary/5">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2.5 bg-primary rounded-none shadow-[0_0_20px_rgb(var(--color-primary)/0.4)] ring-4 ring-primary/20 animate-pulse">
-                                <Sparkles className="w-4 h-4 text-white" />
-                            </div>
-                            <div className="space-y-0.5">
-                                <h4 className="text-[11px] font-black uppercase tracking-widest text-txt-main text-glow">ANTIGRAVITY AI</h4>
-                                <div className="flex items-center gap-1.5">
-                                    <div className="w-1.5 h-1.5 rounded-none bg-emerald-500 animate-ping" />
-                                    <span className="text-[8px] font-black text-emerald-500 uppercase tracking-tighter">Monitoreo Co-Piloto</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-1">
-                            <button
-                                onClick={() => AiMemoryService.exportMemory()}
-                                className="p-2 hover:bg-white/10 rounded-none transition-all group"
-                                title={language === 'es' ? 'Exportar Memoria IA (Archivo .json)' : 'Export AI Memory (.json)'}
-                            >
-                                <Download className="w-4 h-4 text-txt-muted group-hover:text-primary" />
-                            </button>
-                            <button onClick={() => setIsOpen(false)} className="p-2 hover:bg-surface-light rounded-none transition-colors">
-                                <X className="w-4 h-4 text-txt-muted" />
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* MESSAGES */}
-                    <div className="flex-1 overflow-y-auto p-5 space-y-4 custom-scrollbar bg-canvas/30">
-                        {msgs.map((m, i) => (
-                            <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                <div className={`max-w-[85%] px-4 py-3 rounded-none text-[11px] leading-relaxed font-medium ${m.role === 'user' ? 'bg-primary text-white shadow-lg rounded-none' : 'bg-surface border border-surface-light text-txt-main shadow-sm rounded-none'}`}>
-                                    {/* Optional markdown parsing could be added here similar to App.tsx */}
-                                    <div className="whitespace-pre-wrap">{m.text}</div>
-                                </div>
-                            </div>
-                        ))}
-                        {loading && <div className="flex justify-start"><div className="bg-surface px-4 py-2 rounded-none border border-surface-light"><RefreshCw className="w-3 h-3 animate-spin text-primary" /></div></div>}
-                        <div ref={endRef} />
-                    </div>
-
-                    {/* INPUT */}
-                    <div className="p-4 bg-surface border-t border-surface-light">
-                        <div className="relative">
-                            <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && send()} placeholder={language === 'es' ? 'Escribe o pregunta...' : 'Ask about fleet/wells...'} className="w-full bg-canvas border border-surface-light rounded-none pl-4 pr-12 py-3 text-[11px] text-txt-main outline-none focus:border-primary/50 transition-all font-semibold placeholder:text-txt-muted/50" />
-                            <button onClick={send} disabled={!input.trim() || loading} className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-primary text-white rounded-none shadow-md hover:bg-primary/90 transition-all disabled:opacity-30">
-                                <Send className="w-3.5 h-3.5" />
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <button onClick={() => setIsOpen(!isOpen)} className={`relative flex items-center justify-center w-16 h-16 rounded-none shadow-[0_15px_35px_rgb(var(--color-primary)/0.4)] transition-all duration-500 group border-4 border-canvas overflow-hidden ${isOpen ? 'bg-surface text-primary rotate-90 scale-90' : 'bg-primary text-white'}`}>
-                {isOpen ? <X className="w-6 h-6" /> : <Sparkles className="w-7 h-7 group-hover:rotate-12 transition-transform" />}
-                <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                {fleet.filter(w => w.status !== 'normal').length > 0 && !isOpen && (
-                    <div className="absolute top-0 right-0 w-4 h-4 bg-danger rounded-none border-2 border-canvas shadow-glow-danger animate-pulse"></div>
-                )}
-            </button>
-        </div>
-    );
-};
 
 export default PhaseMonitoreo;
 

@@ -1037,7 +1037,7 @@ textarea::placeholder {
 }
 
 .table-header-fusion th {
-  color: #03023a !important;
+  color: rgb(var(--color-text-main)) !important;
   font-family: var(--font-mono) !important;
   text-transform: uppercase;
   letter-spacing: 0.15em;
@@ -1049,13 +1049,13 @@ textarea::placeholder {
 }
 
 .table-header-fusion th span {
-  opacity: 0.8 !important;
-  color: #ff0000;
+  opacity: 0.5 !important;
+  color: inherit !important;
 }
 
 .table-header-fusion th:hover {
-  background: rgb(var(--color-primary) / 0.1);
-  color: #ffffff !important;
+  background: rgba(var(--color-primary) / 0.08) !important;
+  color: rgb(var(--color-primary)) !important;
 }
 
 .custom-scrollbar-h::-webkit-scrollbar {
@@ -1105,16 +1105,17 @@ textarea::placeholder {
 .frequency-cell-solid {
   background: rgb(var(--color-surface-raised)) !important;
   backdrop-filter: none !important;
-  color: #ffffff !important;
+  color: rgb(var(--color-text-main)) !important;
   z-index: 50;
   border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
 
 .frequency-cell-actual-solid {
-  background: #b2c4ff !important;
-  /* 100% OPAQUE VIBRANT BLUE */
+  background: rgb(var(--color-surface-light)) !important;
+  color: rgb(var(--color-primary)) !important;
   opacity: 1 !important;
   z-index: 30;
+  border-right: 1px solid rgba(var(--color-primary) / 0.3) !important;
 }
 
 .table-cell-danger {

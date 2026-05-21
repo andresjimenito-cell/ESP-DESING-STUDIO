@@ -249,6 +249,7 @@ export interface HistoryMatchData {
   startDate: string;
   matchDate: string;
   gor?: number;
+  runLife?: string;
 }
 
 export interface SystemParams {
@@ -265,10 +266,12 @@ export interface SystemParams {
   survey: SurveyPoint[];
   motorHp: number;
   selectedMotor?: EspMotor;
+  motorExactFound?: boolean;
   selectedCable?: EspCable;
   selectedVSD?: EspVSD;      // NEW — Surface Variable Speed Drive
   simulation: SimulationSettings;
   historyMatch?: HistoryMatchData;
+  runLife?: string;
 
   // Temporary storage for matching equipment during batch import
   initialPumpName?: string;
@@ -340,5 +343,3 @@ export interface WellFleetItem {
   productionTest: ProductionTest;
   depthMD: number;
 }
-
-

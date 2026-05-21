@@ -225,9 +225,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         }));
     }, []);
 
-    // Antigravity-style particle field — more orbs, varied sizes, slow drift
+    // Antigravity-style particle field — optimized particle count and behavior
     const fieldParticles = useMemo(() => {
-        return Array.from({ length: 80 }).map((_, i) => ({
+        return Array.from({ length: 30 }).map((_, i) => ({
             id: i,
             x: Math.random() * 100,
             y: Math.random() * 100,
@@ -408,7 +408,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     />
 
                     {/* Rising data particles — antigravity style */}
-                    {fieldParticles.slice(0, 50).map(p => (
+                    {fieldParticles.map(p => (
                         <div
                             key={p.id}
                             className="absolute rounded-full"
@@ -418,7 +418,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                                 width: p.size,
                                 height: p.size,
                                 background: `rgb(${p.color})`,
-                                boxShadow: `0 0 ${p.size * 4}px rgb(${p.color})`,
+                                boxShadow: `0 0 3px rgb(${p.color})`,
                                 '--op': p.opacity,
                                 '--drift': `${p.drift}px`,
                                 animation: `eks-particle-rise ${p.speed}s linear ${p.delay}s infinite`,
@@ -731,7 +731,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                             width: p.size,
                             height: p.size,
                             background: `rgb(${p.color})`,
-                            boxShadow: `0 0 ${p.size * 5}px rgb(${p.color})`,
+                            boxShadow: `0 0 3px rgb(${p.color})`,
                             '--op': p.opacity,
                             '--drift': `${p.drift}px`,
                             animationName: 'lp-particle-rise',

@@ -165,7 +165,7 @@ const MarkdownRenderer = ({ content }: { content: string }) => {
             elements.push(<h2 key={index} className="text-2xl font-black text-txt-main mt-6 mb-6 tracking-tighter">{trimmed.replace(/^#\s*/, '')}</h2>);
         }
         else if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
-            elements.push(<div key={index} className="flex gap-3 ml-2 mb-1 text-txt-muted"><span className="text-primary font-bold mt-1.5">•</span><span className="leading-relaxed">{processInline(trimmed.substring(2))}</span></div>);
+            elements.push(<div key={index} className="flex gap-3 ml-2 mb-1 text-txt-muted"><span className="text-primary font-bold mt-1.5">â€¢</span><span className="leading-relaxed">{processInline(trimmed.substring(2))}</span></div>);
         }
         else if (/^\d+\./.test(trimmed)) {
             elements.push(<div key={index} className="flex gap-3 ml-2 mb-1 text-txt-muted"><span className="text-secondary font-bold mt-0.5 min-w-[20px]">{trimmed.split('.')[0]}.</span><span className="leading-relaxed">{processInline(trimmed.replace(/^\d+\.\s*/, ''))}</span></div>);
@@ -274,9 +274,9 @@ const App: React.FC = () => {
 
     const loadCatalog = async (silent = false) => {
         try {
-            const response = await fetch(`/PUMPS (1).xlsx?v=${Date.now()}`, { cache: 'no-store' });
+            const response = await fetch(`/COEF.xlsx?v=${Date.now()}`, { cache: 'no-store' });
             if (!response.ok) {
-                if (!silent) setToast({ show: true, msg: "No se pudo cargar el archivo PUMPS (1).xlsx de la carpeta public.", type: 'warning' });
+                if (!silent) setToast({ show: true, msg: "No se pudo cargar el archivo COEF de la carpeta public.", type: 'warning' });
                 return;
             }
             const buffer = await response.arrayBuffer();
@@ -406,11 +406,11 @@ const App: React.FC = () => {
                 setMotorCatalog(fallbackMotors);
             }
 
-            if (!silent) setToast({ show: true, msg: `Catálogo actualizado: ${pumps.length} bombas y ${motors.length} motores cargados.`, type: 'info' });
+            if (!silent) setToast({ show: true, msg: `CatÃ¡logo actualizado: ${pumps.length} bombas y ${motors.length} motores cargados.`, type: 'info' });
 
         } catch (err) {
             console.error("Error loading database:", err);
-            if (!silent) setToast({ show: true, msg: "Error crítico leyendo el archivo Excel. Revisa el formato.", type: 'warning' });
+            if (!silent) setToast({ show: true, msg: "Error crÃ­tico leyendo el archivo Excel. Revisa el formato.", type: 'warning' });
         }
     };
 
@@ -650,7 +650,7 @@ const App: React.FC = () => {
         );
     }
 
-    // ── GLOBAL BACKGROUND (shared across ALL modes) ──
+    // â”€â”€ GLOBAL BACKGROUND (shared across ALL modes) â”€â”€
     const globalBackground = (
         <div className="aurora-bg">
             {/* Background Image Layer */}
@@ -664,8 +664,8 @@ const App: React.FC = () => {
             <div className="aurora-1 opacity-60"></div>
             <div className="aurora-2 opacity-40"></div>
             <div className="blueprint-grid absolute inset-0 opacity-10"></div>
-            <div className="absolute top-[-10%] left-[20%] w-[30vw] h-[30vw] bg-primary/10 rounded-full blur-[120px] animate-pulse"></div>
-            <div className="absolute bottom-[-10%] right-[20%] w-[30vw] h-[30vw] bg-secondary/10 rounded-full blur-[120px] animate-pulse-slow"></div>
+            <div className="absolute top-[-10%] left-[20%] w-[30vw] h-[30vw] bg-primary/10 rounded-full blur-[120px]"></div>
+            <div className="absolute bottom-[-10%] right-[20%] w-[30vw] h-[30vw] bg-secondary/10 rounded-full blur-[120px]"></div>
         </div>
     );
 
@@ -721,13 +721,13 @@ const App: React.FC = () => {
                             <button
                                 onClick={() => {
                                     const msg = language === 'es'
-                                        ? "¿Estás seguro de volver al menú principal? Se perderán los cambios no guardados."
+                                        ? "Â¿EstÃ¡s seguro de volver al menÃº principal? Se perderÃ¡n los cambios no guardados."
                                         : "Are you sure you want to return to the main menu? Unsaved changes will be lost.";
                                     if (window.confirm(msg)) {
                                         setAppState({ appMode: 'landing' });
                                     }
                                 }}
-                                title="Volver al Menú"
+                                title="Volver al MenÃº"
                                 className="w-10 h-10 rounded-full glass-surface hover:bg-red-500/10 border border-white/5 hover:border-red-500/30 flex items-center justify-center transition-all duration-500 group/back active:scale-90 shadow-lg"
                             >
                                 <ArrowLeft className="w-5 h-5 text-txt-muted group-hover:text-red-500 group-hover:-translate-x-1 transition-all" />
@@ -811,7 +811,7 @@ const App: React.FC = () => {
                                     }}
                                     className="w-full text-left px-4 py-2 text-[10px] font-black uppercase text-txt-muted hover:text-secondary hover:bg-secondary/5 transition-all border-t border-surface-light/30"
                                 >
-                                    Salir al Menú Principal
+                                    Salir al MenÃº Principal
                                 </button>
                                 {cameFromMonitoring && (
                                     <button
@@ -821,7 +821,7 @@ const App: React.FC = () => {
                                         }}
                                         className="w-full text-left px-4 py-2 text-[10px] font-black uppercase text-secondary hover:text-white hover:bg-secondary/20 transition-all border-t border-surface-light/30"
                                     >
-                                        ⚡ Volver a Flota
+                                        âš¡ Volver a Flota
                                     </button>
                                 )}
                             </div>
@@ -857,7 +857,7 @@ const App: React.FC = () => {
             <aside className={`${isChatMinimized ? 'w-[64px]' : 'w-[400px]'} flex-none glass-surface flex flex-col overflow-hidden relative border-l border-surface-light/30 transition-all duration-500 ease-in-out shadow-glow-primary z-10`}>
                 <div className="p-4 bg-gradient-to-b from-surface/40 to-transparent border-b border-surface-light/20 shadow-lg z-10 space-y-3 backdrop-blur-md shrink-0">
                     {isChatMinimized ? (
-                        /* ── MINIMIZED: vertical icon + expand button ── */
+                        /* â”€â”€ MINIMIZED: vertical icon + expand button â”€â”€ */
                         <div className="flex flex-col items-center gap-3 py-1">
                             <div className="p-2.5 bg-gradient-to-br from-primary via-primary to-secondary rounded-[10px] shadow-glow-primary ring-2 ring-white/5">
                                 <Sparkles className="w-5 h-5 text-white" />
@@ -871,7 +871,7 @@ const App: React.FC = () => {
                             </button>
                         </div>
                     ) : (
-                        /* ── EXPANDED: full header ── */
+                        /* â”€â”€ EXPANDED: full header â”€â”€ */
                         <>
                             <div className="flex justify-between items-center">
                                 <div className="flex items-center gap-2">
@@ -885,7 +885,7 @@ const App: React.FC = () => {
                             </div>
                             <div className="relative group">
                                 <select value={aiScope} onChange={(e) => setAiScope(e.target.value === 'current' ? 'current' : parseInt(e.target.value))} className="w-full bg-surface/50 text-sm font-black text-txt-main border border-surface-light rounded-xl py-3 pl-4 pr-10 outline-none focus:border-primary/50 appearance-none cursor-pointer hover:bg-surface-light transition-all uppercase tracking-widest">
-                                    <option value="current">⚡ Current Phase</option>
+                                    <option value="current">âš¡ Current Phase</option>
                                     <hr />
                                     {steps.map((s, i) => <option key={s.id} value={i}>Phase {i + 1}: {s.label}</option>)}
                                 </select>
@@ -905,7 +905,7 @@ const App: React.FC = () => {
                                     <div className={`max-w-[95%] p-4 rounded-2xl text-sm font-medium leading-relaxed shadow-sm border ${msg.role === 'user' ? 'bg-primary text-white border-primary/20 rounded-br-none' : 'bg-surface text-txt-main border-surface-light rounded-bl-none'}`}>
                                         <div className="markdown-content"><MarkdownRenderer content={msg.text} /></div>
                                     </div>
-                                    <span className="text-[10px] font-black text-txt-muted px-3 uppercase opacity-60 tracking-widest">{msg.role === 'user' ? t('ai.user') : t('ai.ai')} • {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                    <span className="text-[10px] font-black text-txt-muted px-3 uppercase opacity-60 tracking-widest">{msg.role === 'user' ? t('ai.user') : t('ai.ai')} â€¢ {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                 </div>
                             ))}
                             <div ref={chatEndRef}></div>
@@ -927,3 +927,4 @@ const App: React.FC = () => {
 };
 
 export default App;
+

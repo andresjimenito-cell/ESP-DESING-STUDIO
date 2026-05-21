@@ -45,21 +45,68 @@ export const DesignDataImport: React.FC<DesignDataImportProps> = ({ onImported, 
                     let foundHeaderRow = 0;
                     for (let i = 0; i < 20; i++) {
                         const temp = xlsxUtils.sheet_to_json(surveySheet, { range: i, header: 1 }) as any[][];
-                        if (temp.length > 0 && temp[0].some(c => String(c || '').toUpperCase().includes('DEPTH'))) {
-                            foundHeaderRow = i;
-                            break;
+                        if (temp.length > 0) {
+                            const rowStrs = temp[0].map(c => String(c || '').toUpperCase().replace(/[^A-Z]/g, ''));
+                            const hasDepth = rowStrs.some(s => s.includes('DEPTH') || s.includes('MD'));
+                            const hasIncAzim = rowStrs.some(s => s.includes('INC') || s.includes('AZIM'));
+                            if (hasDepth && hasIncAzim) {
+                                foundHeaderRow = i;
+                                break;
+                            }
                         }
                     }
                     const jsonSurvey = xlsxUtils.sheet_to_json(surveySheet, { range: foundHeaderRow }) as any[];
                     jsonSurvey.forEach(row => {
-                        const md = row['Measured Depth (ft)'] || row['MD (ft)'] || row['Measured Depth'] || row['MD'];
-                        const tvd = row['Vertical Depth (ft)'] || row['TVD (ft)'] || row['Vertical Depth'] || row['TVD'];
-                        const p = (v: any) => {
-                            const raw = typeof v === 'number' ? v : (typeof v === 'string' ? parseFloat(v.replace(',', '.')) : null);
-                            return raw !== null && !isNaN(raw) ? Number(raw.toFixed(1)) : null;
+                        const getVal = (keys: string[]) => {
+                            const normKey = (s: string) => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+                            const normTargets = keys.map(normKey);
+                            for (const [rowKey, rowVal] of Object.entries(row)) {
+                                if (normTargets.includes(normKey(rowKey))) return rowVal;
+                            }
+                            // Fallback a un include basico si no es exacto
+                            for (const [rowKey, rowVal] of Object.entries(row)) {
+                                const nK = normKey(rowKey);
+                                if (normTargets.some(t => t.length > 4 && nK.includes(t))) return rowVal;
+                            }
+                            return undefined;
                         };
-                        const fm = p(md); const ft = p(tvd);
-                        if (fm !== null && ft !== null && !isNaN(fm)) surveyPoints.push({ md: fm, tvd: ft });
+                        
+                        const md = getVal(['Measured Depth (ft)', 'MD (ft)', 'Measured Depth', 'MD', 'Measured Depth (m)', 'MD (m)']);
+                        const tvd = getVal(['Vertical Depth (ft)', 'TVD (ft)', 'Vertical Depth', 'TVD', 'Vertical Depth (m)', 'TVD (m)']);
+                        const inc = getVal(['Inc. (deg)', 'Inclination (deg)', 'Inc (deg)', 'Inc', 'Inclination']);
+                        const azim = getVal(['Azim. (deg)', 'Azimuth (deg)', 'Azim (deg)', 'Azim', 'Azimuth']);
+                        const subSea = getVal(['Sub-Sea Depth (ft)', 'Sub-Sea Depth', 'SubSea Depth', 'SUBSEA', 'SubSea']);
+                        const northing = getVal(['Northings (ft) - Latitude', 'Northings (ft)', 'Northing (ft)', 'Latitude (ft)']);
+                        const easting = getVal(['Eastings (ft) - Longitude', 'Eastings (ft)', 'Easting (ft)', 'Longitude (ft)']);
+                        const northingM = getVal(['Northings (m)', 'Northing (m)']);
+                        const eastingM = getVal(['Eastings (m)', 'Easting (m)']);
+                        const verticalSection = getVal(['Vertical Section (ft)', 'Vertical Section', 'VS']);
+                        const dogleg = getVal(['Dogleg Rate (deg/100ft)', 'Dogleg Rate', 'Dogleg', 'DLS']);
+
+                        const p = (v: any) => {
+                            if (v === undefined || v === null || v === '') return undefined;
+                            const raw = typeof v === 'number' ? v : (typeof v === 'string' ? parseFloat(v.replace(',', '.')) : null);
+                            return raw !== null && !isNaN(raw) ? Number(raw.toFixed(3)) : undefined;
+                        };
+                        
+                        const fm = p(md); 
+                        const ft = p(tvd);
+                        
+                        if (fm !== undefined && fm !== null && !isNaN(fm)) {
+                            surveyPoints.push({ 
+                                md: fm, 
+                                tvd: ft !== undefined ? ft : fm,
+                                inc: p(inc),
+                                azim: p(azim),
+                                subSea: p(subSea),
+                                northing: p(northing),
+                                easting: p(easting),
+                                northingM: p(northingM),
+                                eastingM: p(eastingM),
+                                verticalSection: p(verticalSection),
+                                dogleg: p(dogleg)
+                            });
+                        }
                     });
                 }
 
@@ -223,6 +270,8 @@ export const DesignDataImport: React.FC<DesignDataImportProps> = ({ onImported, 
 
                 const wellName = String(getVal(['POZO', 'WELL']) || 'NUEVO_POZO').trim();
                 const testDate = d(getVal(['FECHA', 'DATE', 'FECHA DE PRUEBA', 'FECHA PRUEBA', 'DATE OF TEST']));
+                const rawStartDate = getVal(['FECHA DE ARRANQUE', 'FECHA ARRANQUE', 'START DATE', 'STARTUP DATE', 'FECHA_ARRANQUE']);
+                const startDate = rawStartDate ? d(rawStartDate) : testDate;
 
                 const bfpdLabel = ['BFPD @ PIP MINIMA'];
                 const bfpdObj = parseFloat(n(findKV(bfpdLabel, 1)).toFixed(1));
@@ -265,7 +314,7 @@ export const DesignDataImport: React.FC<DesignDataImportProps> = ({ onImported, 
                             return (raw > 0 && raw <= 1.0) ? raw * 100 : raw;
                         })(),
                         matchDate: testDate,
-                        startDate: testDate,
+                        startDate: startDate,
                         tht: n(getVal(['THT', 'T-SURFACE'])) || 80,
                         hp: 0, gor: 0, pd: testPdp, fluidLevel: 0, submergence: 0,
                         pStatic: pStatic
@@ -350,6 +399,14 @@ export const DesignDataImport: React.FC<DesignDataImportProps> = ({ onImported, 
                     survey: surveyPoints, motorHp: 0,
                     simulation: { annualWearPercent: 0, simulationMonths: 36, costPerKwh: 0.12, ipType: 'fixed', ipTarget: importedIp }
                 };
+
+                console.log("[DesignDataImport] Survey Sheet Found:", !!surveySheetName);
+                console.log("[DesignDataImport] Parsed Survey Points:", surveyPoints.length);
+                if (surveyPoints.length > 0) {
+                    console.log("[DesignDataImport] First Survey Point:", surveyPoints[0]);
+                } else {
+                    console.warn("[DesignDataImport] SURVEY IS EMPTY! Header row detection might have failed.");
+                }
 
                 setStatus('success');
                 setTimeout(() => { onImported(importedParams); setStatus('idle'); setLoading(false); }, 1000);

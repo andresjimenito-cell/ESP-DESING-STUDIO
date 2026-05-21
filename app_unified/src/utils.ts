@@ -806,11 +806,12 @@ export const calculateSystemResults = (
     const tempRise = massFlowLbHr > 0 ? (heatGeneratedBtuHr / (massFlowLbHr * Cp)) : 0;
     const motorT = intakeTemp + (tempRise * 0.85); // 0.85 as a cooling efficiency factor
 
-    const bepAtFreq = (pump?.bepRate || 1000) * (frequency / (pump?.nameplateFrequency || 60));
-    const thrustRatio = bepAtFreq > 0 ? (q / bepAtFreq) : 1;
+    const freqRatio = frequency / (pump?.nameplateFrequency || 60);
+    const minQ = (pump?.minRate || 0) * freqRatio;
+    const maxQ = (pump?.maxRate || 2000) * freqRatio;
     let thrustStatus = "Normal";
-    if (thrustRatio > 1.15) thrustStatus = "Upthrust";
-    else if (thrustRatio < 0.75) thrustStatus = "Downthrust";
+    if (q > maxQ * 1.05) thrustStatus = "Upthrust";
+    else if (q < minQ * 0.95) thrustStatus = "Downthrust";
 
     // --- SHAFT LOADS ---
     const mechLimits = getEquipmentMechanicalLimits(pump?.series || "");

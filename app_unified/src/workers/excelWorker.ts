@@ -61,10 +61,30 @@ self.onmessage = async (e: MessageEvent) => {
         if (svSheet) {
             const aoa: any[][] = xlsxUtils.sheet_to_json(wb.Sheets[svSheet], { header: 1, defval: '' });
             let hi = 0;
-            for (let i = 0; i < Math.min(aoa.length, 15); i++) {
-                const r = (aoa[i] || []).map((c: any) => _norm(String(c))).join('|');
-                if (r.includes('POZO') || r.includes('WELL') || r.includes('MD') || r.includes('MEASURED')) { hi = i; break; }
+            let bestScore = -1;
+            const surveyKeywords = ['MEASURED', 'MD', 'TVD', 'VERTICAL', 'INC', 'AZIM', 'SUBSEA', 'NORTHING', 'EASTING', 'DOGLEG', 'DLS', 'LATITUDE', 'LONGITUDE'];
+            
+            for (let i = 0; i < Math.min(aoa.length, 25); i++) {
+                const row = aoa[i] || [];
+                let score = 0;
+                const rowNorm = row.map((c: any) => _norm(String(c)));
+                
+                for (const cell of rowNorm) {
+                    if (!cell) continue;
+                    for (const kw of surveyKeywords) {
+                        if (cell.includes(kw)) {
+                            score++;
+                            break;
+                        }
+                    }
+                }
+                
+                if (score > bestScore) {
+                    bestScore = score;
+                    hi = i;
+                }
             }
+            
             const hdrs = (aoa[hi] || []).map((c: any) => _s(c));
             const normHdrs = hdrs.map(_norm);
 
@@ -93,9 +113,28 @@ self.onmessage = async (e: MessageEvent) => {
             const verticalSectionIdx = resolveIndex(['VERTICAL SECTION', 'VS', 'VERT SECTION', 'VERTICAL SECTION FT', 'VERTICAL SECTION (FT)']);
             const doglegIdx = resolveIndex(['DOGLEG RATE', 'DOGLEG', 'DLS', 'DOGLEG RATE FT', 'DOGLEG RATE (DEG/100FT)']);
 
+            let currentWell = _s(hdrs[0]) || 'DEFAULT_WELL';
+
             aoa.slice(hi + 1).forEach(row => {
                 if (!row || !row.some((c: any) => c !== '')) return;
-                const w   = wIdx !== -1 ? _s(row[wIdx]) : '';
+                
+                let wRaw = undefined;
+                if (wIdx !== -1) {
+                    wRaw = row[wIdx];
+                } else if (mdIdx !== 0 && incIdx !== 0 && tvdIdx !== 0) {
+                    wRaw = row[0];
+                }
+
+                if (wRaw !== undefined && _s(wRaw) && isNaN(Number(wRaw))) {
+                    currentWell = _s(wRaw);
+                }
+                const w = currentWell;
+                
+                // If MD column exists but is empty, skip this row to avoid false zeros
+                if (mdIdx !== -1 && (row[mdIdx] == null || String(row[mdIdx]).trim() === '')) {
+                    return;
+                }
+
                 const md  = mdIdx !== -1 ? _n(row[mdIdx]) : 0;
                 const tvd = tvdIdx !== -1 ? _n(row[tvdIdx]) : 0;
 
@@ -120,7 +159,7 @@ self.onmessage = async (e: MessageEvent) => {
                 const nsVal = nsRaw ? _s(nsRaw).toUpperCase().charAt(0) : undefined;
                 const ewVal = ewRaw ? _s(ewRaw).toUpperCase().charAt(0) : undefined;
 
-                if (w && md > 0) {
+                if (w && md !== undefined && !isNaN(md)) {
                     if (!surveyMap[w]) surveyMap[w] = [];
                     surveyMap[w].push({
                         md,

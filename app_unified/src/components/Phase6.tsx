@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Activity, Gauge, Printer, Download, Droplets, ArrowDown, ClipboardCheck, X, Hammer, Thermometer, RefreshCw, Maximize2, Minimize2, Brain, Calendar, Play, Zap, TrendingDown, TrendingUp, Monitor, Layers, Repeat, Cpu, Target, Info, ShieldCheck, ChevronDown, ChevronUp, AlertTriangle, Database, Clock } from 'lucide-react';
 import { SystemParams, EspPump, ScenarioData, HistoryMatchData } from '../types';
@@ -8,6 +8,7 @@ import { PerformanceCurveMultiAxis } from './PerformanceCurveMultiAxis';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 import { useLanguage } from '../i18n';
+import { useTheme } from '../theme';
 
 interface Props {
     params: SystemParams; // Design Params
@@ -382,9 +383,73 @@ const buildVsdRows = (
     });
 };
 
+const getThemeReportColors = (theme: string) => {
+    switch (theme) {
+        case 'fusion':
+            return {
+                titleText: 'text-slate-800',
+                border: 'border-slate-300',
+                headerBg: 'bg-slate-50',
+                headerText: 'text-slate-700',
+                designHeaderBg: 'bg-slate-800',
+                designHeaderText: 'text-white',
+                actualHeaderBg: 'bg-slate-200',
+                actualHeaderText: 'text-slate-900',
+                bottomBorder: 'border-slate-800',
+                accentText: 'text-slate-600',
+                footerText: 'text-slate-400',
+            };
+        case 'cyber':
+            return {
+                titleText: 'text-amber-800',
+                border: 'border-amber-200',
+                headerBg: 'bg-amber-50/50',
+                headerText: 'text-amber-900',
+                designHeaderBg: 'bg-stone-900',
+                designHeaderText: 'text-white',
+                actualHeaderBg: 'bg-amber-500/25',
+                actualHeaderText: 'text-amber-950',
+                bottomBorder: 'border-amber-700',
+                accentText: 'text-amber-700',
+                footerText: 'text-amber-600/70',
+            };
+        case 'heritage':
+            return {
+                titleText: 'text-orange-600',
+                border: 'border-orange-200',
+                headerBg: 'bg-orange-50/40',
+                headerText: 'text-orange-900',
+                designHeaderBg: 'bg-stone-900',
+                designHeaderText: 'text-white',
+                actualHeaderBg: 'bg-orange-500/20',
+                actualHeaderText: 'text-orange-950',
+                bottomBorder: 'border-orange-600',
+                accentText: 'text-orange-700',
+                footerText: 'text-orange-600/60',
+            };
+        case 'executive':
+        default:
+            return {
+                titleText: 'text-blue-900',
+                border: 'border-blue-200',
+                headerBg: 'bg-blue-50/40',
+                headerText: 'text-blue-950',
+                designHeaderBg: 'bg-slate-900',
+                designHeaderText: 'text-white',
+                actualHeaderBg: 'bg-secondary/15',
+                actualHeaderText: 'text-secondary',
+                bottomBorder: 'border-blue-900',
+                accentText: 'text-blue-800',
+                footerText: 'text-slate-400',
+            };
+    }
+};
+
 // --- REPORT COMPONENT (PRINT VIEW) ---
 const HistoryMatchReport = ({ onClose, designParams, actualParams, pump, designRes, actualRes, designFreq, actualFreq, chartData, mechanics, compareScenario, fieldData, refPoints, calculatedIP, aiAnalysis, motor, degradationPct, vsdRows }: any) => {
     const { t, language } = useLanguage();
+    const { theme } = useTheme();
+    const themeColors = getThemeReportColors(theme);
 
     const [isDownloading, setIsDownloading] = useState(false);
 
@@ -467,9 +532,13 @@ const HistoryMatchReport = ({ onClose, designParams, actualParams, pump, designR
         { label: 'Prof. Bomba (MD)', unit: 'ft', dv: designParams?.pressures?.pumpDepthMD ?? 0, av: actualParams?.pressures?.pumpDepthMD ?? 0, noD: true },
     ];
 
-    const bepAtFreq = (pump?.bepRate || 1000) * (actualFreq / (pump?.nameplateFrequency || 60));
+    const freqRatio = actualFreq / (pump?.nameplateFrequency || 60);
+    const minQ = (pump?.minRate || 0) * freqRatio;
+    const maxQ = (pump?.maxRate || 2000) * freqRatio;
+    const bepAtFreq = (pump?.bepRate || 1000) * freqRatio;
     const flowRatio = bepAtFreq > 0 ? (fieldData.rate / bepAtFreq) : 1;
-    const thrustStatus = flowRatio > 1.15 ? 'UPTHRUST' : flowRatio < 0.75 ? 'DOWNTHRUST' : 'NORMAL';
+    const rate = fieldData.rate;
+    const thrustStatus = rate > maxQ * 1.05 ? 'UPTHRUST' : rate < minQ * 0.95 ? 'DOWNTHRUST' : 'NORMAL';
     const thrustClr = thrustStatus === 'UPTHRUST' ? '#d97706' : thrustStatus === 'DOWNTHRUST' ? '#dc2626' : '#059669';
     const thrustBg = thrustStatus === 'UPTHRUST' ? '#fffbeb' : thrustStatus === 'DOWNTHRUST' ? '#fef2f2' : '#f0fdf4';
 
@@ -565,14 +634,14 @@ const HistoryMatchReport = ({ onClose, designParams, actualParams, pump, designR
                     <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-transparent to-slate-50 pointer-events-none"></div>
 
                     {/* ===== ROW 1: HEADER & LOGO ===== */}
-                    <div className="flex justify-between items-start border-b-2 border-slate-900 pb-8 mb-8 relative z-10">
+                    <div className={`flex justify-between items-start border-b-2 pb-8 mb-8 relative z-10 ${themeColors.bottomBorder}`}>
                         <div className="flex items-center gap-6">
                             <div className="bg-slate-50 p-4 rounded-none border border-slate-200 shadow-sm">
                                 <img src="/LOGO.png" alt="Company Logo" className="w-16 h-16 object-contain" />
                             </div>
                             <div>
                                 <h1 className="text-4xl font-black text-slate-900 tracking-tighter uppercase mb-1">REPORTE ESP <span className="text-secondary">DESIGN PRO</span></h1>
-                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.5em] opacity-70">SISTEMA DE DISE'O Y ANALISIS DE RENDIMIENTO</p>
+                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.5em] opacity-70">SISTEMA DE DISE\u00d1O Y AN\u00c1LISIS DE RENDIMIENTO</p>
                             </div>
                         </div>
                         <div className="text-right text-[9px] text-slate-500">
@@ -608,8 +677,8 @@ const HistoryMatchReport = ({ onClose, designParams, actualParams, pump, designR
 
                     {/* ===== ROW 2: AI DIAGNOSTICS & STATUS ===== */}
                     <div className="break-inside-avoid mt-4">
-                        <h3 className="font-black text-[9px] uppercase tracking-[0.2em] text-blue-800 mb-2 pb-1 border-b-2 border-slate-900 flex items-center gap-1">
-                            <Brain className="w-3.5 h-3.5" /> Motor IA - Diagn\u00f3stico Integral & Pr\u00f3ximos Pasos Predictivos
+                        <h3 className={`font-black text-[9px] uppercase tracking-[0.2em] mb-2 pb-1 border-b-2 flex items-center gap-1 ${themeColors.titleText} ${themeColors.bottomBorder}`}>
+                            <Brain className={`w-3.5 h-3.5 ${themeColors.accentText || themeColors.titleText}`} /> Motor IA - Diagn\u00f3stico Integral & Pr\u00f3ximos Pasos Predictivos
                         </h3>
                         <div className="bg-slate-50 rounded-none border-2 border-slate-100 p-4 space-y-2">
                             {aiLines.map((line: string, i: number) => {
@@ -622,16 +691,16 @@ const HistoryMatchReport = ({ onClose, designParams, actualParams, pump, designR
 
                     <div className="portrait-grid mt-4 pt-2 border-t border-slate-200 overflow-visible break-inside-avoid">
                         <div className="flex flex-col">
-                            <h3 className="font-black text-[9px] uppercase tracking-[0.2em] text-slate-800 mb-2 pb-1 border-b-2 border-slate-900 flex items-center gap-1">
-                                <Activity className="w-3 h-3" /> Curva Operacion ({actualFreq} Hz)
+                            <h3 className={`font-black text-[9px] uppercase tracking-[0.2em] mb-2 pb-1 border-b-2 flex items-center gap-1 ${themeColors.titleText} ${themeColors.bottomBorder}`}>
+                                <Activity className={`w-3 h-3 ${themeColors.accentText || themeColors.titleText}`} /> Curva Operacion ({actualFreq} Hz)
                             </h3>
                             <div className="h-[600px] print-graph-container graph-force-height border-2 border-slate-200 rounded-none overflow-visible bg-white relative w-full flex-1">
                                 <PerformanceCurveMultiAxis data={chartData} frequency={actualFreq} currentFlow={fieldData.rate} pump={pump} minHeight={580} className="w-full h-full !bg-transparent !p-4" />
                             </div>
                         </div>
                         <div className="flex flex-col">
-                            <h3 className="font-black text-[9px] uppercase tracking-[0.2em] text-slate-800 mb-2 pb-1 border-b-2 border-slate-900 flex items-center gap-1">
-                                <Layers className="w-3 h-3" /> Sensibilidad VSD Multifrecuencia
+                            <h3 className={`font-black text-[9px] uppercase tracking-[0.2em] mb-2 pb-1 border-b-2 flex items-center gap-1 ${themeColors.titleText} ${themeColors.bottomBorder}`}>
+                                <Layers className={`w-3 h-3 ${themeColors.accentText || themeColors.titleText}`} /> Sensibilidad VSD Multifrecuencia
                             </h3>
                             <div className="h-[600px] print-graph-container graph-force-height border-2 border-slate-200 rounded-none overflow-visible bg-white relative w-full flex-1">
                                 {/* Utilizing PumpChart for MultiFrequency */}
@@ -642,17 +711,17 @@ const HistoryMatchReport = ({ onClose, designParams, actualParams, pump, designR
 
                     {/* ===== ROW 4: DESIGN vs ACTUAL TABLE ===== */}
                     <div className="mt-6 pt-4 border-t border-slate-200 break-inside-avoid">
-                        <h3 className="font-black text-[9px] uppercase tracking-[0.2em] text-slate-800 mb-2 pb-1 border-b-2 border-slate-900 flex items-center gap-1">
-                            <Repeat className="w-3 h-3" /> Tabla Comparativa: DISENO ORIGINAL vs. Condiciones Actuales de Campo
+                        <h3 className={`font-black text-[9px] uppercase tracking-[0.2em] mb-2 pb-1 border-b-2 flex items-center gap-1 ${themeColors.titleText} ${themeColors.bottomBorder}`}>
+                            <Repeat className={`w-3 h-3 ${themeColors.accentText || themeColors.titleText}`} /> Tabla Comparativa: DISENO ORIGINAL vs. Condiciones Actuales de Campo
                         </h3>
                         <div className="bg-white border border-slate-200 rounded-none shadow-xl overflow-visible mt-4">
                             <table className="w-full text-[10px]">
-                                <thead className="bg-slate-50">
-                                    <tr className="border-b border-slate-200">
-                                        <th className="py-3 px-4 text-left font-black uppercase tracking-widest text-slate-900 border-r border-slate-200">Parametro</th>
+                                <thead className={themeColors.headerBg}>
+                                    <tr className={`border-b ${themeColors.border}`}>
+                                        <th className={`py-3 px-4 text-left font-black uppercase tracking-widest border-r ${themeColors.headerText} ${themeColors.border}`}>Par\u00e1metro</th>
                                         <th className="py-3 px-2 text-center font-black uppercase text-slate-500">Ud.</th>
-                                        <th className="py-3 px-4 text-center font-black uppercase bg-slate-900 text-white shadow-lg">- DISE'O</th>
-                                        <th className="py-3 px-4 text-center font-black uppercase bg-secondary text-slate-900 shadow-lg">- ACTUAL CAMPO</th>
+                                        <th className={`py-3 px-4 text-center font-black uppercase shadow-lg ${themeColors.designHeaderBg} ${themeColors.designHeaderText}`}>- DISE\u00d1O</th>
+                                        <th className={`py-3 px-4 text-center font-black uppercase shadow-lg ${themeColors.actualHeaderBg} ${themeColors.actualHeaderText}`}>- ACTUAL CAMPO</th>
                                         <th className="py-3 px-2 text-center font-black uppercase text-slate-500">"%</th>
                                         <th className="py-3 px-2 text-center font-black uppercase text-slate-500">Estado</th>
                                     </tr>
@@ -688,16 +757,16 @@ const HistoryMatchReport = ({ onClose, designParams, actualParams, pump, designR
                     </div>
 
                     <div className="mt-6 pt-4 border-t border-slate-200 break-inside-avoid">
-                        <h3 className="font-black text-[9px] uppercase tracking-[0.2em] text-slate-800 mb-2 pb-1 border-b-2 border-slate-900 flex items-center gap-1">
-                            <Layers className="w-3 h-3" /> Tabla de Sensibilidad VSD (Gemelo Digital)
+                        <h3 className={`font-black text-[9px] uppercase tracking-[0.2em] mb-2 pb-1 border-b-2 flex items-center gap-1 ${themeColors.titleText} ${themeColors.bottomBorder}`}>
+                            <Layers className={`w-3 h-3 ${themeColors.accentText || themeColors.titleText}`} /> Tabla de Sensibilidad VSD (Gemelo Digital)
                         </h3>
-                        <div className="bg-white border border-slate-200 rounded-none overflow-auto print:overflow-visible max-h-none mt-2 custom-scrollbar-h shadow-lg vsd-table-mini">
+                        <div className={`bg-white border rounded-none overflow-auto print:overflow-visible max-h-none mt-2 custom-scrollbar-h shadow-lg vsd-table-mini ${themeColors.border}`}>
                             <table className="w-full text-[9px] text-center border-collapse min-w-[1000px]">
-                                <thead className="bg-slate-50 sticky top-0 z-30">
+                                <thead className={`${themeColors.headerBg} sticky top-0 z-30`}>
                                     <tr className="sticky top-0 z-30">
-                                        <th className="p-2 px-3 font-black uppercase tracking-widest border-b border-slate-200 sticky left-0 z-40 bg-slate-50 text-secondary">Hz</th>
+                                        <th className={`p-2 px-3 font-black uppercase tracking-widest border-b sticky left-0 z-40 text-secondary ${themeColors.headerBg} ${themeColors.border}`}>Hz</th>
                                         {vsdCols.map(col => (
-                                            <th key={col.label} className="p-2 px-1 font-black uppercase tracking-widest border-b border-slate-200 bg-slate-50 text-slate-800">
+                                            <th key={col.label} className={`p-2 px-1 font-black uppercase tracking-widest border-b ${themeColors.headerBg} ${themeColors.headerText} ${themeColors.border}`}>
                                                 {col.label}
                                                 <span className="block text-[7px] opacity-60 lowercase font-normal">{col.unit}</span>
                                             </th>
@@ -707,7 +776,7 @@ const HistoryMatchReport = ({ onClose, designParams, actualParams, pump, designR
                                 <tbody className="divide-y divide-slate-100">
                                     {vsdRows.map((row, i) => {
                                         const tdClass = row.isActual
-                                            ? 'bg-blue-50 text-blue-900'
+                                            ? `${themeColors.actualHeaderBg} ${themeColors.actualHeaderText} font-bold`
                                             : row.isDanger
                                                 ? 'bg-red-50 text-red-900'
                                                 : row.isWarning
@@ -717,7 +786,7 @@ const HistoryMatchReport = ({ onClose, designParams, actualParams, pump, designR
                                             <tr key={row.hz} className="hover:bg-slate-50" title={row.limitReason || ''}>
                                                 <td className={`${tdClass} p-1.5 border-r border-slate-100 font-mono font-bold sticky left-0 z-10 bg-inherit shadow-[1px_0_3px_rgba(0,0,0,0.05)]`}>
                                                     {row.hz} Hz
-                                                    {row.isActual && <span className="ml-1 text-[7px] bg-blue-500 text-white px-1 rounded shadow-lg shadow-blue-500/20">FRECUENCIA ACTUAL</span>}
+                                                    {row.isActual && <span className={`ml-1 text-[7px] text-white px-1 rounded shadow-lg ${theme === 'cyber' ? 'bg-amber-700' : theme === 'heritage' ? 'bg-orange-600' : theme === 'fusion' ? 'bg-slate-700' : 'bg-blue-600'}`}>FRECUENCIA ACTUAL</span>}
                                                     {row.isDanger && !row.isActual && <span className="ml-1 text-[7px] bg-danger text-white px-1 rounded animate-pulse">CRITICO</span>}
                                                     {row.isWarning && !row.isActual && <span className="ml-1 text-[7px] bg-amber-500 text-white px-1 rounded">AVISO</span>}
                                                 </td>
@@ -735,7 +804,7 @@ const HistoryMatchReport = ({ onClose, designParams, actualParams, pump, designR
                     </div>
 
                     {/* ===== FOOTER ===== */}
-                    <div className="pt-3 border-t-4 border-slate-900 flex justify-between items-center">
+                    <div className={`pt-3 border-t-4 flex justify-between items-center ${themeColors.bottomBorder}`}>
                         <div className="text-[8px] font-black text-slate-300 uppercase tracking-widest">ESP DIGITAL TWIN | An\u00e1lisis Inteligente de Rendimiento</div>
                         <div className="flex gap-12">
                             <div className="text-center"><div className="w-36 border-b-2 border-slate-300 mb-1 h-8"></div><div className="text-[7px] font-black uppercase text-slate-400">{t('p6.engineerApproval')}</div></div>
@@ -1800,57 +1869,59 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
 
         // 1. Degradacion hidraulica
         if (degradationPct > 15) {
-            lines.push(`sï¸ CRITICO - Degradacion hidraulica severa: ${degradationPct.toFixed(1)}% bajo la curva original.`);
+            lines.push(`\u26A0 CR\u00cdTICO - Degradaci\u00f3n hidr\u00e1ulica severa: ${degradationPct.toFixed(1)}% bajo la curva original.`);
             lines.push(`Causas: desgaste abrasivo, erosion por arena, incrustaciones o rotura de impulsores. Se requiere workover/pull para inspeccion.`);
         } else if (degradationPct > 8) {
-            lines.push(`s PRECAUCI"N - Degradacion moderada: ${degradationPct.toFixed(1)}%. Tendencia de desgaste acelerado.`);
+            lines.push(`\u26A0 PRECAUCI\u00d3N - Degradaci\u00f3n moderada: ${degradationPct.toFixed(1)}%. Tendencia de desgaste acelerado.`);
             lines.push(`Registrar lecturas semanales. Verificar IP del yacimiento antes de concluir desgaste mecanico.`);
         } else if (degradationPct > 3) {
-            lines.push(`Y" AVISO - Desviacion leve (${degradationPct.toFixed(1)}%). Dentro del margen de incertidumbre de medicion.`);
+            lines.push(`\u26A0 AVISO - Desviaci\u00f3n leve (${degradationPct.toFixed(1)}%). Dentro del margen de incertidumbre de medicion.`);
             lines.push(`Monitoreo mensual recomendado. Sin accion correctiva inmediata.`);
         } else {
-            lines.push(`o. "PTIMO - Bomba dentro del ${degradationPct.toFixed(1)}% de su curva original de diseno.`);
+            lines.push(`\u2714 \u00d3PTIMO - Bomba dentro del ${degradationPct.toFixed(1)}% de su curva original de dise\u00f1o.`);
             lines.push(`Sistema alineado con la prediccion teorica. Mantener condiciones actuales.`);
-        }
-
-        // 2. Condicion de empuje (Upthrust / Downthrust)
-        const bepAtFreq = (pump.bepRate || 1000) * (displayFreq / (pump.nameplateFrequency || 60));
+        }        // 2. Condicion de empuje (Upthrust / Downthrust)
+        const freqRatio = displayFreq / (pump.nameplateFrequency || 60);
+        const minQ = (pump.minRate || 0) * freqRatio;
+        const maxQ = (pump.maxRate || 2000) * freqRatio;
+        const bepAtFreq = (pump.bepRate || 1000) * freqRatio;
         const currentRate = displayRes.rate || 0;
         const flowRatio = bepAtFreq > 0 ? currentRate / bepAtFreq : 1;
-        if (flowRatio > 1.15) {
+
+        if (currentRate > maxQ * 1.05) {
             const targetRate = bepAtFreq;
             const requiredDrop = Math.max(0, currentRate - targetRate);
-            lines.push(`Y" UPTHRUST - Operando al ${(flowRatio * 100).toFixed(0)}% del BEP (${bepAtFreq.toFixed(0)} BPD). Riesgo de fractura del eje por empuje axial ascendente.`);
+            lines.push(`\u26A0 UPTHRUST - Operando al ${(flowRatio * 100).toFixed(0)}% del BEP (${bepAtFreq.toFixed(0)} BPD). Riesgo de fractura del eje por empuje axial ascendente.`);
             lines.push(`ACCION REQUERIDA: mover caudal hacia ~${targetRate.toFixed(0)} BPD (bajar ~${requiredDrop.toFixed(0)} BPD). Ajustar VSD en pasos de 1-2 Hz y verificar que Q/BEP entre a 0.85-1.10; si no responde, revisar aforo/IP y condiciones de superficie.`);
-        } else if (flowRatio < 0.75) {
+        } else if (currentRate < minQ * 0.95) {
             const targetRate = bepAtFreq * 0.9;
             const requiredGain = Math.max(0, targetRate - currentRate);
             const canRaiseHz = displayFreq < 80;
-            lines.push(`Y" DOWNTHRUST - Operando al ${(flowRatio * 100).toFixed(0)}% del BEP. Desgaste cojinetes radiales + sobrecalentamiento del motor.`);
+            lines.push(`\u26A0 DOWNTHRUST - Operando al ${(flowRatio * 100).toFixed(0)}% del BEP. Desgaste cojinetes radiales + sobrecalentamiento del motor.`);
             lines.push(canRaiseHz
                 ? `ACCION REQUERIDA: mover caudal hacia ~${targetRate.toFixed(0)} BPD (subir ~${requiredGain.toFixed(0)} BPD). Aumentar VSD en pasos de 1-2 Hz y validar que Q/BEP suba a 0.85-1.10; detener aumento si no hay respuesta de caudal.`
                 : `ACCION REQUERIDA: no seguir subiendo Hz (limite operativo). El problema es de inflow/sistema: revisar drawdown, PIP, pruebas de produccion y evaluar redimensionamiento si Q/BEP sigue <0.85.`);
         } else {
-            lines.push(`s-ï¸ THRUST NORMAL - ${(flowRatio * 100).toFixed(0)}% del BEP. Cargas axiales dentro del rango operativo.`);
+            lines.push(`\u2714 THRUST NORMAL - ${(flowRatio * 100).toFixed(0)}% del BEP. Cargas axiales dentro del rango operativo.`);
         }
 
         // 3. Motor
         const ml = displayRes.motorLoad || 0;
         if (!motorMissing) {
-            if (ml >= 95) lines.push(`Y" MOTOR SOBRECARGADO al ${ml.toFixed(0)}%. ACCI"N INMEDIATA: Reducir frecuencia.`);
-            else if (ml >= 80) lines.push(`sï¸ Motor al limite (${ml.toFixed(0)}%). Monitorear temperatura diariamente.`);
-            else if (ml < 40) lines.push(`"ï¸ Motor subexigido (${ml.toFixed(0)}%). Riesgo de bajo enfriamiento.`);
+            if (ml >= 95) lines.push(`\u26A0 MOTOR SOBRECARGADO al ${ml.toFixed(0)}%. ACCI\u00d3N INMEDIATA: Reducir frecuencia.`);
+            else if (ml >= 80) lines.push(`\u26A0 Motor al l\u00edmite (${ml.toFixed(0)}%). Monitorear temperatura diariamente.`);
+            else if (ml < 40) lines.push(`\u2139 Motor subexigido (${ml.toFixed(0)}%). Riesgo de bajo enfriamiento.`);
         } else {
-            lines.push(language === 'es' ? '"ï¸ MOTOR NO ENCONTRADO: sin evaluacion electrica.' : '"ï¸ MOTOR NOT FOUND: electrical evaluation disabled.');
+            lines.push(language === 'es' ? '\u2139 MOTOR NO ENCONTRADO: sin evaluaci\u00f3n el\u00e9ctrica.' : '\u2139 MOTOR NOT FOUND: electrical evaluation disabled.');
         }
 
         // 4. PIP / Gas
         const currentPip = displayRes.pip || 0;
         const pb = effectiveParams?.fluids?.pb || 0;
         if (pb > 0 && currentPip > 0 && currentPip < pb * 1.15) {
-            lines.push(`Y' GAS EN INTAKE - PIP=${currentPip.toFixed(0)} psi cerca de Pb=${pb.toFixed(0)} psi. Riesgo bloqueo.`);
+            lines.push(`\u26A0 GAS EN INTAKE - PIP=${currentPip.toFixed(0)} psi cerca de Pb=${pb.toFixed(0)} psi. Riesgo bloqueo.`);
         } else if (currentPip > 0 && currentPip < 120) {
-            lines.push(`s PIP BAJO (${currentPip.toFixed(0)} psi). Riesgo cavitacion.`);
+            lines.push(`\u26A0 PIP BAJO (${currentPip.toFixed(0)} psi). Riesgo cavitaci\u00f3n.`);
         }
 
         // 5. IP Comparacion
@@ -1858,8 +1929,8 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
         const ipDiff = dIP > 0 ? ((calculatedIP - dIP) / dIP) * 100 : 0;
         if (Math.abs(ipDiff) > 15) {
             lines.push(ipDiff < 0
-                ? `Y"? IP REDUCIDO: ${dIP.toFixed(2)} - ${calculatedIP.toFixed(2)} bpd/psi (${Math.abs(ipDiff).toFixed(0)}% menor). El yacimiento perdio productividad. CAUSA PRINCIPAL de bajo caudal - no necesariamente desgaste de bomba.`
-                : `Y"^ IP MAYOR AL DISE'O: ${calculatedIP.toFixed(2)} vs ${dIP.toFixed(2)} bpd/psi (+${ipDiff.toFixed(0)}%). Verificar riesgo de upthrust.`);
+                ? `\u25BC IP REDUCIDO: ${dIP.toFixed(2)} - ${calculatedIP.toFixed(2)} bpd/psi (${Math.abs(ipDiff).toFixed(0)}% menor). El yacimiento perdi\u00f3 productividad. CAUSA PRINCIPAL de bajo caudal - no necesariamente desgaste de bomba.`
+                : `\u25B2 IP MAYOR AL DISE\u00d1O: ${calculatedIP.toFixed(2)} vs ${dIP.toFixed(2)} bpd/psi (+${ipDiff.toFixed(0)}%). Verificar riesgo de upthrust.`);
         }
 
         // 6. Proximos pasos (HIGH PROTECTION MODE - Strict Margins)
@@ -1882,11 +1953,11 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
         const firstLimitedRow = vsdRows.find(r => !r.isSuccess && r.hz > fieldData.frequency);
         const limitReason = firstLimitedRow?.violations[0]?.reason || "Limite tecnico general";
 
-        lines.push('""" PR"XIMOS PASOS """');
+        lines.push('""" PR\u00d3XIMOS PASOS """');
         if (degradationPct > 15 || ml >= 95) {
             lines.push('1. Programar workover/pull for inspection inmediata del equipo de fondo.');
             lines.push('2. Descargar historial de amperaje/voltaje para identificar el inicio de la falla.');
-            lines.push('3. Redisenar equipo ajustado al IP actual.');
+            lines.push('3. Redise\u00f1ar equipo ajustado al IP actual.');
         } else if (degradationPct > 8 || flowRatio > 1.15 || flowRatio < 0.75) {
             const advice = flowRatio < 0.75
                 ? `Ajustar VSD solo hasta recuperar ventana 0.85-1.10 BEP (max ${maxOptimalHz} Hz). Si no hay respuesta de caudal, tratar como limite de inflow/sistema.`
@@ -1902,21 +1973,21 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
 
         // 7. Simulacion de Capacidad (Maximum Capacity Section)
         if (isMaxCapActive && simResult) {
-            lines.push('\n""" ANALISIS DE CAPACIDAD """');
+            lines.push('\n""" AN\u00c1LISIS DE CAPACIDAD """');
             const gain = simResult.rate - fieldData.rate;
             if (gain > 5) {
-                lines.push(`Y"^ POTENCIAL: Incrementar a ${simFreq} Hz genera +${gain.toFixed(0)} BPD adicionales.`);
+                lines.push(`\u26A1 POTENCIAL: Incrementar a ${simFreq} Hz genera +${gain.toFixed(0)} BPD adicionales.`);
             } else if (gain < -5) {
-                lines.push(`Y"? REDUCCI"N: Operar a ${simFreq} Hz bajaria la produccion en ${Math.abs(gain).toFixed(0)} BPD.`);
+                lines.push(`\u25BC REDUCCI\u00d3N: Operar a ${simFreq} Hz bajar\u00eda la producci\u00f3n en ${Math.abs(gain).toFixed(0)} BPD.`);
             }
 
             if (simAlerts.length > 0) {
-                lines.push('sï¸ RESTRICCIONES DE SIMULACI"N:');
+                lines.push('\u26A0 RESTRICCIONES DE SIMULACI\u00d3N:');
                 simAlerts.forEach(a => lines.push(`  - ${a.message} (${a.value})`));
-                lines.push(`RECOMENDACI"N: El punto de 65 Hz NO es recomendable. Ajustar maximo a ${maxOptimalHz} Hz.`);
+                lines.push(`RECOMENDACI\u00d3N: El punto de 65 Hz NO es recomendable. Ajustar m\u00e1ximo a ${maxOptimalHz} Hz.`);
             } else if (Math.abs(gain) > 5) {
-                lines.push('o. FACTIBILIDAD: El cambio de frecuencia es seguro mecanica y electricamente.');
-                lines.push(`RECOMENDACI"N: Ajustar VSD a ${simFreq} Hz para capturar el potencial de ${simResult.rate.toFixed(0)} BPD.`);
+                lines.push('\u2714 FACTIBILIDAD: El cambio de frecuencia es seguro mec\u00e1nica y el\u00e9ctricamente.');
+                lines.push(`RECOMENDACI\u00d3N: Ajustar VSD a ${simFreq} Hz para capturar el potencial de ${simResult.rate.toFixed(0)} BPD.`);
             }
         }
 
@@ -2184,7 +2255,7 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
                                             </div>
                                             <div className="mt-1 p-2 bg-primary/20 rounded-none border border-primary/30 shadow-glow-primary/10">
                                                 <p className="text-[7px] font-black text-primary uppercase leading-tight text-center tracking-widest animate-pulse">
-                                                    PROYECCI"N NODAL ACTIVA
+                                                    PROYECCI\u00d3N NODAL ACTIVA
                                                 </p>
                                             </div>
                                         </div>

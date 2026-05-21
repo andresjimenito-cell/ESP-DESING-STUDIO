@@ -1,1083 +1,1134 @@
-import React, { useMemo, useState, useRef, useEffect } from 'react';
-import { createPortal } from 'react-dom';
-import { RotateCw, Play, Pause, AlertTriangle, Shield, Maximize2, X } from 'lucide-react';
+/**
+ * TrajectoryPlot.tsx — Wellbore Trajectory Workstation (Estética Premium Integrada)
+ */
+
+import React, { useMemo, useState, useRef, useEffect, useCallback } from 'react';
+import { RotateCw, Play, Pause } from 'lucide-react';
 import {
     ComposedChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer,
-    Tooltip, ReferenceLine, ReferenceArea, Customized, ReferenceDot, Label
+    ReferenceLine
 } from 'recharts';
-import { SystemParams } from '../types';
+import { SystemParams, SurveyPoint } from '../types';
 import { interpolateTVD } from '../utils';
-import { useLanguage } from '../i18n';
 import { useTheme } from '../theme';
 
+const DEG2RAD = Math.PI / 180;
+const RAD2DEG = 180 / Math.PI;
+
 interface TrajectoryPlotProps {
-    survey: any[];
+    survey: SurveyPoint[];
     params: SystemParams;
+    isSidebar?: boolean;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Custom Tooltip for 2D View
-// ─────────────────────────────────────────────────────────────────────────────
-const CustomTooltip = ({ active, payload, colorSurface, colorSurfaceLight, colorTextMuted, params, pumpTVD, perfsTVD }: any) => {
-    if (!active || !payload?.length) return null;
-    const d = payload[0]?.payload;
-    const isCased = d.md <= params.wellbore.casingBottom;
-    const zoneName = isCased ? 'Cased Hole' : 'Open Hole';
-    const zoneColor = isCased ? '#00185eff' : '#fbbf24';
-    let equipment = null;
-    if (Math.abs(d.tvd - pumpTVD) < 30) equipment = { name: 'BOMBA ESP', color: '#0ea5e9' };
-    else if (Math.abs(d.tvd - perfsTVD) < 50) equipment = { name: 'PERFORACIONES', color: '#f59e0b' };
+interface ProcessedPoint {
+    x: number;
+    y: number;
+    z: number;
+    departure: number;
+    tvd: number;
+    md: number;
+    inc: number;
+    dogleg: number;
+    azim: number;
+    casedTvd: number | null;
+}
+
+// ─── Math Helpers ─────────────────────────────────────────────────────────────
+
+function computePlotBounds(data: ProcessedPoint[], sp3dX = 0, sp3dY = 0) {
+    let minX = Math.min(0, sp3dX);
+    let maxX = Math.max(0, sp3dX);
+    let minY = Math.min(0, sp3dY);
+    let maxY = Math.max(0, sp3dY);
+    let minZ = 0, maxZ = -Infinity;
+    let hasFinite = false;
+    for (const pt of data) {
+        if (![pt.x, pt.y, pt.z].every(Number.isFinite)) continue;
+        hasFinite = true;
+        if (pt.x < minX) minX = pt.x;
+        if (pt.x > maxX) maxX = pt.x;
+        if (pt.y < minY) minY = pt.y;
+        if (pt.y > maxY) maxY = pt.y;
+        if (pt.z > maxZ) maxZ = pt.z;
+    }
+    if (!hasFinite) {
+        return { minX: -150, maxX: 150, minY: -150, maxY: 150, minZ: 0, maxZ: 1200, cX: 0, cY: 0, cZ: 600, maxRange: 1200, hasData: false };
+    }
+    const cX = (minX + maxX) / 2, cY = (minY + maxY) / 2, cZ = (minZ + maxZ) / 2;
+    const maxRange = Math.max(maxX - minX, maxY - minY, maxZ - minZ, 200, 300, 300, 1200);
+    return { minX, maxX, minY, maxY, minZ, maxZ, cX, cY, cZ, maxRange, hasData: true };
+}
+
+function computeDLS(inc1: number, az1: number, inc2: number, az2: number, dMD: number): number {
+    if (dMD <= 0) return 0;
+    const i1 = inc1 * DEG2RAD, i2 = inc2 * DEG2RAD;
+    const a1 = az1 * DEG2RAD, a2 = az2 * DEG2RAD;
+    const dot = Math.cos(i1) * Math.cos(i2) + Math.sin(i1) * Math.sin(i2) * Math.cos(a2 - a1);
+    const doglegRad = Math.acos(Math.max(-1, Math.min(1, dot)));
+    return (doglegRad * RAD2DEG / dMD) * 100;
+}
+
+// Nueva paleta estética estilizada (Estilo Cyber/Sutil)
+function getEstheticColorRgb(t: number, mode: 'depth' | 'inc' | 'dogleg'): [number, number, number] {
+    const v = Math.max(0, Math.min(1, t));
+    if (mode === 'dogleg') {
+        // Verde esmeralda tech -> Naranja suave -> Rojo alert
+        if (v < 0.5) {
+            const factor = v / 0.5;
+            return [Math.round(16 + (245 - 16) * factor), Math.round(185 + (158 - 185) * factor), Math.round(129 + (11 - 129) * factor)];
+        } else {
+            const factor = (v - 0.5) / 0.5;
+            return [Math.round(245 + (239 - 245) * factor), Math.round(158 + (68 - 158) * factor), Math.round(11 + (68 - 11) * factor)];
+        }
+    } else if (mode === 'inc') {
+        // Azul profundo a cian eléctrico brillante
+        return [Math.round(7 + (56 - 7) * v), Math.round(89 + (189 - 89) * v), Math.round(177 + (248 - 177) * v)];
+    } else {
+        // Estructura/Profundidad: Slate moderno a Violeta Tech
+        return [Math.round(71 + (139 - 71) * v), Math.round(85 + (92 - 85) * v), Math.round(105 + (246 - 105) * v)];
+    }
+}
+
+// Helper para dibujar segmentos cilíndricos en el canvas
+function drawTubeSegment(
+    ctx: CanvasRenderingContext2D,
+    p0: { x: number; y: number; depth: number },
+    p1: { x: number; y: number; depth: number },
+    radiusPixels: number,
+    colorGradientStart: string,
+    colorGradientMid: string,
+    colorGradientEnd: string,
+    yaw: number,
+    opacity = 1.0
+) {
+    const dx = p1.x - p0.x, dy = p1.y - p0.y;
+    const len = Math.sqrt(dx * dx + dy * dy);
+    if (len < 0.1) return;
+    const nx = -dy / len, ny = dx / len;
+    const r = radiusPixels;
+    const x0L = p0.x + nx * r, y0L = p0.y + ny * r;
+    const x0R = p0.x - nx * r, y0R = p0.y - ny * r;
+    const x1L = p1.x + nx * r, y1L = p1.y + ny * r;
+    const x1R = p1.x - nx * r, y1R = p1.y - ny * r;
+    const hlPos = Math.max(0.15, Math.min(0.85, 0.35 + 0.15 * Math.sin(yaw + Math.atan2(dy, dx))));
+    const grad = ctx.createLinearGradient(x0L, y0L, x0R, y0R);
+    grad.addColorStop(0.0, colorGradientStart);
+    grad.addColorStop(hlPos, colorGradientMid);
+    grad.addColorStop(Math.min(1, hlPos + 0.12), colorGradientMid);
+    grad.addColorStop(1.0, colorGradientEnd);
+    ctx.save();
+    ctx.globalAlpha = opacity;
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.moveTo(x0L, y0L); ctx.lineTo(x1L, y1L); ctx.lineTo(x1R, y1R); ctx.lineTo(x0R, y0R);
+    ctx.closePath(); ctx.fill();
+    ctx.restore();
+}
+
+// ─── Spooler Polar Chart ──────────────────────────────────────────────────────
+
+const SpoolerPolarChart: React.FC<{ processedData: ProcessedPoint[]; limitMD: number; isDark: boolean; }> = ({ processedData, limitMD, isDark }) => {
+    const size = 360, cx = size / 2, cy = size / 2, R = 135;
+    const toRad = (deg: number) => (deg - 90) * DEG2RAD;
+    const getPt = (deg: number, radiusVal: number) => {
+        const rad = toRad(deg);
+        const rPix = (radiusVal / 100) * R;
+        return { x: cx + Math.cos(rad) * rPix, y: cy + Math.sin(rad) * rPix };
+    };
+
+    const sector = useMemo(() => {
+        const validPoints = processedData.filter(pt => pt.md > 0 && pt.md <= limitMD && pt.azim !== undefined);
+        if (validPoints.length === 0) return { start: 0, end: 0, draw: false };
+        let sumSin = 0, sumCos = 0, sumW = 0;
+        validPoints.forEach(pt => {
+            const w = Math.sin((pt.inc ?? 0) * DEG2RAD);
+            sumSin += Math.sin((pt.azim ?? 0) * DEG2RAD) * w;
+            sumCos += Math.cos((pt.azim ?? 0) * DEG2RAD) * w;
+            sumW += w;
+        });
+        let avgAz = 0;
+        if (sumW < 0.0001) {
+            let simpleSin = 0, simpleCos = 0;
+            validPoints.forEach(pt => {
+                simpleSin += Math.sin((pt.azim ?? 0) * DEG2RAD);
+                simpleCos += Math.cos((pt.azim ?? 0) * DEG2RAD);
+            });
+            avgAz = (Math.atan2(simpleSin, simpleCos) * RAD2DEG + 360) % 360;
+        } else {
+            avgAz = (Math.atan2(sumSin, sumCos) * RAD2DEG + 360) % 360;
+        }
+        let minDiff = 0, maxDiff = 0;
+        validPoints.forEach(pt => {
+            const w = Math.sin((pt.inc ?? 0) * DEG2RAD);
+            if (sumW >= 0.0001 && w < 0.043) return;
+            let diff = pt.azim - avgAz;
+            while (diff < -180) diff += 360; while (diff > 180) diff -= 360;
+            if (diff < minDiff) minDiff = diff; if (diff > maxDiff) maxDiff = diff;
+        });
+        return { start: (avgAz + minDiff - 2 + 360) % 360, end: (avgAz + maxDiff + 2 + 360) % 360, draw: true };
+    }, [processedData, limitMD]);
+
+    const concentricValues = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
+    const degreeLabels = useMemo(() => { const l: number[] = []; for (let d = 0; d < 360; d += 4) if (d !== 0 && d !== 90 && d !== 180 && d !== 270) l.push(d); return l; }, []);
+
     return (
-        <div style={{
-            background: `${colorSurface}f2`, border: `1px solid ${colorSurfaceLight}`,
-            borderRadius: 12, padding: '10px 14px', boxShadow: '0 8px 32px rgba(0,0,0,0.9)',
-            minWidth: 190, backdropFilter: 'blur(16px)', zIndex: 1000
-        }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: 5 }}>
-                <span style={{ color: zoneColor, fontSize: 9, fontWeight: 900, letterSpacing: '0.1em' }}>{zoneName}</span>
-                {equipment && <span style={{ background: `${equipment.color}20`, color: equipment.color, fontSize: 8, fontWeight: 900, padding: '2px 6px', borderRadius: 4 }}>{equipment.name}</span>}
-            </div>
-            {[
-                { label: 'TVD', value: `${Math.round(d?.tvd ?? 0)} ft`, color: '#38bdf8' },
-                { label: 'MD', value: `${Math.round(d?.md ?? 0)} ft`, color: '#a78bfa' },
-                { label: 'Departure', value: `${Math.round(d?.departure ?? 0)} ft`, color: '#34d399' },
-            ].map(({ label, value, color }) => (
-                <div key={label} style={{ display: 'flex', justifyContent: 'space-between', gap: 20, marginTop: 4 }}>
-                    <span style={{ color: colorTextMuted, fontSize: 9, fontWeight: 600 }}>{label}</span>
-                    <span style={{ color, fontSize: 9, fontWeight: 800 }}>{value}</span>
-                </div>
-            ))}
-        </div>
+        <svg viewBox={`0 0 ${size} ${size}`} className="w-full max-w-[320px] h-[320px] select-none overflow-visible">
+            {sector.draw && (
+                <path
+                    d={`M ${cx} ${cy} L ${cx + Math.cos(toRad(sector.start)) * R} ${cy + Math.sin(toRad(sector.start)) * R} A ${R} ${R} 0 ${(sector.end - sector.start + 360) % 360 > 180 ? 1 : 0} 1 ${cx + Math.cos(toRad(sector.end)) * R} ${cy + Math.sin(toRad(sector.end)) * R} Z`}
+                    fill="rgba(6,182,212,0.04)"
+                    stroke="#06b6d4"
+                    strokeWidth="1.5"
+                    strokeDasharray="3 3"
+                />
+            )}
+            {concentricValues.map(val => <circle key={val} cx={cx} cy={cy} r={(val / 100) * R} fill="none" stroke={isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)'} strokeWidth={val === 100 ? 1.0 : 0.5} />)}
+            {degreeLabels.map(deg => { const p = getPt(deg, 105); return <text key={`l${deg}`} x={p.x} y={p.y} textAnchor="middle" dominantBaseline="middle" fontSize="6.5" fontWeight="600" className={isDark ? 'fill-slate-500' : 'fill-slate-400'}>{deg}°</text>; })}
+            <line x1={cx - R} y1={cy} x2={cx + R} y2={cy} stroke={isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)'} strokeWidth="1.0" />
+            <line x1={cx} y1={cy - R} x2={cx} y2={cy + R} stroke={isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)'} strokeWidth="1.0" />
+            <text x={cx} y={cy - R - 10} textAnchor="middle" fill="#ef4444" fontSize="12" fontWeight="900">N</text>
+            <text x={cx + R + 10} y={cy} textAnchor="start" dominantBaseline="middle" fill={isDark ? '#fff' : '#000'} fontSize="11" fontWeight="800">E</text>
+            {processedData.map((pt, idx) => {
+                if (pt.md === 0 || pt.md > limitMD || pt.azim === undefined) return null;
+                const pT = getPt(pt.azim, (pt.md / limitMD) * 98);
+                return <line key={`r${idx}`} x1={cx} y1={cy} x2={pT.x} y2={pT.y} stroke="#3b82f6" strokeWidth="2.0" strokeLinecap="round" opacity="0.8" />;
+            })}
+            <circle cx={cx} cy={cy} r={3} fill="#ef4444" />
+        </svg>
     );
 };
 
-const InclinationTooltip = ({ active, payload, colorSurface, colorSurfaceLight, colorTextMuted }: any) => {
-    if (!active || !payload?.length) return null;
-    const d = payload[0]?.payload;
-    return (
-        <div style={{ background: `${colorSurface}f2`, border: `1px solid ${colorSurfaceLight}`, borderRadius: 12, padding: '10px 14px', boxShadow: '0 8px 32px rgba(0,0,0,0.9)', backdropFilter: 'blur(16px)' }}>
-            <div style={{ color: '#38bdf8', fontSize: 9, fontWeight: 900, letterSpacing: '0.1em', marginBottom: 5 }}>INCLINACIÓN</div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 20, marginTop: 4 }}>
-                <span style={{ color: colorTextMuted, fontSize: 9, fontWeight: 600 }}>MD</span>
-                <span style={{ color: '#fff', fontSize: 9, fontWeight: 800 }}>{Math.round(d.md)} ft</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 20, marginTop: 4 }}>
-                <span style={{ color: colorTextMuted, fontSize: 9, fontWeight: 600 }}>Inc</span>
-                <span style={{ color: '#38bdf8', fontSize: 9, fontWeight: 800 }}>{d.inc?.toFixed(2)}°</span>
-            </div>
-        </div>
-    );
-};
+// ─── Main Component ───────────────────────────────────────────────────────────
 
-const DoglegTooltip = ({ active, payload, colorSurface, colorSurfaceLight, colorTextMuted }: any) => {
-    if (!active || !payload?.length) return null;
-    const d = payload[0]?.payload;
-    const isDangerous = d.dogleg > 3;
-    return (
-        <div style={{ background: `${colorSurface}f2`, border: `1px solid ${colorSurfaceLight}`, borderRadius: 12, padding: '10px 14px', boxShadow: '0 8px 32px rgba(0,0,0,0.9)', backdropFilter: 'blur(16px)' }}>
-            <div style={{ color: isDangerous ? '#ef4444' : '#f59e0b', fontSize: 9, fontWeight: 900, letterSpacing: '0.1em', marginBottom: 5 }}>DLS {isDangerous && '⚠'}</div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 20, marginTop: 4 }}>
-                <span style={{ color: colorTextMuted, fontSize: 9, fontWeight: 600 }}>MD</span>
-                <span style={{ color: '#fff', fontSize: 9, fontWeight: 800 }}>{Math.round(d.md)} ft</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 20, marginTop: 4 }}>
-                <span style={{ color: colorTextMuted, fontSize: 9, fontWeight: 600 }}>DLS</span>
-                <span style={{ color: isDangerous ? '#ef4444' : '#f59e0b', fontSize: 9, fontWeight: 800 }}>{d.dogleg?.toFixed(2)}°/100ft</span>
-            </div>
-        </div>
-    );
-};
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Drilling Rig SVG (2D overlay)
-// ─────────────────────────────────────────────────────────────────────────────
-const DrillingRig = (props: any) => {
-    const { xAxisMap, yAxisMap, theme } = props;
-    const xKey = Object.keys(xAxisMap ?? {})[0];
-    const yKey = Object.keys(yAxisMap ?? {})[0];
-    const xScale = xAxisMap?.[xKey]?.scale;
-    const yScale = yAxisMap?.[yKey]?.scale;
-    if (!xScale || !yScale) return null;
-    const isDark = theme === 'fusion' || theme === 'cyber';
-    const rx = xScale(0);
-    const ry = yScale(0);
-    const scale = 0.45;
-    return (
-        <g transform={`translate(${rx - 25 * scale}, ${ry - 78 * scale}) scale(${scale})`} style={{ pointerEvents: 'none' }}>
-            <path d="M 25 10 L 5 78 L 45 78 Z" fill="none" stroke={isDark ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.2)"} strokeWidth={1.2} />
-            <path d="M 25 10 L 25 78" stroke={isDark ? "rgba(255,255,255,0.35)" : "rgba(0,0,0,0.3)"} strokeWidth={1.5} />
-            {[-12, 10, 32, 54].map(dy => (
-                <line key={dy} x1={25 - (78 - dy) * 0.25} y1={dy} x2={25 + (78 - dy) * 0.25} y2={dy}
-                    stroke={isDark ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.15)"} strokeWidth={1} />
-            ))}
-            <rect x={12} y={78} width={26} height={6} fill={isDark ? "#1e293b" : "#e2e8f0"} stroke={isDark ? "#475569" : "#cbd5e1"} strokeWidth={1} rx={1} />
-            <circle cx={25} cy={10} r={2} fill={isDark ? "#ef4444" : "#dc2626"} />
-        </g>
-    );
-};
-
-// ─────────────────────────────────────────────────────────────────────────────
-// 2D Wellbore Symbols
-// ─────────────────────────────────────────────────────────────────────────────
-const getSmoothAngleDeg = (mdVal: number, processedData: any[], xScale: (v: number) => number, yScale: (v: number) => number): number => {
-    const idx = processedData.findIndex((d: any) => d.md >= mdVal);
-    if (idx < 1) return 0;
-    const p0 = processedData[idx - 1];
-    const p1 = processedData[idx];
-    const sdx = xScale(p1.departure) - xScale(p0.departure);
-    const sdy = yScale(p1.tvd) - yScale(p0.tvd);
-    const len = Math.sqrt(sdx * sdx + sdy * sdy);
-    if (len < 0.001) return 0;
-    return Math.atan2(sdx, sdy) * 180 / Math.PI;
-};
-
-const WellboreSymbols = ({ xAxisMap, yAxisMap, processedData, pumpDep, pumpTVD, pumpMD, perfsDep, perfsTVD, perfsMD, perfsTVDRange, colorPrimary, colorTextMuted, theme }: any) => {
-    const xKey = Object.keys(xAxisMap ?? {})[0];
-    const yKey = Object.keys(yAxisMap ?? {})[0];
-    const xScale = xAxisMap?.[xKey]?.scale;
-    const yScale = yAxisMap?.[yKey]?.scale;
-    if (!xScale || !yScale) return null;
-    const isDark = theme === 'fusion' || theme === 'cyber';
-    const ac = colorPrimary;
-    const perf = isDark ? '#D97706' : '#78350F';
-    const ex = xScale(pumpDep); const ey = yScale(pumpTVD);
-    const px = xScale(perfsDep); const py = yScale(perfsTVD);
-    const eAngle = getSmoothAngleDeg(pumpMD, processedData, xScale, yScale);
-    const pAngle = getSmoothAngleDeg(perfsMD, processedData, xScale, yScale);
-    const rawPx = Math.abs(yScale(perfsTVD + perfsTVDRange) - yScale(perfsTVD));
-    const halfInt = Math.max(16, Math.min(34, rawPx));
-    const shots = [-halfInt * 0.85, -halfInt * 0.5, -halfInt * 0.2, 0, halfInt * 0.2, halfInt * 0.5, halfInt * 0.85];
-    const PH = 13; const PW = 3;
-    return (
-        <g>
-            <circle cx={ex} cy={ey} r={10} fill="none" stroke={ac} strokeWidth={1} strokeOpacity={0.2} />
-            <g transform={`translate(${ex}, ${ey}) rotate(${eAngle})`}>
-                <rect x={-PW - 1.5} y={-PH - 1.5} width={(PW + 1.5) * 2} height={(PH + 1.5) * 2} rx={3} fill={isDark ? "#0A1628" : "#EFF6FF"} stroke={ac} strokeWidth={1.2} />
-                {[-PH * 0.55, 0, PH * 0.55].map((bandY, i) => (
-                    <rect key={i} x={-PW - 0.5} y={bandY - 2.5} width={(PW + 0.5) * 2} height={4} rx={1} fill={ac} fillOpacity={0.35} stroke={ac} strokeWidth={0.5} />
-                ))}
-                <line x1={0} y1={-PH} x2={0} y2={PH} stroke={ac} strokeWidth={0.6} opacity={0.5} />
-                <rect x={-1.5} y={-PH - 6} width={3} height={6} rx={1} fill={ac} fillOpacity={0.7} />
-                <rect x={-2} y={PH} width={4} height={5} rx={1} fill={ac} fillOpacity={0.4} stroke={ac} strokeWidth={0.5} strokeDasharray="2 1" />
-            </g>
-            <circle cx={ex} cy={ey} r={2.5} fill={ac} />
-            <g transform={`translate(${ex + 16}, ${ey - 20})`}>
-                <rect x={0} y={0} width={80} height={36} rx={4} fill={isDark ? "rgba(10,20,35,0.88)" : "rgba(248,250,252,0.92)"} stroke={isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.1)"} strokeWidth={1} />
-                <rect x={0} y={0} width={2.5} height={36} fill={ac} />
-                <text x={8} y={12} fill={ac} fontSize={8} fontWeight="900" fontFamily="monospace">ESP PUMP</text>
-                <text x={8} y={23} fill={colorTextMuted} fontSize={7} fontFamily="monospace">MD: {Math.round(pumpMD)}'</text>
-                <text x={8} y={32} fill={isDark ? "#fff" : "#000"} fontSize={7} fontWeight="800" fontFamily="monospace">TVD: {Math.round(pumpTVD)}'</text>
-                <line x1={-10} y1={18} x2={0} y2={18} stroke={isDark ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.15)"} strokeWidth={0.5} />
-            </g>
-            <g transform={`translate(${px}, ${py}) rotate(${pAngle})`}>
-                <rect x={-12} y={-halfInt} width={24} height={halfInt * 2} fill="url(#patRes)" fillOpacity={0.4} stroke={perf} strokeWidth={0.5} strokeOpacity={0.3} />
-            </g>
-            <g transform={`translate(${px}, ${py}) rotate(${pAngle})`}>
-                {shots.map((offset, i) => (
-                    <g key={i}>
-                        <line x1={-15} y1={offset} x2={15} y2={offset} stroke={perf} strokeWidth={1} strokeOpacity={0.6} strokeDasharray="2 2" />
-                        <rect x={-16} y={offset - 1} width={4} height={2} fill={perf} />
-                        <rect x={12} y={offset - 1} width={4} height={2} fill={perf} />
-                    </g>
-                ))}
-            </g>
-            <g transform={`translate(${px + 24}, ${py - 10})`}>
-                <rect x={0} y={0} width={88} height={36} rx={4} fill={isDark ? "rgba(20,15,10,0.92)" : "rgba(252,250,248,0.96)"} stroke={isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"} strokeWidth={1} />
-                <rect x={0} y={0} width={2.5} height={36} fill={perf} />
-                <text x={8} y={12} fill={perf} fontSize={8} fontWeight="900" fontFamily="monospace">PERFORACIONES</text>
-                <text x={8} y={23} fill={colorTextMuted} fontSize={7} fontFamily="monospace">MD: {Math.round(perfsMD)}'</text>
-                <text x={8} y={32} fill={isDark ? "#fff" : "#000"} fontSize={7} fontWeight="800" fontFamily="monospace">TVD: {Math.round(perfsTVD)}'</text>
-                <line x1={-20} y1={18} x2={0} y2={18} stroke={isDark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.1)"} strokeWidth={0.5} />
-            </g>
-        </g>
-    );
-};
-
-// ─────────────────────────────────────────────────────────────────────────────
-// MAIN UNIFIED WORKSTATION COMPONENT
-// ─────────────────────────────────────────────────────────────────────────────
-export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params }) => {
-    const { t } = useLanguage();
+export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params, isSidebar = false }) => {
     const { theme } = useTheme();
     const isDark = theme === 'fusion' || theme === 'cyber';
+    const colorPrimary = `rgb(var(--color-primary))`;
+    const colorSurfaceLight = `rgb(var(--color-surface-light))`;
 
-    const cv = (n: string) => `rgb(var(${n}))`;
-    const colorPrimary = cv('--color-primary');
-    const colorSecondary = cv('--color-secondary');
-    const colorTextMuted = cv('--color-text-muted');
-    const colorSurfaceLight = cv('--color-surface-light');
-    const colorSurface = cv('--color-surface');
-
-    // Expanded Panel state ('3d' | 'lithology' | 'inclination' | 'dls' | null)
-    const [expandedPanel, setExpandedPanel] = useState<'3d' | 'lithology' | 'inclination' | 'dls' | null>(null);
-
-    // 3D Color overlay
-    const [colorOverlay3D, setColorOverlay3D] = useState<'structure' | 'inc' | 'dogleg'>('dogleg');
-    const overlayOptions = [
-        { mode: 'structure' as const, label: 'Estructura', color: colorPrimary },
-        { mode: 'inc' as const, label: 'Inclinación', color: '#38bdf8' },
-        { mode: 'dogleg' as const, label: 'DLS (Severidad)', color: '#fbbf24' }
-    ];
-
-    // 3D layers
-    const [showGridCage3D, setShowGridCage3D] = useState(true);
-    const [showShadows3D, setShowShadows3D] = useState(true);
-    const [showGeologySlices, setShowGeologySlices] = useState(true);
-    const [showRig3D, setShowRig3D] = useState(true);
-
-    // 3D Camera
-    const [yaw, setYaw] = useState(Math.PI / 4.5);
-    const [pitch, setPitch] = useState(-Math.PI / 6.5);
-    const [zoom, setZoom] = useState(1.05);
+    const [expandedCanvas, setExpandedCanvas] = useState(false);
+    const [colorOverlay3D, setColorOverlay3D] = useState<'depth' | 'inc' | 'dogleg'>('dogleg');
     const [isAutoRotating, setIsAutoRotating] = useState(true);
-    const [hoveredPointIdx, setHoveredPointIdx] = useState<number | null>(null);
 
+    const yawRef = useRef(Math.PI / 4.5);
+    const pitchRef = useRef(-Math.PI / 7.0);
+    const zoomRef = useRef(1.0);
+    const hovIdxRef = useRef<number | null>(null);
+    const isAutoRotRef = useRef(true);
+    const dragRef = useRef<{ x: number; y: number; yaw: number; pitch: number } | null>(null);
+    const canvasSizeRef = useRef({ w: 0, h: 0, dpr: 1 });
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const dragStartRef = useRef<{ x: number; y: number } | null>(null);
-    const cameraStartRef = useRef<{ yaw: number; pitch: number } | null>(null);
-    const animFrameRef = useRef<number>(0);
+    const boundsRef = useRef<ReturnType<typeof computePlotBounds> | null>(null);
+    const needsRenderRef = useRef(true);
+    const requestRenderRef = useRef<(() => void) | null>(null);
 
-    const GEO = {
-        soil: { pat: 'patSoil2', color: isDark ? '#855933' : '#a17a55' },
-        limestone: { pat: 'patLimestone2', color: isDark ? '#64748b' : '#94a3b8' },
-        shale: { pat: 'patShale2', color: isDark ? '#334155' : '#475569' },
-        salt: { pat: 'patSalt2', color: isDark ? '#4b5563' : '#cbd5e1' },
-        sand: { pat: 'patSand2', color: isDark ? '#b45309' : '#ca8a04' },
-        granite: { pat: 'patGranite2', color: isDark ? '#3f3f46' : '#71717a' },
-        res: { pat: 'patRes', color: '#ffea00' },
-    };
+    const setView = useCallback((type: 'top' | 'bottom' | 'lateral') => {
+        isAutoRotRef.current = false;
+        setIsAutoRotating(false);
+        if (type === 'top') { yawRef.current = 0; pitchRef.current = 0; }
+        else if (type === 'bottom') { yawRef.current = Math.PI / 4.5; pitchRef.current = Math.PI / 7.0; }
+        else if (type === 'lateral') { yawRef.current = Math.PI / 2; pitchRef.current = -Math.PI / 2; }
+        needsRenderRef.current = true;
+        requestRenderRef.current?.();
+    }, []);
 
-    const hasAdv = useMemo(() => {
-        return survey.some(s => (s.inc !== undefined && s.inc !== null && s.inc !== 0) || (s.dogleg !== undefined && s.dogleg !== null && s.dogleg !== 0));
-    }, [survey]);
+    // ── Survey Processing ──────────────────────────────────────────────────────
 
-    const metrics = useMemo(() => {
-        let maxDLS = 0; let maxInc = 0;
-        survey.forEach(s => {
-            if ((s.dogleg ?? 0) > maxDLS) maxDLS = s.dogleg;
-            if ((s.inc ?? 0) > maxInc) maxInc = s.inc;
-        });
-        return { maxDLS, maxInc };
-    }, [survey]);
+    const processedData = useMemo<ProcessedPoint[]>(() => {
+        if (!survey || !Array.isArray(survey)) return [];
+        let departure = 0; let curX = 0; let curY = 0;
 
-    const { processedData, tubingData, pumpDep, pumpTVD, perfsDep, perfsTVD, maxTVD, kopPoint, stats } = useMemo(() => {
-        let departure = 0;
-        let data = survey.map((pt, i) => {
+        const raw = survey.map((pt, i) => {
+            const prev = survey[i - 1];
+            let dls = pt.dogleg ?? 0;
             if (i > 0) {
-                const dMD = pt.md - survey[i - 1].md;
-                const dTVD = pt.tvd - survey[i - 1].tvd;
+                const dMD = pt.md - prev.md;
+                const dTVD = pt.tvd - prev.tvd;
                 departure += Math.sqrt(Math.max(0, dMD ** 2 - dTVD ** 2));
+                if (!pt.dogleg && pt.inc !== undefined && pt.azim !== undefined && prev.inc !== undefined && prev.azim !== undefined) {
+                    dls = computeDLS(prev.inc, prev.azim, pt.inc, pt.azim, dMD);
+                }
+                const avgInc = ((prev.inc ?? 0) + (pt.inc ?? 0)) / 2 * DEG2RAD;
+                const avgAz = ((prev.azim ?? 0) + (pt.azim ?? 0)) / 2 * DEG2RAD;
+                curX += dMD * Math.sin(avgInc) * Math.sin(avgAz);
+                curY += dMD * Math.sin(avgInc) * Math.cos(avgAz);
             }
             return {
-                x: pt.easting ?? departure,
-                y: pt.northing ?? 0,
-                z: pt.tvd,
-                departure: Math.round(departure),
-                tvd: pt.tvd,
-                md: pt.md,
+                x: curX, y: curY, z: pt.tvd,
+                departure: Math.round(departure), tvd: pt.tvd, md: pt.md,
+                inc: pt.inc ?? 0, dogleg: dls, azim: pt.azim ?? 0,
                 casedTvd: pt.md <= params.wellbore.casingBottom ? pt.tvd : null,
-                inc: pt.inc ?? 0,
-                dogleg: pt.dogleg ?? 0,
+            } satisfies ProcessedPoint;
+        });
+        if (raw.length > 0 && raw[0].md > 0) {
+            raw.unshift({ x: 0, y: 0, z: 0, departure: 0, tvd: 0, md: 0, inc: 0, dogleg: 0, azim: 0, casedTvd: 0 });
+        }
+        return raw;
+    }, [survey, params.wellbore.casingBottom]);
+
+    const { maxCurveDLS, maxDlsPoint } = useMemo(() => {
+        let maxDLS = 0, maxCurveDLS = 0;
+        let maxDlsPoint: ProcessedPoint = processedData[0];
+        processedData.forEach(s => {
+            if ((s.dogleg ?? 0) > maxDLS) maxDLS = s.dogleg;
+            if (s.md <= params.pressures.pumpDepthMD && (s.dogleg ?? 0) > maxCurveDLS) {
+                maxCurveDLS = s.dogleg; maxDlsPoint = s;
+            }
+        });
+        return { maxCurveDLS, maxDlsPoint };
+    }, [processedData, params.pressures.pumpDepthMD]);
+
+    const { maxMD, maxTVD, kopPoint } = useMemo(() => {
+        const safeSurvey = Array.isArray(survey) ? survey : [];
+        const tdTVD = interpolateTVD(params.totalDepthMD, safeSurvey);
+        const surveyMax = Math.max(...safeSurvey.map(s => s.tvd), 1000);
+        const kop = processedData.find((d, i) =>
+            i > 0 && (d.departure - processedData[i - 1].departure) / Math.max(1, d.tvd - processedData[i - 1].tvd) > 0.035
+        );
+        return { maxMD: Math.max(...safeSurvey.map(s => s.md), 100), maxTVD: Math.ceil(Math.max(surveyMax, tdTVD) / 1000) * 1000 + 400, kopPoint: kop };
+    }, [survey, params.totalDepthMD, processedData]);
+
+    const limitMD = useMemo(() => params.pressures.pumpDepthMD || maxMD, [params.pressures.pumpDepthMD, maxMD]);
+
+    const avgAzimuth = useMemo(() => {
+        const validPoints = processedData.filter(pt => pt.md > 0 && pt.md <= limitMD && pt.azim !== undefined);
+        if (validPoints.length === 0) return 0;
+        let sumSin = 0, sumCos = 0, sumW = 0;
+        validPoints.forEach(pt => {
+            const w = Math.sin((pt.inc ?? 0) * DEG2RAD);
+            sumSin += Math.sin((pt.azim ?? 0) * DEG2RAD) * w;
+            sumCos += Math.cos((pt.azim ?? 0) * DEG2RAD) * w;
+            sumW += w;
+        });
+        if (sumW < 0.0001) {
+            let simpleSin = 0, simpleCos = 0;
+            validPoints.forEach(pt => { simpleSin += Math.sin((pt.azim ?? 0) * DEG2RAD); simpleCos += Math.cos((pt.azim ?? 0) * DEG2RAD); });
+            return (Math.atan2(simpleSin, simpleCos) * RAD2DEG + 360) % 360;
+        }
+        return (Math.atan2(sumSin, sumCos) * RAD2DEG + 360) % 360;
+    }, [processedData, limitMD]);
+
+    const spoolerAzimuth = useMemo(() => Math.round(avgAzimuth), [avgAzimuth]);
+
+    // ── Single RAF-based Canvas Loop ───────────────────────────────────────────
+
+    useEffect(() => {
+        const canvas = canvasRef.current; if (!canvas) return;
+        const ctx = canvas.getContext('2d'); if (!ctx) return;
+        let rafId: number | null = null;
+
+        let rawMinX = 0, rawMaxX = 0, rawMinY = 0, rawMaxY = 0;
+        processedData.forEach(pt => {
+            if (Number.isFinite(pt.x)) { rawMinX = Math.min(rawMinX, pt.x); rawMaxX = Math.max(rawMaxX, pt.x); }
+            if (Number.isFinite(pt.y)) { rawMinY = Math.min(rawMinY, pt.y); rawMaxY = Math.max(rawMaxY, pt.y); }
+        });
+        const rawHorizExtent = Math.max(Math.abs(rawMaxX - rawMinX), Math.abs(rawMaxY - rawMinY), 100);
+        const spRadius3D = Math.max(80, rawHorizExtent * 0.35);
+
+        const bounds = computePlotBounds(processedData, spRadius3D * Math.sin(spoolerAzimuth * DEG2RAD), spRadius3D * Math.cos(spoolerAzimuth * DEG2RAD));
+        boundsRef.current = bounds;
+        const { minX, maxX, minY, maxY, minZ, maxZ, cX, cY, cZ, maxRange, hasData } = bounds;
+        const globalMaxDLS = Math.max(...processedData.map(p => p.dogleg), 2);
+        const baseTubingRadius = 4.0;
+
+        // Función para extraer y generar opacidades de los colores del tema actual
+        const getCssVarAlpha = (cssVarName: string, alpha: number, fallbackRgb: string) => {
+            if (typeof window === 'undefined') return `rgba(${fallbackRgb}, ${alpha})`;
+            try {
+                const bodyStyle = window.getComputedStyle(document.body);
+                let rawVal = bodyStyle.getPropertyValue(cssVarName).trim();
+                if (!rawVal) {
+                    rawVal = window.getComputedStyle(document.documentElement).getPropertyValue(cssVarName).trim();
+                }
+                if (rawVal) {
+                    const formatted = rawVal.replace(/\s+/g, ', ');
+                    return `rgba(${formatted}, ${alpha})`;
+                }
+            } catch (err) {
+                // ignore
+            }
+            return `rgba(${fallbackRgb}, ${alpha})`;
+        };
+
+        const colorPrimaryAlpha = (alpha: number) => getCssVarAlpha('--color-primary', alpha, '6, 182, 212');
+        const colorAccentAlpha = (alpha: number) => getCssVarAlpha('--color-accent', alpha, '148, 163, 184');
+        const colorSecondaryAlpha = (alpha: number) => getCssVarAlpha('--color-secondary', alpha, '15, 45, 65');
+        const colorGlowAlpha = (alpha: number) => getCssVarAlpha('--color-glow', alpha, '147, 197, 253');
+
+        const drawFrame = () => {
+            const yaw = yawRef.current; const pitch = pitchRef.current; const zoom = zoomRef.current;
+            const hoveredPointIdx = hovIdxRef.current; const isLookingFromBelow = pitch > 0.05;
+
+            // Resize Control
+            const parent = canvas.parentElement; if (!parent) return;
+            const dpr = window.devicePixelRatio || 1;
+            const w = parent.clientWidth; const h = Math.max(380, parent.clientHeight);
+            if (w !== canvasSizeRef.current.w || h !== canvasSizeRef.current.h || dpr !== canvasSizeRef.current.dpr) {
+                canvas.width = w * dpr; canvas.height = h * dpr;
+                canvas.style.width = `${w}px`; canvas.style.height = `${h}px`;
+                ctx.scale(dpr, dpr); canvasSizeRef.current = { w, h, dpr };
+            }
+            ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+
+            // Proyección 3D Básica Estilizada
+            const project = (x3d: number, y3d: number, z3d: number) => {
+                const tx = x3d - cX, ty = y3d - cY, tz = z3d - cZ;
+                const rx1 = tx * Math.cos(yaw) - ty * Math.sin(yaw);
+                const ry1 = -(tx * Math.sin(yaw) + ty * Math.cos(yaw));
+                const ry2 = ry1 * Math.cos(pitch) - tz * Math.sin(pitch);
+                const rz2 = ry1 * Math.sin(pitch) + tz * Math.cos(pitch);
+                const vScale = Math.min(w, h) * 0.72 / maxRange;
+                return { x: w / 2 + rx1 * vScale * zoom, y: h / 2 + ry2 * vScale * zoom, depth: rz2 };
             };
-        });
-        if (data.length > 0 && data[0].md > 0) {
-            data = [{ x: 0, y: 0, z: 0, departure: 0, tvd: 0, md: 0, casedTvd: 0, inc: 0, dogleg: 0 }, ...data];
-        }
-        const pumpTVDVal = interpolateTVD(params.pressures.pumpDepthMD, survey);
-        const pumpPt = data.find(d => d.tvd >= pumpTVDVal);
-        const tubingMDLimit = params.pressures.pumpDepthMD;
-        const tubingD = data.filter(d => d.md <= tubingMDLimit);
-        if (tubingMDLimit > 0 && (!tubingD.length || tubingD[tubingD.length - 1].md < tubingMDLimit)) {
-            const exactTVD = interpolateTVD(tubingMDLimit, survey);
-            const lastD = tubingD.length > 0 ? tubingD[tubingD.length - 1].departure : 0;
-            const lastMD = tubingD.length > 0 ? tubingD[tubingD.length - 1].md : 0;
-            const dMD = tubingMDLimit - lastMD;
-            const dTVD = exactTVD - (tubingD.length > 0 ? tubingD[tubingD.length - 1].tvd : 0);
-            const dDep = Math.sqrt(Math.max(0, dMD ** 2 - dTVD ** 2));
-            tubingD.push({ x: data.find(s => s.md >= tubingMDLimit)?.x ?? (lastD + dDep), y: 0, z: exactTVD, md: tubingMDLimit, tvd: exactTVD, departure: lastD + dDep, casedTvd: tubingMDLimit <= params.wellbore.casingBottom ? exactTVD : null, inc: survey.find(s => s.md >= tubingMDLimit)?.inc ?? 0, dogleg: survey.find(s => s.md >= tubingMDLimit)?.dogleg ?? 0 });
-        }
-        const perfsTVDVal = interpolateTVD(params.wellbore.midPerfsMD, survey);
-        const perfsPt = data.find(d => d.tvd >= perfsTVDVal);
-        const kop = data.find((d, i) => i > 0 && (d.departure - data[i - 1].departure) / Math.max(1, d.tvd - data[i - 1].tvd) > 0.035);
-        const surveyMax = Math.max(...survey.map(s => s.tvd), 1000);
-        const tdTVD = interpolateTVD(params.totalDepthMD, survey);
-        return {
-            processedData: data, tubingData: tubingD,
-            pumpDep: pumpPt?.departure ?? 0, pumpTVD: pumpTVDVal,
-            perfsDep: perfsPt?.departure ?? 0, perfsTVD: perfsTVDVal,
-            maxTVD: Math.ceil(Math.max(surveyMax, tdTVD) / 1000) * 1000 + 500,
-            kopPoint: kop,
-            stats: { totalDeparture: Math.round(departure), maxMD: Math.round(Math.max(...survey.map(s => s.md))), maxTVD: Math.round(surveyMax) }
-        };
-    }, [survey, params]);
 
-    const getIncColor = (inc: number) => { if (inc < 10) return '#10b981'; if (inc < 35) return '#38bdf8'; if (inc < 65) return '#f59e0b'; return '#ec4899'; };
-    const getDlsColor = (dls: number) => { if (dls < 1.5) return '#10b981'; if (dls < 3.0) return '#eab308'; return '#ef4444'; };
+            const projectedPoints = processedData.map(pt => ({ ...project(pt.x, pt.y, pt.z), pt }));
+            const pWell = projectedPoints[0];
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // 3D Canvas Render
-    // ─────────────────────────────────────────────────────────────────────────
-    useEffect(() => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-        const parent = canvas.parentElement;
-        if (!parent) return;
+            const drawText = (text: string, x: number, y: number, font: string, fill: string, align: CanvasTextAlign = 'left') => {
+                ctx.save(); ctx.font = font; ctx.textAlign = align; ctx.textBaseline = 'middle';
+                ctx.strokeStyle = isDark ? '#090d16' : '#ffffff'; ctx.lineWidth = 3.5; ctx.strokeText(text, x, y);
+                ctx.fillStyle = fill; ctx.fillText(text, x, y); ctx.restore();
+            };
 
-        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity, minZ = 0, maxZ = -Infinity;
-        processedData.forEach(pt => { if (pt.x < minX) minX = pt.x; if (pt.x > maxX) maxX = pt.x; if (pt.y < minY) minY = pt.y; if (pt.y > maxY) maxY = pt.y; if (pt.z < minZ) minZ = pt.z; if (pt.z > maxZ) maxZ = pt.z; });
-        const centerX = (minX + maxX) / 2, centerY = (minY + maxY) / 2, centerZ = (minZ + maxZ) / 2;
-        const rangeX = Math.max(maxX - minX, 300), rangeY = Math.max(maxY - minY, 300), rangeZ = Math.max(maxZ - minZ, 1200);
-        const maxRange = Math.max(rangeX, rangeY, rangeZ, 150);
+            // ── MEJORA 1: Fondo Degradado Estilo "Workstation" Profesional ────
+            const bgGrad = ctx.createRadialGradient(w / 2, h * 0.4, 0, w / 2, h / 2, Math.max(w, h) * 0.8);
+            if (isDark) { bgGrad.addColorStop(0, '#0f172a'); bgGrad.addColorStop(0.6, '#090d16'); bgGrad.addColorStop(1, '#05070f'); }
+            else { bgGrad.addColorStop(0, '#ffffff'); bgGrad.addColorStop(0.7, '#f1f5f9'); bgGrad.addColorStop(1, '#e2e8f0'); }
+            ctx.fillStyle = bgGrad; ctx.fillRect(0, 0, w, h);
 
-        const dpr = window.devicePixelRatio || 1;
-        const w = parent.clientWidth;
-        const h = Math.max(320, parent.clientHeight);
-        canvas.width = w * dpr; canvas.height = h * dpr;
-        canvas.style.width = `${w}px`; canvas.style.height = `${h}px`;
-        ctx.scale(dpr, dpr);
-        ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+            if (!hasData || processedData.length === 0) return;
 
-        const project = (x3d: number, y3d: number, z3d: number) => {
-            const tx = x3d - centerX, ty = y3d - centerY, tz = z3d - centerZ;
-            const rx1 = tx * Math.cos(yaw) - ty * Math.sin(yaw);
-            const ry1 = tx * Math.sin(yaw) + ty * Math.cos(yaw);
-            const ry2 = ry1 * Math.cos(pitch) - tz * Math.sin(pitch);
-            const rz2 = ry1 * Math.sin(pitch) + tz * Math.cos(pitch);
-            const viewportScale = Math.min(w, h) * 0.72 / maxRange;
-            return { x: w / 2 + rx1 * viewportScale * zoom, y: h / 2 + ry2 * viewportScale * zoom, depth: rz2 };
-        };
+            // ── MEJORA 3: Formaciones Geológicas Holográficas 3D (Afinidad Total al Tema) ──
+            const drawGeologyBlock = (
+                zStart: number,
+                zEnd: number,
+                fillColor: string,
+                lineColor: string,
+                drawGridPattern = true
+            ) => {
+                const offset = 140;
+                const p = [
+                    project(minX - offset, minY - offset, zStart),
+                    project(maxX + offset, minY - offset, zStart),
+                    project(maxX + offset, maxY + offset, zStart),
+                    project(minX - offset, maxY + offset, zStart),
+                    project(minX - offset, minY - offset, zEnd),
+                    project(maxX + offset, minY - offset, zEnd),
+                    project(maxX + offset, maxY + offset, zEnd),
+                    project(minX - offset, maxY + offset, zEnd)
+                ];
 
-        const projectedPoints = processedData.map(pt => ({ ...project(pt.x, pt.y, pt.z), pt }));
+                // Draw faces
+                const drawFace = (v1: typeof p[0], v2: typeof p[0], v3: typeof p[0], v4: typeof p[0], faceFill: string) => {
+                    ctx.save();
+                    ctx.fillStyle = faceFill;
+                    ctx.beginPath();
+                    ctx.moveTo(v1.x, v1.y);
+                    ctx.lineTo(v2.x, v2.y);
+                    ctx.lineTo(v3.x, v3.y);
+                    ctx.lineTo(v4.x, v4.y);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.restore();
+                };
 
-        function drawText(text: string, x: number, y: number, font: string, fill: string, align: CanvasTextAlign = 'left') {
-            ctx.save(); ctx.font = font; ctx.textAlign = align; ctx.textBaseline = 'middle';
-            ctx.strokeStyle = isDark ? '#020617' : '#ffffff'; ctx.lineWidth = 3.5; ctx.strokeText(text, x, y);
-            ctx.fillStyle = fill; ctx.fillText(text, x, y); ctx.restore();
-        }
+                // Fill translucent faces
+                drawFace(p[3], p[0], p[4], p[7], fillColor); // Left
+                drawFace(p[0], p[1], p[5], p[4], fillColor); // Back
+                drawFace(p[1], p[2], p[6], p[5], fillColor); // Right
 
-        // Surface grid
-        if (showRig3D) {
-            ctx.lineWidth = 0.6;
-            ctx.strokeStyle = isDark ? 'rgba(16,185,129,0.08)' : 'rgba(5,150,105,0.12)';
-            const steps = 6;
-            const xStep = (maxX - minX + 200) / steps, yStep = (maxY - minY + 200) / steps;
-            for (let i = 0; i <= steps; i++) {
-                const curX = minX - 100 + i * xStep;
-                const p1 = project(curX, minY - 100, 0), p2 = project(curX, maxY + 100, 0);
-                ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
-            }
-            for (let i = 0; i <= steps; i++) {
-                const curY = minY - 100 + i * yStep;
-                const p1 = project(minX - 100, curY, 0), p2 = project(maxX + 100, curY, 0);
-                ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
-            }
-        }
+                ctx.save();
+                ctx.globalAlpha = 0.03;
+                drawFace(p[2], p[3], p[7], p[6], fillColor); // Front
+                ctx.restore();
 
-        // Geology slices
-        if (showGeologySlices) {
-            const geoPlanes = [
-                { z: maxZ * 0.2, color: isDark ? 'rgba(94,116,140,0.05)' : 'rgba(148,163,184,0.07)', label: 'Caliza / Lutita' },
-                { z: maxZ * 0.5, color: isDark ? 'rgba(161,98,7,0.05)' : 'rgba(217,119,6,0.06)', label: 'Lutita / Arenisca' },
-                { z: maxZ * 0.85, color: isDark ? 'rgba(16,185,129,0.06)' : 'rgba(16,185,129,0.07)', label: 'Tope Reservorio' }
-            ];
-            geoPlanes.forEach(plane => {
-                const c1 = project(minX - 100, minY - 100, plane.z), c2 = project(maxX + 100, minY - 100, plane.z);
-                const c3 = project(maxX + 100, maxY + 100, plane.z), c4 = project(minX - 100, maxY + 100, plane.z);
-                ctx.beginPath(); ctx.moveTo(c1.x, c1.y); ctx.lineTo(c2.x, c2.y); ctx.lineTo(c3.x, c3.y); ctx.lineTo(c4.x, c4.y); ctx.closePath();
-                ctx.fillStyle = plane.color; ctx.fill();
-                ctx.lineWidth = 0.5; ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)'; ctx.stroke();
-                drawText(`${Math.round(plane.z)} ft`, c2.x + 8, c2.y, 'bold 7.5px monospace', isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.4)');
-            });
-        }
+                // Relleno de la placa superior (superficie)
+                if (zStart === minZ) {
+                    ctx.save();
+                    ctx.fillStyle = colorSecondaryAlpha(0.12); // Placa superior más visible
+                    ctx.beginPath();
+                    ctx.moveTo(p[0].x, p[0].y); ctx.lineTo(p[1].x, p[1].y); ctx.lineTo(p[2].x, p[2].y); ctx.lineTo(p[3].x, p[3].y);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.restore();
+                }
 
-        // Grid cage
-        if (showGridCage3D) {
-            const cageVertices = [
+                ctx.save();
+                // Draw wireframe borders
+                ctx.strokeStyle = lineColor;
+
+                // Borde superior (placa superior) es más grueso (2.2) y el resto más tenue (0.6)
+                ctx.lineWidth = (zStart === minZ) ? 2.2 : 0.6;
+                ctx.beginPath();
+                ctx.moveTo(p[0].x, p[0].y); ctx.lineTo(p[1].x, p[1].y); ctx.lineTo(p[2].x, p[2].y); ctx.lineTo(p[3].x, p[3].y);
+                ctx.closePath();
+                ctx.stroke();
+
+                ctx.lineWidth = 0.6;
+                ctx.beginPath();
+                ctx.moveTo(p[4].x, p[4].y); ctx.lineTo(p[5].x, p[5].y); ctx.lineTo(p[6].x, p[6].y); ctx.lineTo(p[7].x, p[7].y);
+                ctx.closePath();
+                ctx.stroke();
+
+                for (const idx of [0, 1, 2, 3]) {
+                    ctx.beginPath();
+                    ctx.moveTo(p[idx].x, p[idx].y);
+                    ctx.lineTo(p[idx + 4].x, p[idx + 4].y);
+                    ctx.stroke();
+                }
+                ctx.restore();
+
+                // Scan lines inside the block
+                if (drawGridPattern) {
+                    ctx.save();
+                    ctx.strokeStyle = lineColor;
+                    ctx.lineWidth = 0.25;
+                    ctx.globalAlpha = ctx.globalAlpha * 0.55; // Hacer las líneas de escaneo interno un 45% más tenues
+                    const stepZ = (zEnd - zStart) / 4;
+                    for (let sz = zStart + stepZ; sz < zEnd; sz += stepZ) {
+                        const s0 = project(minX - offset, minY - offset, sz);
+                        const s1 = project(maxX + offset, minY - offset, sz);
+                        const s2 = project(maxX + offset, maxY + offset, sz);
+                        const s3 = project(minX - offset, maxY + offset, sz);
+
+                        ctx.beginPath();
+                        ctx.moveTo(s0.x, s0.y); ctx.lineTo(s1.x, s1.y); ctx.lineTo(s2.x, s2.y);
+                        ctx.stroke();
+
+                        ctx.beginPath();
+                        ctx.moveTo(s2.x, s2.y); ctx.lineTo(s3.x, s3.y); ctx.lineTo(s0.x, s0.y);
+                        ctx.stroke();
+                    }
+
+                    // Vertical grid stripes on left face
+                    const stepsX = 4;
+                    for (let i = 1; i < stepsX; i++) {
+                        const t = i / stepsX;
+                        const xVal = (minX - offset) + (maxX - minX + 2 * offset) * t;
+                        const sl0 = project(xVal, minY - offset, zStart);
+                        const sl1 = project(xVal, minY - offset, zEnd);
+                        ctx.beginPath();
+                        ctx.moveTo(sl0.x, sl0.y);
+                        ctx.lineTo(sl1.x, sl1.y);
+                        ctx.stroke();
+                    }
+                    ctx.restore();
+                }
+            };
+
+            const maxGeologyZ = maxZ * 1.15;
+
+            // Dibujo de las capas con un degradé del color secundario del tema (sin textos de formación)
+            drawGeologyBlock(minZ, maxGeologyZ * 0.25, colorSecondaryAlpha(0.03), colorSecondaryAlpha(0.08));
+            drawGeologyBlock(maxGeologyZ * 0.25, maxGeologyZ * 0.62, colorSecondaryAlpha(0.07), colorSecondaryAlpha(0.15));
+            drawGeologyBlock(maxGeologyZ * 0.62, maxGeologyZ * 0.88, colorSecondaryAlpha(0.12), colorSecondaryAlpha(0.24));
+            drawGeologyBlock(maxGeologyZ * 0.88, maxGeologyZ, colorSecondaryAlpha(0.18), colorSecondaryAlpha(0.36));
+
+            // ── Jaula de Rejilla Tecnológica (Cage) ──
+            const verts = [
                 { x: minX, y: minY, z: minZ }, { x: maxX, y: minY, z: minZ }, { x: maxX, y: maxY, z: minZ }, { x: minX, y: maxY, z: minZ },
-                { x: minX, y: minY, z: maxZ }, { x: maxX, y: minY, z: maxZ }, { x: maxX, y: maxY, z: maxZ }, { x: minX, y: maxY, z: maxZ }
+                { x: minX, y: minY, z: maxGeologyZ }, { x: maxX, y: minY, z: maxGeologyZ }, { x: maxX, y: maxY, z: maxGeologyZ }, { x: minX, y: maxY, z: maxGeologyZ }
             ].map(v => project(v.x, v.y, v.z));
-            ctx.lineWidth = 0.8; ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)';
-            ctx.beginPath(); ctx.moveTo(cageVertices[0].x, cageVertices[0].y); for (let i = 1; i < 4; i++) ctx.lineTo(cageVertices[i].x, cageVertices[i].y); ctx.closePath(); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(cageVertices[4].x, cageVertices[4].y); for (let i = 5; i < 8; i++) ctx.lineTo(cageVertices[i].x, cageVertices[i].y); ctx.closePath(); ctx.stroke();
-            for (let i = 0; i < 4; i++) { ctx.beginPath(); ctx.moveTo(cageVertices[i].x, cageVertices[i].y); ctx.lineTo(cageVertices[i + 4].x, cageVertices[i + 4].y); ctx.stroke(); }
-            ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)';
-            const divisions = 5;
-            for (let i = 1; i < divisions; i++) {
-                const curZ = minZ + (i / divisions) * (maxZ - minZ);
-                const pL1 = project(minX, minY, curZ), pL2 = project(maxX, minY, curZ), pL3 = project(maxX, maxY, curZ), pL4 = project(minX, maxY, curZ);
-                ctx.beginPath(); ctx.moveTo(pL1.x, pL1.y); ctx.lineTo(pL2.x, pL2.y); ctx.lineTo(pL3.x, pL3.y); ctx.lineTo(pL4.x, pL4.y); ctx.closePath(); ctx.stroke();
+
+            ctx.lineWidth = 0.45; ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.03)' : 'rgba(15,23,42,0.03)';
+            ctx.beginPath(); ctx.moveTo(verts[0].x, verts[0].y); for (let i = 1; i < 4; i++) ctx.lineTo(verts[i].x, verts[i].y); ctx.closePath(); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(verts[4].x, verts[4].y); for (let i = 5; i < 8; i++) ctx.lineTo(verts[i].x, verts[i].y); ctx.closePath(); ctx.stroke();
+            for (let i = 0; i < 4; i++) { ctx.beginPath(); ctx.moveTo(verts[i].x, verts[i].y); ctx.lineTo(verts[i + 4].x, verts[i + 4].y); ctx.stroke(); }
+
+            // Marcas de profundidad laterales
+            for (let i = 1; i <= 4; i++) {
+                const zd = (i / 4) * maxGeologyZ, p = project(minX, minY, zd);
+                drawText(`${Math.round(zd)} ft`, p.x - 8, p.y, '600 7.5px monospace', isDark ? 'rgba(255,255,255,0.3)' : 'rgba(15,23,42,0.4)', 'right');
             }
-            drawText(`N (${Math.round(minY)} ft)`, cageVertices[0].x - 10, cageVertices[0].y - 8, 'bold 8px monospace', isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.55)', 'right');
-            drawText(`S (${Math.round(maxY)} ft)`, cageVertices[2].x + 10, cageVertices[2].y + 12, 'bold 8px monospace', isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.55)', 'left');
-            drawText(`W (${Math.round(minX)} ft)`, cageVertices[3].x - 10, cageVertices[3].y + 12, 'bold 8px monospace', isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.55)', 'right');
-            drawText(`E (${Math.round(maxX)} ft)`, cageVertices[1].x + 10, cageVertices[1].y - 8, 'bold 8px monospace', isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.55)', 'left');
-            drawText(`TVD: ${Math.round(maxZ)} ft`, cageVertices[6].x + 10, cageVertices[6].y, 'bold 8.5px monospace', isDark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.65)', 'left');
-        }
 
-        // Shadows
-        if (showShadows3D) {
-            ctx.beginPath();
-            projectedPoints.forEach((p, idx) => { const sh = project(p.pt.x, p.pt.y, maxZ); idx === 0 ? ctx.moveTo(sh.x, sh.y) : ctx.lineTo(sh.x, sh.y); });
-            ctx.lineWidth = 1.2; ctx.strokeStyle = 'rgba(56,189,248,0.12)'; ctx.stroke();
-            ctx.beginPath();
-            projectedPoints.forEach((p, idx) => { const sh = project(maxX, p.pt.y, p.pt.z); idx === 0 ? ctx.moveTo(sh.x, sh.y) : ctx.lineTo(sh.x, sh.y); });
-            ctx.lineWidth = 1.2; ctx.strokeStyle = 'rgba(245,158,11,0.12)'; ctx.stroke();
-        }
+            // ── Compass de Superficie Metálico ─────────────────────────────────
+            {
+                ctx.save(); if (isLookingFromBelow) { ctx.globalAlpha = 0.08; ctx.filter = 'blur(2px)'; }
+                const rings = [spRadius3D * 0.5, spRadius3D];
+                ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.12)' : 'rgba(15,23,42,0.09)'; ctx.lineWidth = 1.0;
+                rings.forEach(r => {
+                    ctx.beginPath();
+                    for (let theta = 0; theta <= 2 * Math.PI + 0.1; theta += Math.PI / 18) {
+                        const p = project(r * Math.sin(theta), r * Math.cos(theta), 0);
+                        if (theta === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y);
+                    }
+                    ctx.stroke();
+                });
 
-        // Rig
-        if (showRig3D) {
-            const d1 = project(-18, -18, 0), d2 = project(18, -18, 0), d3 = project(18, 18, 0), d4 = project(-18, 18, 0), dTop = project(0, 0, -58);
-            ctx.lineWidth = 1; ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.4)' : 'rgba(15,23,42,0.5)';
-            ctx.beginPath(); ctx.moveTo(d1.x, d1.y); ctx.lineTo(d2.x, d2.y); ctx.lineTo(d3.x, d3.y); ctx.lineTo(d4.x, d4.y); ctx.closePath();
-            ctx.fillStyle = isDark ? 'rgba(30,41,59,0.3)' : 'rgba(226,232,240,0.4)'; ctx.fill(); ctx.stroke();
-            [d1, d2, d3, d4].forEach(leg => { ctx.beginPath(); ctx.moveTo(leg.x, leg.y); ctx.lineTo(dTop.x, dTop.y); ctx.stroke(); });
-            [0.33, 0.66].forEach(ratio => {
-                const subPts = [d1, d2, d3, d4].map(leg => ({ x: leg.x + (dTop.x - leg.x) * ratio, y: leg.y + (dTop.y - leg.y) * ratio }));
-                ctx.beginPath(); ctx.moveTo(subPts[0].x, subPts[0].y); for (let k = 1; k < 4; k++) ctx.lineTo(subPts[k].x, subPts[k].y); ctx.closePath(); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(subPts[0].x, subPts[0].y); ctx.lineTo(subPts[2].x, subPts[2].y); ctx.moveTo(subPts[1].x, subPts[1].y); ctx.lineTo(subPts[3].x, subPts[3].y); ctx.stroke();
-            });
-            ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(dTop.x, dTop.y, 2.5, 0, Math.PI * 2); ctx.fill();
-            drawText('▲ TORRE', dTop.x, dTop.y - 11, 'bold 8px sans-serif', isDark ? '#fff' : '#0f172a', 'center');
-        }
-
-        // Wellbore glow
-        ctx.beginPath();
-        projectedPoints.forEach((p, idx) => { idx === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y); });
-        ctx.lineWidth = 12; ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.012)' : 'rgba(0,0,0,0.008)'; ctx.stroke();
-
-        // Wellbore segments
-        for (let i = 1; i < projectedPoints.length; i++) {
-            const p0 = projectedPoints[i - 1], p1 = projectedPoints[i];
-            ctx.beginPath(); ctx.moveTo(p0.x, p0.y); ctx.lineTo(p1.x, p1.y);
-            if (colorOverlay3D === 'structure') {
-                ctx.strokeStyle = p1.pt.md <= params.wellbore.casingBottom ? (isDark ? '#38bdf8' : '#0284c7') : (isDark ? '#d97706' : '#b45309');
-            } else if (colorOverlay3D === 'inc') {
-                ctx.strokeStyle = getIncColor(p1.pt.inc);
-            } else {
-                ctx.strokeStyle = getDlsColor(p1.pt.dogleg);
+                // Cardinal direction axes
+                const dirs = [
+                    { dx: 0, dy: 1, label: 'N', color: '#ef4444' },
+                    { dx: 1, dy: 0, label: 'E', color: isDark ? '#38bdf8' : '#0284c7' },
+                    { dx: 0, dy: -1, label: 'S', color: isDark ? '#94a3b8' : '#475569' },
+                    { dx: -1, dy: 0, label: 'W', color: isDark ? '#94a3b8' : '#475569' }
+                ];
+                ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(15,23,42,0.06)'; ctx.lineWidth = 0.8;
+                dirs.forEach(d => {
+                    const pStart = project(0, 0, 0); const pEnd = project(d.dx * spRadius3D, d.dy * spRadius3D, 0);
+                    ctx.beginPath(); ctx.moveTo(pStart.x, pStart.y); ctx.lineTo(pEnd.x, pEnd.y); ctx.stroke();
+                });
+                dirs.forEach(d => {
+                    const pLabel = project(d.dx * spRadius3D * 1.15, d.dy * spRadius3D * 1.15, 0);
+                    drawText(d.label, pLabel.x, pLabel.y, 'bold 9px system-ui, sans-serif', d.color, 'center');
+                });
+                ctx.restore();
             }
-            const depthFactor = (p1.depth + maxRange) / (maxRange * 2);
-            ctx.lineWidth = Math.max(1.8, depthFactor * 4.5 + 2.2); ctx.stroke();
-        }
 
-        // ESP pump
-        const pumpPtIdx = projectedPoints.findIndex(p => p.pt.md >= params.pressures.pumpDepthMD);
-        if (pumpPtIdx !== -1) {
-            const pumpPt = projectedPoints[pumpPtIdx];
-            const idx = processedData.findIndex(d => d.md >= params.pressures.pumpDepthMD);
-            let eAngle = 0;
-            if (idx > 0) { const p0 = projectedPoints[idx - 1]; eAngle = Math.atan2(pumpPt.x - p0.x, pumpPt.y - p0.y); }
-            ctx.save(); ctx.translate(pumpPt.x, pumpPt.y); ctx.rotate(eAngle);
-            const scaleFac = Math.max(0.6, (pumpPt.depth + maxRange) / (maxRange * 2)), wS = 3 * scaleFac;
-            ctx.fillStyle = '#d97706'; ctx.fillRect(-wS - 0.5, 9 * scaleFac, (wS + 0.5) * 2, 14 * scaleFac);
-            ctx.fillStyle = '#94a3b8'; ctx.fillRect(-wS, 3 * scaleFac, wS * 2, 6 * scaleFac);
-            ctx.fillStyle = '#1e293b'; ctx.fillRect(-wS, -1 * scaleFac, wS * 2, 4 * scaleFac);
-            ctx.fillStyle = '#0ea5e9'; ctx.fillRect(-wS, -17 * scaleFac, wS * 2, 16 * scaleFac);
-            ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 0.5; ctx.strokeRect(-wS, -17 * scaleFac, wS * 2, 16 * scaleFac);
+            // Sombra del Wellpath en el fondo Z=maxGeologyZ
+            for (let i = 1; i < projectedPoints.length; i++) {
+                const shPrev = project(projectedPoints[i - 1].pt.x, projectedPoints[i - 1].pt.y, maxGeologyZ);
+                const shCurr = project(projectedPoints[i].pt.x, projectedPoints[i].pt.y, maxGeologyZ);
+                const pt = projectedPoints[i].pt;
+                let sT = 0;
+                if (colorOverlay3D === 'depth') sT = pt.tvd / Math.max(maxZ, 1);
+                else if (colorOverlay3D === 'inc') sT = pt.inc / 90;
+                else sT = pt.dogleg / globalMaxDLS;
+                const [sr, sg, sb] = getEstheticColorRgb(sT, colorOverlay3D);
+                ctx.beginPath(); ctx.moveTo(shPrev.x, shPrev.y); ctx.lineTo(shCurr.x, shCurr.y);
+                ctx.lineWidth = 3.0; ctx.strokeStyle = `rgba(${sr},${sg},${sb},0.08)`; ctx.stroke();
+            }
+
+            // ── Torre de Perforación Estructurada Detallada ────────────────────
+            const rigS = Math.max(14, 18 * zoom), rigH = Math.max(48, 64 * zoom);
+            const rigCX = pWell.x, rigCY = pWell.y;
+            const rigTop = { x: rigCX, y: rigCY - rigH };
+            ctx.save();
+            if (isLookingFromBelow) { ctx.globalAlpha = 0.05; ctx.filter = 'blur(3px)'; }
+            const rigFill = ctx.createLinearGradient(rigCX - rigS, rigCY, rigCX + rigS, rigCY);
+            rigFill.addColorStop(0, isDark ? 'rgba(71,85,105,0.55)' : 'rgba(148,163,184,0.45)');
+            rigFill.addColorStop(0.5, isDark ? 'rgba(100,116,139,0.35)' : 'rgba(203,213,225,0.35)');
+            rigFill.addColorStop(1, isDark ? 'rgba(71,85,105,0.55)' : 'rgba(148,163,184,0.45)');
+            ctx.fillStyle = rigFill;
+            ctx.beginPath(); ctx.moveTo(rigTop.x, rigTop.y); ctx.lineTo(rigCX - rigS, rigCY); ctx.lineTo(rigCX + rigS, rigCY); ctx.closePath(); ctx.fill();
+            ctx.strokeStyle = isDark ? 'rgba(148,163,184,0.75)' : 'rgba(51,65,85,0.75)'; ctx.lineWidth = 1.2;
+            ctx.beginPath(); ctx.moveTo(rigTop.x, rigTop.y); ctx.lineTo(rigCX - rigS, rigCY); ctx.moveTo(rigTop.x, rigTop.y); ctx.lineTo(rigCX + rigS, rigCY); ctx.moveTo(rigCX - rigS, rigCY); ctx.lineTo(rigCX + rigS, rigCY); ctx.stroke();
+            for (let lv = 1; lv < 4; lv++) {
+                const t = lv / 4, ly = rigTop.y + (rigCY - rigTop.y) * t, halfW = rigS * t;
+                ctx.lineWidth = 0.7; ctx.beginPath(); ctx.moveTo(rigCX - halfW, ly); ctx.lineTo(rigCX + halfW, ly); ctx.stroke();
+                if (lv < 3) {
+                    const t2 = (lv + 1) / 4, ly2 = rigTop.y + (rigCY - rigTop.y) * t2, hw2 = rigS * t2;
+                    ctx.lineWidth = 0.5; ctx.beginPath();
+                    ctx.moveTo(rigCX - halfW, ly); ctx.lineTo(rigCX + hw2, ly2); ctx.moveTo(rigCX + halfW, ly); ctx.lineTo(rigCX - hw2, ly2); ctx.stroke();
+                }
+            }
+            ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(rigTop.x, rigTop.y, 3.5, 0, Math.PI * 2); ctx.fill();
+            const rtGrad = ctx.createRadialGradient(rigCX - 1, rigCY - 1, 0, rigCX, rigCY, 6);
+            rtGrad.addColorStop(0, '#e2e8f0'); rtGrad.addColorStop(1, '#64748b');
+            ctx.fillStyle = rtGrad; ctx.beginPath(); ctx.arc(rigCX, rigCY, 6, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#f97316'; ctx.beginPath(); ctx.arc(rigCX, rigCY, 2.5, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = isDark ? 'rgba(226,232,240,0.5)' : 'rgba(15,23,42,0.5)'; ctx.lineWidth = 1.0; ctx.setLineDash([3, 2]);
+            ctx.beginPath(); ctx.moveTo(rigTop.x, rigTop.y); ctx.lineTo(rigCX, rigCY); ctx.stroke(); ctx.setLineDash([]);
             ctx.restore();
-            const pulse = 9 + Math.sin(Date.now() / 150) * 2;
-            const glowG = ctx.createRadialGradient(pumpPt.x, pumpPt.y, 1, pumpPt.x, pumpPt.y, pulse);
-            glowG.addColorStop(0, 'rgba(14,165,233,0.4)'); glowG.addColorStop(1, 'rgba(14,165,233,0)');
-            ctx.fillStyle = glowG; ctx.beginPath(); ctx.arc(pumpPt.x, pumpPt.y, pulse, 0, Math.PI * 2); ctx.fill();
-            ctx.strokeStyle = 'rgba(14,165,233,0.6)'; ctx.lineWidth = 1;
-            ctx.beginPath(); ctx.moveTo(pumpPt.x, pumpPt.y); ctx.lineTo(pumpPt.x + 30, pumpPt.y - 18); ctx.lineTo(pumpPt.x + 85, pumpPt.y - 18); ctx.stroke();
-            drawText('⚡ ESP', pumpPt.x + 33, pumpPt.y - 22, 'bold 9px monospace', isDark ? '#fff' : '#0f172a');
-            drawText(`MD: ${Math.round(params.pressures.pumpDepthMD)} ft`, pumpPt.x + 33, pumpPt.y - 10, 'bold 8px monospace', isDark ? '#38bdf8' : '#0284c7');
-        }
 
-        // Perforations
-        const perfTopIdx = projectedPoints.findIndex(p => p.pt.md >= params.wellbore.midPerfsMD - 90);
-        const perfBottomIdx = projectedPoints.findIndex(p => p.pt.md >= params.wellbore.midPerfsMD + 90);
-        if (perfTopIdx !== -1 && perfBottomIdx !== -1) {
-            ctx.beginPath();
-            for (let i = perfTopIdx; i <= perfBottomIdx; i++) { i === perfTopIdx ? ctx.moveTo(projectedPoints[i].x, projectedPoints[i].y) : ctx.lineTo(projectedPoints[i].x, projectedPoints[i].y); }
-            ctx.lineWidth = 7; ctx.strokeStyle = 'rgba(245,158,11,0.22)'; ctx.stroke();
-            for (let i = perfTopIdx; i <= perfBottomIdx; i += 2) {
-                const p = projectedPoints[i];
-                ctx.strokeStyle = 'rgba(245,158,11,0.5)'; ctx.lineWidth = 0.7;
-                for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 2.5) { ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x + Math.cos(angle) * 6, p.y + Math.sin(angle) * 6); ctx.stroke(); }
+            // ── SPOOLER Detallado con Cable Aéreo ──
+            {
+                const spAngle = spoolerAzimuth * DEG2RAD;
+                const sp3dX = spRadius3D * Math.sin(spAngle);
+                const sp3dY = spRadius3D * Math.cos(spAngle);
+                const spProj = project(sp3dX, sp3dY, 0);
+
+                const spDrumW = Math.max(14, 18 * zoom);
+                const spDrumH = Math.max(6, 8 * zoom);
+                const spIconX = spProj.x;
+                const spBase = spProj.y;
+                const spIconY = spBase - (spDrumH + 14 * zoom);
+
+                ctx.save();
+                if (isLookingFromBelow) { ctx.globalAlpha = 0.05; ctx.filter = 'blur(3px)'; }
+
+                // Huella de anclaje
+                ctx.save();
+                const footW = Math.max(22, spDrumW * 2.6);
+                const footGrad = ctx.createRadialGradient(spIconX, spBase, 0, spIconX, spBase, footW);
+                footGrad.addColorStop(0, isDark ? 'rgba(148,163,184,0.25)' : 'rgba(71,85,105,0.18)');
+                footGrad.addColorStop(0.6, isDark ? 'rgba(148,163,184,0.08)' : 'rgba(71,85,105,0.06)');
+                footGrad.addColorStop(1, 'rgba(0,0,0,0)');
+                ctx.fillStyle = footGrad; ctx.beginPath(); ctx.ellipse(spIconX, spBase, footW, Math.max(4, 5 * zoom), 0, 0, Math.PI * 2); ctx.fill();
+                ctx.restore();
+
+                // Sombra del drum
+                const shadowRad = 18 * zoom;
+                const shadowGrad = ctx.createRadialGradient(spIconX, spBase - 2, 0, spIconX, spBase - 2, shadowRad);
+                shadowGrad.addColorStop(0, isDark ? 'rgba(0,0,0,0.45)' : 'rgba(0,0,0,0.18)'); shadowGrad.addColorStop(1, 'rgba(0,0,0,0)');
+                ctx.fillStyle = shadowGrad; ctx.beginPath(); ctx.ellipse(spIconX, spBase + 2, shadowRad, shadowRad * 0.35, 0, 0, Math.PI * 2); ctx.fill();
+
+                // Cable Aéreo suspendido
+                ctx.save();
+                const cableGrad = ctx.createLinearGradient(rigTop.x, rigTop.y, spIconX, spIconY);
+                cableGrad.addColorStop(0.0, 'rgba(244,63,94,0.90)'); cableGrad.addColorStop(0.5, 'rgba(251,113,133,0.70)'); cableGrad.addColorStop(1.0, 'rgba(244,63,94,0.55)');
+                ctx.strokeStyle = cableGrad; ctx.lineWidth = 1.8 * zoom; ctx.setLineDash([5, 3]);
+                const cpX = (rigTop.x + spIconX) / 2, cpY = Math.min(rigTop.y, spIconY) - 22 * zoom;
+                ctx.beginPath(); ctx.moveTo(rigTop.x, rigTop.y); ctx.quadraticCurveTo(cpX, cpY, spIconX, spIconY); ctx.stroke();
+                ctx.setLineDash([]); ctx.restore();
+
+                // Guía del pozo al spooler en superficie
+                ctx.save();
+                ctx.strokeStyle = isDark ? 'rgba(245,158,11,0.22)' : 'rgba(120,53,15,0.18)'; ctx.lineWidth = 0.8; ctx.setLineDash([2, 4]);
+                ctx.beginPath(); ctx.moveTo(rigCX, rigCY); ctx.lineTo(spIconX, spBase); ctx.stroke();
+                ctx.setLineDash([]); ctx.restore();
+
+                // Placa Base
+                const plateW = spDrumW * 2.6, plateH = 4 * zoom;
+                ctx.fillStyle = isDark ? 'rgba(51,65,85,0.85)' : 'rgba(203,213,225,0.90)';
+                ctx.strokeStyle = isDark ? '#475569' : '#94a3b8'; ctx.lineWidth = 0.7;
+                ctx.beginPath(); ctx.roundRect(spIconX - plateW / 2, spIconY + spDrumH + 10 * zoom, plateW, plateH, 2); ctx.fill(); ctx.stroke();
+
+                // Patas estructurales del marco
+                ctx.strokeStyle = isDark ? 'rgba(148,163,184,0.90)' : 'rgba(51,65,85,0.85)'; ctx.lineWidth = 1.4 * zoom;
+                ctx.beginPath();
+                ctx.moveTo(spIconX - spDrumW - 4 * zoom, spIconY + spDrumH + 10 * zoom);
+                ctx.lineTo(spIconX - spDrumW * 0.3, spIconY - spDrumH);
+                ctx.lineTo(spIconX + spDrumW * 0.3, spIconY - spDrumH);
+                ctx.lineTo(spIconX + spDrumW + 4 * zoom, spIconY + spDrumH + 10 * zoom);
+                ctx.stroke();
+
+                // Tambor
+                const drumGrad = ctx.createLinearGradient(spIconX, spIconY - spDrumH, spIconX, spIconY + spDrumH);
+                drumGrad.addColorStop(0.00, isDark ? '#1c1917' : '#78350f'); drumGrad.addColorStop(0.20, isDark ? '#92400e' : '#b45309');
+                drumGrad.addColorStop(0.45, isDark ? '#f59e0b' : '#fbbf24'); drumGrad.addColorStop(0.55, isDark ? '#fbbf24' : '#fde68a');
+                drumGrad.addColorStop(0.75, isDark ? '#d97706' : '#f59e0b'); drumGrad.addColorStop(1.00, isDark ? '#78350f' : '#92400e');
+                ctx.fillStyle = drumGrad; ctx.strokeStyle = isDark ? '#f59e0b' : '#92400e'; ctx.lineWidth = 1.0 * zoom;
+                ctx.beginPath(); ctx.roundRect(spIconX - spDrumW, spIconY - spDrumH, spDrumW * 2, spDrumH * 2, 3 * zoom); ctx.fill(); ctx.stroke();
+
+                // Vueltas del cable enrolladas
+                ctx.strokeStyle = isDark ? 'rgba(120,53,15,0.55)' : 'rgba(30,27,21,0.35)'; ctx.lineWidth = 0.5 * zoom;
+                for (let wi = 1; wi < 5; wi++) {
+                    const wx = spIconX - spDrumW + (spDrumW * 2 / 5) * wi;
+                    ctx.beginPath(); ctx.moveTo(wx, spIconY - spDrumH + 1); ctx.lineTo(wx, spIconY + spDrumH - 1); ctx.stroke();
+                }
+
+                // Bridas laterales
+                const flangeFill = isDark ? 'rgba(51,65,85,0.92)' : 'rgba(148,163,184,0.95)';
+                ctx.lineWidth = 0.9 * zoom;
+                for (const fx of [spIconX - spDrumW, spIconX + spDrumW]) {
+                    ctx.fillStyle = flangeFill; ctx.strokeStyle = isDark ? '#94a3b8' : '#475569';
+                    ctx.beginPath(); ctx.roundRect(fx - 2.5 * zoom, spIconY - spDrumH - 3.5 * zoom, 5 * zoom, spDrumH * 2 + 7 * zoom, 2); ctx.fill(); ctx.stroke();
+                }
+
+                // Eje central
+                ctx.fillStyle = isDark ? '#475569' : '#94a3b8'; ctx.beginPath(); ctx.arc(spIconX, spIconY, 2.5 * zoom, 0, Math.PI * 2); ctx.fill();
+
+                // Panel flotante
+                const labelY = spBase + 6 * zoom;
+                const panelW = 68 * zoom, panelH = 18 * zoom;
+                ctx.fillStyle = isDark ? 'rgba(15,23,42,0.85)' : 'rgba(255,255,255,0.90)';
+                ctx.strokeStyle = isDark ? 'rgba(245,158,11,0.30)' : 'rgba(146,64,14,0.25)'; ctx.lineWidth = 0.8;
+                ctx.beginPath(); ctx.roundRect(spIconX - panelW / 2, labelY, panelW, panelH, 4); ctx.fill(); ctx.stroke();
+                ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+                const fs1 = Math.max(6, 7 * zoom);
+                ctx.font = `bold ${fs1}px monospace`;
+                ctx.strokeStyle = isDark ? 'rgba(2,6,23,0.9)' : 'rgba(255,255,255,0.9)'; ctx.lineWidth = 2.5;
+                ctx.strokeText('SPOOLER', spIconX, labelY + 2); ctx.fillStyle = isDark ? '#fbbf24' : '#92400e'; ctx.fillText('SPOOLER', spIconX, labelY + 2);
+                ctx.restore();
             }
-            const midPt = projectedPoints[Math.floor((perfTopIdx + perfBottomIdx) / 2)];
-            ctx.strokeStyle = 'rgba(245,158,11,0.6)'; ctx.lineWidth = 1;
-            ctx.beginPath(); ctx.moveTo(midPt.x, midPt.y); ctx.lineTo(midPt.x - 28, midPt.y + 20); ctx.lineTo(midPt.x - 82, midPt.y + 20); ctx.stroke();
-            drawText('🎯 PERFS', midPt.x - 80, midPt.y + 14, 'bold 9px monospace', isDark ? '#fff' : '#0f172a');
-            drawText(`MD: ${Math.round(params.wellbore.midPerfsMD)} ft`, midPt.x - 80, midPt.y + 26, 'bold 8px monospace', '#f59e0b');
-        }
 
-        // KOP
-        if (kopPoint) {
-            const kopPt = projectedPoints.find(p => Math.abs(p.pt.md - kopPoint.md) < 6);
-            if (kopPt) {
-                ctx.strokeStyle = '#a78bfa'; ctx.lineWidth = 1.2;
-                ctx.beginPath(); ctx.arc(kopPt.x, kopPt.y, 7, 0, Math.PI * 2); ctx.stroke();
-                ctx.fillStyle = '#c084fc'; ctx.beginPath(); ctx.arc(kopPt.x, kopPt.y, 3, 0, Math.PI * 2); ctx.fill();
-                drawText(`KOP: ${Math.round(kopPoint.md)} ft`, kopPt.x + 10, kopPt.y + 3, 'bold 8.5px monospace', '#c084fc');
+            // ── Casing con Depth Cueing (Atenuación por Distancia) ──
+            for (let i = 1; i < projectedPoints.length; i++) {
+                const p0 = projectedPoints[i - 1], p1 = projectedPoints[i];
+                if (p1.pt.md <= params.wellbore.casingBottom) {
+                    const df = (p1.depth + maxRange) / (maxRange * 2);
+                    const depthRatio = (p1.depth + maxRange) / (maxRange * 2);
+                    const visualOpacity = Math.max(0.25, Math.min(1.0, 0.3 + depthRatio * 0.7));
+                    drawTubeSegment(ctx, p0, p1, 9.0 * 1.2 * zoom * df + 2.5, 'rgba(148,163,184,0.32)', 'rgba(241,245,249,0.75)', 'rgba(71,85,105,0.42)', yaw, 0.72 * visualOpacity);
+                }
             }
-        }
+            const casingShoeIdx = projectedPoints.findIndex(p => p.pt.md >= params.wellbore.casingBottom);
+            if (casingShoeIdx > 0) {
+                const sp = projectedPoints[casingShoeIdx], pp = projectedPoints[casingShoeIdx - 1];
+                const df = (sp.depth + maxRange) / (maxRange * 2);
+                const depthRatio = (sp.depth + maxRange) / (maxRange * 2);
+                const visualOpacity = Math.max(0.25, Math.min(1.0, 0.3 + depthRatio * 0.7));
+                drawTubeSegment(ctx, pp, sp, 9.0 * 1.2 * zoom * df + 3.8, 'rgba(148,163,184,0.70)', 'rgba(241,245,249,0.95)', 'rgba(71,85,105,0.75)', yaw, 0.95 * visualOpacity);
+                drawText('ZAPATA CASING', sp.x + 14, sp.y, 'bold 7.5px monospace', isDark ? '#cbd5e1' : '#475569');
+            }
 
-        // Compass
-        const cx = w - 52, cy = 56, r = 24;
-        ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2);
-        ctx.fillStyle = isDark ? 'rgba(8,15,30,0.75)' : 'rgba(255,255,255,0.8)'; ctx.fill();
-        ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'; ctx.lineWidth = 1.2; ctx.stroke();
-        [{ label: 'N', angle: 0, color: '#ef4444' }, { label: 'E', angle: Math.PI / 2, color: isDark ? '#fff' : '#000' }, { label: 'S', angle: Math.PI, color: isDark ? '#666' : '#555' }, { label: 'W', angle: -Math.PI / 2, color: isDark ? '#fff' : '#000' }].forEach(d => {
-            const dynamicAngle = d.angle - yaw - Math.PI / 2;
-            const lx = cx + Math.cos(dynamicAngle) * (r - 7), ly = cy + Math.sin(dynamicAngle) * (r - 7);
-            ctx.font = 'bold 8px sans-serif'; ctx.fillStyle = d.color; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(d.label, lx, ly);
+            // ── Tubing con Depth Cueing (Atenuación por Distancia) ──
+            for (let i = 1; i < projectedPoints.length; i++) {
+                const p0 = projectedPoints[i - 1], p1 = projectedPoints[i];
+                if (p1.pt.md <= params.pressures.pumpDepthMD) {
+                    const df = (p1.depth + maxRange) / (maxRange * 2);
+                    const depthRatio = (p1.depth + maxRange) / (maxRange * 2);
+                    const visualOpacity = Math.max(0.25, Math.min(1.0, 0.3 + depthRatio * 0.7));
+                    drawTubeSegment(ctx, p0, p1, baseTubingRadius * zoom * df + 0.8, 'rgba(180,83,9,0.95)', 'rgba(251,191,36,1.0)', 'rgba(124,45,18,0.95)', yaw, 1.0 * visualOpacity);
+                }
+            }
+
+            // ── Wellpath Principal con Color Overlay y Depth Cueing ──
+            for (let i = 1; i < projectedPoints.length; i++) {
+                const p0 = projectedPoints[i - 1], p1 = projectedPoints[i];
+                const ptData = p1.pt;
+
+                let colorT = 0;
+                if (colorOverlay3D === 'depth') colorT = ptData.tvd / Math.max(maxZ, 1);
+                else if (colorOverlay3D === 'inc') colorT = ptData.inc / 90;
+                else colorT = ptData.dogleg / globalMaxDLS;
+
+                const [cr, cg, cb] = getEstheticColorRgb(colorT, colorOverlay3D);
+                const dx = p1.x - p0.x, dy = p1.y - p0.y, len = Math.sqrt(dx * dx + dy * dy);
+                if (len < 0.2) continue;
+
+                const df = (p1.depth + maxRange) / (maxRange * 2);
+                const tubeR = 2.5 * zoom * df + 0.8;
+                const nx = -dy / len, ny = dx / len;
+                const hl = Math.max(0.12, Math.min(0.88, 0.30 + 0.20 * Math.sin(yaw + Math.atan2(dy, dx))));
+
+                const dr = Math.round(cr * 0.22), dg = Math.round(cg * 0.22), db = Math.round(cb * 0.22);
+                const sR = Math.min(255, Math.round(cr + (255 - cr) * 0.55)), sG = Math.min(255, Math.round(cg + (255 - cg) * 0.55)), sB = Math.min(255, Math.round(cb + (255 - cb) * 0.55));
+
+                const depthRatio = (p1.depth + maxRange) / (maxRange * 2);
+                const visualOpacity = Math.max(0.25, Math.min(1.0, 0.3 + depthRatio * 0.7));
+
+                const tGrad = ctx.createLinearGradient(p0.x + nx * tubeR, p0.y + ny * tubeR, p0.x - nx * tubeR, p0.y - ny * tubeR);
+                tGrad.addColorStop(0.00, `rgba(${dr},${dg},${db},${0.92 * visualOpacity})`);
+                tGrad.addColorStop(hl, `rgba(${cr},${cg},${cb},${visualOpacity})`);
+                tGrad.addColorStop(1.00, `rgba(${dr},${dg},${db},${0.92 * visualOpacity})`);
+
+                ctx.fillStyle = tGrad;
+                ctx.beginPath();
+                ctx.moveTo(p0.x + nx * tubeR, p0.y + ny * tubeR); ctx.lineTo(p1.x + nx * tubeR, p1.y + ny * tubeR);
+                ctx.lineTo(p1.x - nx * tubeR, p1.y - ny * tubeR); ctx.lineTo(p0.x - nx * tubeR, p0.y - ny * tubeR);
+                ctx.closePath(); ctx.fill();
+
+                ctx.strokeStyle = `rgba(${sR},${sG},${sB},${0.28 * visualOpacity})`; ctx.lineWidth = 0.45;
+                ctx.beginPath(); ctx.moveTo(p0.x + nx * tubeR, p0.y + ny * tubeR); ctx.lineTo(p1.x + nx * tubeR, p1.y + ny * tubeR); ctx.stroke();
+            }
+
+            // ── ALS Pump Stack Detallada con Depth Cueing ──
+            {
+                const espStackLen = Math.min(60, maxMD * 0.04);
+                const pumpMD = params.pressures.pumpDepthMD;
+                const motorBotMD = pumpMD + espStackLen * 0.40;
+                const sealBotMD = motorBotMD + espStackLen * 0.15;
+                const pumpBotMD = sealBotMD + espStackLen * 0.45;
+                const projAtMD = (md: number) => {
+                    for (let i = 1; i < projectedPoints.length; i++) {
+                        const a = projectedPoints[i - 1], b = projectedPoints[i];
+                        if (b.pt.md >= md) {
+                            const t = (md - a.pt.md) / Math.max(0.001, b.pt.md - a.pt.md);
+                            return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, depth: a.depth + (b.depth - a.depth) * t };
+                        }
+                    }
+                    return projectedPoints[projectedPoints.length - 1];
+                };
+                const pMT = projAtMD(pumpMD), pMB = projAtMD(motorBotMD), pSB = projAtMD(sealBotMD), pPB = projAtMD(pumpBotMD);
+                const df = (pMT.depth + maxRange) / (maxRange * 2);
+                const baseRad = 8.5 * zoom * Math.max(0.35, df);
+                const depthRatio = (pMT.depth + maxRange) / (maxRange * 2);
+                const visualOpacity = Math.max(0.25, Math.min(1.0, 0.3 + depthRatio * 0.7));
+
+                drawTubeSegment(ctx, pMT, pMB, baseRad, '#1e293b', '#475569', '#0f172a', yaw, visualOpacity);
+                for (let bi = 0.25; bi < 1.0; bi += 0.25) {
+                    const bx = pMT.x + (pMB.x - pMT.x) * bi, by = pMT.y + (pMB.y - pMT.y) * bi;
+                    const bdx = pMB.x - pMT.x, bdy = pMB.y - pMT.y, blen = Math.sqrt(bdx * bdx + bdy * bdy);
+                    if (blen > 0.5) { const bnx = -bdy / blen, bny = bdx / blen; ctx.strokeStyle = isDark ? `rgba(148,163,184,${0.4 * visualOpacity})` : `rgba(30,41,59,${0.3 * visualOpacity})`; ctx.lineWidth = 0.9; ctx.beginPath(); ctx.moveTo(bx + bnx * baseRad, by + bny * baseRad); ctx.lineTo(bx - bnx * baseRad, by - bny * baseRad); ctx.stroke(); }
+                }
+                drawTubeSegment(ctx, pMB, pSB, baseRad * 0.88, '#713f12', '#d97706', '#854d0e', yaw, visualOpacity);
+                drawTubeSegment(ctx, pSB, pPB, baseRad, '#164e63', '#0891b2', '#083344', yaw, visualOpacity);
+                for (let bi = 0.2; bi < 1.0; bi += 0.2) {
+                    const bx = pSB.x + (pPB.x - pSB.x) * bi, by = pSB.y + (pPB.y - pSB.y) * bi;
+                    const bdx = pPB.x - pSB.x, bdy = pPB.y - pSB.y, blen = Math.sqrt(bdx * bdx + bdy * bdy);
+                    if (blen > 0.5) { const bnx = -bdy / blen, bny = bdx / blen; ctx.strokeStyle = `rgba(6,182,212,${0.5 * visualOpacity})`; ctx.lineWidth = 1.1; ctx.beginPath(); ctx.moveTo(bx + bnx * (baseRad + 2.5), by + bny * (baseRad + 2.5)); ctx.lineTo(bx - bnx * (baseRad + 2.5), by - bny * (baseRad + 2.5)); ctx.stroke(); }
+                }
+                const lox = pMT.x > w / 2 ? -90 : 12;
+                ctx.strokeStyle = `rgba(6,182,212,${0.5 * visualOpacity})`; ctx.lineWidth = 0.9;
+                ctx.beginPath(); ctx.moveTo(pMT.x, pMT.y); ctx.lineTo(pMT.x + lox, pMT.y - 14); ctx.lineTo(pMT.x + lox + (lox > 0 ? 60 : -60), pMT.y - 14); ctx.stroke();
+                drawText('SISTEMA ALS (ESP)', pMT.x + lox + (lox > 0 ? 0 : -60), pMT.y - 21, 'bold 8px monospace', isDark ? '#e0f2fe' : '#0f172a', lox > 0 ? 'left' : 'right');
+                drawText(`${Math.round(pumpMD)} ft`, pMT.x + lox + (lox > 0 ? 0 : -60), pMT.y - 9, 'bold 7px monospace', isDark ? '#38bdf8' : '#0284c7', lox > 0 ? 'left' : 'right');
+            }
+
+            // ── ESP Cable con Depth Cueing ──
+            for (let i = 1; i < projectedPoints.length; i++) {
+                const p0 = projectedPoints[i - 1], p1 = projectedPoints[i];
+                if (p1.pt.md <= params.pressures.pumpDepthMD) {
+                    const df = (p1.depth + maxRange) / (maxRange * 2);
+                    const rad = (baseTubingRadius * zoom * df + 0.8) + 1.2;
+                    const dx = p1.x - p0.x, dy = p1.y - p0.y, len = Math.sqrt(dx * dx + dy * dy);
+                    if (len > 0.1) {
+                        const nx = -dy / len, ny = dx / len;
+                        const depthRatio = (p1.depth + maxRange) / (maxRange * 2);
+                        const visualOpacity = Math.max(0.25, Math.min(1.0, 0.3 + depthRatio * 0.7));
+                        ctx.beginPath(); ctx.moveTo(p0.x + nx * rad, p0.y + ny * rad); ctx.lineTo(p1.x + nx * rad, p1.y + ny * rad);
+                        ctx.strokeStyle = `rgba(248,113,113,${visualOpacity})`; ctx.lineWidth = 1.35; ctx.stroke();
+                    }
+                }
+            }
+
+            // ── Perforaciones con Depth Cueing ──
+            const perfTopIdx = projectedPoints.findIndex(p => p.pt.md >= params.wellbore.midPerfsMD - 70);
+            const perfBotIdx = projectedPoints.findIndex(p => p.pt.md >= params.wellbore.midPerfsMD + 70);
+            if (perfTopIdx !== -1 && perfBotIdx !== -1) {
+                const midPt = projectedPoints[Math.floor((perfTopIdx + perfBotIdx) / 2)];
+                const depthRatio = (midPt.depth + maxRange) / (maxRange * 2);
+                const visualOpacity = Math.max(0.25, Math.min(1.0, 0.3 + depthRatio * 0.7));
+
+                ctx.strokeStyle = `rgba(245,158,11,${0.42 * visualOpacity})`; ctx.lineWidth = 0.8;
+                for (let i = perfTopIdx; i <= perfBotIdx; i += 3) {
+                    const p = projectedPoints[i];
+                    for (let a = 0; a < Math.PI * 2; a += Math.PI / 3) { ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x + Math.cos(a) * 5, p.y + Math.sin(a) * 5); ctx.stroke(); }
+                }
+                ctx.strokeStyle = `rgba(245,158,11,${0.55 * visualOpacity})`; ctx.lineWidth = 0.9;
+                ctx.beginPath(); ctx.moveTo(midPt.x, midPt.y); ctx.lineTo(midPt.x + 30, midPt.y + 16); ctx.lineTo(midPt.x + 85, midPt.y + 16); ctx.stroke();
+                drawText('PERFORACIONES', midPt.x + 32, midPt.y + 11, 'bold 8px monospace', '#fb923c');
+                drawText(`MD: ${Math.round(params.wellbore.midPerfsMD)} ft`, midPt.x + 32, midPt.y + 22, 'bold 7px monospace', '#f59e0b');
+            }
+
+            // ── Mini Brújula de Orientación en la Esquina Superior Izquierda ───
+            const compX = 45, compY = 45, compR = 24;
+            const angleN = -yaw - Math.PI / 2;
+            ctx.save();
+            ctx.beginPath(); ctx.arc(compX, compY, compR, 0, Math.PI * 2);
+            ctx.fillStyle = isDark ? 'rgba(15,23,42,0.85)' : 'rgba(255,255,255,0.92)';
+            ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(15,23,42,0.08)'; ctx.lineWidth = 1.0; ctx.fill(); ctx.stroke();
+
+            const tx = compX + Math.cos(angleN) * (compR - 7), ty = compY + Math.sin(angleN) * (compR - 7);
+            drawText('N', tx, ty, 'bold 8px sans-serif', '#ef4444', 'center');
+            ctx.restore();
+
+            // ── Color Scale Legend ──
+            {
+                const lgX = w - 50, lgY = Math.round(h / 2 - 75), lgH = 150, lgW = 12;
+                const overlayLabel = colorOverlay3D === 'dogleg' ? 'DLS (°/100ft)' : colorOverlay3D === 'inc' ? 'Inc (°)' : 'TVD (ft)';
+                const overlayMax = colorOverlay3D === 'dogleg' ? globalMaxDLS : colorOverlay3D === 'inc' ? 90 : Math.round(maxZ);
+                ctx.save();
+                ctx.fillStyle = isDark ? 'rgba(15,23,42,0.80)' : 'rgba(255,255,255,0.86)';
+                ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)'; ctx.lineWidth = 1;
+                ctx.beginPath(); ctx.roundRect(lgX - 10, lgY - 24, lgW + 45, lgH + 42, 8); ctx.fill(); ctx.stroke();
+                ctx.font = 'bold 7px monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+                ctx.fillStyle = isDark ? '#e2e8f0' : '#1e293b'; ctx.fillText(overlayLabel, lgX + lgW / 2 + 8, lgY - 8);
+                for (let py = 0; py < lgH; py++) {
+                    const [r, g, b] = getEstheticColorRgb(1 - py / lgH, colorOverlay3D);
+                    ctx.fillStyle = `rgb(${r},${g},${b})`; ctx.fillRect(lgX, lgY + py, lgW, 1.5);
+                }
+                ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'; ctx.lineWidth = 0.7; ctx.strokeRect(lgX, lgY, lgW, lgH);
+                ctx.font = '6.5px monospace'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillStyle = isDark ? '#94a3b8' : '#475569';
+                for (let ti = 0; ti <= 5; ti++) {
+                    const tVal = ti / 5, tPy = lgY + tVal * lgH, tNum = (1 - tVal) * overlayMax;
+                    ctx.beginPath(); ctx.moveTo(lgX + lgW, tPy); ctx.lineTo(lgX + lgW + 4, tPy); ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.25)'; ctx.lineWidth = 0.5; ctx.stroke();
+                    ctx.fillText(tNum.toFixed(colorOverlay3D === 'dogleg' ? 1 : 0), lgX + lgW + 6, tPy);
+                }
+                ctx.restore();
+            }
+
+            // ── Hover Tooltip Estilizado ──
+            if (hoveredPointIdx !== null && hoveredPointIdx < projectedPoints.length) {
+                const hPt = projectedPoints[hoveredPointIdx];
+                ctx.fillStyle = '#f59e0b'; ctx.beginPath(); ctx.arc(hPt.x, hPt.y, 4, 0, Math.PI * 2); ctx.fill();
+                const boxW = 135, boxH = 62, bx = hPt.x + 15 + boxW > w ? hPt.x - 15 - boxW : hPt.x + 15, by = hPt.y - 31;
+                ctx.save();
+                ctx.fillStyle = isDark ? 'rgba(15,23,42,0.94)' : 'rgba(255,255,255,0.96)';
+                ctx.strokeStyle = isDark ? 'rgba(56,189,248,0.25)' : 'rgba(15,23,42,0.12)'; ctx.lineWidth = 1.0;
+                ctx.beginPath(); ctx.roundRect(bx, by, boxW, boxH, 6); ctx.fill(); ctx.stroke();
+                ctx.fillStyle = isDark ? '#fff' : '#0f172a'; ctx.font = 'bold 8px monospace'; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+                ctx.fillText(`MD: ${Math.round(hPt.pt.md)} ft`, bx + 8, by + 6);
+                ctx.font = '7px monospace'; ctx.fillStyle = isDark ? '#94a3b8' : '#64748b';
+                ctx.fillText(`TVD: ${Math.round(hPt.pt.tvd)} ft`, bx + 8, by + 17);
+                ctx.fillText(`Inc: ${hPt.pt.inc.toFixed(1)}° | Az: ${hPt.pt.azim.toFixed(0)}°`, bx + 8, by + 28);
+                ctx.fillText(`DLS: ${hPt.pt.dogleg.toFixed(2)} °/100ft`, bx + 8, by + 39);
+                ctx.restore();
+            }
+        };
+
+        const tick = () => {
+            rafId = null;
+            let shouldContinue = false;
+            if (isAutoRotRef.current) {
+                yawRef.current = (yawRef.current + 0.0025) % (Math.PI * 2);
+                shouldContinue = true;
+                needsRenderRef.current = true;
+            }
+            if (needsRenderRef.current) {
+                drawFrame();
+                needsRenderRef.current = false;
+            }
+            if (shouldContinue) {
+                rafId = requestAnimationFrame(tick);
+            }
+        };
+
+        const triggerRender = () => {
+            if (rafId === null) {
+                rafId = requestAnimationFrame(tick);
+            }
+        };
+        requestRenderRef.current = triggerRender;
+
+        const resizeObserver = new ResizeObserver(() => {
+            needsRenderRef.current = true;
+            triggerRender();
         });
-        ctx.beginPath(); ctx.moveTo(cx - 2.5, cy); ctx.lineTo(cx + 2.5, cy); ctx.moveTo(cx, cy - 2.5); ctx.lineTo(cx, cy + 2.5); ctx.strokeStyle = '#38bdf8'; ctx.stroke();
-        ctx.fillStyle = isDark ? 'rgba(255,255,255,0.4)' : 'rgba(15,23,42,0.5)'; ctx.font = '6.5px monospace'; ctx.textAlign = 'right';
-        ctx.fillText(`YAW: ${(yaw * 180 / Math.PI).toFixed(0)}°`, cx - r - 6, cy - 5);
-        ctx.fillText(`ZOOM: ${zoom.toFixed(2)}x`, cx - r - 6, cy + 5);
-
-        // Hover
-        if (hoveredPointIdx !== null && hoveredPointIdx < projectedPoints.length) {
-            const hPt = projectedPoints[hoveredPointIdx];
-            ctx.fillStyle = '#f59e0b'; ctx.beginPath(); ctx.arc(hPt.x, hPt.y, 4.5, 0, Math.PI * 2); ctx.fill();
-            const boxW = 160, boxH = 82, bx = hPt.x + 16 + boxW > w ? hPt.x - 16 - boxW : hPt.x + 16, by = hPt.y - 38;
-            ctx.fillStyle = isDark ? 'rgba(8,16,36,0.94)' : 'rgba(255,255,255,0.97)';
-            ctx.strokeStyle = isDark ? 'rgba(56,189,248,0.22)' : 'rgba(0,0,0,0.12)'; ctx.lineWidth = 1.5;
-            ctx.beginPath(); ctx.roundRect(bx, by, boxW, boxH, 10); ctx.fill(); ctx.stroke();
-            ctx.fillStyle = getIncColor(hPt.pt.inc); ctx.fillRect(bx, by + 4, 3.5, boxH - 8);
-            ctx.fillStyle = isDark ? '#fff' : '#0f172a'; ctx.font = 'bold 9px monospace'; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
-            ctx.fillText(`MD: ${Math.round(hPt.pt.md)} ft`, bx + 10, by + 9);
-            ctx.font = '8px monospace'; ctx.fillStyle = isDark ? '#94a3b8' : '#64748b';
-            ctx.fillText(`TVD: ${Math.round(hPt.pt.tvd)} ft`, bx + 10, by + 23);
-            ctx.fillText(`Inc: ${hPt.pt.inc.toFixed(2)}°`, bx + 10, by + 35);
-            ctx.fillText(`DLS: ${hPt.pt.dogleg.toFixed(2)}°/100ft`, bx + 10, by + 47);
-            ctx.fillText(`X,Y: (${Math.round(hPt.pt.x)}, ${Math.round(hPt.pt.y)}) ft`, bx + 10, by + 59);
+        if (canvas.parentElement) {
+            resizeObserver.observe(canvas.parentElement);
         }
 
-    }, [processedData, yaw, pitch, zoom, colorOverlay3D, hoveredPointIdx, params, showGridCage3D, showShadows3D, showGeologySlices, showRig3D, isDark, expandedPanel]);
+        needsRenderRef.current = true;
+        triggerRender();
 
-    // Auto-rotate
-    useEffect(() => {
-        if (!isAutoRotating) { cancelAnimationFrame(animFrameRef.current); return; }
-        const loop = () => { setYaw(prev => prev + 0.004); animFrameRef.current = requestAnimationFrame(loop); };
-        animFrameRef.current = requestAnimationFrame(loop);
-        return () => cancelAnimationFrame(animFrameRef.current);
-    }, [isAutoRotating]);
+        return () => {
+            if (rafId !== null) cancelAnimationFrame(rafId);
+            resizeObserver.disconnect();
+            requestRenderRef.current = null;
+        };
+    }, [processedData, colorOverlay3D, params, spoolerAzimuth, isDark, maxMD, colorPrimary]);
 
-    // Mouse events
-    const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
-        setIsAutoRotating(false);
-        dragStartRef.current = { x: e.clientX, y: e.clientY };
-        cameraStartRef.current = { yaw, pitch };
-    };
-    const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    // ── Event Handlers ────────────────────────────────────────────────────────
+
+    const handleMouseDown = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+        isAutoRotRef.current = false; setIsAutoRotating(false);
+        dragRef.current = { x: e.clientX, y: e.clientY, yaw: yawRef.current, pitch: pitchRef.current };
+        needsRenderRef.current = true;
+        requestRenderRef.current?.();
+    }, []);
+
+    const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+        if (dragRef.current) {
+            const dx = e.clientX - dragRef.current.x, dy = e.clientY - dragRef.current.y;
+            yawRef.current = (dragRef.current.yaw - dx * 0.005 + Math.PI * 2) % (Math.PI * 2);
+            pitchRef.current = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, dragRef.current.pitch + dy * 0.005));
+            needsRenderRef.current = true;
+            requestRenderRef.current?.();
+            return;
+        }
         const canvas = canvasRef.current;
-        if (!canvas) return;
-        if (dragStartRef.current && cameraStartRef.current) {
-            const dx = e.clientX - dragStartRef.current.x, dy = e.clientY - dragStartRef.current.y;
-            setYaw(cameraStartRef.current.yaw - dx * 0.0075);
-            setPitch(Math.max(-Math.PI / 2.1, Math.min(Math.PI / 2.1, cameraStartRef.current.pitch + dy * 0.0075)));
+        if (!canvas || processedData.length === 0) {
+            if (hovIdxRef.current !== null) {
+                hovIdxRef.current = null;
+                needsRenderRef.current = true;
+                requestRenderRef.current?.();
+            }
             return;
         }
         const rect = canvas.getBoundingClientRect();
         const mouseX = e.clientX - rect.left, mouseY = e.clientY - rect.top;
-        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity, minZ = 0, maxZ = -Infinity;
-        processedData.forEach(pt => { if (pt.x < minX) minX = pt.x; if (pt.x > maxX) maxX = pt.x; if (pt.y < minY) minY = pt.y; if (pt.y > maxY) maxY = pt.y; if (pt.z < minZ) minZ = pt.z; if (pt.z > maxZ) maxZ = pt.z; });
-        const centerX = (minX + maxX) / 2, centerY = (minY + maxY) / 2, centerZ = (minZ + maxZ) / 2;
-        const maxRange = Math.max(maxX - minX, maxY - minY, maxZ - minZ, 150);
-        const w = rect.width, h = rect.height;
-        const viewportScale = Math.min(w, h) * 0.72 / maxRange;
-        let closestIdx: number | null = null, closestDist = 18;
+        const bounds = boundsRef.current || computePlotBounds(processedData);
+        const { cX, cY, cZ, maxRange } = bounds;
+        const vScale = Math.min(rect.width, rect.height) * 0.75 / maxRange;
+        const yaw = yawRef.current, pitch = pitchRef.current, zoom = zoomRef.current;
+
+        let closestIdx: number | null = null, closestDist = 12;
         processedData.forEach((pt, idx) => {
-            const tx = pt.x - centerX, ty = pt.y - centerY, tz = pt.z - centerZ;
+            const tx = pt.x - cX, ty = pt.y - cY, tz = pt.z - cZ;
             const rx1 = tx * Math.cos(yaw) - ty * Math.sin(yaw);
-            const ry1 = tx * Math.sin(yaw) + ty * Math.cos(yaw);
+            const ry1 = -(tx * Math.sin(yaw) + ty * Math.cos(yaw));
             const ry2 = ry1 * Math.cos(pitch) - tz * Math.sin(pitch);
-            const sx = w / 2 + rx1 * viewportScale * zoom, sy = h / 2 + ry2 * viewportScale * zoom;
+            const sx = rect.width / 2 + rx1 * vScale * zoom, sy = rect.height / 2 + ry2 * vScale * zoom;
             const dist = Math.sqrt((sx - mouseX) ** 2 + (sy - mouseY) ** 2);
             if (dist < closestDist) { closestDist = dist; closestIdx = idx; }
         });
-        setHoveredPointIdx(closestIdx);
-    };
-    const handleMouseUp = () => { dragStartRef.current = null; cameraStartRef.current = null; };
-    const handleWheel = (e: React.WheelEvent<HTMLCanvasElement>) => { e.preventDefault(); setZoom(prev => Math.max(0.4, Math.min(4.5, prev - e.deltaY * 0.0012))); };
+        if (hovIdxRef.current !== closestIdx) {
+            hovIdxRef.current = closestIdx;
+            needsRenderRef.current = true;
+            requestRenderRef.current?.();
+        }
+    }, [processedData]);
 
-    const isDlsCritical = metrics.maxDLS >= 3.0;
-    const airGap = 400;
-    const perfsTVDRange = maxTVD * 0.025;
+    const handleMouseUp = useCallback(() => { dragRef.current = null; }, []);
 
-    const layers = [
-        { y1: 0, y2: maxTVD * 0.10, geo: GEO.soil },
-        { y1: maxTVD * 0.10, y2: maxTVD * 0.25, geo: GEO.limestone },
-        { y1: maxTVD * 0.25, y2: maxTVD * 0.45, geo: GEO.shale },
-        { y1: maxTVD * 0.45, y2: maxTVD * 0.60, geo: GEO.salt },
-        { y1: maxTVD * 0.60, y2: maxTVD * 0.75, geo: GEO.sand },
-        { y1: maxTVD * 0.75, y2: maxTVD * 0.90, geo: GEO.granite },
-        { y1: maxTVD * 0.90, y2: 30000, geo: GEO.res },
-    ];
+    const handleWheel = useCallback((e: React.WheelEvent<HTMLCanvasElement>) => {
+        e.preventDefault();
+        zoomRef.current = Math.max(0.4, Math.min(3.5, zoomRef.current - e.deltaY * 0.0008));
+        needsRenderRef.current = true;
+        requestRenderRef.current?.();
+    }, []);
 
-    // Overlay toggle pill
-    const panelAJX = (
-        <div
-            className={`transition-all duration-300 ${expandedPanel === '3d'
-                ? 'fixed inset-0 z-[99999] bg-surface/98 backdrop-blur-xl p-6 flex flex-col'
-                : 'relative overflow-hidden bg-surface/30 w-full h-full'
-                }`}
-            style={expandedPanel === '3d' ? {} : { gridColumn: '1', gridRow: '1 / 2' }}
-        >
-            <canvas
-                ref={canvasRef}
-                onMouseDown={handleMouseDown}
-                onMouseMove={handleMouseMove}
-                onMouseUp={handleMouseUp}
-                onMouseLeave={handleMouseUp}
-                onWheel={handleWheel}
-                className="w-full h-full cursor-grab active:cursor-grabbing block"
-            />
-            {/* 3D panel label */}
-            <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-surface/60 backdrop-blur-sm px-2.5 py-1 rounded-lg border border-surface-light/25 z-10 animate-in fade-in">
-                <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-                <span className="text-[8px] font-black text-txt-muted uppercase tracking-widest">Modelo 3D Interactivo</span>
-                {expandedPanel !== '3d' && (
-                    <button
-                        onClick={(e) => { e.stopPropagation(); setExpandedPanel('3d'); }}
-                        className="ml-2 flex items-center justify-center hover:text-primary transition-all text-txt-muted hover:scale-110 active:scale-95 pointer-events-auto"
-                        title="Pantalla Completa"
-                    >
-                        <Maximize2 className="w-2.5 h-2.5" />
-                    </button>
-                )}
-            </div>
+    const resetCamera = useCallback(() => {
+        yawRef.current = Math.PI / 4.5; pitchRef.current = -Math.PI / 7.0; zoomRef.current = 1.0;
+        needsRenderRef.current = true;
+        requestRenderRef.current?.();
+    }, []);
 
-            {/* Floating Close Button for Fullscreen */}
-            {expandedPanel === '3d' && (
-                <button
-                    onClick={(e) => { e.stopPropagation(); setExpandedPanel(null); }}
-                    className="absolute top-4 right-4 z-50 flex items-center gap-1.5 px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 hover:border-red-500/30 rounded-xl text-[10px] font-black uppercase tracking-widest text-red-400 hover:text-red-300 transition-all active:scale-95 animate-in fade-in"
-                >
-                    <X className="w-3.5 h-3.5" /> Cerrar Pantalla Completa
-                </button>
-            )}
-
-            {/* Layer toggles floating in 3D panel */}
-            <div className="absolute bottom-3 right-3 flex flex-col gap-1.5 bg-surface/55 backdrop-blur-md p-2.5 rounded-xl border border-surface-light/25 z-10">
-                {[
-                    { key: 'rig', label: 'Torre', val: showRig3D, set: setShowRig3D },
-                    { key: 'geo', label: 'Geología', val: showGeologySlices, set: setShowGeologySlices },
-                    { key: 'cage', label: 'Rejilla', val: showGridCage3D, set: setShowGridCage3D },
-                ].map(({ key, label, val, set }) => (
-                    <label key={key} className="flex items-center gap-2 cursor-pointer">
-                        <div
-                            onClick={() => set(!val)}
-                            className={`w-6 h-3 rounded-full transition-all relative ${val ? 'bg-primary/70' : 'bg-surface-light/40'}`}
-                        >
-                            <div className={`absolute top-0.5 w-2 h-2 rounded-full bg-white transition-all ${val ? 'left-3.5' : 'left-0.5'}`} />
-                        </div>
-                        <span className="text-[7.5px] font-bold text-txt-muted uppercase tracking-widest">{label}</span>
-                    </label>
-                ))}
-            </div>
-
-            {/* 3D Unified Controls (bottom-left) */}
-            <div className="absolute bottom-3 left-3 flex items-center gap-1.5 bg-surface/55 backdrop-blur-md p-1.5 rounded-xl border border-surface-light/25 z-10">
-                <span className="text-[7.5px] font-black text-txt-muted uppercase tracking-widest px-1">Giro:</span>
-                <button
-                    onClick={(e) => { e.stopPropagation(); setIsAutoRotating(!isAutoRotating); }}
-                    className="text-[7.5px] font-black uppercase tracking-widest px-2 py-1 rounded-lg border border-surface-light/25 text-txt-muted hover:text-primary transition-all bg-surface-light/10 flex items-center justify-center min-w-6"
-                >
-                    {isAutoRotating ? <Pause className="w-2.5 h-2.5" /> : <Play className="w-2.5 h-2.5" />}
-                </button>
-                <button
-                    onClick={(e) => { e.stopPropagation(); setYaw(Math.PI / 4.5); setPitch(-Math.PI / 6.5); setZoom(1.05); }}
-                    className="text-[7.5px] font-black uppercase tracking-widest px-2 py-1 rounded-lg border border-surface-light/25 text-txt-muted hover:text-txt-main transition-all bg-surface-light/10 flex items-center justify-center min-w-6"
-                    title="Restaurar Cámara"
-                >
-                    <RotateCw className="w-2.5 h-2.5" />
-                </button>
-
-                <div className="w-px h-3.5 bg-surface-light/35 mx-1" />
-
-                <span className="text-[7.5px] font-black text-txt-muted uppercase tracking-widest px-1">Overlay 3D:</span>
-                {overlayOptions.map(({ mode, label, color }) => (
-                    <button
-                        key={mode}
-                        onClick={(e) => { e.stopPropagation(); setColorOverlay3D(mode); }}
-                        style={{
-                            borderColor: colorOverlay3D === mode ? color : 'transparent',
-                            color: colorOverlay3D === mode ? color : undefined
-                        }}
-                        className={`text-[7.5px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg border transition-all ${colorOverlay3D === mode ? 'bg-surface-light/35 font-extrabold' : 'text-txt-muted hover:text-txt-main'
-                            }`}
-                    >
-                        {label}
-                    </button>
-                ))}
-            </div>
-        </div>
-    );
-
-    const panelBJX = (
-        <div
-            className={`transition-all duration-300 ${expandedPanel === 'lithology'
-                ? 'fixed inset-0 z-[99999] bg-surface/98 backdrop-blur-xl p-6 flex flex-col'
-                : 'relative overflow-hidden bg-surface/30 w-full h-full'
-                }`}
-            style={expandedPanel === 'lithology' ? {} : { gridColumn: '3', gridRow: '1 / 2' }}
-        >
-            <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-surface/60 backdrop-blur-sm px-2.5 py-1 rounded-lg border border-surface-light/25 z-10 animate-in fade-in">
-                <div className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse" />
-                <span className="text-[8px] font-black text-txt-muted uppercase tracking-widest">Perfil Litológico 2D</span>
-                {expandedPanel !== 'lithology' && (
-                    <button
-                        onClick={(e) => { e.stopPropagation(); setExpandedPanel('lithology'); }}
-                        className="ml-2 flex items-center justify-center hover:text-primary transition-all text-txt-muted hover:scale-110 active:scale-95 pointer-events-auto"
-                        title="Pantalla Completa"
-                    >
-                        <Maximize2 className="w-2.5 h-2.5" />
-                    </button>
-                )}
-            </div>
-
-            {/* Floating Close Button for Fullscreen */}
-            {expandedPanel === 'lithology' && (
-                <button
-                    onClick={(e) => { e.stopPropagation(); setExpandedPanel(null); }}
-                    className="absolute top-4 right-4 z-50 flex items-center gap-1.5 px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 hover:border-red-500/30 rounded-xl text-[10px] font-black uppercase tracking-widest text-red-400 hover:text-red-300 transition-all active:scale-95 animate-in fade-in"
-                >
-                    <X className="w-3.5 h-3.5" /> Cerrar Pantalla Completa
-                </button>
-            )}
-
-            {/* Dual-pill premium overview metrics */}
-            <div className="absolute top-3 right-3 flex items-center gap-2 bg-surface/60 backdrop-blur-sm p-1.5 rounded-xl border border-surface-light/25 z-10 pointer-events-none">
-                <div className="flex flex-col items-end gap-0.5 px-1.5">
-                    <span className="text-[6.5px] font-black text-txt-muted uppercase tracking-wider leading-none">Inclinación Máx.</span>
-                    <span className="text-[9px] font-black text-sky-400 leading-none mt-0.5">{metrics.maxInc.toFixed(1)}°</span>
-                </div>
-                <div className="w-px h-5 bg-surface-light/35" />
-                <div className="flex flex-col items-end gap-0.5 px-1.5">
-                    <span className="text-[6.5px] font-black text-txt-muted uppercase tracking-wider leading-none">DLS Máximo</span>
-                    <span className={`text-[9px] font-black leading-none mt-0.5 ${isDlsCritical ? 'text-red-400' : 'text-amber-400'}`}>{metrics.maxDLS.toFixed(2)}°</span>
-                </div>
-            </div>
-            <div className={expandedPanel === 'lithology' ? "absolute inset-0 pt-20 pb-4 px-6" : "absolute inset-0 pt-14 pb-3 px-2"}>
-                <ResponsiveContainer width="100%" height="100%">
-                    <ComposedChart data={processedData} margin={{ top: 24, right: 12, left: 10, bottom: 8 }}>
-                        <defs>
-                            <pattern id="patSoil2" patternUnits="userSpaceOnUse" width="18" height="18" patternTransform="rotate(38)">
-                                <rect width="18" height="18" fill={GEO.soil.color} fillOpacity="0.25" />
-                                <line x1="0" y1="5" x2="18" y2="5" stroke={GEO.soil.color} strokeWidth="1" opacity="0.3" />
-                                <circle cx="4" cy="9" r="1" fill={GEO.soil.color} opacity="0.2" />
-                            </pattern>
-                            <pattern id="patLimestone2" patternUnits="userSpaceOnUse" width="40" height="24">
-                                <rect width="40" height="24" fill={GEO.limestone.color} fillOpacity="0.15" />
-                                <line x1="0" y1="0" x2="40" y2="0" stroke={GEO.limestone.color} strokeWidth="1" opacity="0.3" />
-                                <line x1="20" y1="0" x2="20" y2="12" stroke={GEO.limestone.color} strokeWidth="1" opacity="0.3" />
-                                <line x1="0" y1="12" x2="40" y2="12" stroke={GEO.limestone.color} strokeWidth="1" opacity="0.3" />
-                            </pattern>
-                            <pattern id="patShale2" patternUnits="userSpaceOnUse" width="52" height="14">
-                                <rect width="52" height="14" fill={GEO.shale.color} fillOpacity="0.15" />
-                                <line x1="0" y1="4" x2="40" y2="4" stroke={GEO.shale.color} strokeWidth="1.5" opacity="0.3" />
-                                <line x1="10" y1="10" x2="50" y2="10" stroke={GEO.shale.color} strokeWidth="0.8" opacity="0.2" />
-                            </pattern>
-                            <pattern id="patSalt2" patternUnits="userSpaceOnUse" width="30" height="30">
-                                <rect width="30" height="30" fill={GEO.salt.color} fillOpacity="0.1" />
-                                <path d="M 5,5 L 10,10 M 20,20 L 25,25" stroke={GEO.salt.color} strokeWidth="1" opacity="0.2" />
-                                <path d="M 25,5 L 20,10 M 10,20 L 5,25" stroke={GEO.salt.color} strokeWidth="1" opacity="0.2" />
-                            </pattern>
-                            <pattern id="patSand2" patternUnits="userSpaceOnUse" width="14" height="14">
-                                <rect width="14" height="14" fill={GEO.sand.color} fillOpacity="0.15" />
-                                <circle cx="3" cy="3" r="1.2" fill={GEO.sand.color} opacity="0.4" />
-                                <circle cx="11" cy="11" r="1" fill={GEO.sand.color} opacity="0.3" />
-                            </pattern>
-                            <pattern id="patGranite2" patternUnits="userSpaceOnUse" width="100" height="100">
-                                <rect width="100" height="100" fill={GEO.granite.color} fillOpacity="0.15" />
-                                <path d="M 10,10 L 20,20 M 60,70 L 80,90" stroke={GEO.granite.color} strokeWidth="2" opacity="0.2" />
-                            </pattern>
-                            <pattern id="patRes" patternUnits="userSpaceOnUse" width="22" height="22">
-                                <rect width="22" height="22" fill={isDark ? "#011F17" : "#ECFDF5"} fillOpacity="0.9" />
-                                <path d="M0 22 L22 0" stroke={GEO.res.color} strokeWidth="1.6" opacity={isDark ? 0.65 : 0.25} />
-                                <circle cx="5" cy="5" r="2.2" fill={GEO.res.color} fillOpacity={isDark ? 0.5 : 0.2} />
-                                <circle cx="17" cy="17" r="2.2" fill={GEO.res.color} fillOpacity={isDark ? 0.5 : 0.2} />
-                            </pattern>
-                            <linearGradient id="skyGrad2" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="0%" stopColor={isDark ? "#040A14" : "#F8FAFC"} stopOpacity={0.12} />
-                                <stop offset="100%" stopColor={isDark ? "#0D1E38" : "#F1F5F9"} stopOpacity={0} />
-                            </linearGradient>
-                            <linearGradient id="payGrad2" x1="0" y1="0" x2="1" y2="0">
-                                <stop offset="0%" stopColor="#fdf7afff" stopOpacity="0" />
-                                <stop offset="20%" stopColor="#fff461ff" stopOpacity="0.07" />
-                                <stop offset="80%" stopColor="#fff716ff" stopOpacity="0.07" />
-                                <stop offset="100%" stopColor="#fffd94ff" stopOpacity="0" />
-                            </linearGradient>
-                            <filter id="glow2">
-                                <feGaussianBlur stdDeviation="2.5" result="b" />
-                                <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
-                            </filter>
-                        </defs>
-
-                        <ReferenceArea y1={-airGap} y2={0} fill="url(#skyGrad2)" />
-                        {layers.map((l, i) => <ReferenceArea key={i} y1={l.y1} y2={l.y2} fill={`url(#${l.geo.pat})`} fillOpacity={1} />)}
-                        <ReferenceArea y1={perfsTVD - perfsTVDRange * 2.5} y2={perfsTVD + perfsTVDRange * 2.5} fill="url(#payGrad2)" />
-                        <ReferenceLine y={0} stroke="#4B5563" strokeWidth={2} />
-                        <CartesianGrid stroke={colorSurfaceLight} strokeDasharray="2 8" opacity={0.15} />
-
-                        <XAxis dataKey="departure" type="number" orientation="top" domain={[-200, (max: number) => Math.max(max + 1200, 2800)]}
-                            tick={{ fill: colorTextMuted, fontSize: 8, fontWeight: 700 }} tickFormatter={(v) => (v < 0 ? '' : v)}
-                            axisLine={{ stroke: colorSurfaceLight }} tickLine={false} />
-                        <YAxis dataKey="tvd" type="number" reversed domain={[-airGap, maxTVD]}
-                            tick={{ fill: colorTextMuted, fontSize: 8, fontWeight: 700 }} tickFormatter={(v) => (v < 0 ? '' : v)}
-                            axisLine={{ stroke: colorSurfaceLight }} tickLine={false} width={48} />
-
-                        <Tooltip shared content={<CustomTooltip colorSurface={colorSurface} colorSurfaceLight={colorSurfaceLight} colorTextMuted={colorTextMuted} params={params} pumpTVD={pumpTVD} perfsTVD={perfsTVD} />} />
-
-                        <ReferenceLine y={params.totalDepthMD} stroke="#EF4444" strokeWidth={1.2} strokeDasharray="4 3"
-                            label={{ position: 'insideBottomRight', value: `TD: ${params.totalDepthMD}ft`, fill: '#EF4444', fontSize: 9, fontWeight: 'bold' }} />
-
-                        <Line type="linear" dataKey="tvd" stroke={colorSurfaceLight} strokeWidth={16} dot={false} isAnimationActive={false} strokeOpacity={0.7} />
-                        <Line type="linear" dataKey="tvd" stroke={colorSurface} strokeWidth={12} dot={false} isAnimationActive={false} />
-                        <Line type="linear" data={tubingData} dataKey="tvd" stroke={colorPrimary} strokeWidth={2.5} dot={false} isAnimationActive={true} animationDuration={1800} filter="url(#glow2)" />
-
-                        <Customized component={(props: any) => <DrillingRig {...props} theme={theme} />} />
-                        <Customized component={(props: any) => (
-                            <WellboreSymbols {...props} processedData={processedData}
-                                pumpDep={pumpDep} pumpTVD={pumpTVD} pumpMD={params.pressures.pumpDepthMD}
-                                perfsDep={perfsDep} perfsTVD={perfsTVD} perfsMD={params.wellbore.midPerfsMD}
-                                perfsTVDRange={perfsTVDRange} colorPrimary={colorPrimary} colorTextMuted={colorTextMuted}
-                                payZoneLabel={t('p1.pay_zone')} theme={theme} />
-                        )} />
-
-                        {kopPoint && (
-                            <ReferenceDot x={kopPoint.departure} y={kopPoint.tvd} r={0}>
-                                <Label content={({ viewBox }: any) => {
-                                    const { x, y } = viewBox;
-                                    return (
-                                        <g transform={`translate(${x}, ${y})`}>
-                                            <circle cx={0} cy={0} r={11} fill="none" stroke={colorSecondary} strokeWidth={1} opacity={0.3} />
-                                            <circle cx={0} cy={0} r={6} fill="none" stroke={colorSecondary} strokeWidth={1.2} opacity={0.6} />
-                                            <circle cx={0} cy={0} r={2.5} fill={colorSecondary} filter="url(#glow2)" />
-                                            {[0, 90, 180, 270].map(a => (
-                                                <line key={a} x1={Math.cos(a * Math.PI / 180) * 8} y1={Math.sin(a * Math.PI / 180) * 8} x2={Math.cos(a * Math.PI / 180) * 14} y2={Math.sin(a * Math.PI / 180) * 14} stroke={colorSecondary} strokeWidth={1.2} />
-                                            ))}
-                                            <rect x={16} y={-9} width={34} height={18} rx={4} fill={colorSecondary} fillOpacity={0.12} stroke={colorSecondary} strokeWidth={0.8} strokeOpacity={0.45} />
-                                            <text x={33} y={3} textAnchor="middle" fill={colorSecondary} fontSize={9} fontWeight="800" fontFamily="monospace">KOP</text>
-                                        </g>
-                                    );
-                                }} />
-                            </ReferenceDot>
-                        )}
-                    </ComposedChart>
-                </ResponsiveContainer>
-            </div>
-        </div>
-    );
-
-    const panelCJX = (
-        <div
-            className={`transition-all duration-300 ${expandedPanel === 'inclination'
-                ? 'fixed inset-0 z-[99999] bg-surface/98 backdrop-blur-xl p-6 flex flex-col'
-                : 'relative overflow-hidden bg-surface/30 w-full h-full'
-                }`}
-            style={expandedPanel === 'inclination' ? {} : { gridColumn: '1', gridRow: '3' }}
-        >
-            <div className="absolute top-2 left-3 flex items-center gap-1.5 bg-surface/60 backdrop-blur-sm px-2.5 py-1 rounded-lg border border-surface-light/25 z-10 animate-in fade-in">
-                <div className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse" />
-                <span className="text-[8px] font-black text-txt-muted uppercase tracking-widest">Inclinación vs MD</span>
-                {expandedPanel !== 'inclination' && (
-                    <button
-                        onClick={(e) => { e.stopPropagation(); setExpandedPanel('inclination'); }}
-                        className="ml-2 flex items-center justify-center hover:text-primary transition-all text-txt-muted hover:scale-110 active:scale-95 pointer-events-auto"
-                        title="Pantalla Completa"
-                    >
-                        <Maximize2 className="w-2.5 h-2.5" />
-                    </button>
-                )}
-            </div>
-
-            {/* Floating Close Button for Fullscreen */}
-            {expandedPanel === 'inclination' && (
-                <button
-                    onClick={(e) => { e.stopPropagation(); setExpandedPanel(null); }}
-                    className="absolute top-4 right-4 z-50 flex items-center gap-1.5 px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 hover:border-red-500/30 rounded-xl text-[10px] font-black uppercase tracking-widest text-red-400 hover:text-red-300 transition-all active:scale-95 animate-in fade-in"
-                >
-                    <X className="w-3.5 h-3.5" /> Cerrar Pantalla Completa
-                </button>
-            )}
-            {!hasAdv ? (
-                <div className="h-full flex flex-col items-center justify-center text-center px-4">
-                    <span className="text-[9px] font-bold text-txt-muted uppercase tracking-wider">Sin datos avanzados de inclinación</span>
-                </div>
-            ) : (
-                <div className={expandedPanel === 'inclination' ? "absolute inset-0 pt-20 pb-4 px-6" : "absolute inset-0 pt-14 pb-2 px-2"}>
-                    <ResponsiveContainer width="100%" height="100%">
-                        <ComposedChart layout="vertical" data={processedData} margin={{ top: 28, right: 16, left: 42, bottom: 8 }}>
-                            <CartesianGrid stroke={colorSurfaceLight} strokeDasharray="3 3" opacity={0.12} />
-                            <XAxis type="number" domain={[0, 90]}
-                                tick={{ fill: colorTextMuted, fontSize: 8, fontWeight: 700 }} tickFormatter={(v) => `${v}°`}
-                                axisLine={{ stroke: colorSurfaceLight }} tickLine={false} />
-                            <YAxis type="number" dataKey="md" domain={[stats.maxMD, 0]}
-                                tick={{ fill: colorTextMuted, fontSize: 8, fontWeight: 700 }}
-                                axisLine={{ stroke: colorSurfaceLight }} tickLine={false} width={38} />
-                            <Tooltip content={<InclinationTooltip colorSurface={colorSurface} colorSurfaceLight={colorSurfaceLight} colorTextMuted={colorTextMuted} />} />
-                            <ReferenceLine y={params.pressures.pumpDepthMD} stroke={colorPrimary} strokeWidth={1.5} strokeDasharray="3 2"
-                                label={{ position: 'insideBottomRight', value: 'ESP', fill: colorPrimary, fontSize: 8, fontWeight: 'bold' }} />
-                            <ReferenceLine y={params.wellbore.midPerfsMD} stroke="#D97706" strokeWidth={1.5} strokeDasharray="3 2"
-                                label={{ position: 'insideBottomRight', value: 'PERFS', fill: '#D97706', fontSize: 8, fontWeight: 'bold' }} />
-                            <Line layout="vertical" type="monotone" dataKey="inc" stroke="#38bdf8" strokeWidth={2.5} dot={false} filter="url(#glow2)" />
-                        </ComposedChart>
-                    </ResponsiveContainer>
-                </div>
-            )}
-        </div>
-    );
-
-    const panelDJX = (
-        <div
-            className={`transition-all duration-300 ${expandedPanel === 'dls'
-                ? 'fixed inset-0 z-[99999] bg-surface/98 backdrop-blur-xl p-6 flex flex-col'
-                : 'relative overflow-hidden bg-surface/30 w-full h-full'
-                }`}
-            style={expandedPanel === 'dls' ? {} : { gridColumn: '3', gridRow: '3' }}
-        >
-            <div className="absolute top-2 left-3 flex items-center gap-1.5 bg-surface/60 backdrop-blur-sm px-2.5 py-1 rounded-lg border border-surface-light/25 z-10 animate-in fade-in">
-                <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${isDlsCritical ? 'bg-red-400' : 'bg-amber-400'}`} />
-                <span className="text-[8px] font-black text-txt-muted uppercase tracking-widest">Severidad DLS vs MD</span>
-                {expandedPanel !== 'dls' && (
-                    <button
-                        onClick={(e) => { e.stopPropagation(); setExpandedPanel('dls'); }}
-                        className="ml-2 flex items-center justify-center hover:text-primary transition-all text-txt-muted hover:scale-110 active:scale-95 pointer-events-auto"
-                        title="Pantalla Completa"
-                    >
-                        <Maximize2 className="w-2.5 h-2.5" />
-                    </button>
-                )}
-            </div>
-
-            {/* Floating Close Button for Fullscreen */}
-            {expandedPanel === 'dls' && (
-                <button
-                    onClick={(e) => { e.stopPropagation(); setExpandedPanel(null); }}
-                    className="absolute top-4 right-4 z-50 flex items-center gap-1.5 px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 hover:border-red-500/30 rounded-xl text-[10px] font-black uppercase tracking-widest text-red-400 hover:text-red-300 transition-all active:scale-95 animate-in fade-in"
-                >
-                    <X className="w-3.5 h-3.5" /> Cerrar Pantalla Completa
-                </button>
-            )}
-            {!hasAdv ? (
-                <div className="h-full flex flex-col items-center justify-center text-center px-4">
-                    <span className="text-[9px] font-bold text-txt-muted uppercase tracking-wider">Sin datos de dogleg</span>
-                </div>
-            ) : (
-                <div className={expandedPanel === 'dls' ? "absolute inset-0 pt-20 pb-4 px-6" : "absolute inset-0 pt-14 pb-2 px-2"}>
-                    <ResponsiveContainer width="100%" height="100%">
-                        <ComposedChart layout="vertical" data={processedData} margin={{ top: 28, right: 16, left: 42, bottom: 8 }}>
-                            <CartesianGrid stroke={colorSurfaceLight} strokeDasharray="3 3" opacity={0.12} />
-                            <XAxis type="number" domain={[0, (dataMax: number) => Math.max(5, Math.ceil(dataMax))]}
-                                tick={{ fill: colorTextMuted, fontSize: 8, fontWeight: 700 }} tickFormatter={(v) => `${v}°`}
-                                axisLine={{ stroke: colorSurfaceLight }} tickLine={false} />
-                            <YAxis type="number" dataKey="md" domain={[stats.maxMD, 0]}
-                                tick={{ fill: colorTextMuted, fontSize: 8, fontWeight: 700 }}
-                                axisLine={{ stroke: colorSurfaceLight }} tickLine={false} width={38} />
-                            <Tooltip content={<DoglegTooltip colorSurface={colorSurface} colorSurfaceLight={colorSurfaceLight} colorTextMuted={colorTextMuted} />} />
-                            <ReferenceArea x1={3} x2={12} fill="#ef4444" fillOpacity={0.06} />
-                            <ReferenceLine x={3} stroke="#ef4444" strokeWidth={1.2} strokeDasharray="4 3"
-                                label={{ position: 'top', value: '3.0° crítico', fill: '#ef4444', fontSize: 7, fontWeight: 'bold' }} />
-                            <ReferenceLine y={params.pressures.pumpDepthMD} stroke={colorPrimary} strokeWidth={1.5} strokeDasharray="3 2"
-                                label={{ position: 'insideBottomRight', value: 'ESP', fill: colorPrimary, fontSize: 8, fontWeight: 'bold' }} />
-                            <ReferenceLine y={params.wellbore.midPerfsMD} stroke="#D97706" strokeWidth={1.5} strokeDasharray="3 2"
-                                label={{ position: 'insideBottomRight', value: 'PERFS', fill: '#D97706', fontSize: 8, fontWeight: 'bold' }} />
-                            <Line layout="vertical" type="monotone" dataKey="dogleg" stroke="#f59e0b" strokeWidth={2.5} dot={false} filter="url(#glow2)" />
-                        </ComposedChart>
-                    </ResponsiveContainer>
-                </div>
-            )}
-        </div>
-    );
+    const toggleAutoRotate = useCallback(() => {
+        const next = !isAutoRotRef.current; isAutoRotRef.current = next; setIsAutoRotating(next);
+        needsRenderRef.current = true;
+        requestRenderRef.current?.();
+    }, []);
 
     return (
-        <div className="h-full flex flex-col glass-surface rounded-[2rem] border border-surface-light shadow-2xl overflow-hidden relative group select-none">
-            {/* Background grid texture */}
-            <div className="absolute inset-0 bg-[linear-gradient(rgb(var(--color-primary)/0.015)_1px,transparent_1px),linear-gradient(90deg,rgb(var(--color-primary)/0.015)_1px,transparent_1px)] bg-[size:48px_48px] pointer-events-none z-0" />
+        <div className="h-full flex flex-col glass-surface rounded-[1.5rem] border border-surface-light shadow-xl overflow-hidden relative select-none">
+            <div className={`relative z-10 flex-1 min-h-0 grid grid-cols-1 ${isSidebar ? '' : 'lg:grid-cols-2'}`}>
 
-            {/* ── MAIN WORKSPACE: 4-panel symmetrical grid ── */}
-            <div className="relative z-10 flex-1 min-h-0 grid" style={{ gridTemplateColumns: '1fr 1px 1fr', gridTemplateRows: '1fr 1px 1fr' }}>
-                {expandedPanel === '3d' ? (
-                    <div className="bg-surface/10 border border-surface-light/10 rounded-2xl flex flex-col items-center justify-center text-center p-4" style={{ gridColumn: '1', gridRow: '1 / 2' }}>
-                        <span className="text-[10px] font-black text-primary/70 uppercase tracking-widest animate-pulse">Modelo 3D Maximizado</span>
-                        <span className="text-[8px] text-txt-muted mt-1 uppercase">Visualizando en pantalla completa...</span>
+                {/* ── LEFT: 3D Canvas Estilizado ── */}
+                <div className={`relative flex flex-col min-w-0 bg-slate-950/20 transition-all duration-300 ${expandedCanvas ? 'fixed inset-0 z-50 bg-slate-950' : (isSidebar ? 'h-[380px] border-b' : 'border-r border-surface-light/10')}`}>
+
+                    {/* Botones de Control Flotantes Estilizados */}
+                    <div className="absolute bottom-4 left-4 flex items-center gap-1.5 bg-slate-900/80 backdrop-blur-md p-1 rounded-xl border border-white/5 z-20">
+                        <button onClick={toggleAutoRotate} className="text-[8px] font-bold uppercase tracking-wider px-2 py-1 rounded-lg text-slate-400 hover:text-white transition-all flex items-center gap-1 bg-white/5">
+                            {isAutoRotating ? <Pause className="w-2.5 h-2.5" /> : <Play className="w-2.5 h-2.5" />}
+                        </button>
+                        <button onClick={resetCamera} className="text-[8px] font-bold uppercase tracking-wider px-2 py-1 rounded-lg text-slate-400 hover:text-white transition-all flex items-center gap-1 bg-white/5">
+                            <RotateCw className="w-2.5 h-2.5" />
+                        </button>
+                        <div className="h-3 w-px bg-white/10 mx-0.5" />
+                        <button onClick={() => setView('top')} className="text-[8px] font-bold uppercase tracking-wider px-2 py-1 rounded-lg text-slate-400 hover:text-white transition-all bg-white/5">Planta</button>
+                        <button onClick={() => setView('lateral')} className="text-[8px] font-bold uppercase tracking-wider px-2 py-1 rounded-lg text-slate-400 hover:text-white transition-all bg-white/5">Perfil</button>
                     </div>
-                ) : panelAJX}
 
-                {/* Vertical divider */}
-                <div className="bg-surface-light/20" style={{ gridColumn: '2', gridRow: '1 / 4' }} />
-
-                {expandedPanel === 'lithology' ? (
-                    <div className="bg-surface/10 border border-surface-light/10 rounded-2xl flex flex-col items-center justify-center text-center p-4" style={{ gridColumn: '3', gridRow: '1 / 2' }}>
-                        <span className="text-[10px] font-black text-sky-400/70 uppercase tracking-widest animate-pulse">Perfil Litológico Maximizado</span>
-                        <span className="text-[8px] text-txt-muted mt-1 uppercase">Visualizando en pantalla completa...</span>
+                    {/* Selector de Modo de Visualización */}
+                    <div className="absolute top-4 right-4 flex items-center gap-1 bg-slate-900/80 backdrop-blur-md p-1 rounded-xl border border-white/5 z-20">
+                        {[
+                            { mode: 'depth' as const, label: 'Estructura' },
+                            { mode: 'inc' as const, label: 'Inc (°)' },
+                            { mode: 'dogleg' as const, label: 'DLS (Severidad)' }
+                        ].map(({ mode, label }) => (
+                            <button
+                                key={mode}
+                                onClick={() => {
+                                    setColorOverlay3D(mode);
+                                    needsRenderRef.current = true;
+                                    requestRenderRef.current?.();
+                                }}
+                                className={`text-[8px] font-bold uppercase tracking-wider px-2 py-1 rounded-lg transition-all ${colorOverlay3D === mode ? 'bg-cyan-500/20 border border-cyan-500/40 text-cyan-400' : 'border border-transparent text-slate-400 hover:text-slate-200'}`}
+                            >
+                                {label}
+                            </button>
+                        ))}
                     </div>
-                ) : panelBJX}
 
-                {/* Horizontal divider */}
-                <div className="bg-surface-light/20" style={{ gridColumn: '1 / 4', gridRow: '2' }} />
-
-                {expandedPanel === 'inclination' ? (
-                    <div className="bg-surface/10 border border-surface-light/10 rounded-2xl flex flex-col items-center justify-center text-center p-4" style={{ gridColumn: '1', gridRow: '3' }}>
-                        <span className="text-[10px] font-black text-sky-400/70 uppercase tracking-widest animate-pulse">Inclinación vs MD Maximizado</span>
-                        <span className="text-[8px] text-txt-muted mt-1 uppercase">Visualizando en pantalla completa...</span>
-                    </div>
-                ) : panelCJX}
-
-                {expandedPanel === 'dls' ? (
-                    <div className="bg-surface/10 border border-surface-light/10 rounded-2xl flex flex-col items-center justify-center text-center p-4" style={{ gridColumn: '3', gridRow: '3' }}>
-                        <span className={`text-[10px] font-black uppercase tracking-widest animate-pulse ${isDlsCritical ? 'text-red-400/70' : 'text-amber-400/70'}`}>DLS vs MD Maximizado</span>
-                        <span className="text-[8px] text-txt-muted mt-1 uppercase">Visualizando en pantalla completa...</span>
-                    </div>
-                ) : panelDJX}
-            </div>
-
-            {/* ── PORTAL FOR MAXIMIZED PANELS ── */}
-            {expandedPanel === '3d' && createPortal(panelAJX, document.body)}
-            {expandedPanel === 'lithology' && createPortal(panelBJX, document.body)}
-            {expandedPanel === 'inclination' && createPortal(panelCJX, document.body)}
-            {expandedPanel === 'dls' && createPortal(panelDJX, document.body)}
-
-            {/* ── FOOTER METRICS + SAFETY ── */}
-            <div className="relative z-20 px-6 py-3.5 border-t border-surface-light/25 bg-surface/50 backdrop-blur-xl shrink-0 flex items-center gap-4">
-
-                {/* Metrics grid */}
-                <div className="flex-1 grid grid-cols-4 gap-4">
-                    {[
-                        { label: 'MD Total', value: `${stats.maxMD} ft`, sub: `TVD: ${stats.maxTVD} ft` },
-                        { label: 'Desvío Lateral', value: `${stats.totalDeparture} ft`, sub: 'Desplazamiento horizontal' },
-                        { label: 'Inc. Máxima', value: `${metrics.maxInc.toFixed(1)}°`, sub: 'Ángulo vs vertical' },
-                        { label: 'DLS Máximo', value: `${metrics.maxDLS.toFixed(2)}°`, sub: '/100ft · límite: 3.0°', highlight: isDlsCritical }
-                    ].map(({ label, value, sub, highlight }) => (
-                        <div key={label} className="flex flex-col gap-0.5 min-w-0">
-                            <span className="text-[8px] font-black text-txt-muted uppercase tracking-wider truncate">{label}</span>
-                            <span className={`text-sm font-black tracking-tight leading-none ${highlight ? 'text-danger' : 'text-txt-main'}`}>{value}</span>
-                            <span className="text-[7.5px] text-txt-muted font-bold tracking-wide truncate">{sub}</span>
-                        </div>
-                    ))}
+                    <canvas
+                        ref={canvasRef}
+                        onMouseDown={handleMouseDown}
+                        onMouseMove={handleMouseMove}
+                        onMouseUp={handleMouseUp}
+                        onMouseLeave={handleMouseUp}
+                        onWheel={handleWheel}
+                        className="w-full h-full cursor-grab active:cursor-grabbing block relative z-10"
+                    />
                 </div>
 
-                {/* Divider */}
-                <div className="w-px h-10 bg-surface-light/30 shrink-0" />
+                {/* ── RIGHT: Charts & Analytics ── */}
+                <div className={`flex flex-col bg-slate-900/5 overflow-y-auto p-5 gap-5 justify-center ${isSidebar ? 'border-t border-surface-light/10' : 'border-l border-surface-light/10'}`}>
 
-                {/* Safety badge */}
-                {isDlsCritical ? (
-                    <div className="flex items-center gap-2.5 bg-danger/8 border border-danger/20 rounded-xl px-4 py-2.5 shrink-0">
-                        <AlertTriangle className="w-4 h-4 text-danger animate-bounce shrink-0" />
-                        <div>
-                            <span className="text-[8.5px] font-black text-danger uppercase tracking-wider block">DLS Crítico ⚠</span>
-                            <span className="text-[7px] text-txt-muted font-bold">{metrics.maxDLS.toFixed(2)}° — riesgo mecánico ESP</span>
+                    {/* Polar Chart */}
+                    <div className="flex flex-col items-center justify-center border border-surface-light/10 rounded-xl p-4 bg-slate-950/10 backdrop-blur-md">
+                        <h2 className="text-[11px] font-bold text-slate-400 tracking-wide text-center mb-3 uppercase">
+                            Optimización de Azimut - Spooler ALS
+                        </h2>
+                        <SpoolerPolarChart processedData={processedData} limitMD={limitMD} isDark={isDark} />
+                    </div>
+
+                    {/* Recharts Trajectory Curves */}
+                    <div className="flex flex-col border border-surface-light/10 rounded-xl p-4 bg-slate-950/10 backdrop-blur-md">
+                        <h2 className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-3 text-center">
+                            Perfil Hidráulico de Trayectoria vs MD
+                        </h2>
+                        <div className="h-[160px] w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <ComposedChart data={processedData} margin={{ top: 5, right: -5, left: -25, bottom: -10 }}>
+                                    <CartesianGrid stroke={colorSurfaceLight} strokeDasharray="3 3" opacity={0.06} vertical={false} />
+                                    <XAxis dataKey="md" type="number" tick={{ fill: 'rgba(148,163,184,0.6)', fontSize: 8 }} tickLine={false} />
+                                    <YAxis yAxisId="inc" domain={[0, 90]} tick={{ fill: '#38bdf8', fontSize: 8 }} tickLine={false} />
+                                    <YAxis yAxisId="dls" domain={[0, (max: number) => Math.max(5, Math.ceil(max))]} orientation="right" tick={{ fill: '#f59e0b', fontSize: 8 }} tickLine={false} />
+                                    <Line yAxisId="inc" type="monotone" dataKey="inc" stroke="#38bdf8" strokeWidth={2.0} dot={false} />
+                                    <Line yAxisId="dls" type="stepAfter" dataKey="dogleg" stroke="#f59e0b" strokeWidth={1.5} dot={false} strokeOpacity={0.8} />
+                                    <ReferenceLine yAxisId="inc" x={params.pressures.pumpDepthMD} stroke={colorPrimary} strokeWidth={1.2} strokeDasharray="3 3" />
+                                    <ReferenceLine yAxisId="inc" x={params.wellbore.casingBottom} stroke="#ef4444" strokeWidth={1.2} strokeDasharray="3 3" />
+                                </ComposedChart>
+                            </ResponsiveContainer>
                         </div>
                     </div>
-                ) : (
-                    <div className="flex items-center gap-2.5 bg-success/8 border border-success/20 rounded-xl px-4 py-2.5 shrink-0">
-                        <Shield className="w-4 h-4 text-success shrink-0" />
-                        <div>
-                            <span className="text-[8.5px] font-black text-success uppercase tracking-wider block">Alineación Segura ✔</span>
-                            <span className="text-[7px] text-txt-muted font-bold">DLS {metrics.maxDLS.toFixed(2)}° — parámetros nominales</span>
-                        </div>
-                    </div>
-                )}
+
+                </div>
             </div>
-        </div >
+        </div>
     );
 };

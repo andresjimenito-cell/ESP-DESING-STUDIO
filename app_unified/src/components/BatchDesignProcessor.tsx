@@ -107,6 +107,8 @@ const findPipeData = (catalog: any[], od: number, fallback: number): PipeData =>
 const rowToParams = (row: Record<string, any>, surveys: Record<string, SurveyPoint[]>): SystemParams => {
     const wellName = s(get(row, ['POZO', 'WELL']));
     const testDate = d(get(row, ['FECHA', 'DATE', 'FECHA DE PRUEBA', 'TIMESTAMP']));
+    const rawStartDate = get(row, ['FECHA DE ARRANQUE', 'FECHA ARRANQUE', 'START DATE', 'STARTUP DATE', 'FECHA_ARRANQUE']);
+    const startDate = rawStartDate ? d(rawStartDate) : testDate;
     const pStatic = n(get(row, ['P ESTATICA (PSI)', 'P ESTATICA', 'STATIC PRESSURE', 'PESTATICA']));
     const pipMin = n(get(row, ['PIP MINIMA (PSI)', 'PIP MINIMA', 'PIPMINIMA', 'MIN PIP']));
     const ip = n(get(row, ['IP (BFPD/PSI)', 'IP (BFP/PSI)', 'PRODUCTIVITY INDEX', 'PI (BFPD/PSI)']));
@@ -178,7 +180,7 @@ const rowToParams = (row: Record<string, any>, surveys: Record<string, SurveyPoi
             pdp: testPdp,
             waterCut: bsw,
             matchDate: testDate,
-            startDate: testDate,
+            startDate: startDate,
             tht: tht || 80,
             hp: 0, gor: gorTarget, pd: testPdp, fluidLevel: 0, submergence: 0,
             pStatic: pStatic

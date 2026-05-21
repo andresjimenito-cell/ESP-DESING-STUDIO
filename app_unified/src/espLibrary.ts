@@ -1,7 +1,7 @@
-/**
+﻿/**
  * ESP Library
  * This file is now empty because all data is loaded dynamically from Excel files 
- * (PUMPS (1).xlsx) to ensure real-time catalog updates.
+ * (COEF.xlsx) to ensure real-time catalog updates.
  */
 
 export const STANDARD_PUMPS: any[] = [];
