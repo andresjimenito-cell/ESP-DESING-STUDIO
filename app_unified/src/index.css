@@ -48,8 +48,8 @@
 [data-theme='fusion'] {
   --color-primary: 170 185 205;
   /* Light Industrial Grey - Gris Claro */
-  --color-secondary: 15 45 65;
-  /* Deep Petrol Blue - Azul Petróleo */
+  --color-secondary: 96 165 250;
+  /* Blue 400 - Bright visible blue for dark bg */
   --color-accent: 148 163 184;
   /* Slate 400 - Silver Steel */
   --color-tertiary: 59 130 246;
@@ -105,7 +105,8 @@
    ============================================================ */
 [data-theme='executive'] {
   --color-primary: 4 33 102;
-  --color-secondary: 88 28 28;
+  --color-secondary: 180 30 60;
+  /* Crimson Red - visible on white */
   --color-accent: 15 45 120;
   --color-tertiary: 59 130 246;
   --color-glow: 96 165 250;
@@ -791,6 +792,10 @@ textarea::placeholder {
   color: rgb(var(--color-primary));
 }
 
+.text-secondary {
+  color: rgb(var(--color-secondary));
+}
+
 .text-txt-main {
   color: rgb(var(--color-text-main));
 }
@@ -861,6 +866,42 @@ textarea::placeholder {
 
 .bg-primary\/10 {
   background-color: rgb(var(--color-primary) / 0.10);
+}
+
+.bg-secondary {
+  background-color: rgb(var(--color-secondary));
+}
+
+.bg-secondary\/5 {
+  background-color: rgb(var(--color-secondary) / 0.05);
+}
+
+.bg-secondary\/10 {
+  background-color: rgb(var(--color-secondary) / 0.10);
+}
+
+.bg-secondary\/15 {
+  background-color: rgb(var(--color-secondary) / 0.15);
+}
+
+.bg-secondary\/20 {
+  background-color: rgb(var(--color-secondary) / 0.20);
+}
+
+.border-secondary {
+  border-color: rgb(var(--color-secondary));
+}
+
+.border-secondary\/10 {
+  border-color: rgb(var(--color-secondary) / 0.10);
+}
+
+.border-secondary\/20 {
+  border-color: rgb(var(--color-secondary) / 0.20);
+}
+
+.border-secondary\/30 {
+  border-color: rgb(var(--color-secondary) / 0.30);
 }
 
 .border-success {
@@ -1288,6 +1329,24 @@ textarea::placeholder {
 /* ============================================================
    LIGHT THEME OVERRIDES — EXECUTIVE, HERITAGE, CHALK & SAGE
    ============================================================ */
+
+/* Ensure btn-primary text is always white in light themes */
+[data-theme='executive'] .btn-primary,
+[data-theme='heritage'] .btn-primary {
+  color: #ffffff !important;
+}
+
+/* In fusion/dark themes, btn-primary uses canvas color (dark bg) */
+:root .btn-primary,
+[data-theme='fusion'] .btn-primary {
+  color: #ffffff !important;
+}
+
+/* Cyber theme: primary is gold on black — white text */
+[data-theme='cyber'] .btn-primary {
+  color: #000000 !important;
+}
+
 [data-theme='chalk'],
 [data-theme='sage'],
 [data-theme='executive'],

@@ -55,8 +55,11 @@ const VisualESPStackComponent: React.FC<Props> = ({ pump, motor, params, results
     const intakeH = 70;
     const sealH = 110;
 
-    const motorHp = motor?.hp || params.motorHp || 100;
-    const motorH = Math.min(280, 130 + (motorHp * 0.4));
+    // When no motor is found, use a fixed rendering height with NO fake HP fallback
+    const hasMotor = !!motor;
+    const motorHp = hasMotor ? motor!.hp : 0;
+    // Render a minimal motor block (160px) when not found, or scale by HP when found
+    const motorH = hasMotor ? Math.min(280, 130 + (motorHp * 0.4)) : 160;
     const sensorH = 100;  // taller sensor
 
     // Y-Positions — VSD box space at top, then wellhead, then ESP string
@@ -100,8 +103,9 @@ const VisualESPStackComponent: React.FC<Props> = ({ pump, motor, params, results
     };
 
     const intakeTemp = isNaN(params.bottomholeTemp) ? 150 : params.bottomholeTemp;
-    const motorRise = (safeResults.motorLoad || 0) * 0.8;
-    const motorTemp = intakeTemp + motorRise;
+    // Only compute motor thermal rise if motor exists — otherwise 0
+    const motorRise = hasMotor ? (safeResults.motorLoad || 0) * 0.8 : 0;
+    const motorTemp = hasMotor ? intakeTemp + motorRise : 0;
 
     const pumpDepthMD = params.pressures.pumpDepthMD || 0;
     // --- FLUID LEVEL VISUALIZATION ---
@@ -1269,7 +1273,9 @@ const VisualESPStackComponent: React.FC<Props> = ({ pump, motor, params, results
                                 <rect x="2" y="-6" width="12" height="6" fill="rgb(var(--color-surface-light))" rx="2" stroke="rgb(var(--color-text-muted) / 0.5)" strokeWidth="0.8" />
                                 {[-3, 0, 3].map(px => <circle key={px} cx={8 + px} cy={14} r="1.8" fill="rgb(var(--color-canvas))" stroke="rgb(var(--color-text-muted) / 0.5)" />)}
                             </g>
-                            <DigitalTwinTag y={motorRealTop + motorH / 2} label="Motor Model" value={motor?.model || "Induction Motor"} side="left" color="slate" />
+                            <DigitalTwinTag y={motorRealTop + motorH / 2} label="Motor Model"
+                                value={hasMotor ? (motor!.model || 'Induction Motor') : 'NO ENCONTRADO'}
+                                side="left" color={hasMotor ? 'slate' : 'red'} />
                         </g>
 
                         {/* 6. DOWNHOLE SENSOR — High-Fidelity Polished Metal Probe */}
@@ -1397,7 +1403,9 @@ const VisualESPStackComponent: React.FC<Props> = ({ pump, motor, params, results
                     )}
                     <DigitalTwinTag y={pumpTopY + (bodyH * housingCount) * 0.3} label="Generated Head" value={safeResults.tdh?.toFixed(0)} unit="FT" side="right" color="blue" />
                     <DigitalTwinTag y={intakeRealTop + intakeH / 2} label="Intake Pressure" value={safeResults.pip?.toFixed(0)} unit="PSI" side="right" color="emerald" />
-                    <DigitalTwinTag y={motorRealTop + motorH * 0.3} label="Motor Load" value={safeResults.motorLoad?.toFixed(1)} unit="%" side="right" color="amber" />
+                    {hasMotor && (
+                        <DigitalTwinTag y={motorRealTop + motorH * 0.3} label="Motor Load" value={safeResults.motorLoad?.toFixed(1)} unit="%" side="right" color="amber" />
+                    )}
                     <DigitalTwinTag y={fluidY - 20} label="Fluid Level" value={(results.fluidLevel || 0).toFixed(0)} unit="FT" side="right" color="blue" />
                     <DigitalTwinTag y={pumpTopY + bodyH * 0.75} label="Design Stages" value={pump?.stages || 0} unit="STG" side="right" color="slate" />
                     {isReport && (

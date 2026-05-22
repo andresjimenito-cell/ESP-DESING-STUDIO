@@ -92,7 +92,7 @@ export const AiMemoryManager: React.FC<AiMemoryManagerProps> = ({ language, onCl
     return (
         <div className="flex flex-col h-full overflow-hidden text-txt-main animate-fadeIn">
             {/* MANAGER HEADER */}
-            <div className="flex items-center justify-between pb-3 mb-3 border-b border-white/10">
+            <div className="flex items-center justify-between pb-3 mb-3 border-b border-surface-light/40">
                 <div className="flex items-center gap-2">
                     <Database className="w-4 h-4 text-primary animate-pulse" />
                     <h3 className="text-xs font-black uppercase tracking-widest text-txt-main">
@@ -100,7 +100,7 @@ export const AiMemoryManager: React.FC<AiMemoryManagerProps> = ({ language, onCl
                     </h3>
                 </div>
                 {onClose && (
-                    <button onClick={onClose} className="p-1 hover:bg-white/10 rounded-full transition-all">
+                    <button onClick={onClose} className="p-1 hover:bg-surface-light rounded-full transition-all">
                         <X className="w-3.5 h-3.5 text-txt-muted hover:text-txt-main" />
                     </button>
                 )}
@@ -133,7 +133,7 @@ export const AiMemoryManager: React.FC<AiMemoryManagerProps> = ({ language, onCl
                             onClick={() => setCategoryFilter(cat)}
                             className={`px-2.5 py-1.5 rounded-lg border transition-all ${
                                 categoryFilter === cat
-                                    ? 'bg-primary text-white border-primary shadow-glow-primary/20'
+                                    ? 'bg-primary text-canvas border-primary shadow-glow-primary/20'
                                     : 'bg-surface-light/40 border-surface-light text-txt-muted hover:text-txt-main hover:bg-surface-light/80'
                             }`}
                         >
@@ -217,7 +217,7 @@ export const AiMemoryManager: React.FC<AiMemoryManagerProps> = ({ language, onCl
 
                         <button
                             type="submit"
-                            className="w-full flex items-center justify-center gap-1.5 py-2 bg-primary hover:bg-primary/95 text-white font-black uppercase text-[10px] tracking-widest rounded-xl transition-all shadow-lg shadow-primary/20"
+                            className="w-full flex items-center justify-center gap-1.5 py-2 bg-primary hover:bg-primary/95 text-canvas font-black uppercase text-[10px] tracking-widest rounded-xl transition-all shadow-lg shadow-primary/20"
                         >
                             <Check className="w-3.5 h-3.5" />
                             {t('Guardar en Memoria', 'Save to Memory')}
@@ -242,7 +242,7 @@ export const AiMemoryManager: React.FC<AiMemoryManagerProps> = ({ language, onCl
                         return (
                             <div 
                                 key={c.id} 
-                                className={`glass-surface border border-white/5 hover:border-white/10 rounded-2xl transition-all overflow-hidden ${
+                                className={`glass-surface border border-surface-light/40 hover:border-surface-light transition-all overflow-hidden ${
                                     isExpanded ? 'ring-1 ring-primary/20 shadow-md' : 'shadow-sm'
                                 }`}
                             >
@@ -252,7 +252,7 @@ export const AiMemoryManager: React.FC<AiMemoryManagerProps> = ({ language, onCl
                                         if (isEditing) return;
                                         setExpandedCaseId(isExpanded ? null : c.id);
                                     }}
-                                    className="p-3.5 flex items-start justify-between gap-3 cursor-pointer hover:bg-white/5 transition-all"
+                                    className="p-3.5 flex items-start justify-between gap-3 cursor-pointer hover:bg-surface-light/45 transition-all"
                                 >
                                     <div className="space-y-1.5 min-w-0">
                                         <div className="flex items-center gap-2 flex-wrap">
@@ -280,7 +280,7 @@ export const AiMemoryManager: React.FC<AiMemoryManagerProps> = ({ language, onCl
 
                                 {/* CARD EXPANDED CONTENT */}
                                 {isExpanded && (
-                                    <div className="px-4 pb-4 border-t border-white/5 bg-canvas/30 animate-fadeIn space-y-3">
+                                    <div className="px-4 pb-4 border-t border-surface-light/40 bg-canvas/30 animate-fadeIn space-y-3">
                                         {isEditing ? (
                                             <div className="space-y-2 pt-3">
                                                 <textarea
@@ -292,13 +292,13 @@ export const AiMemoryManager: React.FC<AiMemoryManagerProps> = ({ language, onCl
                                                 <div className="flex gap-2 justify-end">
                                                     <button
                                                         onClick={() => { setEditingId(null); setEditingText(''); }}
-                                                        className="px-3 py-1.5 border border-surface-light/80 hover:bg-white/5 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all"
+                                                        className="px-3 py-1.5 border border-surface-light/80 hover:bg-surface-light/45 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all"
                                                     >
                                                         {t('Cancelar', 'Cancel')}
                                                     </button>
                                                     <button
                                                         onClick={() => handleSaveEdit(c)}
-                                                        className="px-3 py-1.5 bg-primary hover:bg-primary/90 text-white text-[9px] font-black uppercase tracking-widest rounded-lg transition-all flex items-center gap-1"
+                                                        className="px-3 py-1.5 bg-primary hover:bg-primary/90 text-canvas text-[9px] font-black uppercase tracking-widest rounded-lg transition-all flex items-center gap-1"
                                                     >
                                                         <Check className="w-3 h-3" />
                                                         {t('Guardar', 'Save')}
@@ -311,7 +311,7 @@ export const AiMemoryManager: React.FC<AiMemoryManagerProps> = ({ language, onCl
                                                     <MarkdownRenderer content={c.recommendation} />
                                                 </div>
                                                 
-                                                <div className="flex items-center justify-between border-t border-white/5 pt-3 mt-1">
+                                                <div className="flex items-center justify-between border-t border-surface-light/40 pt-3 mt-1">
                                                     <div className="text-[8px] font-black uppercase text-txt-muted/50">
                                                         ID: {c.id.substring(0, 8)}...
                                                     </div>

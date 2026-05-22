@@ -2538,8 +2538,8 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
                     )}
 
                     {/* CONSOLIDATED CENTRAL OPERATION BAR */}
-                    <div className="flex items-center justify-center gap-6 px-4 py-1 relative">
-                        <div className="flex bg-surface-light/40 backdrop-blur-md p-1 rounded-none border border-white/5 shadow-2xl relative z-10">
+                    <div className="flex items-center justify-center gap-6 px-4 py-1 relative z-50 pointer-events-auto">
+                        <div className="flex bg-surface-light/40 backdrop-blur-md p-1 rounded-none border border-white/5 shadow-2xl relative z-50 pointer-events-auto">
                             <button
                                 onClick={() => setViewMode('telemetry')}
                                 className={`flex items-center gap-3 px-6 py-2.5 rounded-none text-[10px] font-black uppercase transition-all duration-500 ${viewMode === 'telemetry' ? 'bg-secondary text-black shadow-glow-secondary/20 scale-[1.02]' : 'text-txt-muted hover:text-white hover:bg-white/5'}`}

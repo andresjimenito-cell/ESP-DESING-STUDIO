@@ -181,6 +181,10 @@ export const useEspCopilot = (params: SystemParams, results: any, activeStep: nu
 
                     IDIOMA: Responde SIEMPRE en ${language === 'es' ? 'ESPAÑOL' : 'INGLÉS'}.
 
+                    **TRATO AL USUARIO (CRÍTICO):**
+                    - Dirígete siempre al usuario como "Ingeniero" (o "Engineer" si respondes en inglés) de manera sumamente profesional.
+                    - Queda ESTRICTAMENTE PROHIBIDO usar nombres propios como "Andrés", "Andres" o cualquier otro. Bajo ninguna circunstancia uses o reveles nombres propios de personas en tus respuestas.
+
                     ESTRUCTURA DE RESPUESTA:
                     - Para preguntas generales de auditoría, organiza tu respuesta en:
                       1. **Estado Operativo:** (Basado estrictamente en el % BEP calculado u operando).

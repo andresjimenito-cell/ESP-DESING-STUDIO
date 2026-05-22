@@ -31,25 +31,25 @@ import { AiMemoryService } from '../services/AiMemoryService';
 
 // Constantes
 import {
-  INITIAL_PARAMS, MOCK_FLEET, FALLBACK_PUMP, HealthTagLabels,
-  _cachedFleet, _cachedDesigns, _cachedHistoricalData, _dataLoaded,
-  setCachedFleet, setCachedDesigns, setCachedHistoricalData, setDataLoaded
+    INITIAL_PARAMS, MOCK_FLEET, FALLBACK_PUMP, HealthTagLabels,
+    _cachedFleet, _cachedDesigns, _cachedHistoricalData, _dataLoaded,
+    setCachedFleet, setCachedDesigns, setCachedHistoricalData, setDataLoaded
 } from './PhaseMonitoreo.constants';
 
 // Helpers
 import {
-  isWellMatchComplete, buildHistoryMatchFromWell,
-  computeWellCapacity, getPhase6Diagnosis, getOptimizationPathLocalized,
-  getOptimizationPath, getWellHealthScore,
-  s_ext, d_ext, n_ext, norm_ext, fuzzyWellName, get_ext,
-  smartMatchExt, exactMatchExt
+    isWellMatchComplete, buildHistoryMatchFromWell,
+    computeWellCapacity, getPhase6Diagnosis, getOptimizationPathLocalized,
+    getOptimizationPath, getWellHealthScore,
+    s_ext, d_ext, n_ext, norm_ext, fuzzyWellName, get_ext,
+    smartMatchExt, exactMatchExt
 } from './PhaseMonitoreo.helpers';
 
 // Sub-componentes
 import {
-  WellListItem, DebouncedSearchInput, MetricCard, HealthTag,
-  MetricSummaryCard, DiagnosticBadge, PredictiveWidget,
-  PredictiveMiniWidget, CompValueCard, DiagnosticRow
+    WellListItem, DebouncedSearchInput, MetricCard, HealthTag,
+    MetricSummaryCard, DiagnosticBadge, PredictiveWidget,
+    PredictiveMiniWidget, CompValueCard, DiagnosticRow
 } from './PhaseMonitoreo.subcomponents';
 
 // FloatingAiPanel
@@ -454,12 +454,17 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
         // Corrected heuristic: BHP scales with frequency^2.5 (avg) or ^3 (theoretical)
         const freqRatio_30_60 = test.freq / 60;
         const bhpEst = (test.rate * (selectedWell.depthMD * 0.433) * 1.1) / (135770 * 0.65) * Math.max(1, Math.pow(freqRatio_30_60, 2.8));
-        const motorLimit = (base.selectedMotor?.hp || 100) * Math.min(1.0, test.freq / 60); // Constant HP above 60Hz
-        const motorLoad = motorLimit > 0 ? (bhpEst / motorLimit) * 100 : 85;
 
-        let motorStatus: 'optimal' | 'caution' | 'alert' = 'optimal';
-        if (motorLoad > 105) motorStatus = 'alert';
-        else if (motorLoad > 90) motorStatus = 'caution';
+        // ONLY calculate motor load if a motor is actually defined in the design
+        const hasMotorData = !!base.selectedMotor;
+        const motorLimit = hasMotorData ? (base.selectedMotor!.hp * Math.min(1.0, test.freq / 60)) : 0;
+        const motorLoad = hasMotorData && motorLimit > 0 ? (bhpEst / motorLimit) * 100 : 0;
+
+        let motorStatus: 'optimal' | 'caution' | 'alert' | 'unknown' = hasMotorData ? 'optimal' : 'unknown';
+        if (hasMotorData) {
+            if (motorLoad > 105) motorStatus = 'alert';
+            else if (motorLoad > 90) motorStatus = 'caution';
+        }
 
         // 3. Degradation Analysis
         // Find theoretical head at this flow and frequency
@@ -479,10 +484,10 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
 
         return {
             thrust: { status: thrustStatus, label: thrustLabel, ratio: flowRatio * 100 },
-            motor: { status: motorStatus, load: motorLoad },
+            motor: { status: motorStatus, load: motorLoad, hasData: hasMotorData },
             pump: { status: pumpStatus, degradation: Math.max(0, degPct) },
             gas: { status: gasRisk, pip: test.pip, pb },
-            shaft: { status: motorLoad > 95 ? 'caution' : 'optimal' as any, load: motorLoad * 0.9 } // Correlated to motor load
+            shaft: { status: (hasMotorData && motorLoad > 95) ? 'caution' : 'optimal' as any, load: hasMotorData ? motorLoad * 0.9 : 0 }
         };
     }, [selectedWell, pump, wellMatchParams]);
 
@@ -725,11 +730,16 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
         };
 
         const hasPumpExact = !!pump;
+        const hasMotorExact = !!wellMatchParams.selectedMotor;
         const baseFreq = pump?.nameplateFrequency || 60;
         const ratio = f / baseFreq;
         const head = hasPumpExact ? calculateBaseHead(q / ratio, pump) * Math.pow(ratio, 2) : 0;
         const liveBhaResults = hasPumpExact
-            ? (calculateSystemResults(q, head, wellMatchParams, pump, f) || { pip: selectedWell.productionTest.pip, motorLoad: Math.abs(selectedWell.consumptionReal) })
+            ? (calculateSystemResults(q, head, wellMatchParams, pump, f) || {
+                pip: selectedWell.productionTest.pip,
+                // Only use consumptionReal as a motorLoad proxy if a motor is actually defined
+                motorLoad: hasMotorExact ? Math.abs(selectedWell.consumptionReal) : 0
+              })
             : null;
         const safeBhaResults = liveBhaResults || { fluidLevel: 0, fluidLevelMD: 0, submergenceFt: 0, pumpIntakePressure: 0, motorLoad: 0, pip: 0 };
 
@@ -986,11 +996,10 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                         setIsBhaMinimized(!isBhaMinimized);
                                         if (isBhaMinimized) setIsTrajectoryMinimized(true); // Exclusión mutua
                                     }}
-                                    className={`w-12 rounded-none flex flex-col items-center justify-center gap-3 transition-all duration-300 border ${
-                                        !isBhaMinimized
+                                    className={`w-12 rounded-none flex flex-col items-center justify-center gap-3 transition-all duration-300 border ${!isBhaMinimized
                                             ? 'bg-primary border-primary shadow-glow-primary'
                                             : 'bg-primary/5 text-txt-muted border-primary/10 hover:bg-primary/15 hover:text-primary hover:border-primary/25'
-                                    }`}
+                                        }`}
                                     style={{
                                         height: '350px',
                                         color: !isBhaMinimized ? 'rgb(var(--color-canvas))' : undefined
@@ -1009,11 +1018,10 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                         setIsTrajectoryMinimized(!isTrajectoryMinimized);
                                         if (isTrajectoryMinimized) setIsBhaMinimized(true); // Exclusión mutua
                                     }}
-                                    className={`w-12 rounded-none flex flex-col items-center justify-center gap-3 transition-all duration-300 border ${
-                                        !isTrajectoryMinimized
+                                    className={`w-12 rounded-none flex flex-col items-center justify-center gap-3 transition-all duration-300 border ${!isTrajectoryMinimized
                                             ? 'bg-primary border-primary shadow-glow-primary'
                                             : 'bg-primary/5 text-txt-muted border-primary/10 hover:bg-primary/15 hover:text-primary hover:border-primary/25'
-                                    }`}
+                                        }`}
                                     style={{
                                         height: '350px',
                                         color: !isTrajectoryMinimized ? 'rgb(var(--color-canvas))' : undefined
@@ -1348,11 +1356,11 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
             <input type="file" id="well-history-input" ref={importWellHistoryRef} className="hidden" accept=".xlsx,.xls,.csv" onChange={handleImportWellHistory} />
 
             {/* FLOATING AI CHAT FOR MONITORING */}
-            <FloatingAiPanel 
-                fleet={fleet} 
-                selectedWell={selectedWell} 
-                language={language} 
-                t={t} 
+            <FloatingAiPanel
+                fleet={fleet}
+                selectedWell={selectedWell}
+                language={language}
+                t={t}
                 wellParams={wellMatchParams}
                 pump={pump}
                 operationalResults={operationalResults}

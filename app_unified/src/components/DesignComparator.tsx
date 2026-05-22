@@ -589,6 +589,7 @@ const FloatingAiPanel = ({ designs, language }: { designs: DesignSnapshot[]; lan
             3. Gas Handling: Flag designs exceeding 35% GVF at intake.
             4. Power Optimization: Which design has the lowest kW per barrel?
             Be precise, use engineering terminology, and always recommend the most stable design over the most 'aggressive' one. 
+            Always address the user as "Ingeniero" (or "Engineer" if language is English). It is strictly forbidden to use proper names like "Andrés", "Andres", or any other name. Never assume or output person names.
             Respond in ${language === 'es' ? 'SPANISH' : 'ENGLISH'}. 
             SYSTEM DATA:\n${designData}`
         });
@@ -637,7 +638,7 @@ const FloatingAiPanel = ({ designs, language }: { designs: DesignSnapshot[]; lan
                     <div className="flex-1 overflow-y-auto p-5 space-y-4 custom-scrollbar bg-canvas/30">
                         {msgs.map((m, i) => (
                             <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                <div className={`max-w-[85%] px-4 py-3 rounded-2xl text-[11px] leading-relaxed font-medium ${m.role === 'user' ? 'bg-primary text-white shadow-lg rounded-br-none' : 'bg-surface border border-surface-light text-txt-main shadow-sm rounded-bl-none'}`}>
+                                <div className={`max-w-[85%] px-4 py-3 rounded-2xl text-[11px] leading-relaxed font-medium ${m.role === 'user' ? 'bg-primary text-canvas shadow-lg rounded-br-none' : 'bg-surface border border-surface-light text-txt-main shadow-sm rounded-bl-none'}`}>
                                     {m.text}
                                 </div>
                             </div>
@@ -650,7 +651,7 @@ const FloatingAiPanel = ({ designs, language }: { designs: DesignSnapshot[]; lan
                     <div className="p-4 bg-surface border-t border-surface-light">
                         <div className="relative">
                             <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && send()} placeholder={language === 'es' ? 'Escribe aquí...' : 'Type here...'} className="w-full bg-canvas border border-surface-light rounded-2xl pl-4 pr-12 py-3 text-[11px] text-txt-main outline-none focus:border-primary/50 transition-all font-semibold placeholder:text-txt-muted/50" />
-                            <button onClick={send} disabled={!input.trim() || loading} className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-primary text-white rounded-xl shadow-md hover:bg-primary/90 transition-all disabled:opacity-30">
+                            <button onClick={send} disabled={!input.trim() || loading} className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-primary text-canvas rounded-xl shadow-md hover:bg-primary/90 transition-all disabled:opacity-30">
                                 <Send className="w-3.5 h-3.5" />
                             </button>
                         </div>
@@ -658,7 +659,7 @@ const FloatingAiPanel = ({ designs, language }: { designs: DesignSnapshot[]; lan
                 </div>
             </div>
 
-            <button onClick={() => setIsOpen(!isOpen)} className={`relative flex items-center justify-center w-16 h-16 rounded-full shadow-[0_15px_35px_rgba(var(--color-primary),0.4)] transition-all duration-500 group border-4 border-canvas overflow-hidden ${isOpen ? 'bg-surface text-primary rotate-90 scale-90' : 'bg-primary text-white hover:scale-105 active:scale-95'}`}>
+            <button onClick={() => setIsOpen(!isOpen)} className={`relative flex items-center justify-center w-16 h-16 rounded-full shadow-[0_15px_35px_rgba(var(--color-primary),0.4)] transition-all duration-500 group border-4 border-canvas overflow-hidden ${isOpen ? 'bg-surface text-primary rotate-90 scale-90' : 'bg-primary text-canvas hover:scale-105 active:scale-95'}`}>
                 {isOpen ? <X className="w-6 h-6" /> : <Sparkles className="w-7 h-7 group-hover:rotate-12 transition-transform" />}
                 <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
             </button>
