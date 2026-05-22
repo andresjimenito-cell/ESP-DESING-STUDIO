@@ -23,16 +23,16 @@ export const MarkdownRenderer = ({ content, isStreaming = false }: { content: st
         const body = rows.slice(1).filter(r => r.length > 0 && !r.every(c => c.includes('---')));
 
         const table = (
-            <div key={keyPrefix} className="my-6 overflow-hidden rounded-2xl border border-surface-light shadow-md">
+            <div key={keyPrefix} className="my-6 overflow-x-auto custom-scrollbar rounded-2xl border border-surface-light shadow-md">
                 <table className="w-full text-sm text-left">
-                    <thead className="bg-surface-light text-txt-muted uppercase font-black tracking-widest">
+                    <thead className="bg-surface-light text-txt-main uppercase font-black tracking-widest">
                         <tr>{header.map((h, i) => <th key={i} className="px-5 py-4">{processInline(h)}</th>)}</tr>
                     </thead>
                     <tbody className="divide-y divide-surface-light bg-surface">
                         {body.map((row, i) => (
                             <tr key={i} className="hover:bg-surface-light/50 transition-colors">
                                 {row.map((cell, j) => (
-                                    <td key={j} className={`px-5 py-3 font-medium ${j === 0 ? 'text-primary font-black' : 'text-txt-muted'}`}>
+                                    <td key={j} className={`px-5 py-3 font-medium ${j === 0 ? 'text-primary font-black' : 'text-txt-main'}`}>
                                         {processInline(cell)}
                                     </td>
                                 ))}
@@ -70,16 +70,16 @@ export const MarkdownRenderer = ({ content, isStreaming = false }: { content: st
             elements.push(<h2 key={index} className="text-2xl font-black text-txt-main mt-6 mb-6 tracking-tighter">{trimmed.replace(/^#\s*/, '')}</h2>);
         }
         else if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
-            elements.push(<div key={index} className="flex gap-3 ml-2 mb-1 text-txt-muted"><span className="text-primary font-bold mt-1.5">•</span><span className="leading-relaxed">{processInline(trimmed.substring(2))}</span></div>);
+            elements.push(<div key={index} className="flex gap-3 ml-2 mb-1 text-txt-main"><span className="text-primary font-bold mt-1.5">•</span><span className="leading-relaxed">{processInline(trimmed.substring(2))}</span></div>);
         }
         else if (/^\d+\./.test(trimmed)) {
-            elements.push(<div key={index} className="flex gap-3 ml-2 mb-1 text-txt-muted"><span className="text-secondary font-bold mt-0.5 min-w-[20px]">{trimmed.split('.')[0]}.</span><span className="leading-relaxed">{processInline(trimmed.replace(/^\d+\.\s*/, ''))}</span></div>);
+            elements.push(<div key={index} className="flex gap-3 ml-2 mb-1 text-txt-main"><span className="text-secondary font-bold mt-0.5 min-w-[20px]">{trimmed.split('.')[0]}.</span><span className="leading-relaxed">{processInline(trimmed.replace(/^\d+\.\s*/, ''))}</span></div>);
         }
         else if (trimmed === '') {
             elements.push(<div key={index} className="h-2"></div>);
         }
         else {
-            elements.push(<p key={index} className="text-txt-muted leading-relaxed mb-2 text-sm font-medium">{processInline(trimmed)}</p>);
+            elements.push(<p key={index} className="text-txt-main leading-relaxed mb-2 text-sm font-medium">{processInline(trimmed)}</p>);
         }
     });
 

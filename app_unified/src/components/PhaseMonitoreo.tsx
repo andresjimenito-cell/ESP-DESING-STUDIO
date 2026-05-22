@@ -1348,7 +1348,15 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
             <input type="file" id="well-history-input" ref={importWellHistoryRef} className="hidden" accept=".xlsx,.xls,.csv" onChange={handleImportWellHistory} />
 
             {/* FLOATING AI CHAT FOR MONITORING */}
-            <FloatingAiPanel fleet={fleet} selectedWell={selectedWell} language={language} t={t} />
+            <FloatingAiPanel 
+                fleet={fleet} 
+                selectedWell={selectedWell} 
+                language={language} 
+                t={t} 
+                wellParams={wellMatchParams}
+                pump={pump}
+                operationalResults={operationalResults}
+            />
 
             {/* FULL-SCREEN IMPORT PROGRESS OVERLAY - Simplified & Minimal */}
             {importProgress && (

@@ -164,6 +164,9 @@ export const useEspCopilot = (params: SystemParams, results: any, activeStep: nu
             timestamp: new Date()
         }]);
 
+        const wellName = params.metadata?.wellName || (params as any).wellName || 'ESP Well';
+        const historicalContext = AiMemoryService.findRelevantContext(userText, wellName);
+
         try {
             const systemInstruction = `
                     ROL: Eres "ESP-Core", la Máxima Autoridad Técnica en Sistemas ESP.
@@ -174,6 +177,7 @@ export const useEspCopilot = (params: SystemParams, results: any, activeStep: nu
                     - Si el usuario dice que ve el punto en el centro de la curva, y tus datos lo confirman, valida esa observación.
                     - NO uses conocimiento general de bombas para contradecir los datos específicos del diseño y las curvas calculadas que se te envían.
                     - Usa los datos de la simulación de variador (VSD Sensitivity Summary) para responder predicciones precisas de frecuencia y caudal/BSW en lugar de pedir curvas al usuario.
+                    - Si se incluye "MEMORIA HISTÓRICA / CASOS PREVIOS RELEVANTES" en el prompt, utilízala para complementar tu análisis con lecciones aprendidas de diagnósticos/auditorías anteriores.
 
                     IDIOMA: Responde SIEMPRE en ${language === 'es' ? 'ESPAÑOL' : 'INGLÉS'}.
 
@@ -330,6 +334,9 @@ export const useEspCopilot = (params: SystemParams, results: any, activeStep: nu
             if (globalContext) {
                 finalPrompt += `\n\n[GLOBAL SYSTEM DESIGN CONTEXT]:\n${JSON.stringify(globalContext, null, 2)}`;
             }
+            if (historicalContext) {
+                finalPrompt += `\n\n[MEMORIA HISTÓRICA / CASOS PREVIOS RELEVANTES]:\n${historicalContext}`;
+            }
 
             // Map current messages to OpenRouter history API structure
             const apiMessages = [
@@ -351,7 +358,7 @@ export const useEspCopilot = (params: SystemParams, results: any, activeStep: nu
                 headers["Authorization"] = `Bearer ${userKey}`;
             }
 
-            const res = await fetch("http://localhost:4000/api/copilot/stream", {
+            const res = await fetch("http://127.0.0.1:4000/api/copilot/stream", {
                 method: "POST",
                 headers,
                 body: JSON.stringify({

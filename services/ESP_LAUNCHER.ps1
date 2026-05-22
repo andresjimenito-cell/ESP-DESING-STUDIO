@@ -389,13 +389,15 @@ if (-not $nodeFound) {
 if ($nodeFound) {
     $M.NODE.Val = "V8"; $M.NODE.Color = $PR
     Start-MetricAnimation -Key NODE -TargetPct 60 -Phase "CORE · Modules" -GlobalStart 50 -GlobalEnd 56 -M $M
-    Set-Location "app_unified"
-    if (-not (Test-Path "node_modules")) {
-        Add-Log "Instalando dependencias..." "warn"
+    $rootPath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath(".")
+    if (-not (Test-Path "node_modules") -or -not (Test-Path "app_unified/node_modules") -or -not (Test-Path "backend/node_modules")) {
+        Add-Log "Instalando dependencias (Raíz/Workspace)..." "warn"
         $M.NODE.Val = "INST"; $M.NODE.Color = $WR
         Invoke-PanelRedraw -Phase "NPM · Installing" -GlobalPct 57 -M $M
+        Set-Location $rootPath
         npm.cmd install
     }
+    Set-Location "app_unified"
     Add-Log "Node.js listo" "ok"
     $M.NODE.Val = "READY"; $M.NODE.Color = $OK
     Start-MetricAnimation -Key NODE -TargetPct 100 -Phase "CORE · Finalizado" -GlobalStart 58 -GlobalEnd 64 -M $M
@@ -407,6 +409,44 @@ if ($nodeFound) {
     Add-Log "Cache JSON optimizado" "ok"
     $M.DATA.Val = "CACHE"; $M.DATA.Color = $OK
     Start-MetricAnimation -Key DATA -TargetPct 100 -Phase "DATA · Finalizado" -GlobalStart 75 -GlobalEnd 88 -M $M
+
+    # ── IA BACKEND ────────────────────────────────────────
+    # Liberar puerto 4000 si está ocupado para evitar ERR_CONNECTION_REFUSED / EADDRINUSE
+    try {
+        $connections = Get-NetTCPConnection -LocalPort 4000 -ErrorAction SilentlyContinue
+        if ($connections) {
+            Add-Log "Liberando puerto 4000..." "warn"
+            foreach ($conn in $connections) {
+                if ($conn.OwningProcess -gt 0) {
+                    Stop-Process -Id $conn.OwningProcess -Force -ErrorAction SilentlyContinue
+                }
+            }
+            Start-Sleep -Milliseconds 300
+        }
+    } catch {
+        # Fallback a netstat si Get-NetTCPConnection no está disponible
+        $netstat = netstat -ano | Select-String ":4000 "
+        if ($netstat) {
+            Add-Log "Liberando puerto 4000 (netstat)..." "warn"
+            foreach ($line in $netstat) {
+                $parts = $line.Line -split '\s+' | Where-Object { $_ }
+                if ($parts.Count -ge 5) {
+                    $pid = $parts[4]
+                    if ($pid -match '^\d+$' -and $pid -ne 0) {
+                        Stop-Process -Id $pid -Force -ErrorAction SilentlyContinue
+                    }
+                }
+            }
+            Start-Sleep -Milliseconds 300
+        }
+    }
+
+    Add-Log "Iniciando procesador de IA..." "info"
+    $nodeCmd = Get-Command node -ErrorAction SilentlyContinue
+    $nodeExe = if ($nodeCmd) { $nodeCmd.Source } else { "node" }
+    $backendLogOut = Join-Path $rootPath "backend_server_out.log"
+    $backendLogErr = Join-Path $rootPath "backend_server_err.log"
+    Start-Process $nodeExe -ArgumentList "backend/server.js" -WorkingDirectory "$rootPath" -WindowStyle Hidden -RedirectStandardOutput $backendLogOut -RedirectStandardError $backendLogErr
 
     # ── APP ───────────────────────────────────────────────
     $M.APP.Val = "WAIT"; $M.APP.Color = $SC

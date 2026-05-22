@@ -19,7 +19,7 @@ import { DesignDataImport } from './components/DesignDataImport';
 import { BatchDesignProcessor } from './components/BatchDesignProcessor';
 import { TUBING_CATALOG, CASING_CATALOG, STANDARD_PUMPS, STANDARD_MOTORS, CABLE_CATALOG, VSD_CATALOG } from '@/data';
 import {
-    Activity, RotateCcw, Ruler, Droplets, Target, Hexagon, CheckCircle2, Clock, ClipboardCheck, Maximize, Minimize, Globe, AlertCircle, Sparkles, RefreshCw, Send, ChevronDown, ChevronRight, AlertTriangle, Layers, Palette, FileSpreadsheet, Maximize2, Minimize2, Printer, GitCompareArrows, Zap, Settings, ArrowLeft
+    Activity, RotateCcw, Ruler, Droplets, Target, Hexagon, CheckCircle2, Clock, ClipboardCheck, Maximize, Minimize, Globe, AlertCircle, Sparkles, RefreshCw, Send, ChevronDown, ChevronRight, AlertTriangle, Layers, Palette, FileSpreadsheet, Maximize2, Minimize2, Printer, GitCompareArrows, Zap, Settings, ArrowLeft, Brain
 } from 'lucide-react';
 import { EspPump, EspMotor, SystemParams, SurveyPoint } from '@/types';
 import { useLanguage } from '@/i18n';
@@ -99,6 +99,7 @@ const INITIAL_PARAMS: SystemParams = {
 };
 
 import { MarkdownRenderer } from './components/MarkdownRenderer';
+import { AiMemoryManager } from './components/AiMemoryManager';
 
 const App: React.FC = () => {
     const { t, language, setLanguage } = useLanguage();
@@ -123,6 +124,7 @@ const App: React.FC = () => {
     // AI Controls
     const [aiScope, setAiScope] = useState<number | 'current'>('current');
     const [userInput, setUserInput] = useState('');
+    const [aiViewMode, setAiViewMode] = useState<'chat' | 'memory'>('chat');
     const chatEndRef = useRef<HTMLDivElement>(null);
     const [showAiSettings, setShowAiSettings] = useState(false);
     const [aiApiKeyInput, setAiApiKeyInput] = useState(() => localStorage.getItem('openrouter_api_key') || '');
@@ -803,6 +805,13 @@ const App: React.FC = () => {
                                 </div>
                                 <div className="flex items-center gap-1">
                                     <button
+                                        onClick={() => setAiViewMode(v => v === 'chat' ? 'memory' : 'chat')}
+                                        title={language === 'es' ? 'Gestionar Memoria IA' : 'Manage AI Memory'}
+                                        className={`p-2 hover:bg-surface-light rounded-xl transition-all active:scale-95 ${aiViewMode === 'memory' ? 'text-primary' : 'text-txt-muted hover:text-primary'}`}
+                                    >
+                                        <Brain className="w-5 h-5" />
+                                    </button>
+                                    <button
                                         onClick={() => setShowAiSettings(!showAiSettings)}
                                         title={language === 'es' ? 'Configurar API Key' : 'Configure API Key'}
                                         className={`p-2 hover:bg-surface-light rounded-xl transition-all active:scale-95 ${showAiSettings ? 'text-primary' : 'text-txt-muted hover:text-primary'}`}
@@ -847,14 +856,16 @@ const App: React.FC = () => {
                                     </p>
                                 </div>
                             )}
-                            <div className="relative group">
-                                <select value={aiScope} onChange={(e) => setAiScope(e.target.value === 'current' ? 'current' : parseInt(e.target.value))} className="w-full bg-surface/50 text-sm font-black text-txt-main border border-surface-light rounded-xl py-3 pl-4 pr-10 outline-none focus:border-primary/50 appearance-none cursor-pointer hover:bg-surface-light transition-all uppercase tracking-widest">
-                                    <option value="current">⚡ Current Phase</option>
-                                    <hr />
-                                    {steps.map((s, i) => <option key={s.id} value={i}>Phase {i + 1}: {s.label}</option>)}
-                                </select>
-                                <ChevronDown className="w-5 h-5 text-txt-muted absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none group-hover:text-primary transition-colors" />
-                            </div>
+                            {aiViewMode !== 'memory' && (
+                                <div className="relative group">
+                                    <select value={aiScope} onChange={(e) => setAiScope(e.target.value === 'current' ? 'current' : parseInt(e.target.value))} className="w-full bg-surface/50 text-sm font-black text-txt-main border border-surface-light rounded-xl py-3 pl-4 pr-10 outline-none focus:border-primary/50 appearance-none cursor-pointer hover:bg-surface-light transition-all uppercase tracking-widest">
+                                        <option value="current">⚡ Current Phase</option>
+                                        <hr />
+                                        {steps.map((s, i) => <option key={s.id} value={i}>Phase {i + 1}: {s.label}</option>)}
+                                    </select>
+                                    <ChevronDown className="w-5 h-5 text-txt-muted absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none group-hover:text-primary transition-colors" />
+                                </div>
+                            )}
                         </>
                     )}
                 </div>
@@ -862,24 +873,32 @@ const App: React.FC = () => {
 
                 {!isChatMinimized && (
                     <>
-                        <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar bg-canvas scroll-smooth text-sm">
-                            {messages.length === 0 && <div className="h-full flex flex-col items-center justify-center opacity-40 space-y-2 py-8"><div className="w-12 h-12 bg-surface rounded-xl flex items-center justify-center border border-surface-light animate-pulse"><Sparkles className="w-6 h-6 text-primary/50" /></div><p className="text-[10px] font-black uppercase text-txt-muted tracking-widest">{t('ai.ready')}</p></div>}
-                            {messages.map((msg) => (
-                                <div key={msg.id} className={`flex flex-col gap-1.5 animate-fadeIn ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-                                    <div className={`max-w-[95%] p-4 rounded-2xl text-sm font-medium leading-relaxed shadow-sm border ${msg.role === 'user' ? 'bg-primary text-white border-primary/20 rounded-br-none' : 'bg-surface text-txt-main border-surface-light rounded-bl-none'}`}>
-                                        <div className="markdown-content"><MarkdownRenderer content={msg.text} isStreaming={aiLoading && msg.id === messages[messages.length - 1]?.id} /></div>
-                                    </div>
-                                    <span className="text-[10px] font-black text-txt-muted px-3 uppercase opacity-60 tracking-widest">{msg.role === 'user' ? t('ai.user') : t('ai.ai')} • {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                </div>
-                            ))}
-                            <div ref={chatEndRef}></div>
-                        </div>
-                        <div className="p-3 bg-surface border-t border-surface-light mt-auto">
-                            <div className="flex items-center gap-2 bg-canvas border border-surface-light rounded-xl px-3 py-1.5 focus-within:border-primary/50 transition-all shadow-inner">
-                                <input type="text" value={userInput} onChange={(e) => setUserInput(e.target.value)} onKeyDown={handleKeyPress} placeholder={language === 'es' ? "Pregunte..." : "Ask..."} className="bg-transparent w-full text-xs font-bold text-txt-main outline-none placeholder:text-txt-muted/50" disabled={aiLoading} />
-                                <button onClick={handleSendMessage} disabled={!userInput.trim() || aiLoading} className="p-2 bg-primary hover:bg-primary/90 text-white rounded-lg disabled:opacity-50 transition-all active:scale-95"><Send className="w-3.5 h-3.5" /></button>
+                        {aiViewMode === 'memory' ? (
+                            <div className="flex-1 overflow-hidden p-4 bg-canvas/30">
+                                <AiMemoryManager language={language} onClose={() => setAiViewMode('chat')} />
                             </div>
-                        </div>
+                        ) : (
+                            <>
+                                <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar bg-canvas scroll-smooth text-sm">
+                                    {messages.length === 0 && <div className="h-full flex flex-col items-center justify-center opacity-40 space-y-2 py-8"><div className="w-12 h-12 bg-surface rounded-xl flex items-center justify-center border border-surface-light animate-pulse"><Sparkles className="w-6 h-6 text-primary/50" /></div><p className="text-[10px] font-black uppercase text-txt-muted tracking-widest">{t('ai.ready')}</p></div>}
+                                    {messages.map((msg) => (
+                                        <div key={msg.id} className={`flex flex-col gap-1.5 animate-fadeIn ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+                                            <div className={`max-w-[95%] p-4 rounded-2xl text-sm font-medium leading-relaxed shadow-sm border ${msg.role === 'user' ? 'bg-primary text-white border-primary/20 rounded-br-none' : 'bg-surface text-txt-main border-surface-light rounded-bl-none'}`}>
+                                                <div className="markdown-content"><MarkdownRenderer content={msg.text} isStreaming={aiLoading && msg.id === messages[messages.length - 1]?.id} /></div>
+                                            </div>
+                                            <span className="text-[10px] font-black text-txt-muted px-3 uppercase opacity-60 tracking-widest">{msg.role === 'user' ? t('ai.user') : t('ai.ai')} • {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                        </div>
+                                    ))}
+                                    <div ref={chatEndRef}></div>
+                                </div>
+                                <div className="p-3 bg-surface border-t border-surface-light mt-auto">
+                                    <div className="flex items-center gap-2 bg-canvas border border-surface-light rounded-xl px-3 py-1.5 focus-within:border-primary/50 transition-all shadow-inner">
+                                        <input type="text" value={userInput} onChange={(e) => setUserInput(e.target.value)} onKeyDown={handleKeyPress} placeholder={language === 'es' ? "Pregunte..." : "Ask..."} className="bg-transparent w-full text-xs font-bold text-txt-main outline-none placeholder:text-txt-muted/50" disabled={aiLoading} />
+                                        <button onClick={handleSendMessage} disabled={!userInput.trim() || aiLoading} className="p-2 bg-primary hover:bg-primary/90 text-white rounded-lg disabled:opacity-50 transition-all active:scale-95"><Send className="w-3.5 h-3.5" /></button>
+                                    </div>
+                                </div>
+                            </>
+                        )}
                     </>
                 )}
             </aside>

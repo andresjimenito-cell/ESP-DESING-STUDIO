@@ -740,6 +740,12 @@ export const usePhaseMonitoreoImport = (
 
                     const pdp = n_ext(get_ext(row, ['PDESC', 'DISCHARGE PRESSURE', 'PDP', 'P-DISCHARGE', 'PD']));
 
+                    const amps = n_ext(get_ext(row, ['AMPS', 'AMP', 'AMPERAJE', 'CORRIENTE', 'AMPERIOS', 'CURRENT', 'MOTOR CURRENT', 'AMPS TEST', 'AMPERAJE PRUEBA']));
+                    const volts = n_ext(get_ext(row, ['VOLTS', 'VOLT', 'VOLTAJE', 'MOTOR VOLTAGE', 'VOLTAGE', 'VOLTS TEST']));
+                    const eff_raw = get_ext(row, ['EFF', 'EFFICIENCY', 'EFICIENCIA', 'PUMP EFF', 'PUMP EFFICIENCY', 'EFICIENCIA BOMBA']);
+                    let efficiency = n_ext(eff_raw);
+                    if (efficiency > 0 && efficiency <= 1.0) efficiency = efficiency * 100;
+
                     const pt: ProductionTest = {
                         date: date || new Date().toISOString().split('T')[0],
                         rate,
@@ -748,6 +754,9 @@ export const usePhaseMonitoreoImport = (
                         tht: tht || 80,
                         waterCut: bsw,
                         gor: 0, hp: 0, pdp,
+                        amps: amps || undefined,
+                        volts: volts || undefined,
+                        efficiency: efficiency || undefined,
                         hasMatchData: rate > 5 || (pip > 0 && thp > 0)
                     };
 
@@ -936,6 +945,12 @@ export const usePhaseMonitoreoImport = (
                     const pip = n_ext(get_ext(row, ['PIP', 'INTAKE PRESSURE', 'PI P', 'PRESION SUCCION', 'PIN']));
                     const pdp = n_ext(get_ext(row, ['PDESC', 'DISCHARGE PRESSURE', 'PDP', 'P-DISCHARGE', 'PD']));
 
+                    const amps = n_ext(get_ext(row, ['AMPS', 'AMP', 'AMPERAJE', 'CORRIENTE', 'AMPERIOS', 'CURRENT', 'MOTOR CURRENT', 'AMPS TEST', 'AMPERAJE PRUEBA']));
+                    const volts = n_ext(get_ext(row, ['VOLTS', 'VOLT', 'VOLTAJE', 'MOTOR VOLTAGE', 'VOLTAGE', 'VOLTS TEST']));
+                    const eff_raw = get_ext(row, ['EFF', 'EFFICIENCY', 'EFICIENCIA', 'PUMP EFF', 'PUMP EFFICIENCY', 'EFICIENCIA BOMBA']);
+                    let efficiency = n_ext(eff_raw);
+                    if (efficiency > 0 && efficiency <= 1.0) efficiency = efficiency * 100;
+
                     return {
                         date: date || 'Unknown',
                         rate,
@@ -945,6 +960,9 @@ export const usePhaseMonitoreoImport = (
                         waterCut: bsw,
                         pip,
                         pdp,
+                        amps: amps || undefined,
+                        volts: volts || undefined,
+                        efficiency: efficiency || undefined,
                         gor: 0, hp: 0,
                         hasMatchData: rate > 5 || (pip > 0 && thp > 0)
                     } as ProductionTest;
