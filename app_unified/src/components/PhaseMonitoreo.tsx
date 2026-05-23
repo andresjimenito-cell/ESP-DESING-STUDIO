@@ -865,9 +865,9 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                         <>
                         <div className="sticky top-0 z-30 flex flex-wrap items-center gap-2.5 bg-surface/90 backdrop-blur-xl py-2.5 px-3 border border-white/10 border-t-2 border-t-primary/40 shadow-lg overflow-visible min-h-[44px]">
                             {/* Left: back + well selector */}
-                            <div className="flex items-center gap-2.5 min-w-0">
-                                <button onClick={onBack} className="h-9 w-9 flex items-center justify-center bg-white/5 hover:bg-primary/15 border border-white/10 text-txt-muted hover:text-primary transition-all shrink-0" title="Regresar al Inicio">
-                                    <ChevronLeft className="w-4 h-4" />
+                            <div className="flex items-center gap-3 min-w-0">
+                                <button onClick={onBack} className="h-11 w-11 flex items-center justify-center bg-white/5 hover:bg-primary/15 border border-white/10 text-txt-muted hover:text-primary transition-all shrink-0" title="Regresar al Inicio">
+                                    <ChevronLeft className="w-5 h-5" />
                                 </button>
 
                                 <div className="relative min-w-0 overflow-visible z-[60]" ref={wellDropdownRef}>
@@ -876,12 +876,12 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                             if (!isWellDropdownOpen) updateWellDropdownPos();
                                             setIsWellDropdownOpen(!isWellDropdownOpen);
                                         }}
-                                        className={`h-9 flex items-center gap-2 pl-3 pr-2.5 border transition-all max-w-[min(320px,44vw)] ${isWellDropdownOpen ? 'bg-primary/15 border-primary/40 text-primary' : 'bg-white/5 hover:bg-white/10 border-white/10'}`}
+                                        className={`h-11 flex items-center gap-3 pl-4 pr-3 border transition-all max-w-[min(400px,50vw)] ${isWellDropdownOpen ? 'bg-primary/15 border-primary/40 text-primary' : 'bg-white/5 hover:bg-white/10 border-white/10'}`}
                                     >
-                                        <Monitor className="w-3.5 h-3.5 text-primary shrink-0" />
-                                        <span className="text-sm font-black text-txt-main tracking-tight uppercase truncate">{selectedWell.name}</span>
-                                        <span className={`hidden sm:inline text-[7px] font-black px-1.5 py-0.5 border uppercase tracking-widest shrink-0 ${healthClass}`}>{healthLabel}</span>
-                                        <ChevronRight className={`w-3.5 h-3.5 text-txt-muted shrink-0 transition-transform ${isWellDropdownOpen ? 'rotate-90' : ''}`} />
+                                        <Monitor className="w-4 h-4 text-primary shrink-0" />
+                                        <span className="text-xl font-black text-txt-main tracking-tighter uppercase truncate drop-shadow-sm">{selectedWell.name}</span>
+                                        <span className={`hidden sm:inline text-[9px] font-black px-2 py-0.5 border uppercase tracking-widest shrink-0 ${healthClass}`}>{healthLabel}</span>
+                                        <ChevronRight className={`w-4 h-4 text-txt-muted shrink-0 transition-transform ${isWellDropdownOpen ? 'rotate-90' : ''}`} />
                                     </button>
                                 </div>
                             </div>
@@ -1141,8 +1141,8 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
 
                             {/* OVERLAY: TRAYECTORIA */}
                             {!isTrajectoryMinimized && (
-                                <div className="absolute left-[72px] top-0 bottom-0 w-[1100px] max-w-[calc(100vw-120px)] z-40 glass-surface border border-white/10 shadow-3xl flex flex-col animate-slideRight animate-fadeIn">
-                                    <div className="p-5 border-b border-white/5 flex justify-between items-center bg-white/5 backdrop-blur-md">
+                                <div className="absolute left-[80px] top-0 h-[90vh] max-h-[950px] min-h-[600px] w-[1200px] max-w-[calc(100vw-120px)] z-40 glass-surface rounded-br-3xl rounded-tr-3xl overflow-hidden border border-white/10 shadow-[0_0_100px_rgba(0,0,0,0.6)] flex flex-col animate-slideRight animate-fadeIn">
+                                    <div className="p-4 border-b border-white/5 flex justify-between items-center bg-surface-raised backdrop-blur-md">
                                         <button
                                             onClick={() => setIsTrajectoryMinimized(true)}
                                             className="p-2 bg-white/5 hover:bg-white/10 rounded-sm transition-all border border-white/5 text-primary"

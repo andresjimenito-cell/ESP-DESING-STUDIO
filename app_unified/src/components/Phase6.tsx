@@ -2344,8 +2344,8 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
                 </div>
 
                 <div className="col-span-12 lg:col-span-8 flex flex-col gap-3 overflow-y-auto custom-scrollbar pr-2 min-h-0 bg-success/[0.005] rounded-none p-0">
-                    <div className={`card-solid rounded-none border shadow-2xl overflow-hidden p-3 relative flex flex-col shrink-0 group transition-all duration-700 min-h-[450px] lg:h-[480px] ${isMaxCapActive ? 'border-success/40 ring-1 ring-success/20' : 'border-white/10'}`}>
-                        <div className={`absolute inset-0 ${isMaxCapActive ? 'bg-success/5' : 'bg-secondary/5'} opacity-0 group-hover:opacity-100 transition-opacity`}></div>
+                    <div className={`card-solid rounded-none border shadow-2xl overflow-hidden p-3 relative flex flex-col shrink-0 group transition-all duration-700 min-h-[450px] lg:h-[480px] ${isMaxCapActive ? 'border-success/40 ring-1 ring-success/20 bg-success/10' : 'border-primary/30 bg-primary/10 shadow-[inset_0_0_50px_rgba(var(--color-primary-rgb),0.05)]'}`}>
+                        <div className={`absolute inset-0 ${isMaxCapActive ? 'bg-success/10' : 'bg-primary/10'} opacity-0 group-hover:opacity-100 transition-opacity`}></div>
                         <div className="absolute top-6 right-8 flex gap-3 z-20">
                             <div className={`w-2.5 h-2.5 rounded-none ${isMaxCapActive ? 'bg-success animate-pulse shadow-glow-success' : 'bg-secondary animate-pulse shadow-glow-secondary'}`}></div>
                             <div className="w-2.5 h-2.5 rounded-none bg-primary/40"></div>
@@ -2538,8 +2538,8 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
                     )}
 
                     {/* CONSOLIDATED CENTRAL OPERATION BAR */}
-                    <div className="flex items-center justify-center gap-6 px-4 py-1 relative z-50 pointer-events-auto">
-                        <div className="flex bg-surface-light/40 backdrop-blur-md p-1 rounded-none border border-white/5 shadow-2xl relative z-50 pointer-events-auto">
+                    <div className="flex items-center justify-center gap-6 px-4 relative z-50 h-0 overflow-visible">
+                        <div className="flex bg-surface/80 backdrop-blur-xl p-1 rounded-none border border-white/10 absolute top-1/2 -translate-y-1/2 z-50 pointer-events-auto">
                             <button
                                 onClick={() => setViewMode('telemetry')}
                                 className={`flex items-center gap-3 px-6 py-2.5 rounded-none text-[10px] font-black uppercase transition-all duration-500 ${viewMode === 'telemetry' ? 'bg-secondary text-black shadow-glow-secondary/20 scale-[1.02]' : 'text-txt-muted hover:text-white hover:bg-white/5'}`}
@@ -2562,12 +2562,6 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
                                 <Activity className="w-3.5 h-3.5 text-warning" />
                                 {isVsdTableExpanded ? (language === 'es' ? 'Modo Simple' : 'Simple Mode') : (language === 'es' ? 'Modo Detallado (1Hz)' : 'Detailed Mode (1Hz)')}
                             </button>
-                        </div>
-
-                        {/* Floating Status Indicator */}
-                        <div className="absolute right-8 flex items-center gap-4 text-[9px] font-black text-txt-muted uppercase tracking-[0.3em] opacity-40">
-                            <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-none bg-success"></div> Live</div>
-                            <span>Node: {String((params as any)?.id || 'GEN-01').slice(-6)}</span>
                         </div>
                     </div>
 
