@@ -177,24 +177,26 @@ const SpoolerPolarChart: React.FC<{ processedData: ProcessedPoint[]; limitMD: nu
             {sector.draw && (
                 <path
                     d={`M ${cx} ${cy} L ${cx + Math.cos(toRad(sector.start)) * R} ${cy + Math.sin(toRad(sector.start)) * R} A ${R} ${R} 0 ${(sector.end - sector.start + 360) % 360 > 180 ? 1 : 0} 1 ${cx + Math.cos(toRad(sector.end)) * R} ${cy + Math.sin(toRad(sector.end)) * R} Z`}
-                    fill="rgba(6,182,212,0.04)"
-                    stroke="#06b6d4"
+                    fill="rgb(var(--color-primary) / 0.08)"
+                    stroke="rgb(var(--color-primary))"
                     strokeWidth="1.5"
                     strokeDasharray="3 3"
                 />
             )}
-            {concentricValues.map(val => <circle key={val} cx={cx} cy={cy} r={(val / 100) * R} fill="none" stroke={isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)'} strokeWidth={val === 100 ? 1.0 : 0.5} />)}
-            {degreeLabels.map(deg => { const p = getPt(deg, 105); return <text key={`l${deg}`} x={p.x} y={p.y} textAnchor="middle" dominantBaseline="middle" fontSize="6.5" fontWeight="600" className={isDark ? 'fill-slate-500' : 'fill-slate-400'}>{deg}°</text>; })}
-            <line x1={cx - R} y1={cy} x2={cx + R} y2={cy} stroke={isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)'} strokeWidth="1.0" />
-            <line x1={cx} y1={cy - R} x2={cx} y2={cy + R} stroke={isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)'} strokeWidth="1.0" />
-            <text x={cx} y={cy - R - 10} textAnchor="middle" fill="#ef4444" fontSize="12" fontWeight="900">N</text>
-            <text x={cx + R + 10} y={cy} textAnchor="start" dominantBaseline="middle" fill={isDark ? '#fff' : '#000'} fontSize="11" fontWeight="800">E</text>
+            {concentricValues.map(val => <circle key={val} cx={cx} cy={cy} r={(val / 100) * R} fill="none" stroke="rgb(var(--color-text-main) / 0.05)" strokeWidth={val === 100 ? 1.0 : 0.5} />)}
+            {degreeLabels.map(deg => { const p = getPt(deg, 105); return <text key={`l${deg}`} x={p.x} y={p.y} textAnchor="middle" dominantBaseline="middle" fontSize="6.5" fontWeight="600" fill="rgb(var(--color-text-muted))">{deg}°</text>; })}
+            <line x1={cx - R} y1={cy} x2={cx + R} y2={cy} stroke="rgb(var(--color-text-main) / 0.15)" strokeWidth="1.0" />
+            <line x1={cx} y1={cy - R} x2={cx} y2={cy + R} stroke="rgb(var(--color-text-main) / 0.15)" strokeWidth="1.0" />
+            <text x={cx} y={cy - R - 10} textAnchor="middle" fill="rgb(var(--color-danger))" fontSize="12" fontWeight="900">N</text>
+            <text x={cx + R + 10} y={cy} textAnchor="start" dominantBaseline="middle" fill="rgb(var(--color-text-main))" fontSize="11" fontWeight="800">E</text>
+            <text x={cx} y={cy + R + 18} textAnchor="middle" fill="rgb(var(--color-text-main))" fontSize="11" fontWeight="800">S</text>
+            <text x={cx - R - 10} y={cy} textAnchor="end" dominantBaseline="middle" fill="rgb(var(--color-text-main))" fontSize="11" fontWeight="800">W</text>
             {processedData.map((pt, idx) => {
                 if (pt.md === 0 || pt.md > limitMD || pt.azim === undefined) return null;
                 const pT = getPt(pt.azim, (pt.md / limitMD) * 98);
-                return <line key={`r${idx}`} x1={cx} y1={cy} x2={pT.x} y2={pT.y} stroke="#3b82f6" strokeWidth="2.0" strokeLinecap="round" opacity="0.8" />;
+                return <line key={`r${idx}`} x1={cx} y1={cy} x2={pT.x} y2={pT.y} stroke="rgb(var(--color-primary))" strokeWidth="2.0" strokeLinecap="round" opacity="0.8" />;
             })}
-            <circle cx={cx} cy={cy} r={3} fill="#ef4444" />
+            <circle cx={cx} cy={cy} r={3} fill="rgb(var(--color-danger))" />
         </svg>
     );
 };
@@ -391,11 +393,8 @@ export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params, 
                 ctx.fillStyle = fill; ctx.fillText(text, x, y); ctx.restore();
             };
 
-            // ── MEJORA 1: Fondo Degradado Estilo "Workstation" Profesional ────
-            const bgGrad = ctx.createRadialGradient(w / 2, h * 0.4, 0, w / 2, h / 2, Math.max(w, h) * 0.8);
-            if (isDark) { bgGrad.addColorStop(0, '#0f172a'); bgGrad.addColorStop(0.6, '#090d16'); bgGrad.addColorStop(1, '#05070f'); }
-            else { bgGrad.addColorStop(0, '#ffffff'); bgGrad.addColorStop(0.7, '#f1f5f9'); bgGrad.addColorStop(1, '#e2e8f0'); }
-            ctx.fillStyle = bgGrad; ctx.fillRect(0, 0, w, h);
+            // ── MEJORA 1: Fondo Transparente Integrado ────
+            ctx.clearRect(0, 0, w, h);
 
             if (!hasData || processedData.length === 0) return;
 
@@ -590,35 +589,84 @@ export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params, 
             }
 
             // ── Torre de Perforación Estructurada Detallada ────────────────────
-            const rigS = Math.max(14, 18 * zoom), rigH = Math.max(48, 64 * zoom);
+            const rigS = Math.max(14, 18 * zoom); // ancho de la base
+            const rigH = Math.max(65, 85 * zoom); // más alta y esbelta
+            const rigTopW = rigS * 0.35; // ancho de la corona
             const rigCX = pWell.x, rigCY = pWell.y;
-            const rigTop = { x: rigCX, y: rigCY - rigH };
+            const rigTopY = rigCY - rigH;
+
             ctx.save();
             if (isLookingFromBelow) { ctx.globalAlpha = 0.05; ctx.filter = 'blur(3px)'; }
+
+            // Relleno principal de la torre
             const rigFill = ctx.createLinearGradient(rigCX - rigS, rigCY, rigCX + rigS, rigCY);
-            rigFill.addColorStop(0, isDark ? 'rgba(71,85,105,0.55)' : 'rgba(148,163,184,0.45)');
-            rigFill.addColorStop(0.5, isDark ? 'rgba(100,116,139,0.35)' : 'rgba(203,213,225,0.35)');
-            rigFill.addColorStop(1, isDark ? 'rgba(71,85,105,0.55)' : 'rgba(148,163,184,0.45)');
+            rigFill.addColorStop(0, isDark ? 'rgba(71,85,105,0.65)' : 'rgba(148,163,184,0.55)');
+            rigFill.addColorStop(0.5, isDark ? 'rgba(100,116,139,0.40)' : 'rgba(203,213,225,0.40)');
+            rigFill.addColorStop(1, isDark ? 'rgba(71,85,105,0.65)' : 'rgba(148,163,184,0.55)');
             ctx.fillStyle = rigFill;
-            ctx.beginPath(); ctx.moveTo(rigTop.x, rigTop.y); ctx.lineTo(rigCX - rigS, rigCY); ctx.lineTo(rigCX + rigS, rigCY); ctx.closePath(); ctx.fill();
-            ctx.strokeStyle = isDark ? 'rgba(148,163,184,0.75)' : 'rgba(51,65,85,0.75)'; ctx.lineWidth = 1.2;
-            ctx.beginPath(); ctx.moveTo(rigTop.x, rigTop.y); ctx.lineTo(rigCX - rigS, rigCY); ctx.moveTo(rigTop.x, rigTop.y); ctx.lineTo(rigCX + rigS, rigCY); ctx.moveTo(rigCX - rigS, rigCY); ctx.lineTo(rigCX + rigS, rigCY); ctx.stroke();
-            for (let lv = 1; lv < 4; lv++) {
-                const t = lv / 4, ly = rigTop.y + (rigCY - rigTop.y) * t, halfW = rigS * t;
-                ctx.lineWidth = 0.7; ctx.beginPath(); ctx.moveTo(rigCX - halfW, ly); ctx.lineTo(rigCX + halfW, ly); ctx.stroke();
-                if (lv < 3) {
-                    const t2 = (lv + 1) / 4, ly2 = rigTop.y + (rigCY - rigTop.y) * t2, hw2 = rigS * t2;
-                    ctx.lineWidth = 0.5; ctx.beginPath();
-                    ctx.moveTo(rigCX - halfW, ly); ctx.lineTo(rigCX + hw2, ly2); ctx.moveTo(rigCX + halfW, ly); ctx.lineTo(rigCX - hw2, ly2); ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(rigCX - rigTopW, rigTopY);
+            ctx.lineTo(rigCX - rigS, rigCY);
+            ctx.lineTo(rigCX + rigS, rigCY);
+            ctx.lineTo(rigCX + rigTopW, rigTopY);
+            ctx.closePath();
+            ctx.fill();
+
+            // Bordes principales (piernas)
+            ctx.strokeStyle = isDark ? 'rgba(148,163,184,0.85)' : 'rgba(51,65,85,0.85)';
+            ctx.lineWidth = 1.2 * zoom;
+            ctx.beginPath();
+            ctx.moveTo(rigCX - rigTopW, rigTopY); ctx.lineTo(rigCX - rigS, rigCY);
+            ctx.moveTo(rigCX + rigTopW, rigTopY); ctx.lineTo(rigCX + rigS, rigCY);
+            ctx.stroke();
+
+            // Subestructura (Base)
+            ctx.fillStyle = isDark ? '#334155' : '#cbd5e1';
+            ctx.fillRect(rigCX - rigS * 1.3, rigCY - 2, rigS * 2.6, 6 * zoom);
+            ctx.strokeStyle = isDark ? '#1e293b' : '#94a3b8';
+            ctx.strokeRect(rigCX - rigS * 1.3, rigCY - 2, rigS * 2.6, 6 * zoom);
+
+            // Bloque corona (Arriba)
+            ctx.fillStyle = isDark ? '#475569' : '#94a3b8';
+            ctx.fillRect(rigCX - rigTopW * 1.5, rigTopY - 4 * zoom, rigTopW * 3.0, 4 * zoom);
+
+            // Vigas transversales (Cruces)
+            for (let lv = 1; lv <= 4; lv++) {
+                const t1 = (lv - 1) / 4;
+                const t2 = lv / 4;
+                const ly1 = rigTopY + (rigCY - rigTopY) * t1;
+                const ly2 = rigTopY + (rigCY - rigTopY) * t2;
+                const hw1 = rigTopW + (rigS - rigTopW) * t1;
+                const hw2 = rigTopW + (rigS - rigTopW) * t2;
+
+                if (lv < 4) {
+                    ctx.lineWidth = 0.8 * zoom;
+                    ctx.beginPath(); ctx.moveTo(rigCX - hw2, ly2); ctx.lineTo(rigCX + hw2, ly2); ctx.stroke();
                 }
+
+                ctx.lineWidth = 0.5 * zoom;
+                ctx.beginPath();
+                ctx.moveTo(rigCX - hw1, ly1); ctx.lineTo(rigCX + hw2, ly2);
+                ctx.moveTo(rigCX + hw1, ly1); ctx.lineTo(rigCX - hw2, ly2);
+                ctx.stroke();
             }
-            ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(rigTop.x, rigTop.y, 3.5, 0, Math.PI * 2); ctx.fill();
-            const rtGrad = ctx.createRadialGradient(rigCX - 1, rigCY - 1, 0, rigCX, rigCY, 6);
-            rtGrad.addColorStop(0, '#e2e8f0'); rtGrad.addColorStop(1, '#64748b');
-            ctx.fillStyle = rtGrad; ctx.beginPath(); ctx.arc(rigCX, rigCY, 6, 0, Math.PI * 2); ctx.fill();
-            ctx.fillStyle = '#f97316'; ctx.beginPath(); ctx.arc(rigCX, rigCY, 2.5, 0, Math.PI * 2); ctx.fill();
-            ctx.strokeStyle = isDark ? 'rgba(226,232,240,0.5)' : 'rgba(15,23,42,0.5)'; ctx.lineWidth = 1.0; ctx.setLineDash([3, 2]);
-            ctx.beginPath(); ctx.moveTo(rigTop.x, rigTop.y); ctx.lineTo(rigCX, rigCY); ctx.stroke(); ctx.setLineDash([]);
+
+            // Bloque viajero y línea de perforación
+            ctx.fillStyle = '#ef4444';
+            ctx.fillRect(rigCX - 2.5 * zoom, rigTopY + 8 * zoom, 5 * zoom, 8 * zoom);
+            ctx.strokeStyle = isDark ? '#94a3b8' : '#64748b'; ctx.lineWidth = 0.5 * zoom;
+            ctx.beginPath(); ctx.moveTo(rigCX, rigTopY); ctx.lineTo(rigCX, rigTopY + 8 * zoom); ctx.stroke();
+
+            // Luces de advertencia (balizas)
+            ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(rigCX, rigTopY - 5 * zoom, 2 * zoom, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#f97316'; ctx.beginPath(); ctx.arc(rigCX - rigTopW * 1.2, rigTopY - 2 * zoom, 1.5 * zoom, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#f97316'; ctx.beginPath(); ctx.arc(rigCX + rigTopW * 1.2, rigTopY - 2 * zoom, 1.5 * zoom, 0, Math.PI * 2); ctx.fill();
+
+            // BOP / Wellhead simplificado
+            ctx.fillStyle = isDark ? '#1e293b' : '#94a3b8';
+            ctx.fillRect(rigCX - 4 * zoom, rigCY - 10 * zoom, 8 * zoom, 8 * zoom);
+            ctx.fillRect(rigCX - 6 * zoom, rigCY - 6 * zoom, 12 * zoom, 3 * zoom);
+
             ctx.restore();
 
             // ── SPOOLER Detallado con Cable Aéreo ──
@@ -628,59 +676,60 @@ export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params, 
                 const sp3dY = spRadius3D * Math.cos(spAngle);
                 const spProj = project(sp3dX, sp3dY, 0);
 
-                const spDrumW = Math.max(14, 18 * zoom);
-                const spDrumH = Math.max(6, 8 * zoom);
+                // Tamaño reducido del Spooler
+                const spDrumW = Math.max(9, 12 * zoom);
+                const spDrumH = Math.max(4, 5 * zoom);
                 const spIconX = spProj.x;
                 const spBase = spProj.y;
-                const spIconY = spBase - (spDrumH + 14 * zoom);
+                const spIconY = spBase - (spDrumH + 9 * zoom);
 
                 ctx.save();
                 if (isLookingFromBelow) { ctx.globalAlpha = 0.05; ctx.filter = 'blur(3px)'; }
 
                 // Huella de anclaje
                 ctx.save();
-                const footW = Math.max(22, spDrumW * 2.6);
+                const footW = Math.max(16, spDrumW * 2.6);
                 const footGrad = ctx.createRadialGradient(spIconX, spBase, 0, spIconX, spBase, footW);
                 footGrad.addColorStop(0, isDark ? 'rgba(148,163,184,0.25)' : 'rgba(71,85,105,0.18)');
                 footGrad.addColorStop(0.6, isDark ? 'rgba(148,163,184,0.08)' : 'rgba(71,85,105,0.06)');
                 footGrad.addColorStop(1, 'rgba(0,0,0,0)');
-                ctx.fillStyle = footGrad; ctx.beginPath(); ctx.ellipse(spIconX, spBase, footW, Math.max(4, 5 * zoom), 0, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = footGrad; ctx.beginPath(); ctx.ellipse(spIconX, spBase, footW, Math.max(3, 4 * zoom), 0, 0, Math.PI * 2); ctx.fill();
                 ctx.restore();
 
                 // Sombra del drum
-                const shadowRad = 18 * zoom;
-                const shadowGrad = ctx.createRadialGradient(spIconX, spBase - 2, 0, spIconX, spBase - 2, shadowRad);
+                const shadowRad = 12 * zoom;
+                const shadowGrad = ctx.createRadialGradient(spIconX, spBase - 1, 0, spIconX, spBase - 1, shadowRad);
                 shadowGrad.addColorStop(0, isDark ? 'rgba(0,0,0,0.45)' : 'rgba(0,0,0,0.18)'); shadowGrad.addColorStop(1, 'rgba(0,0,0,0)');
-                ctx.fillStyle = shadowGrad; ctx.beginPath(); ctx.ellipse(spIconX, spBase + 2, shadowRad, shadowRad * 0.35, 0, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = shadowGrad; ctx.beginPath(); ctx.ellipse(spIconX, spBase + 1, shadowRad, shadowRad * 0.35, 0, 0, Math.PI * 2); ctx.fill();
 
                 // Cable Aéreo suspendido
                 ctx.save();
-                const cableGrad = ctx.createLinearGradient(rigTop.x, rigTop.y, spIconX, spIconY);
+                const cableGrad = ctx.createLinearGradient(rigCX, rigTopY + 8 * zoom, spIconX, spIconY);
                 cableGrad.addColorStop(0.0, 'rgba(244,63,94,0.90)'); cableGrad.addColorStop(0.5, 'rgba(251,113,133,0.70)'); cableGrad.addColorStop(1.0, 'rgba(244,63,94,0.55)');
-                ctx.strokeStyle = cableGrad; ctx.lineWidth = 1.8 * zoom; ctx.setLineDash([5, 3]);
-                const cpX = (rigTop.x + spIconX) / 2, cpY = Math.min(rigTop.y, spIconY) - 22 * zoom;
-                ctx.beginPath(); ctx.moveTo(rigTop.x, rigTop.y); ctx.quadraticCurveTo(cpX, cpY, spIconX, spIconY); ctx.stroke();
+                ctx.strokeStyle = cableGrad; ctx.lineWidth = 1.2 * zoom; ctx.setLineDash([4, 2]);
+                const cpX = (rigCX + spIconX) / 2, cpY = Math.min(rigTopY + 8 * zoom, spIconY) - 15 * zoom;
+                ctx.beginPath(); ctx.moveTo(rigCX, rigTopY + 8 * zoom); ctx.quadraticCurveTo(cpX, cpY, spIconX, spIconY); ctx.stroke();
                 ctx.setLineDash([]); ctx.restore();
 
                 // Guía del pozo al spooler en superficie
                 ctx.save();
-                ctx.strokeStyle = isDark ? 'rgba(245,158,11,0.22)' : 'rgba(120,53,15,0.18)'; ctx.lineWidth = 0.8; ctx.setLineDash([2, 4]);
+                ctx.strokeStyle = isDark ? 'rgba(245,158,11,0.22)' : 'rgba(120,53,15,0.18)'; ctx.lineWidth = 0.6; ctx.setLineDash([2, 4]);
                 ctx.beginPath(); ctx.moveTo(rigCX, rigCY); ctx.lineTo(spIconX, spBase); ctx.stroke();
                 ctx.setLineDash([]); ctx.restore();
 
                 // Placa Base
-                const plateW = spDrumW * 2.6, plateH = 4 * zoom;
+                const plateW = spDrumW * 2.6, plateH = 2.5 * zoom;
                 ctx.fillStyle = isDark ? 'rgba(51,65,85,0.85)' : 'rgba(203,213,225,0.90)';
-                ctx.strokeStyle = isDark ? '#475569' : '#94a3b8'; ctx.lineWidth = 0.7;
-                ctx.beginPath(); ctx.roundRect(spIconX - plateW / 2, spIconY + spDrumH + 10 * zoom, plateW, plateH, 2); ctx.fill(); ctx.stroke();
+                ctx.strokeStyle = isDark ? '#475569' : '#94a3b8'; ctx.lineWidth = 0.6;
+                ctx.beginPath(); ctx.roundRect(spIconX - plateW / 2, spIconY + spDrumH + 6 * zoom, plateW, plateH, 1.5); ctx.fill(); ctx.stroke();
 
                 // Patas estructurales del marco
-                ctx.strokeStyle = isDark ? 'rgba(148,163,184,0.90)' : 'rgba(51,65,85,0.85)'; ctx.lineWidth = 1.4 * zoom;
+                ctx.strokeStyle = isDark ? 'rgba(148,163,184,0.90)' : 'rgba(51,65,85,0.85)'; ctx.lineWidth = 1.1 * zoom;
                 ctx.beginPath();
-                ctx.moveTo(spIconX - spDrumW - 4 * zoom, spIconY + spDrumH + 10 * zoom);
+                ctx.moveTo(spIconX - spDrumW - 2 * zoom, spIconY + spDrumH + 6 * zoom);
                 ctx.lineTo(spIconX - spDrumW * 0.3, spIconY - spDrumH);
                 ctx.lineTo(spIconX + spDrumW * 0.3, spIconY - spDrumH);
-                ctx.lineTo(spIconX + spDrumW + 4 * zoom, spIconY + spDrumH + 10 * zoom);
+                ctx.lineTo(spIconX + spDrumW + 2 * zoom, spIconY + spDrumH + 6 * zoom);
                 ctx.stroke();
 
                 // Tambor
@@ -688,11 +737,11 @@ export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params, 
                 drumGrad.addColorStop(0.00, isDark ? '#1c1917' : '#78350f'); drumGrad.addColorStop(0.20, isDark ? '#92400e' : '#b45309');
                 drumGrad.addColorStop(0.45, isDark ? '#f59e0b' : '#fbbf24'); drumGrad.addColorStop(0.55, isDark ? '#fbbf24' : '#fde68a');
                 drumGrad.addColorStop(0.75, isDark ? '#d97706' : '#f59e0b'); drumGrad.addColorStop(1.00, isDark ? '#78350f' : '#92400e');
-                ctx.fillStyle = drumGrad; ctx.strokeStyle = isDark ? '#f59e0b' : '#92400e'; ctx.lineWidth = 1.0 * zoom;
-                ctx.beginPath(); ctx.roundRect(spIconX - spDrumW, spIconY - spDrumH, spDrumW * 2, spDrumH * 2, 3 * zoom); ctx.fill(); ctx.stroke();
+                ctx.fillStyle = drumGrad; ctx.strokeStyle = isDark ? '#f59e0b' : '#92400e'; ctx.lineWidth = 0.8 * zoom;
+                ctx.beginPath(); ctx.roundRect(spIconX - spDrumW, spIconY - spDrumH, spDrumW * 2, spDrumH * 2, 2 * zoom); ctx.fill(); ctx.stroke();
 
                 // Vueltas del cable enrolladas
-                ctx.strokeStyle = isDark ? 'rgba(120,53,15,0.55)' : 'rgba(30,27,21,0.35)'; ctx.lineWidth = 0.5 * zoom;
+                ctx.strokeStyle = isDark ? 'rgba(120,53,15,0.55)' : 'rgba(30,27,21,0.35)'; ctx.lineWidth = 0.4 * zoom;
                 for (let wi = 1; wi < 5; wi++) {
                     const wx = spIconX - spDrumW + (spDrumW * 2 / 5) * wi;
                     ctx.beginPath(); ctx.moveTo(wx, spIconY - spDrumH + 1); ctx.lineTo(wx, spIconY + spDrumH - 1); ctx.stroke();
@@ -700,26 +749,26 @@ export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params, 
 
                 // Bridas laterales
                 const flangeFill = isDark ? 'rgba(51,65,85,0.92)' : 'rgba(148,163,184,0.95)';
-                ctx.lineWidth = 0.9 * zoom;
+                ctx.lineWidth = 0.7 * zoom;
                 for (const fx of [spIconX - spDrumW, spIconX + spDrumW]) {
                     ctx.fillStyle = flangeFill; ctx.strokeStyle = isDark ? '#94a3b8' : '#475569';
-                    ctx.beginPath(); ctx.roundRect(fx - 2.5 * zoom, spIconY - spDrumH - 3.5 * zoom, 5 * zoom, spDrumH * 2 + 7 * zoom, 2); ctx.fill(); ctx.stroke();
+                    ctx.beginPath(); ctx.roundRect(fx - 1.5 * zoom, spIconY - spDrumH - 2 * zoom, 3 * zoom, spDrumH * 2 + 4 * zoom, 1); ctx.fill(); ctx.stroke();
                 }
 
                 // Eje central
-                ctx.fillStyle = isDark ? '#475569' : '#94a3b8'; ctx.beginPath(); ctx.arc(spIconX, spIconY, 2.5 * zoom, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = isDark ? '#475569' : '#94a3b8'; ctx.beginPath(); ctx.arc(spIconX, spIconY, 1.5 * zoom, 0, Math.PI * 2); ctx.fill();
 
                 // Panel flotante
-                const labelY = spBase + 6 * zoom;
-                const panelW = 68 * zoom, panelH = 18 * zoom;
+                const labelY = spBase + 4 * zoom;
+                const panelW = 48 * zoom, panelH = 14 * zoom;
                 ctx.fillStyle = isDark ? 'rgba(15,23,42,0.85)' : 'rgba(255,255,255,0.90)';
-                ctx.strokeStyle = isDark ? 'rgba(245,158,11,0.30)' : 'rgba(146,64,14,0.25)'; ctx.lineWidth = 0.8;
-                ctx.beginPath(); ctx.roundRect(spIconX - panelW / 2, labelY, panelW, panelH, 4); ctx.fill(); ctx.stroke();
+                ctx.strokeStyle = isDark ? 'rgba(245,158,11,0.30)' : 'rgba(146,64,14,0.25)'; ctx.lineWidth = 0.6;
+                ctx.beginPath(); ctx.roundRect(spIconX - panelW / 2, labelY, panelW, panelH, 3); ctx.fill(); ctx.stroke();
                 ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-                const fs1 = Math.max(6, 7 * zoom);
+                const fs1 = Math.max(5, 5.5 * zoom);
                 ctx.font = `bold ${fs1}px monospace`;
-                ctx.strokeStyle = isDark ? 'rgba(2,6,23,0.9)' : 'rgba(255,255,255,0.9)'; ctx.lineWidth = 2.5;
-                ctx.strokeText('SPOOLER', spIconX, labelY + 2); ctx.fillStyle = isDark ? '#fbbf24' : '#92400e'; ctx.fillText('SPOOLER', spIconX, labelY + 2);
+                ctx.strokeStyle = isDark ? 'rgba(2,6,23,0.9)' : 'rgba(255,255,255,0.9)'; ctx.lineWidth = 2.0;
+                ctx.strokeText('SPOOLER', spIconX, labelY + 2.5); ctx.fillStyle = isDark ? '#fbbf24' : '#92400e'; ctx.fillText('SPOOLER', spIconX, labelY + 2.5);
                 ctx.restore();
             }
 
@@ -1048,10 +1097,10 @@ export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params, 
             <div className={`relative z-10 flex-1 min-h-0 grid grid-cols-1 ${isSidebar ? '' : 'lg:grid-cols-2'}`}>
 
                 {/* ── LEFT: 3D Canvas Estilizado ── */}
-                <div className={`relative flex flex-col min-w-0 bg-slate-950/20 transition-all duration-300 ${expandedCanvas ? 'fixed inset-0 z-50 bg-slate-950' : (isSidebar ? 'h-[380px] border-b' : 'border-r border-surface-light/10')}`}>
+                <div className={`relative flex flex-col min-w-0 bg-canvas/40 transition-all duration-300 ${expandedCanvas ? 'fixed inset-0 z-50 bg-surface' : (isSidebar ? 'h-[380px] border-b border-surface-light/30' : 'border-r border-surface-light/30')}`}>
 
                     {/* Botones de Control Flotantes Estilizados */}
-                    <div className="absolute bottom-4 left-4 flex items-center gap-1.5 bg-slate-900/80 backdrop-blur-md p-1 rounded-xl border border-white/5 z-20">
+                    <div className="absolute bottom-4 left-4 flex items-center gap-1.5 bg-surface/80 backdrop-blur-md p-1 rounded-xl border border-surface-light/30 z-20">
                         <button onClick={toggleAutoRotate} className="text-[8px] font-bold uppercase tracking-wider px-2 py-1 rounded-lg text-slate-400 hover:text-white transition-all flex items-center gap-1 bg-white/5">
                             {isAutoRotating ? <Pause className="w-2.5 h-2.5" /> : <Play className="w-2.5 h-2.5" />}
                         </button>
@@ -1064,7 +1113,7 @@ export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params, 
                     </div>
 
                     {/* Selector de Modo de Visualización */}
-                    <div className="absolute top-4 right-4 flex items-center gap-1 bg-slate-900/80 backdrop-blur-md p-1 rounded-xl border border-white/5 z-20">
+                    <div className="absolute top-4 right-4 flex items-center gap-1 bg-surface/80 backdrop-blur-md p-1 rounded-xl border border-surface-light/30 z-20">
                         {[
                             { mode: 'depth' as const, label: 'Estructura' },
                             { mode: 'inc' as const, label: 'Inc (°)' },
@@ -1077,7 +1126,7 @@ export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params, 
                                     needsRenderRef.current = true;
                                     requestRenderRef.current?.();
                                 }}
-                                className={`text-[8px] font-bold uppercase tracking-wider px-2 py-1 rounded-lg transition-all ${colorOverlay3D === mode ? 'bg-cyan-500/20 border border-cyan-500/40 text-cyan-400' : 'border border-transparent text-slate-400 hover:text-slate-200'}`}
+                                className={`text-[8px] font-bold uppercase tracking-wider px-2 py-1 rounded-lg transition-all ${colorOverlay3D === mode ? 'bg-primary/20 border border-primary/40 text-primary' : 'border border-transparent text-txt-muted hover:text-txt-main'}`}
                             >
                                 {label}
                             </button>
@@ -1096,32 +1145,32 @@ export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params, 
                 </div>
 
                 {/* ── RIGHT: Charts & Analytics ── */}
-                <div className={`flex flex-col bg-slate-900/5 overflow-y-auto p-5 gap-5 justify-center ${isSidebar ? 'border-t border-surface-light/10' : 'border-l border-surface-light/10'}`}>
+                <div className={`flex flex-col bg-canvas/40 overflow-y-auto p-5 gap-5 justify-center ${isSidebar ? 'border-t border-surface-light/30' : 'border-l border-surface-light/30'}`}>
 
                     {/* Polar Chart */}
-                    <div className="flex flex-col items-center justify-center border border-surface-light/10 rounded-xl p-4 bg-slate-950/10 backdrop-blur-md">
-                        <h2 className="text-[11px] font-bold text-slate-400 tracking-wide text-center mb-3 uppercase">
+                    <div className="flex flex-col items-center justify-center border border-surface-light/30 rounded-xl p-4 bg-surface/40 backdrop-blur-md">
+                        <h2 className="text-[11px] font-bold text-txt-muted tracking-wide text-center mb-3 uppercase">
                             Optimización de Azimut - Spooler ALS
                         </h2>
                         <SpoolerPolarChart processedData={processedData} limitMD={limitMD} isDark={isDark} />
                     </div>
 
                     {/* Recharts Trajectory Curves */}
-                    <div className="flex flex-col border border-surface-light/10 rounded-xl p-4 bg-slate-950/10 backdrop-blur-md">
-                        <h2 className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-3 text-center">
+                    <div className="flex flex-col border border-surface-light/30 rounded-xl p-4 bg-surface/40 backdrop-blur-md">
+                        <h2 className="text-[9px] font-bold text-txt-muted uppercase tracking-widest mb-3 text-center">
                             Perfil Hidráulico de Trayectoria vs MD
                         </h2>
                         <div className="h-[160px] w-full">
                             <ResponsiveContainer width="100%" height="100%">
                                 <ComposedChart data={processedData} margin={{ top: 5, right: -5, left: -25, bottom: -10 }}>
                                     <CartesianGrid stroke={colorSurfaceLight} strokeDasharray="3 3" opacity={0.06} vertical={false} />
-                                    <XAxis dataKey="md" type="number" tick={{ fill: 'rgba(148,163,184,0.6)', fontSize: 8 }} tickLine={false} />
-                                    <YAxis yAxisId="inc" domain={[0, 90]} tick={{ fill: '#38bdf8', fontSize: 8 }} tickLine={false} />
-                                    <YAxis yAxisId="dls" domain={[0, (max: number) => Math.max(5, Math.ceil(max))]} orientation="right" tick={{ fill: '#f59e0b', fontSize: 8 }} tickLine={false} />
-                                    <Line yAxisId="inc" type="monotone" dataKey="inc" stroke="#38bdf8" strokeWidth={2.0} dot={false} />
-                                    <Line yAxisId="dls" type="stepAfter" dataKey="dogleg" stroke="#f59e0b" strokeWidth={1.5} dot={false} strokeOpacity={0.8} />
-                                    <ReferenceLine yAxisId="inc" x={params.pressures.pumpDepthMD} stroke={colorPrimary} strokeWidth={1.2} strokeDasharray="3 3" />
-                                    <ReferenceLine yAxisId="inc" x={params.wellbore.casingBottom} stroke="#ef4444" strokeWidth={1.2} strokeDasharray="3 3" />
+                                    <XAxis dataKey="md" type="number" tick={{ fill: 'rgb(var(--color-text-muted))', fontSize: 8 }} tickLine={false} />
+                                    <YAxis yAxisId="inc" domain={[0, 90]} tick={{ fill: 'rgb(var(--color-primary))', fontSize: 8 }} tickLine={false} />
+                                    <YAxis yAxisId="dls" domain={[0, (max: number) => Math.max(5, Math.ceil(max))]} orientation="right" tick={{ fill: 'rgb(var(--color-warning))', fontSize: 8 }} tickLine={false} />
+                                    <Line yAxisId="inc" type="monotone" dataKey="inc" stroke="rgb(var(--color-primary))" strokeWidth={2.0} dot={false} />
+                                    <Line yAxisId="dls" type="stepAfter" dataKey="dogleg" stroke="rgb(var(--color-warning))" strokeWidth={1.5} dot={false} strokeOpacity={0.8} />
+                                    <ReferenceLine yAxisId="inc" x={params.pressures.pumpDepthMD} stroke="rgb(var(--color-primary))" strokeWidth={1.2} strokeDasharray="3 3" />
+                                    <ReferenceLine yAxisId="inc" x={params.wellbore.casingBottom} stroke="rgb(var(--color-danger))" strokeWidth={1.2} strokeDasharray="3 3" />
                                 </ComposedChart>
                             </ResponsiveContainer>
                         </div>

@@ -54,7 +54,7 @@ export const THEME_META: Record<
   },
   executive: {
     label: 'Executive',
-    description: 'Petroleum — Serious & Professional Corporate',
+    description: 'Petroleum — Deep Navy & Power Red',
     accent: '#042166',
     surface: '#FFFFFF',
     text: '#0F172A',

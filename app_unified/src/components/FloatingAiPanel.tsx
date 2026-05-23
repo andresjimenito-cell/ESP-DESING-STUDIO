@@ -256,13 +256,13 @@ export const FloatingAiPanel = ({
         }
     ];
 
-    useEffect(() => {
-        if (!isOpen) return;
-        const interval = setInterval(() => {
-            if (Date.now() - lastInteractionRef.current >= 30000) setIsOpen(false);
-        }, 5000);
-        return () => clearInterval(interval);
-    }, [isOpen]);
+    // useEffect(() => {
+    //     if (!isOpen) return;
+    //     const interval = setInterval(() => {
+    //         if (Date.now() - lastInteractionRef.current >= 30000) setIsOpen(false);
+    //     }, 5000);
+    //     return () => clearInterval(interval);
+    // }, [isOpen]);
 
     useEffect(() => {
         const greet = selectedWell
@@ -433,6 +433,7 @@ export const FloatingAiPanel = ({
                 contextData = `ANALYSIS FOR SPECIFIC WELL: ${selectedWell.name}
                 - General Status: ${selectedWell.status.toUpperCase()} (Health Score: ${healthScore.toFixed(0)}/100, Estado Actual: ${selectedWell.estadoActual || 'N/A'})
                 - System/ALS: ${selectedWell.als || 'ESP'}
+                - Run Life (Días de Operación/Vida Útil): ${wellParams?.historyMatch?.runLife || wellParams?.runLife || 'No especificado'}
                 
                 - Measured/Computed Operational Point:
                   * Running Status (Operando): ${isRunning ? 'SÍ (Activo)' : 'NO (Apagado)'}
@@ -630,14 +631,7 @@ export const FloatingAiPanel = ({
                                     </button>
                                 </div>
 
-                                {/* New Conversation Button */}
-                                <button
-                                    onClick={handleNewChat}
-                                    className="w-full flex items-center justify-center gap-2 py-3 bg-primary/5 hover:bg-primary/10 border border-primary/10 rounded-xl transition-all text-xs font-black uppercase tracking-wider text-txt-main mb-4 hover:scale-[1.02]"
-                                >
-                                    <Plus className="w-4 h-4 text-primary" />
-                                    <span>Nueva conversación</span>
-                                </button>
+                                {/* New Conversation Button Removed */}
 
                                 {/* Search Input */}
                                 <div className="relative flex items-center bg-canvas/45 border border-surface-light rounded-xl px-3 py-2 mb-4">
@@ -711,13 +705,7 @@ export const FloatingAiPanel = ({
                                     <Menu className="w-5 h-5" />
                                 </button>
 
-                                <button
-                                    onClick={handleNewChat}
-                                    className="p-3 bg-primary/5 hover:bg-primary/10 border border-primary/10 rounded-2xl hover:scale-105 transition-all text-primary"
-                                    title="Nueva conversación"
-                                >
-                                    <Plus className="w-5 h-5" />
-                                </button>
+                                {/* Collapsed New Conversation Button Removed */}
 
                                 <button
                                     onClick={() => setIsSidebarOpen(true)}
