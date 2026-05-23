@@ -17,29 +17,29 @@ export const WellListItem = React.memo(({ well, health, isActive, isMechVerified
         <button
             onClick={() => isESP && onSelect(well.id)}
             disabled={!isESP}
-            className={`w-full flex items-center gap-4 px-4 py-3 rounded-none transition-all text-left mb-1 ${!isESP ? 'opacity-40 grayscale cursor-not-allowed' : (isActive
-                ? 'bg-primary/20 border border-primary/30'
-                : 'hover:bg-white/5 border border-transparent'
+            className={`w-full flex items-center gap-4 px-5 py-3.5 rounded-none transition-all text-left mb-1.5 ${!isESP ? 'opacity-40 grayscale cursor-not-allowed' : (isActive
+                ? 'bg-primary/15 border border-primary/35 border-l-2 border-l-primary shadow-[inset_0_0_20px_rgb(var(--color-primary)/0.06)]'
+                : 'hover:bg-white/[0.06] border border-transparent border-l-2 border-l-transparent hover:border-l-white/15'
             )}`}
         >
-            <div className={`w-2.5 h-2.5 rounded-none shrink-0 ${statusColor}`}></div>
+            <div className={`w-3 h-3 rounded-none shrink-0 ${statusColor}`}></div>
             <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                    <span className={`text-sm font-black uppercase tracking-tight truncate ${isActive ? 'text-primary' : 'text-txt-main'}`}>{well.name}</span>
+                <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`text-[13px] font-black uppercase tracking-tight truncate ${isActive ? 'text-primary' : 'text-txt-main'}`}>{well.name}</span>
                     {isMechVerified && (
-                        <span className="bg-cyan-500/10 text-cyan-500 border border-cyan-500/30 px-1.5 py-0.5 rounded text-[7px] font-black uppercase tracking-widest">MECH</span>
+                        <span className="bg-cyan-500/10 text-cyan-500 border border-cyan-500/30 px-2 py-0.5 text-[7px] font-black uppercase tracking-widest shrink-0">MECH</span>
                     )}
                     {well.als && (
-                        <span className={`${isESP ? 'bg-primary/10 text-primary border-primary/30' : 'bg-warning/10 text-warning border-warning/30'} border px-1.5 py-0.5 rounded text-[7px] font-black uppercase tracking-widest`}>
+                        <span className={`${isESP ? 'bg-primary/10 text-primary border-primary/30' : 'bg-warning/10 text-warning border-warning/30'} border px-2 py-0.5 text-[7px] font-black uppercase tracking-widest shrink-0`}>
                             {well.als} {!isESP && '- NO SOPORTADO'}
                         </span>
                     )}
                 </div>
-                <span className="text-[9px] font-bold text-txt-muted uppercase tracking-widest">
-                    {isPendiente ? 'Pendiente por Instalacion' : `${Math.round(well.currentRate)} BPD - ${well.productionTest.freq || 0} Hz`}
+                <span className="text-[10px] font-bold text-txt-muted uppercase tracking-widest mt-0.5 block">
+                    {isPendiente ? 'Pendiente por Instalacion' : `${Math.round(well.currentRate)} BPD · ${well.productionTest.freq || 0} Hz`}
                 </span>
             </div>
-            <span className={`text-[9px] font-black tracking-widest px-2 py-1 ${isPendiente ? 'text-txt-muted' : (health >= 90 ? 'text-success' : health >= 60 ? 'text-warning' : 'text-danger')}`}>{statusLabel}</span>
+            <span className={`text-[9px] font-black tracking-widest px-2.5 py-1 border shrink-0 ${isPendiente ? 'text-txt-muted border-white/10 bg-white/5' : (health >= 90 ? 'text-success border-success/25 bg-success/10' : health >= 60 ? 'text-warning border-warning/25 bg-warning/10' : 'text-danger border-danger/25 bg-danger/10')}`}>{statusLabel}</span>
         </button>
     );
 });
@@ -157,13 +157,13 @@ export const DebouncedSearchInput = React.memo(({ value, onChange, placeholder }
 
     return (
         <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-txt-muted/50" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-primary/50" />
             <input
                 type="text"
                 placeholder={placeholder}
                 value={localValue}
                 onChange={(e) => setLocalValue(e.target.value)}
-                className="w-full bg-canvas/60 border border-surface-light rounded-none pl-10 pr-4 py-2.5 text-xs font-bold text-txt-main focus:outline-none focus:border-primary/50 uppercase tracking-wider placeholder:text-txt-muted/30"
+                className="w-full bg-canvas/70 border border-white/10 rounded-none pl-11 pr-4 py-3 text-xs font-bold text-txt-main focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 uppercase tracking-wider placeholder:text-txt-muted/40"
             />
         </div>
     );
