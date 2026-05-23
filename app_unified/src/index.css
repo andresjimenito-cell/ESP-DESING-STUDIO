@@ -100,19 +100,19 @@
 }
 
 /* ============================================================
-   EXECUTIVE — Deep Petroleum + Power Red [LIGHT]
+   EXECUTIVE — Deep Petroleum + Deep Red [LIGHT]
    Look: Professional, Serious, Future Corporate Terminal.
    ============================================================ */
 [data-theme='executive'] {
   --color-primary: 4 33 102;
   /* Azul Petróleo #042166 */
-  --color-secondary: 196 0 0;
-  /* Power Red #C40000 */
+  --color-secondary: 99 0 0;
+  /* Deep Red #630000 */
   --color-accent: 15 45 120;
-  --color-tertiary: 220 20 20;
-  /* Red highlight #DC1414 */
-  --color-glow: 255 40 40;
-  /* Bright red glow #FF2828 */
+  --color-tertiary: 130 10 10;
+  /* Red highlight #820A0A */
+  --color-glow: 160 30 30;
+  /* Muted red glow #A01E1E */
   --color-canvas: 248 250 252;
   --color-surface: 255 255 255;
   --color-surface-light: 235 240 250;
@@ -122,7 +122,7 @@
   --color-text-faint: 148 163 184;
   --color-success: 22 120 58;
   --color-warning: 180 95 6;
-  --color-danger: 153 0 0;
+  --color-danger: 60 0 0;
   --font-display: 'Inter', sans-serif;
 }
 
@@ -297,27 +297,25 @@
   background: rgb(var(--color-canvas));
 }
 
-/* FUSION — subtle deep orange dot grid */
+/* FUSION — ultra-subtle dot texture */
 :root .aurora-bg::before,
 [data-theme='fusion'] .aurora-bg::before {
   content: "";
   position: absolute;
   inset: 0;
-  background-image: radial-gradient(circle, rgb(var(--color-primary) / 0.1) 1px, transparent 1px);
-  background-size: 32px 32px;
+  background-image: radial-gradient(circle, rgb(var(--color-primary) / 0.035) 0.75px, transparent 0.75px);
+  background-size: 44px 44px;
   pointer-events: none;
+}
+
+[data-theme='fusion'] .aurora-bg::before {
+  opacity: 0.8;
 }
 
 /* CYBER — Gold & Obsidian atmosphere */
 [data-theme='cyber'] .aurora-bg::before {
   background-image: radial-gradient(circle, rgb(var(--color-primary) / 0.15) 1px, transparent 1px);
   background-size: 40px 40px;
-}
-
-/* FUSION — subtle deep indigo dot grid */
-[data-theme='fusion'] .aurora-bg::before {
-  background-image: radial-gradient(circle, rgb(var(--color-glow) / 0.2) 1.2px, transparent 1.2px);
-  background-size: 20px 20px;
 }
 
 /* EXECUTIVE & HERITAGE — Blueprint style dots */
