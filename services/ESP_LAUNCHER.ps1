@@ -464,9 +464,8 @@ if ($nodeFound) {
     $nodeCmd = Get-Command node -ErrorAction SilentlyContinue
     $nodeExe = if ($nodeCmd) { $nodeCmd.Source } else { "node" }
     
-    # Redirigimos a la carpeta temporal del sistema para evitar excepciones de PowerShell
-    $tempLog = Join-Path $env:TEMP "esp_backend_null.log"
-    Start-Process $nodeExe -ArgumentList "backend/server.js" -WorkingDirectory "$rootPath" -WindowStyle Hidden -RedirectStandardOutput $tempLog -RedirectStandardError $tempLog
+    # Iniciamos el backend en segundo plano sin redirecciones de log
+    Start-Process $nodeExe -ArgumentList "backend/server.js" -WorkingDirectory "$rootPath" -WindowStyle Hidden
 
     # ── APP ───────────────────────────────────────────────
     $M.APP.Val = "WAIT"; $M.APP.Color = $SC
