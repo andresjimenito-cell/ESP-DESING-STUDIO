@@ -1030,6 +1030,16 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                             <span className="hidden lg:inline">{wellViewMode === 'history' ? (language === 'es' ? 'Monitoreo' : 'Monitoring') : (language === 'es' ? 'Historico' : 'History')}</span>
                                         </button>
                                     </SecureWrapper>
+
+                                    <button
+                                        onClick={handleForceSync}
+                                        disabled={isSyncingOneDrive}
+                                        className={`${toolbarBtn} bg-success/10 text-success border-success/25 hover:bg-success/20 disabled:opacity-50`}
+                                        title="Sincronizar OneDrive en Caliente"
+                                    >
+                                        <RefreshCw className={`w-3.5 h-3.5 ${isSyncingOneDrive ? 'animate-spin' : ''}`} />
+                                        <span className="hidden lg:inline">{isSyncingOneDrive ? (language === 'es' ? 'Sincronizando...' : 'Syncing...') : (language === 'es' ? 'Sincronizar' : 'Sync')}</span>
+                                    </button>
                                 </div>
 
                                 <div className="hidden sm:block w-px h-7 bg-white/10 shrink-0" />
