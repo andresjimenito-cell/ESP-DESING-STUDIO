@@ -387,14 +387,36 @@ if ($nodeFound) {
     $M.NODE.Val = "V8"; $M.NODE.Color = $PR
     Start-MetricAnimation -Key NODE -TargetPct 60 -Phase "CORE · Modules" -GlobalStart 50 -GlobalEnd 56 -M $M
     $rootPath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath(".")
-    if (-not (Test-Path "node_modules") -or -not (Test-Path "app_unified/node_modules") -or -not (Test-Path "backend/node_modules")) {
-        Add-Log "Instalando dependencias (Raíz/Workspace)..." "warn"
+    $depsOkFlag = Join-Path $rootPath ".deps_ok"
+
+    # Solo instalar si el flag no existe (primera vez o deps borradas manualmente)
+    if (-not (Test-Path $depsOkFlag)) {
         $M.NODE.Val = "INST"; $M.NODE.Color = $WR
-        Invoke-PanelRedraw -Phase "NPM · Installing" -GlobalPct 57 -M $M
-        Set-Location $rootPath
-        npm.cmd install
+        Invoke-PanelRedraw -Phase "NPM · Installing" -GlobalPct 52 -M $M
+
+        # ── app_unified ──────────────────────────────────────────────────────
+        $appModules = Join-Path $rootPath "app_unified\node_modules"
+        if (-not (Test-Path $appModules)) {
+            Add-Log "Instalando deps app_unified..." "warn"
+            Set-Location (Join-Path $rootPath "app_unified")
+            npm.cmd install --prefer-offline --no-audit --no-fund 2>&1 | Out-Null
+        }
+
+        # ── backend ──────────────────────────────────────────────────────────
+        $backModules = Join-Path $rootPath "backend\node_modules"
+        if (-not (Test-Path $backModules)) {
+            Add-Log "Instalando deps backend..." "warn"
+            Set-Location (Join-Path $rootPath "backend")
+            npm.cmd install --prefer-offline --no-audit --no-fund 2>&1 | Out-Null
+        }
+
+        # Crear el flag para no volver a instalar en lanzamientos futuros
+        Set-Content -Path $depsOkFlag -Value (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
+        Add-Log "Dependencias instaladas OK" "ok"
+    } else {
+        Add-Log "Dependencias ya instaladas" "ok"
     }
-    Set-Location "app_unified"
+    Set-Location (Join-Path $rootPath "app_unified")
     Add-Log "Node.js listo" "ok"
     $M.NODE.Val = "READY"; $M.NODE.Color = $OK
     Start-MetricAnimation -Key NODE -TargetPct 100 -Phase "CORE · Finalizado" -GlobalStart 58 -GlobalEnd 64 -M $M
