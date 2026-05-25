@@ -188,7 +188,7 @@ function Start-MetricAnimation {
         $g = [int]($GlobalStart + ($GlobalEnd - $GlobalStart) * $s / $Steps)
         $M[$Key].Pct = $p
         Invoke-PanelRedraw -Phase $Phase -GlobalPct $g -M $M
-        Start-Sleep -Milliseconds 40
+        Start-Sleep -Milliseconds 8
     }
     $M[$Key].Pct = $TargetPct
 }
@@ -302,52 +302,49 @@ if ($gitCheck) {
         & $gitExe reset --hard origin/main --quiet
     }
 
-    $M.GIT.Val = "PULL"; $M.GIT.Color = $PR
+    $M.GIT.Val = "ASYNC"; $M.GIT.Color = $PR
     Start-MetricAnimation -Key GIT -TargetPct 60 -Phase "SYNC · GitHub" -GlobalStart 8 -GlobalEnd 16 -M $M
     
-    # Detección inteligente para la máquina de desarrollo vs la practicante
+    # ── Git en SEGUNDO PLANO: no bloquea el arranque ──────────────────────────
     $isDev = $env:USERPROFILE -like "*andre*"
-    if ($isDev) {
-        & $gitExe pull origin main --quiet 2>&1 | Out-Null
-    } else {
-        & $gitExe fetch origin --quiet 2>&1 | Out-Null
-        & $gitExe reset --hard origin/main --quiet 2>&1 | Out-Null
-    }
+    $gitExeCapture = $gitExe
+    Start-Job -ScriptBlock {
+        param($exe, $dev)
+        if ($dev) {
+            & $exe pull origin main --quiet 2>&1 | Out-Null
+        } else {
+            & $exe fetch origin --quiet 2>&1 | Out-Null
+            & $exe reset --hard origin/main --quiet 2>&1 | Out-Null
+        }
+    } -ArgumentList $gitExeCapture, $isDev | Out-Null
 
-    if ($LASTEXITCODE -eq 0) {
-        Add-Log "Sincronizacion Git OK" "ok"
-        $M.GIT.Val = "READY"; $M.GIT.Color = $OK
-    }
-    else {
-        Add-Log "Error o GitHub offline" "warn"
-        $M.GIT.Val = "LOCAL"; $M.GIT.Color = $WR
-    }
+    Add-Log "Sync Git en 2do plano..." "info"
+    $M.GIT.Val = "BG"; $M.GIT.Color = $OK
 }
 else {
     Add-Log "Abriendo descarga de Git..." "warn"
     $M.GIT.Val = "NONE"; $M.GIT.Color = $WR
     Start-Process "https://git-scm.com/download/win"
 }
-$gitOk = ($LASTEXITCODE -eq 0) -and $gitCheck
+$gitOk = $gitCheck
 Start-MetricAnimation -Key GIT -TargetPct 100 -Phase "SYNC · Finalizado" -GlobalStart 16 -GlobalEnd 22 -M $M
 
-# ── PYTHON ────────────────────────────────────────────────
+# ── PYTHON / OneDrive ─────────────────────────────────────
+# La sincronización de OneDrive ya la maneja el backend (server.js)
+# en caliente cada 60s. No bloqueamos el arranque aquí.
 $M.PYTHON.Val = "WAIT"; $M.PYTHON.Color = $SC
-Start-MetricAnimation -Key PYTHON -TargetPct 20 -Phase "CLOUD · OneDrive" -GlobalStart 22 -GlobalEnd 28 -M $M
+Start-MetricAnimation -Key PYTHON -TargetPct 30 -Phase "CLOUD · OneDrive" -GlobalStart 22 -GlobalEnd 28 -M $M
 
 $pythonCheck = $null -ne (Get-Command python -ErrorAction SilentlyContinue)
 if ($pythonCheck) {
-    $M.PYTHON.Val = "RUN"; $M.PYTHON.Color = $PR
-    Start-MetricAnimation -Key PYTHON -TargetPct 55 -Phase "CLOUD · Syncing" -GlobalStart 28 -GlobalEnd 36 -M $M
-    python services/cloud_connector.py
-    Add-Log "OneDrive sincronizado" "ok"
-    $M.PYTHON.Val = "DONE"; $M.PYTHON.Color = $OK
+    Add-Log "Cloud sync delegado al backend" "ok"
+    $M.PYTHON.Val = "BG"; $M.PYTHON.Color = $OK
 }
 else {
     Add-Log "Python no encontrado" "err"
     $M.PYTHON.Val = "MISS"; $M.PYTHON.Color = $ER
 }
-Start-MetricAnimation -Key PYTHON -TargetPct 100 -Phase "CLOUD · Finalizado" -GlobalStart 36 -GlobalEnd 42 -M $M
+Start-MetricAnimation -Key PYTHON -TargetPct 100 -Phase "CLOUD · Finalizado" -GlobalStart 28 -GlobalEnd 42 -M $M
 
 # ── NODE ──────────────────────────────────────────────────
 $M.NODE.Val = "WAIT"; $M.NODE.Color = $SC
@@ -463,10 +460,29 @@ if ($nodeFound) {
     $browser = "msedge"
     if (Test-Path "${env:ProgramFiles}\Google\Chrome\Application\chrome.exe") { $browser = "chrome" }
     elseif (Test-Path "${env:ProgramFiles(x86)}\Google\Chrome\Application\chrome.exe") { $browser = "chrome" }
-    
-    Add-Log "Preparando ventana en $browser (esperando 2s)..." "info"
-    Start-Process powershell -ArgumentList "-NoProfile", "-Command", "Start-Sleep -Seconds 2; Start-Process $browser '--app=http://127.0.0.1:3000'" -WindowStyle Hidden
-    
+
+    # ── Espera DINÁMICA: el navegador se abre solo cuando el puerto 3000 está LISTO
+    # No habrá ERR_CONNECTION_REFUSED porque esperamos a que Vite esté escuchando.
+    Add-Log "Esperando puerto 3000 (Vite)..." "info"
+    $browserScript = @"
+`$maxWait = 60  # segundos máximos de espera
+`$interval = 500 # ms entre intentos
+`$elapsed = 0
+do {
+    try {
+        `$tcp = New-Object System.Net.Sockets.TcpClient
+        `$tcp.Connect('127.0.0.1', 3000)
+        `$tcp.Close()
+        break  # puerto abierto, salimos del bucle
+    } catch {
+        Start-Sleep -Milliseconds `$interval
+        `$elapsed += `$interval
+    }
+} while (`$elapsed -lt (`$maxWait * 1000))
+Start-Process $browser '--app=http://127.0.0.1:3000'
+"@
+    Start-Process powershell -ArgumentList "-NoProfile", "-Command", $browserScript -WindowStyle Hidden
+
     npm.cmd run dev -- --logLevel silent
 
 }
