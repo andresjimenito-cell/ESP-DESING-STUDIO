@@ -106,7 +106,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
     const handleForceSync = async () => {
         setIsSyncingOneDrive(true);
         try {
-            const res = await fetch('http://localhost:4000/api/data/sync', { method: 'POST' });
+            const res = await fetch('http://127.0.0.1:4000/api/data/sync', { method: 'POST' });
             if (!res.ok) {
                 alert(language === 'es' ? "La sincronización ya está en curso." : "Sync is already in progress.");
             }
@@ -383,7 +383,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
         const connectSSE = () => {
             if (!mounted) return;
             console.log('🔌 [SSE] Intentando conectar a live-updates...');
-            eventSource = new EventSource('http://localhost:4000/api/data/live-updates');
+            eventSource = new EventSource('http://127.0.0.1:4000/api/data/live-updates');
 
             eventSource.onmessage = async (event) => {
                 try {
