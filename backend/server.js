@@ -74,10 +74,10 @@ const runBackgroundSync = async () => {
     }
 };
 
-// Iniciar worker en segundo plano (espera 5s al arrancar, luego corre cada 60s)
+// Iniciar worker en segundo plano (espera 5s al arrancar, luego corre cada 5 minutos / 300s)
 setTimeout(() => {
     runBackgroundSync();
-    setInterval(runBackgroundSync, 60000);
+    setInterval(runBackgroundSync, 300000);
 }, 5000);
 
 // Endpoint SSE para recibir notificaciones de actualización en tiempo real en el frontend

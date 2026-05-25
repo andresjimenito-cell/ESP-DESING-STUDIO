@@ -101,6 +101,23 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
     const [importProgress, setImportProgress] = useState<{ current: number, total: number, label: string } | null>(null);
     const [zoomLevel, setZoomLevel] = useState<number>(0.8);
     const [visibleCount, setVisibleCount] = useState<number>(50);
+    const [isSyncingOneDrive, setIsSyncingOneDrive] = useState(false);
+
+    const handleForceSync = async () => {
+        setIsSyncingOneDrive(true);
+        try {
+            const res = await fetch('http://localhost:4000/api/data/sync', { method: 'POST' });
+            if (!res.ok) {
+                alert(language === 'es' ? "La sincronización ya está en curso." : "Sync is already in progress.");
+            }
+        } catch (err) {
+            console.error("Error forzando sincronización:", err);
+            alert(language === 'es' ? "Error de conexión con el backend." : "Connection error with backend.");
+        } finally {
+            // Un pequeño retraso para suavizar la animación del botón
+            setTimeout(() => setIsSyncingOneDrive(false), 2000);
+        }
+    };
 
     // Reset visible count when filters or dropdown state change
     useEffect(() => {
@@ -1392,6 +1409,14 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                         <Database className="w-6 h-6 group-hover:-translate-y-1 transition-transform" />
                                         Cargar SCADA
                                     </button>
+                                    <button
+                                        onClick={handleForceSync}
+                                        disabled={isSyncingOneDrive}
+                                        className="h-14 px-10 bg-success/10 text-success border border-success/30 rounded-none flex items-center gap-4 hover:bg-success hover:text-white transition-all font-black text-xs uppercase tracking-[0.2em] shadow-lg shadow-success/10 disabled:opacity-50"
+                                    >
+                                        <RefreshCw className={`w-6 h-6 ${isSyncingOneDrive ? 'animate-spin' : ''}`} />
+                                        {isSyncingOneDrive ? (language === 'es' ? 'Sincronizando...' : 'Syncing...') : (language === 'es' ? 'Sincronizar OneDrive' : 'Sync OneDrive')}
+                                    </button>
                                 </div>
 
                                 <div className="mt-16 flex items-center gap-12 opacity-30">
@@ -1476,6 +1501,15 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                 </button>
                                 <button onClick={clearFleet} className="p-2.5 bg-danger/10 hover:bg-danger text-danger hover:text-white rounded-none border border-danger/20 transition-all" title="Limpiar Flota">
                                     <Trash2 className="w-4 h-4" />
+                                </button>
+                                <button
+                                    onClick={handleForceSync}
+                                    disabled={isSyncingOneDrive}
+                                    className="flex items-center gap-2.5 px-5 py-2.5 bg-success/10 hover:bg-success text-success hover:text-white border border-success/20 rounded-none font-black text-[10px] uppercase tracking-widest transition-all disabled:opacity-50"
+                                    title="Sincronizar OneDrive Ahora"
+                                >
+                                    <RefreshCw className={`w-4 h-4 ${isSyncingOneDrive ? 'animate-spin' : ''}`} />
+                                    {isSyncingOneDrive ? (language === 'es' ? 'Sincronizando...' : 'Syncing...') : (language === 'es' ? 'Sincronizar OneDrive' : 'Sync OneDrive')}
                                 </button>
                             </div>
 
