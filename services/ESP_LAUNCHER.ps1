@@ -463,9 +463,9 @@ if ($nodeFound) {
     Add-Log "Iniciando procesador de IA..." "info"
     $nodeCmd = Get-Command node -ErrorAction SilentlyContinue
     $nodeExe = if ($nodeCmd) { $nodeCmd.Source } else { "node" }
-    $backendLogOut = Join-Path $rootPath "backend_server_out.log"
-    $backendLogErr = Join-Path $rootPath "backend_server_err.log"
-    Start-Process $nodeExe -ArgumentList "backend/server.js" -WorkingDirectory "$rootPath" -WindowStyle Hidden -RedirectStandardOutput $backendLogOut -RedirectStandardError $backendLogErr
+    
+    # Redirigimos al "vacío" ($null) para evitar llenar el disco con logs
+    Start-Process $nodeExe -ArgumentList "backend/server.js" -WorkingDirectory "$rootPath" -WindowStyle Hidden -RedirectStandardOutput "$rootPath\nul" -RedirectStandardError "$rootPath\nul"
 
     # ── APP ───────────────────────────────────────────────
     $M.APP.Val = "WAIT"; $M.APP.Color = $SC
