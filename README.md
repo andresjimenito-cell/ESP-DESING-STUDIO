@@ -33,16 +33,31 @@ La plataforma permite a los ingenieros realizar un diseño integral de terminaci
 
 - **Modelado PVT:** Correlaciones industriales (Lasater, Vasquez-Beggs, etc.).
 - **Análisis Nodal AI:** Curvas dinámicas con corrección automática de GOR.
+- **Monitoreo SCADA Live:** Sincronización en caliente vía SSE con archivos de OneDrive corporativo.
 - **Smart Matching:** Algoritmos de selección asistida para equipos ESP.
 - **Simulación de Desgaste:** Modelos predictivos de vida útil.
 
 ---
 
-## 🏗️ 2. Arquitectura del Sistema
+## 🏗️ 2. Arquitectura del Sistema e Integración de Datos
 
-La aplicación utiliza un stack moderno basado en **React + TypeScript**, optimizado para cálculos determinísticos pesados.
+La aplicación utiliza una arquitectura desacoplada y fluida basada en **React + TypeScript** en el Frontend, y un **Servidor de Datos en Express (Node.js)** en el Backend.
 
-### 🗺️ Mapa Conceptual y Flujo de Datos
+### 🔄 Flujo de Datos y Sincronización en Tiempo Real
+
+```mermaid
+graph TD
+    OneDrive[📁 OneDrive Corporativo] -->|Sincronización en 2do Plano| Backend[💻 Backend Express :4000]
+    Backend -->|Preprocesamiento JSON| JSON[📄 _precalc.json Files]
+    Backend -.->|Notificación SSE / live-updates| Frontend[🌐 Frontend React :3000]
+    Frontend -->|Fetch Silencioso| JSON
+```
+
+1.  **Sincronización de OneDrive:** El backend detecta de forma automática cambios en las planillas maestras de OneDrive en tu máquina local.
+2.  **Preprocesamiento Rápido:** Para evitar que la interfaz web sea pesada, el backend convierte los archivos Excel pesados en estructuras JSON optimizadas (`designs_precalc.json` y `scada_precalc.json`).
+3.  **Notificación SSE (Server-Sent Events):** El backend mantiene una conexión viva con el frontend. Al detectar un cambio en OneDrive, le notifica a la interfaz y ésta recarga los datos en segundo plano sin interrumpir la experiencia del ingeniero.
+
+### 🗺️ Mapa de Flujo Interno de la App
 
 ```mermaid
 graph TD
@@ -61,6 +76,7 @@ graph TD
         P3[F3: Inflow]:::ui
         P5[F5: Equipment]:::ui
         P6[F6: Simulations]:::ui
+        P7[F7: Monitoreo Live]:::ui
     end
 
     subgraph Core [Motores de Cálculo]
@@ -73,7 +89,7 @@ graph TD
     
     User --> L
     L --> App
-    App --> P1 & P2 & P3 & P5 & P6
+    App --> P1 & P2 & P3 & P5 & P6 & P7
     
     P2 -.-> PVT
     P3 -.-> Hyd
@@ -93,7 +109,7 @@ graph TD
 *   **Inteligencia:** Interpolación automática de survey direccional para cálculo hidrostático.
 
 ### 🧪 Fase 2: Fluids (Termodinámica)
-*   **Cálculo PVT:** Factores de volumen ($B_o, B_w, B_g$), viscosidad y tensión superficial.
+*   **Cálculo PVT:** Factores de volumen ($B_o, B_w, B_g$), viscosidad y tensión superficial mediante correlaciones (Lasater, Vazquez-Beggs).
 *   **Alertas:** Detección automática de inconsistencias entre GOR y Presión de Burbuja ($P_b$).
 
 ### 📈 Fase 3: Inflow (Productividad)
@@ -104,6 +120,10 @@ graph TD
 *   **Matching:** Cruce de curva de bomba vs. curva de sistema.
 *   **Electromecánica:** Cálculo de BHP, etapas, leyes de afinidad y caídas de voltaje en cable.
 
+### 📡 Fase 7: Monitoreo Live (SCADA)
+*   **Telemetría:** Tablero en tiempo real sincronizado de forma asíncrona con el SCADA diario.
+*   **Validación Inteligente:** Auto-mapeo de columnas de Excel y algoritmo de PIP persistente para simulación ininterrumpida de pozos.
+
 ---
 
 ## 📦 4. Análisis de Componentes
@@ -111,6 +131,7 @@ graph TD
 | Módulo | Función Técnica | Impacto en Diseño |
 | :--- | :--- | :--- |
 | `App.tsx` | Orquestador Global | Sincronización de datos entre fases. |
+| `PhaseMonitoreo.tsx` | Tablero de Control Live | Visualización del estado de salud de la flota de pozos y telemetría. |
 | `VisualESPStack.tsx` | Renderizado 2D/3D | Visualización mecánica del pozo. |
 | `PumpChart.tsx` | Gráficos Dinámicos | Intersección de curvas en tiempo real. |
 | `BatchProcessor.tsx` | Procesamiento Masivo | Análisis de flotas completas de pozos. |
