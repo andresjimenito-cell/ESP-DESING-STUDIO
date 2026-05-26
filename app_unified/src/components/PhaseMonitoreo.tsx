@@ -7,7 +7,7 @@ import {
     Waves, HardDrive, Bell, Info, ChevronLeft, ChevronRight, Target,
     History, BarChart3, TrendingUp, Filter, Download, Droplets, Database,
     Globe, Palette, Moon, Sun, Brain, Layers, Maximize2, Minimize2, ClipboardCheck, X, Trash2,
-    Sparkles, Send, Settings, Lock as LockIcon, Compass
+    Sparkles, Send, Settings, Lock as LockIcon, Compass, FileSpreadsheet, ExternalLink
 } from 'lucide-react';
 import {
     ResponsiveContainer, BarChart, Bar, XAxis, YAxis,
@@ -1046,6 +1046,28 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
 
                                 {/* Right: settings */}
                                 <div className="flex items-center gap-1.5 bg-white/5 p-1 border border-white/10 shrink-0 ml-auto">
+                                    <a
+                                        href="https://1drv.ms/x/c/06cc4035ad46ff97/IQClWg69qziUQZ4pcxlcyoF5AdzaFbqGWhkSVp1rxJKvfwQ?e=Zuk6P7"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="h-8 px-2.5 bg-primary/10 hover:bg-primary text-primary hover:text-white border border-primary/25 rounded-none text-[8px] font-black uppercase tracking-widest transition-all flex items-center gap-1.5 shrink-0"
+                                        title={language === 'es' ? 'Abrir Excel de Diseño' : 'Open Design Excel'}
+                                    >
+                                        <FileSpreadsheet className="w-3.5 h-3.5" />
+                                        <span>{language === 'es' ? 'Diseño' : 'Design'}</span>
+                                    </a>
+
+                                    <a
+                                        href="https://1drv.ms/x/c/06cc4035ad46ff97/IQCX60W0l5YeQbDd8jHpZlMJAa0JHU31uqYaXJU1Tawo8I8?e=SD43E4"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="h-8 px-2.5 bg-secondary/10 hover:bg-secondary text-secondary hover:text-white border border-secondary/25 rounded-none text-[8px] font-black uppercase tracking-widest transition-all flex items-center gap-1.5 shrink-0"
+                                        title={language === 'es' ? 'Abrir Excel de Pruebas' : 'Open Tests Excel'}
+                                    >
+                                        <FileSpreadsheet className="w-3.5 h-3.5" />
+                                        <span>{language === 'es' ? 'Pruebas' : 'Tests'}</span>
+                                    </a>
+
                                     <button onClick={toggleLanguage} className="h-8 px-2.5 hover:bg-white/10 rounded-none transition-all text-[8px] font-black font-mono text-txt-main tracking-widest uppercase flex items-center gap-1">
                                         <Globe className="w-3 h-3 text-primary" /> {language}
                                     </button>
