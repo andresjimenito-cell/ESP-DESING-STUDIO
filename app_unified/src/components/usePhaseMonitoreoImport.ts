@@ -260,15 +260,34 @@ export const usePhaseMonitoreoImport = (
                         }
                     }
 
-                    // --- VALORES BASE DE LA HOJA DE DISE'O ---
+                    // --- VALORES BASE DE LA HOJA DE DISEÑO ---
                     let pStatic = n_ext(get_ext(row, ['P ESTATICA (PSI)', 'P ESTATICA', 'STATIC PRESSURE', 'PESTATICA']));
                     let intakeMD = n_ext(get_ext(row, ['PROFUNDIDAD DE INTAKE MD (FT)', 'INTAKE MD', 'INTAKEMD']));
                     let fondoMD = n_ext(get_ext(row, ['PROFUNDIDAD TOTAL MD (FT)', 'PROFUNDIDAD TOTAL MD', 'FONDO MD', 'TOTAL DEPTH', 'PROFUNDIDADTOTALMD', 'PROFUNDIDAD TOTAL', 'PROFUNDIDAD TOTAL (FT)'])) || (intakeMD + 1000);
                     let topPerfs = n_ext(get_ext(row, ['TOPE DE PERFORADOS MD (FT)', 'TOPE DE PERFORADOS MD', 'TOPEDEPERFORADOS', 'TOPE DE PERFORADOS']));
                     let basePerfs = 0;
+                    let isEMVerified = false;
 
-                    // --- PRIORIZAR ESTADOS MECANICOS SI EL VALOR ES VALIDO (> 0) ---
-                    if (mechRow) {
+                    // --- PRIORIZAR COLUMNAS EM EMBEBIDAS DIRECTAMENTE EN DATA DISEÑO ---
+                    const emPest = n_ext(get_ext(row, ['EM PESTA', 'EM_PESTA', 'EM PESTATICA']));
+                    const emIntake = n_ext(get_ext(row, ['EM Intake (MD)', 'EM INTAKE', 'EM_INTAKE']));
+                    const emFondo = n_ext(get_ext(row, ['EM Fondo pozo (MD)', 'EM FONDO', 'EM_FONDO']));
+                    const emTop = n_ext(get_ext(row, ['EM Tope Perf (MD)', 'EM TOPE', 'EM_TOPE']));
+                    const emBase = n_ext(get_ext(row, ['EM Base Perf (MD)', 'EM BASE', 'EM_BASE']));
+                    const emIdTbg = n_ext(get_ext(row, ['EM ID TBG', 'EM_ID_TBG']));
+                    const emIdCsg = n_ext(get_ext(row, ['EM ID CSG', 'EM_ID_CSG']));
+
+                    if (emPest > 0 || emIntake > 0 || emFondo > 0 || emTop > 0 || emBase > 0 || emIdTbg > 0 || emIdCsg > 0) {
+                        isEMVerified = true;
+                        if (emPest > 0) pStatic = emPest;
+                        if (emIntake > 0) intakeMD = emIntake;
+                        if (emFondo > 0) fondoMD = emFondo;
+                        if (emTop > 0) topPerfs = emTop;
+                        if (emBase > 0) basePerfs = emBase;
+                    } 
+                    // --- FALLBACK A LA PESTAÑA TRADICIONAL DE ESTADOS MECANICOS SI EXISTE ---
+                    else if (mechRow) {
+                        isEMVerified = true;
                         const mPest = n_ext(get_ext(mechRow, ['PEST', 'Pest', 'P ESTATICA']));
                         if (mPest > 0) pStatic = mPest;
 
@@ -337,8 +356,8 @@ export const usePhaseMonitoreoImport = (
                         return selected;
                     };
 
-                    const casing = mapPipe(mechRow || row, CASING_CATALOG, ['DESCRIPCION CSG', 'CSG DESC', 'ID CSG'], ['CSG OD', 'CSG OD (IN)', 'ID CSG'], 7);
-                    const tubing = mapPipe(mechRow || row, TUBING_CATALOG, ['DESCRIPCION TBG', 'TBG DESC', 'ID TBG'], ['TBG OD', 'TBG OD (IN)', 'ID TBG'], 3.5);
+                    const casing = mapPipe((isEMVerified && emIdCsg > 0) ? row : (mechRow || row), CASING_CATALOG, ['EM ID CSG', 'EM_ID_CSG', 'DESCRIPCION CSG', 'CSG DESC', 'ID CSG'], ['EM ID CSG', 'EM_ID_CSG', 'CSG OD', 'CSG OD (IN)', 'ID CSG'], 7);
+                    const tubing = mapPipe((isEMVerified && emIdTbg > 0) ? row : (mechRow || row), TUBING_CATALOG, ['EM ID TBG', 'EM_ID_TBG', 'DESCRIPCION TBG', 'TBG DESC', 'ID TBG'], ['EM ID TBG', 'EM_ID_TBG', 'TBG OD', 'TBG OD (IN)', 'ID TBG'], 3.5);
 
                     const design: SystemParams = {
                         ...INITIAL_PARAMS,
@@ -358,7 +377,7 @@ export const usePhaseMonitoreoImport = (
                         inflow: { ...INITIAL_PARAMS.inflow, pStatic, ip },
                         pressures: { ...INITIAL_PARAMS.pressures, totalRate: rate(ip), pumpDepthMD: intakeMD, pht: 80 },
                         survey: surveyDataByWell[fuzzyWellName(wellName)] || surveyDataByWell['UNKNOWN'] || [],
-                        isMechVerified: !!mechRow,
+                        isMechVerified: isEMVerified || !!mechRow,
                         targets: {
                             min: { rate: rate(ipMin || ip * 0.8), ip: cleanIp(ipMin || ip * 0.8), waterCut: bsw, gor, frequency: 50 },
                             target: { rate: rate(ip), ip: cleanIp(ip), waterCut: bsw, gor, frequency: 60 },

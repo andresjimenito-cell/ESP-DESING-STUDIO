@@ -1,6 +1,56 @@
 [
   {
     "category": "diagnosis",
+    "wellName": "QF-1062H#1",
+    "technicalSignature": "normal|Q:3120|PIP:400|F:47",
+    "context": {
+      "id": "EXCEL-QF-1062H#1-1779751347487-0",
+      "name": "QF-1062H#1",
+      "status": "normal",
+      "estadoActual": "operativo",
+      "als": "ESP",
+      "health": {
+        "pump": "normal",
+        "motor": "normal",
+        "seal": "normal",
+        "sensor": "active",
+        "cable": "normal"
+      },
+      "predictive": {
+        "ttf": 365,
+        "vsdStatus": "optimal",
+        "vsdAnalysis": "Excel Import",
+        "transformerStatus": "optimal",
+        "transformerAnalysis": "Normal",
+        "ventBoxStatus": "optimal",
+        "ventBoxAnalysis": "Normal"
+      },
+      "lastUpdate": "2026-05-17",
+      "currentRate": 3115,
+      "targetRate": 4719.6,
+      "consumptionReal": 0,
+      "consumptionTheo": 0,
+      "depthMD": 2796,
+      "productionTest": {
+        "date": "2026-05-17",
+        "rate": 3115,
+        "freq": 47,
+        "pip": 400,
+        "thp": 140,
+        "tht": 150,
+        "waterCut": 94.51,
+        "gor": 0,
+        "hp": 1296,
+        "pdp": 1296,
+        "hasMatchData": true
+      }
+    },
+    "recommendation": "¡Hola! Estoy bien, gracias. ¿Y usted, Ingeniero? ¿En qué puedo ayudarle hoy?",
+    "id": "6e004d50-3f39-4925-831f-d708d267ad0e",
+    "timestamp": "2026-05-25T23:29:17.498Z"
+  },
+  {
+    "category": "diagnosis",
     "wellName": "SAB 27D#2",
     "technicalSignature": "normal|Q:750|PIP:300|F:38",
     "context": {
