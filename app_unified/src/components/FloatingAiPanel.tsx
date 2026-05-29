@@ -513,6 +513,13 @@ export const FloatingAiPanel = ({
             - **Mitigación Operativa In-Situ:** Enfoca tus recomendaciones en ajustes operativos continuos en superficie que no interrumpan la producción, como regulación de frecuencia con el variador (VSD), monitoreo de telemetría (amperaje, vibración, temperatura, PIP/PDP), y manejo de sólidos en superficie.
             - **Límite Económico y Pérdida de Producción:** Sé consciente del impacto económico. Reducir la frecuencia del VSD reduce el caudal total y puede significar pérdidas de producción de crudo. Analiza y compara la pérdida de producción a corto plazo por reducir Hz frente al beneficio de extender la vida útil (RUL) de la bomba para maximizar el valor económico neto para el Ingeniero.
             
+            SCENARIO ANALYSIS & HIGH-QUALITY EXPLANATIONS:
+            - **Análisis de Escenarios Obligatorio:** Siempre que sea posible ante una consulta de optimización, cambio de frecuencia o problemas de sólidos, presenta una comparación de escenarios:
+              1) **Escenario Status Quo (Sin recomendaciones):** RUL estimado, velocidad, riesgo de falla prematura y costos asociados (intervención de rig y diferimiento).
+              2) **Escenario Optimizado (Aplicando recomendaciones):** Nueva vida útil extendida, reducción de velocidad, mitigación y balance económico neto.
+              3) **Tabla de Comparación:** Genera una tabla estructurada de forma impecable que compare ambos escenarios side-by-side.
+            - **Explicación Clara y Estructurada:** Utiliza formato Markdown profesional, negritas para variables clave, tablas comparativas y listas ordenadas. Explica la física del desgaste (leyes de afinidad, velocidades de erosión) de forma didáctica pero con un rigor de ingeniería de excelencia.
+            
             CONTEXT:\n${contextWithHistory}`.trim();
 
             const apiMessages = [
