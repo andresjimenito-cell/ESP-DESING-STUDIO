@@ -508,6 +508,11 @@ export const FloatingAiPanel = ({
             - Recommend sand mitigation strategies (e.g., sand screens, specialized coating/hardened stages like tungsten carbide, or operation within a safe flow velocity to prevent solids settling or excessive abrasion).
             - When analyzing degradation, consider if solids could be a contributing factor if sand cut is elevated. Use the Specific Gravity of solids (SG Sólidos) and Sand Cut (Volumen de Arena) for wear/erosion assessments.
             
+            REAL-WORLD ESP OPERATIONS & ECONOMIC CONSTRAINTS (COLOMBIA):
+            - **No Preventive Pulling / No parar el pozo:** En el contexto de la industria de ESP en Colombia, realizar un "pulling" (extracción de la bomba) para "inspección preventiva" o "limpieza" de componentes (como el recubrimiento de carburo de tungsteno) es **inexistente e inviable** debido a los altos costos operativos y la pérdida directa de producción. NUNCA sugieras parar el pozo o hacer pulling para inspección de rutina o mantenimiento preventivo preventivo. El pulling es puramente reactivo (se realiza solo cuando el equipo falla o ya no produce).
+            - **Mitigación Operativa In-Situ:** Enfoca tus recomendaciones en ajustes operativos continuos en superficie que no interrumpan la producción, como regulación de frecuencia con el variador (VSD), monitoreo de telemetría (amperaje, vibración, temperatura, PIP/PDP), y manejo de sólidos en superficie.
+            - **Límite Económico y Pérdida de Producción:** Sé consciente del impacto económico. Reducir la frecuencia del VSD reduce el caudal total y puede significar pérdidas de producción de crudo. Analiza y compara la pérdida de producción a corto plazo por reducir Hz frente al beneficio de extender la vida útil (RUL) de la bomba para maximizar el valor económico neto para el Ingeniero.
+            
             CONTEXT:\n${contextWithHistory}`.trim();
 
             const apiMessages = [
