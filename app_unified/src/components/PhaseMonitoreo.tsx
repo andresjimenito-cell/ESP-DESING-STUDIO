@@ -352,18 +352,24 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                 const resDesigns = await fetch(`/designs_precalc.json?t=${Date.now()}`).catch(() => null);
                 const resScada   = await fetch(`/scada_precalc.json?t=${Date.now()}`).catch(() => null);
 
-                const hasLocal = (resDesigns && resDesigns.ok) || (resScada && resScada.ok);
+                const isJson = (res: Response | null) => {
+                    if (!res || !res.ok) return false;
+                    const ct = res.headers.get('content-type') || '';
+                    return ct.includes('application/json');
+                };
+
+                const hasLocal = isJson(resDesigns) || isJson(resScada);
 
                 if (hasLocal && mounted) {
                     // Cargar desde JSON pre-calculados (instantáneo)
                     setImportProgress({ current: 20, total: 100, label: language === 'es' ? 'Cargando base de datos maestra...' : 'Loading master database...' });
-                    if (resDesigns && resDesigns.ok) {
-                        const payload = await resDesigns.json();
+                    if (isJson(resDesigns)) {
+                        const payload = await resDesigns!.json();
                         await processExcelDesignsBufferRef.current(payload, true, true);
                     }
                     setImportProgress({ current: 60, total: 100, label: language === 'es' ? 'Cargando telemetría SCADA...' : 'Loading SCADA telemetry...' });
-                    if (resScada && resScada.ok) {
-                        const payload = await resScada.json();
+                    if (isJson(resScada)) {
+                        const payload = await resScada!.json();
                         await processScadaBufferRef.current(payload, true, true);
                     }
                 } else if (mounted) {
