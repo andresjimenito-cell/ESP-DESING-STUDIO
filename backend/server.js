@@ -1,9 +1,22 @@
+/**
+ * ESP DESIGN STUDIO — Backend de Desarrollo Local
+ * 
+ * Este servidor es SOLO para desarrollo local con `npm run dev`.
+ * En producción (Vercel), las rutas /api/* son manejadas por las
+ * funciones serverless en app_unified/api/.
+ * 
+ * Endpoints replicados para dev local:
+ *   GET  /api/onedrive-fetch?url=<shareUrl>   → Proxy OneDrive
+ *   POST /api/copilot/stream                   → Proxy IA OpenRouter
+ *   GET  /api/ai-memory                        → Memoria IA (fichero local)
+ *   POST /api/ai-memory                        → Guardar memoria IA
+ */
+
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { exec } from 'child_process';
 import fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -13,112 +26,104 @@ dotenv.config({ path: path.join(__dirname, '.env') });
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
 
-// --- PROCESOS EN SEGUNDO PLANO Y CONTROLADOR DE CACHÉ ---
-const rootDir = path.resolve(__dirname, '..');
-const appUnifiedDir = path.join(rootDir, 'app_unified');
+// ── AI MEMORY (fichero local para dev) ─────────────────────────────────────
+const memoryPath = path.join(__dirname, '..', 'app_unified', 'ai_memory.json');
 
-let isSyncing = false;
-let clients = [];
-
-// Helper para ejecutar comandos del sistema
-const runCommand = (command, options = {}) => {
-    return new Promise((resolve, reject) => {
-        exec(command, options, (error, stdout, stderr) => {
-            if (error) {
-                reject({ error, stdout, stderr });
-            } else {
-                resolve({ stdout, stderr });
-            }
-        });
-    });
-};
-
-// Sincronizador de OneDrive y preprocesador
-const runBackgroundSync = async () => {
-    if (isSyncing) return;
-    isSyncing = true;
+app.get('/api/ai-memory', (req, res) => {
     try {
-        console.log(`\n[BACKGROUND SYNC] comprobando cambios en OneDrive...`);
-        
-        // 1. Ejecutar Python cloud_connector.py (valida ETags en OneDrive)
-        const pythonEnv = { ...process.env, PYTHONIOENCODING: 'utf-8' };
-        const pythonResult = await runCommand('python services/cloud_connector.py', {
-            cwd: rootDir,
-            env: pythonEnv
-        });
-        
-        console.log(`[BACKGROUND SYNC] cloud_connector.py:\n${pythonResult.stdout}`);
-        
-        // 2. Ejecutar Node preprocesar_datos.js (genera JSON solo si hay cambios)
-        const preprocessResult = await runCommand('node tools/preprocesar_datos.js', {
-            cwd: appUnifiedDir
-        });
-        
-        console.log(`[BACKGROUND SYNC] preprocesar_datos.js:\n${preprocessResult.stdout}`);
-        
-        // 3. Notificar cambios a los clientes conectados
-        if (pythonResult.stdout.includes('[SINCRONIZADO]') || preprocessResult.stdout.includes('Actualizando')) {
-            console.log(`[BACKGROUND SYNC] ¡Nuevos datos detectados! Enviando actualización a los clientes...`);
-            clients.forEach(client => {
-                client.res.write(`data: ${JSON.stringify({ type: 'update', timestamp: Date.now() })}\n\n`);
-            });
+        if (fs.existsSync(memoryPath)) {
+            const data = fs.readFileSync(memoryPath, 'utf-8');
+            res.setHeader('Content-Type', 'application/json');
+            res.send(data);
         } else {
-            console.log(`[BACKGROUND SYNC] Todo al día. No se requirieron cambios.`);
+            res.json([]);
         }
-    } catch (err) {
-        console.error(`[BACKGROUND SYNC] Error en sincronización:`, err);
-    } finally {
-        isSyncing = false;
+    } catch (e) {
+        res.json([]);
     }
-};
-
-// Iniciar worker en segundo plano (espera 5s al arrancar, luego corre cada 5 minutos / 300s)
-setTimeout(() => {
-    runBackgroundSync();
-    setInterval(runBackgroundSync, 300000);
-}, 5000);
-
-// Endpoint SSE para recibir notificaciones de actualización en tiempo real en el frontend
-app.get('/api/data/live-updates', (req, res) => {
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
-    
-    // Encabezado para evitar almacenamiento en búfer en algunos proxies
-    res.setHeader('X-Accel-Buffering', 'no');
-    
-    const clientId = Date.now();
-    const newClient = { id: clientId, res };
-    clients.push(newClient);
-
-    console.log(`🔌 [SSE CONNECTED] Cliente registrado (${clientId}). Total clientes: ${clients.length}`);
-
-    // Ping para mantener viva la conexión
-    const keepAliveInterval = setInterval(() => {
-        res.write(': keep-alive\n\n');
-    }, 30000);
-
-    req.on('close', () => {
-        clearInterval(keepAliveInterval);
-        clients = clients.filter(c => c.id !== clientId);
-        console.log(`🔌 [SSE DISCONNECTED] Cliente desconectado (${clientId}). Total clientes: ${clients.length}`);
-    });
 });
 
-// Endpoint para forzar una sincronización manual
-app.post('/api/data/sync', async (req, res) => {
-    if (isSyncing) {
-        return res.status(409).json({ message: "Sincronización en curso actualmente." });
+app.post('/api/ai-memory', (req, res) => {
+    try {
+        const body = typeof req.body === 'string' ? req.body : JSON.stringify(req.body, null, 2);
+        fs.writeFileSync(memoryPath, body, 'utf-8');
+        res.send('OK');
+    } catch (e) {
+        console.error('[AI Memory] Error saving:', e);
+        res.status(500).send('Error');
     }
-    // Ejecutar de forma asíncrona sin bloquear la respuesta
-    runBackgroundSync().catch(err => console.error("Error en sync manual:", err));
-    res.json({ success: true, message: "Sincronización iniciada en segundo plano." });
 });
 
+// ── ONEDRIVE PROXY (bypass CORS para dev local) ────────────────────────────
+app.get('/api/onedrive-fetch', async (req, res) => {
+    const { url } = req.query;
+    if (!url) return res.status(400).json({ error: 'Parámetro "url" requerido.' });
 
-// Proxy Endpoint con soporte de Server-Sent Events (SSE) para Streaming de IA
+    try {
+        // Fase 1: Obtener la página de OneDrive y extraer el link de descarga
+        const pageRes = await fetch(url, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            },
+            redirect: 'follow',
+        });
+        const html = await pageRes.text();
+
+        const patterns = [
+            /"FileGetUrl"\s*:\s*"([^"]+)"/,
+            /"FileUrlNoAuth"\s*:\s*"([^"]+)"/,
+            /downloadUrl\s*:\s*"([^"]+)"/,
+            /"downloadFileUrl"\s*:\s*"([^"]+)"/,
+        ];
+
+        let directUrl = null;
+        for (const pattern of patterns) {
+            const match = html.match(pattern);
+            if (match) {
+                directUrl = match[1]
+                    .replace(/\\u0026/g, '&')
+                    .replace(/\\u003d/gi, '=')
+                    .replace(/\\\//g, '/');
+                break;
+            }
+        }
+
+        if (!directUrl) {
+            if (url.includes('1drv.ms') || url.includes('onedrive.live.com')) {
+                directUrl = url.replace('redir?', 'download?').replace('view?', 'download?');
+            } else {
+                return res.status(422).json({ error: 'No se pudo extraer el link de descarga de OneDrive.' });
+            }
+        }
+
+        // Fase 2: Descargar el archivo
+        console.log(`[OneDrive Proxy] Descargando desde: ${directUrl.substring(0, 80)}...`);
+        const fileRes = await fetch(directUrl, {
+            headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
+        });
+
+        if (!fileRes.ok) throw new Error(`Descarga fallida: HTTP ${fileRes.status}`);
+
+        const buffer = await fileRes.arrayBuffer();
+        const contentType = fileRes.headers.get('content-type') ||
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+
+        console.log(`[OneDrive Proxy] ✅ Archivo descargado (${(buffer.byteLength / 1024 / 1024).toFixed(1)} MB)`);
+        res.setHeader('Content-Type', contentType);
+        res.setHeader('Content-Length', buffer.byteLength);
+        res.setHeader('Cache-Control', 'no-store');
+        res.send(Buffer.from(buffer));
+
+    } catch (error) {
+        console.error('[OneDrive Proxy] Error:', error.message);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// ── AI COPILOT STREAM ──────────────────────────────────────────────────────
 app.post('/api/copilot/stream', async (req, res) => {
     const { prompt, messages, systemInstruction } = req.body;
 
@@ -132,40 +137,36 @@ app.post('/api/copilot/stream', async (req, res) => {
     }
 
     if (!apiKey) {
-        res.status(400).send("API Key de OpenRouter no configurada.");
+        res.status(400).send('API Key de OpenRouter no configurada.');
         return;
     }
 
     try {
         const apiMessages = [];
-        if (systemInstruction) {
-            apiMessages.push({ role: "system", content: systemInstruction });
-        }
+        if (systemInstruction) apiMessages.push({ role: 'system', content: systemInstruction });
         if (messages && Array.isArray(messages)) {
             apiMessages.push(...messages);
         } else if (prompt) {
-            apiMessages.push({ role: "user", content: prompt });
+            apiMessages.push({ role: 'user', content: prompt });
         }
 
-        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-            method: "POST",
+        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+            method: 'POST',
             headers: {
-                "Authorization": `Bearer ${apiKey}`,
-                "HTTP-Referer": "http://localhost:3000",
-                "X-Title": "ESP Design Studio",
-                "Content-Type": "application/json"
+                'Authorization': `Bearer ${apiKey}`,
+                'HTTP-Referer': 'http://localhost:3000',
+                'X-Title': 'ESP Design Studio',
+                'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                model: "openrouter/free",
+                model: 'openrouter/free',
                 messages: apiMessages,
                 stream: true,
-                temperature: 0.1
-            })
+                temperature: 0.1,
+            }),
         });
 
-        if (!response.ok) {
-            throw new Error(`OpenRouter HTTP Error: ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`OpenRouter HTTP Error: ${response.status}`);
 
         res.setHeader('Content-Type', 'text/plain; charset=utf-8');
         res.setHeader('Transfer-Encoding', 'chunked');
@@ -174,14 +175,13 @@ app.post('/api/copilot/stream', async (req, res) => {
 
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
-        let buffer = "";
+        let buffer = '';
 
         while (true) {
             const { done, value } = await reader.read();
             buffer += decoder.decode(value || new Uint8Array(), { stream: !done });
-
             const lines = buffer.split('\n');
-            buffer = lines.pop() || "";
+            buffer = lines.pop() || '';
 
             for (const line of lines) {
                 const trimmed = line.trim();
@@ -189,31 +189,28 @@ app.post('/api/copilot/stream', async (req, res) => {
                 if (trimmed.includes('[DONE]')) break;
                 if (trimmed.startsWith('data: ')) {
                     try {
-                        const jsonStr = trimmed.substring(6);
-                        const parsed = JSON.parse(jsonStr);
-                        const content = parsed.choices[0]?.delta?.content || "";
-                        if (content) {
-                            res.write(content);
-                        }
-                    } catch (e) {
-                        // Ignorar fragmentos parciales
-                    }
+                        const parsed = JSON.parse(trimmed.substring(6));
+                        const content = parsed.choices[0]?.delta?.content || '';
+                        if (content) res.write(content);
+                    } catch (e) { /* fragmento parcial */ }
                 }
             }
-
             if (done) break;
         }
         res.end();
 
     } catch (error) {
-        console.error("Error crítico de transmisión de datos de IA:", error);
-        if (!res.headersSent) {
-            res.status(500).send("ERROR_GENERATING_TECHNICAL_AUDIT");
-        }
+        console.error('[Copilot Stream] Error:', error);
+        if (!res.headersSent) res.status(500).send('ERROR_GENERATING_TECHNICAL_AUDIT');
     }
 });
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`⚡ [ESP-CORE SERVER] Procesador de IA activo en el puerto ${PORT}`);
+    console.log(`⚡ [ESP DEV SERVER] Servidor de desarrollo activo en puerto ${PORT}`);
+    console.log(`   Endpoints disponibles:`);
+    console.log(`   - GET  http://localhost:${PORT}/api/onedrive-fetch?url=<shareUrl>`);
+    console.log(`   - POST http://localhost:${PORT}/api/copilot/stream`);
+    console.log(`   - GET  http://localhost:${PORT}/api/ai-memory`);
+    console.log(`   - POST http://localhost:${PORT}/api/ai-memory`);
 });

@@ -362,7 +362,7 @@ export const useEspCopilot = (params: SystemParams, results: any, activeStep: nu
                 headers["Authorization"] = `Bearer ${userKey}`;
             }
 
-            const res = await fetch("http://127.0.0.1:4000/api/copilot/stream", {
+            const res = await fetch("/api/copilot/stream", {
                 method: "POST",
                 headers,
                 body: JSON.stringify({

@@ -103,19 +103,62 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
     const [visibleCount, setVisibleCount] = useState<number>(50);
     const [isSyncingOneDrive, setIsSyncingOneDrive] = useState(false);
 
+    // URLs de compartido de OneDrive (configuradas en cloud_connector.py original)
+    const ONEDRIVE_URLS = {
+        designs: 'https://1drv.ms/x/c/06cc4035ad46ff97/IQClWg69qziUQZ4pcxlcyoF5AdzaFbqGWhkSVp1rxJKvfwQ?e=Zuk6P7',
+        scada:   'https://1drv.ms/x/c/06cc4035ad46ff97/IQCX60W0l5YeQbDd8jHpZlMJAa0JHU31uqYaXJU1Tawo8I8?e=SD43E4',
+    };
+
+    // Carga directa desde OneDrive a través del proxy serverless (/api/onedrive-fetch)
+    const loadFromOneDrive = useCallback(async (silent = false) => {
+        if (!silent) setImportProgress({ current: 0, total: 100, label: language === 'es' ? 'Conectando con OneDrive...' : 'Connecting to OneDrive...' });
+        try {
+            // 1. Descargar Excel de Diseños
+            if (!silent) setImportProgress({ current: 10, total: 100, label: language === 'es' ? 'Descargando Base de Datos Maestra desde OneDrive...' : 'Downloading master database from OneDrive...' });
+            const resDesigns = await fetch(`/api/onedrive-fetch?url=${encodeURIComponent(ONEDRIVE_URLS.designs)}`);
+            if (resDesigns.ok) {
+                const buf = await resDesigns.arrayBuffer();
+                await processExcelDesignsBufferRef.current(new Uint8Array(buf), true, false);
+            } else {
+                throw new Error(`Error descargando diseños: ${resDesigns.status}`);
+            }
+
+            // 2. Descargar Excel de Pruebas de Producción / SCADA
+            if (!silent) setImportProgress({ current: 60, total: 100, label: language === 'es' ? 'Descargando datos SCADA/Producción desde OneDrive...' : 'Downloading SCADA/Production data from OneDrive...' });
+            const resScada = await fetch(`/api/onedrive-fetch?url=${encodeURIComponent(ONEDRIVE_URLS.scada)}`);
+            if (resScada.ok) {
+                const buf = await resScada.arrayBuffer();
+                await processScadaBufferRef.current(new Uint8Array(buf), true, false);
+            } else {
+                throw new Error(`Error descargando SCADA: ${resScada.status}`);
+            }
+
+            if (!silent) {
+                setImportProgress({ current: 100, total: 100, label: language === 'es' ? '¡Sistema Listo!' : 'System Ready!' });
+                await new Promise(r => setTimeout(r, 400));
+                setImportProgress(null);
+                setDataLoaded(true);
+            }
+            console.log('✅ [OneDrive Sync] Datos cargados correctamente desde OneDrive.');
+        } catch (err: any) {
+            console.error('[OneDrive Sync] Error:', err);
+            if (!silent) {
+                setImportProgress(null);
+                alert(language === 'es'
+                    ? `Error al sincronizar con OneDrive: ${err.message}\n\nVerifica que el servidor esté activo y los links de OneDrive sean válidos.`
+                    : `Error syncing from OneDrive: ${err.message}`);
+            }
+            throw err;
+        }
+    }, [language]);
+
     const handleForceSync = async () => {
+        if (isSyncingOneDrive) return;
         setIsSyncingOneDrive(true);
         try {
-            const res = await fetch('http://127.0.0.1:4000/api/data/sync', { method: 'POST' });
-            if (!res.ok) {
-                alert(language === 'es' ? "La sincronización ya está en curso." : "Sync is already in progress.");
-            }
-        } catch (err) {
-            console.error("Error forzando sincronización:", err);
-            alert(language === 'es' ? "Error de conexión con el backend." : "Connection error with backend.");
+            await loadFromOneDrive(false);
         } finally {
-            // Un pequeño retraso para suavizar la animación del botón
-            setTimeout(() => setIsSyncingOneDrive(false), 2000);
+            setTimeout(() => setIsSyncingOneDrive(false), 1000);
         }
     };
 
@@ -288,134 +331,63 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
         processScadaBufferRef.current = processScadaBuffer;
     }, [processExcelDesignsBuffer, processScadaBuffer]);
 
-    // "?"?"?"? SILENT DATA RELOADER (NO OVERLAYS) "?"?"?"?"?"?"?"?"?"?"?"?"?"?
-    const loadAutoFilesSilently = useCallback(async () => {
-        try {
-            console.log("🔄 [SILENT SYNC] Recargando datos de forma silenciosa...");
-            const resDesigns = await fetch(`/designs_precalc.json?t=${Date.now()}`).catch(() => null);
-            if (resDesigns && resDesigns.ok) {
-                const payload = await resDesigns.json();
-                await processExcelDesignsBufferRef.current(payload, true, true);
-            }
-            const resScada = await fetch(`/scada_precalc.json?t=${Date.now()}`).catch(() => null);
-            if (resScada && resScada.ok) {
-                const payload = await resScada.json();
-                await processScadaBufferRef.current(payload, true, true);
-            }
-            console.log("✅ [SILENT SYNC] Datos actualizados correctamente.");
-        } catch (err) {
-            console.error("Error silently reloading data:", err);
-        }
-    }, []);
-
-    // "?"?"?"? AUTO-LOAD INITIAL FILES ON MOUNT "?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?
+    // "?"?"?"? AUTO-LOAD INICIAL DESDE ONEDRIVE "?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?
+    const loadFromOneDriveRef = useRef(loadFromOneDrive);
     useEffect(() => {
-        // Skip if data was already loaded (cached from previous mount)
+        loadFromOneDriveRef.current = loadFromOneDrive;
+    }, [loadFromOneDrive]);
+
+    useEffect(() => {
+        // Omitir si los datos ya están en caché de esta sesión
         if (_dataLoaded || fleet.length > 0) return;
 
         let mounted = true;
         const loadAutoFiles = async () => {
             try {
-                setImportProgress({ current: 0, total: 100, label: 'Inicializando Centro de Control...' });
-                await new Promise(r => setTimeout(r, 200));
+                // 1. Intentar cargar desde los JSON pre-calculados locales (carga rápida)
+                setImportProgress({ current: 0, total: 100, label: language === 'es' ? 'Inicializando Centro de Control...' : 'Initializing Control Center...' });
+                await new Promise(r => setTimeout(r, 150));
 
-                // 1. Cargar la Flota Base
-                setImportProgress({ current: 10, total: 100, label: 'Sincronizando Base de Datos Maestra...' });
+                setImportProgress({ current: 10, total: 100, label: language === 'es' ? 'Verificando base de datos local...' : 'Checking local database...' });
                 const resDesigns = await fetch(`/designs_precalc.json?t=${Date.now()}`).catch(() => null);
-                if (resDesigns && resDesigns.ok && mounted) {
-                    const payload = await resDesigns.json();
-                    await processExcelDesignsBufferRef.current(payload, true, true);
-                } else if (mounted) {
-                    setImportProgress({ current: 15, total: 100, label: 'Leyendo Registro de Disenos (XLSX)...' });
-                    const resExcel = await fetch('/DATAS%20DE%20DISE%C3%91O.xlsx');
-                    if (resExcel.ok) {
-                        const buf = await resExcel.arrayBuffer();
-                        await processExcelDesignsBufferRef.current(new Uint8Array(buf), true, false);
-                    }
-                }
+                const resScada   = await fetch(`/scada_precalc.json?t=${Date.now()}`).catch(() => null);
 
-                await new Promise(r => setTimeout(r, 100));
+                const hasLocal = (resDesigns && resDesigns.ok) || (resScada && resScada.ok);
 
-                // 2. Cargar Pruebas de Produccion SCADA
-                setImportProgress({ current: 50, total: 100, label: 'Recuperando Telemetria SCADA...' });
-                const resScada = await fetch(`/scada_precalc.json?t=${Date.now()}`).catch(() => null);
-                if (resScada && resScada.ok && mounted) {
-                    const payload = await resScada.json();
-                    await processScadaBufferRef.current(payload, true, true);
-                } else if (mounted) {
-                    setImportProgress({ current: 60, total: 100, label: 'Procesando Reportes de Produccion...' });
-                    const resExcel = await fetch('/PRUEBAS DE PRODUCCION.xlsx');
-                    if (resExcel.ok) {
-                        const buf = await resExcel.arrayBuffer();
-                        await processScadaBufferRef.current(new Uint8Array(buf), true, false);
+                if (hasLocal && mounted) {
+                    // Cargar desde JSON pre-calculados (instantáneo)
+                    setImportProgress({ current: 20, total: 100, label: language === 'es' ? 'Cargando base de datos maestra...' : 'Loading master database...' });
+                    if (resDesigns && resDesigns.ok) {
+                        const payload = await resDesigns.json();
+                        await processExcelDesignsBufferRef.current(payload, true, true);
                     }
+                    setImportProgress({ current: 60, total: 100, label: language === 'es' ? 'Cargando telemetría SCADA...' : 'Loading SCADA telemetry...' });
+                    if (resScada && resScada.ok) {
+                        const payload = await resScada.json();
+                        await processScadaBufferRef.current(payload, true, true);
+                    }
+                } else if (mounted) {
+                    // Sin datos locales → sincronizar directamente desde OneDrive
+                    await loadFromOneDriveRef.current(false);
+                    return; // loadFromOneDrive ya maneja el setImportProgress final
                 }
 
                 if (mounted) {
-                    setImportProgress({ current: 100, total: 100, label: 'Sistema Listo.' });
+                    setImportProgress({ current: 100, total: 100, label: language === 'es' ? '¡Sistema Listo!' : 'System Ready!' });
                     await new Promise(r => setTimeout(r, 400));
                     setImportProgress(null);
                     setDataLoaded(true);
                 }
             } catch (err) {
-                console.error("Error auto-loading standard files:", err);
+                console.error('[Auto-Load] Error cargando datos iniciales:', err);
                 if (mounted) setImportProgress(null);
             }
         };
 
-        // Delay inicial para suavizar la transicion
         setTimeout(loadAutoFiles, 300);
-
         return () => { mounted = false; };
-    }, []);
-
-    // Keep reload function referenced through a ref for the SSE lifecycle
-    const reloadRef = useRef(loadAutoFilesSilently);
-    useEffect(() => {
-        reloadRef.current = loadAutoFilesSilently;
-    }, [loadAutoFilesSilently]);
-
-    // "?"?"?"? LIVE SYNC SSE CONNECTIVITY "?"?"?"?"?"?"?"?"?"?"?"?"?
-    useEffect(() => {
-        let mounted = true;
-        let eventSource: EventSource | null = null;
-
-        const connectSSE = () => {
-            if (!mounted) return;
-            console.log('🔌 [SSE] Intentando conectar a live-updates...');
-            eventSource = new EventSource('http://127.0.0.1:4000/api/data/live-updates');
-
-            eventSource.onmessage = async (event) => {
-                try {
-                    const data = JSON.parse(event.data);
-                    if (data.type === 'update') {
-                        console.log('⚡ [SSE UPDATE] Cambio en OneDrive detectado. Recargando...');
-                        if (mounted) {
-                            await reloadRef.current();
-                        }
-                    }
-                } catch (e) {
-                    console.error('Error procesando mensaje SSE:', e);
-                }
-            };
-
-            eventSource.onerror = (err) => {
-                console.warn('Error en SSE, reintentando en 5s...');
-                eventSource?.close();
-                setTimeout(connectSSE, 5000);
-            };
-        };
-
-        connectSSE();
-
-        return () => {
-            mounted = false;
-            if (eventSource) {
-                eventSource.close();
-            }
-        };
-    }, []);
-    // "?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?
+    }, [language]);
+    // "?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?
 
 
     const selectedWell = useMemo(() => fleet.find(w => w.id === selectedWellId), [selectedWellId, fleet]);

@@ -334,7 +334,7 @@ ${c.recommendation}`;
                 "Por favor, consolida y compacta los siguientes 25 diagnósticos históricos en un resumen técnico de alta densidad:\n\n" + 
                 casesText;
 
-            const response = await fetch("http://127.0.0.1:4000/api/copilot/stream", {
+            const response = await fetch("/api/copilot/stream", {
                 method: "POST",
                 headers,
                 body: JSON.stringify({
