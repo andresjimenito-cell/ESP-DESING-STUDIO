@@ -430,6 +430,10 @@ export const FloatingAiPanel = ({
                         }).join('\n');
                 }
 
+                // Solid / Sand parameters
+                const sandCutVal = wellParams?.fluids?.sandCut || 0;
+                const sandDensityVal = wellParams?.fluids?.sandDensity || 2.65;
+
                 contextData = `ANALYSIS FOR SPECIFIC WELL: ${selectedWell.name}
                 - General Status: ${selectedWell.status.toUpperCase()} (Health Score: ${healthScore.toFixed(0)}/100, Estado Actual: ${selectedWell.estadoActual || 'N/A'})
                 - System/ALS: ${selectedWell.als || 'ESP'}
@@ -444,6 +448,8 @@ export const FloatingAiPanel = ({
                   * Target Flow Rate (Caudal Objetivo): ${selectedWell.targetRate || 0} BPD
                   * Water Cut / BS&W: ${bswVal}%
                   * GOR (Gas Oil Ratio): ${selectedWell.productionTest?.gor || 0} scf/stb
+                  * Sand Cut / Solids Volume (Volumen de Arena / Sólidos): ${sandCutVal}%
+                  * Specific Gravity of Solids (SG Sólidos): ${sandDensityVal}
                   * PIP (Intake Pressure / Presión de Entrada): ${pipVal} psi
                   * PDP (Discharge Pressure / Presión de Descarga): ${pdpVal} psi
                   * Pwf (Presión de Fondo Fluyendo): ${Math.round(pwfVal)} psi
@@ -496,6 +502,12 @@ export const FloatingAiPanel = ({
             Always address the user as "Ingeniero" (or "Engineer" if language is English). It is strictly forbidden to use proper names like "Andrés", "Andres", or any other name. Never assume or output person names.
             Do not request information from the user (such as pump curves, BS&W, frequency, or pressures) if it is already present in the CONTEXT below. Use the CONTEXT data directly to answer and make predictions.
             Aprovecha la "MEMORIA HISTÓRICA / CASOS PREVIOS RELEVANTES" si contiene información del pozo o de la situación técnica consultada.
+            
+            TECHNICAL DETAILS ON EROSION & SAND HANDLING:
+            - If Sand Cut (Solids Volume) > 0%, evaluate the erosion wear risk. High sand concentration causes accelerated stage wear, leading to rapid degradation of head capacity (degradación de cabezal/bomba).
+            - Recommend sand mitigation strategies (e.g., sand screens, specialized coating/hardened stages like tungsten carbide, or operation within a safe flow velocity to prevent solids settling or excessive abrasion).
+            - When analyzing degradation, consider if solids could be a contributing factor if sand cut is elevated. Use the Specific Gravity of solids (SG Sólidos) and Sand Cut (Volumen de Arena) for wear/erosion assessments.
+            
             CONTEXT:\n${contextWithHistory}`.trim();
 
             const apiMessages = [

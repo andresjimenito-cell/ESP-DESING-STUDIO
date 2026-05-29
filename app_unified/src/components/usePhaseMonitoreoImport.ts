@@ -379,7 +379,16 @@ export const usePhaseMonitoreoImport = (
                             midPerfsMD,
                             casing, tubing
                         },
-                        fluids: { ...INITIAL_PARAMS.fluids, apiOil: api || 30, waterCut: bsw, gor, pb: pbValue, isDeadOil: pbValue <= 0 },
+                        fluids: {
+                            ...INITIAL_PARAMS.fluids,
+                            apiOil: api || 30,
+                            waterCut: bsw,
+                            gor,
+                            pb: pbValue,
+                            isDeadOil: pbValue <= 0,
+                            sandCut: n_ext(get_ext(row, ['PRODUCCION DE SOLIDOS (PTB)', 'PRODUCCION DE SOLIDOS', 'PRODUCCIONDESOLIDOS', 'SAND CUT', 'SAND_CUT', 'SOLIDOS', 'SOLIDS', 'VOLUMEN DE ARENA', 'VOLUMEN ARENA'])),
+                            sandDensity: n_ext(get_ext(row, ['SG SOLIDOS', 'SG SÓLIDOS', 'SAND DENSITY', 'SAND_DENSITY', 'GRAVEDAD ESPECIFICA SOLIDOS', 'SG_SOLIDOS', 'SG SOLIDO', 'SG SÓLIDO'])) || 2.65
+                        },
                         inflow: { ...INITIAL_PARAMS.inflow, pStatic, ip },
                         pressures: { ...INITIAL_PARAMS.pressures, totalRate: rate(ip), pumpDepthMD: intakeMD, pht: 80 },
                         survey: surveyDataByWell[fuzzyWellName(wellName)] || surveyDataByWell['UNKNOWN'] || [],
