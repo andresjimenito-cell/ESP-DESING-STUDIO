@@ -29,51 +29,13 @@ export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
 
     try {
-        // ── FASE 1: Extraer link de descarga directa (OneDrive Bypass) ──────────
-        const pageRes = await fetch(url, {
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            },
-            redirect: 'follow',
-        });
-
-        const html = await pageRes.text();
-
-        // Buscar la URL de descarga directa en el HTML del visor de OneDrive
-        const patterns = [
-            /"FileGetUrl"\s*:\s*"([^"]+)"/,
-            /"FileUrlNoAuth"\s*:\s*"([^"]+)"/,
-            /downloadUrl\s*:\s*"([^"]+)"/,
-            /"downloadFileUrl"\s*:\s*"([^"]+)"/,
-        ];
-
-        let directUrl = null;
-        for (const pattern of patterns) {
-            const match = html.match(pattern);
-            if (match) {
-                // Limpiar caracteres escapados (\u0026 → &)
-                directUrl = match[1]
-                    .replace(/\\u0026/g, '&')
-                    .replace(/\\u003d/gi, '=')
-                    .replace(/\\\//g, '/');
-                break;
-            }
-        }
-
-        // Fallback: intentar convertir la URL compartida en URL de descarga directa
-        if (!directUrl) {
-            if (url.includes('1drv.ms') || url.includes('onedrive.live.com')) {
-                directUrl = url
-                    .replace('redir?', 'download?')
-                    .replace('view?', 'download?');
-            } else {
-                return res.status(422).json({
-                    error: 'No se pudo extraer el link de descarga del HTML de OneDrive.',
-                    hint: 'Asegúrate de que el link sea un enlace de compartido válido de OneDrive.',
-                });
-            }
-        }
+        // Convertir la URL compartida de OneDrive a formato base64 compatible con la API de Microsoft
+        const base64Url = Buffer.from(url).toString('base64')
+            .replace(/=/g, '')
+            .replace(/\//g, '_')
+            .replace(/\+/g, '-');
+        
+        const directUrl = `https://api.onedrive.com/v1.0/shares/u!${base64Url}/root/content`;
 
         // ── FASE 2: Descargar el archivo Excel ──────────────────────────────────
         const fileRes = await fetch(directUrl, {
