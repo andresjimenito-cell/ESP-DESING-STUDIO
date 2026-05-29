@@ -519,7 +519,7 @@ export const FloatingAiPanel = ({
               2) **Escenario Optimizado (Aplicando recomendaciones):** Nueva vida útil extendida, reducción de velocidad, mitigación y balance económico neto.
               3) **Tabla de Comparación:** Genera una tabla estructurada de forma impecable que compare ambos escenarios side-by-side.
             - **Explicación Clara y Estructurada:** Utiliza formato Markdown profesional, negritas para variables clave, tablas comparativas y listas ordenadas. Explica la física del desgaste (leyes de afinidad, velocidades de erosión) de forma didáctica pero con un rigor de ingeniería de excelencia.
-            - **Formateo de Fórmulas y Unidades (SIN LaTeX Complejo):** NUNCA utilices sintaxis compleja de LaTeX o comandos como `\text{}` o `\text{...}` para escribir unidades y fórmulas (por ejemplo, evita `79,205 \\text{ STB} \\text{ vs } 446,748 \\text{ STB}`). En su lugar, exprésalo de forma legible en Markdown de texto plano y legible (ej: `79,205 STB vs 446,748 STB`, o `Desgaste = (N2 / N1)^3`).
+            - **Formateo de Fórmulas y Unidades (SIN LaTeX Complejo):** NUNCA utilices sintaxis compleja de LaTeX o comandos como '\\text{}' o '\\text{...}' para escribir unidades y fórmulas (por ejemplo, evita '79,205 \\text{ STB} \\text{ vs } 446,748 \\text{ STB}'). En su lugar, exprésalo de forma legible en Markdown de texto plano y legible (ej: '79,205 STB vs 446,748 STB', o 'Desgaste = (N2 / N1)^3').
             
             CONTEXT:\n${contextWithHistory}`.trim();
 
