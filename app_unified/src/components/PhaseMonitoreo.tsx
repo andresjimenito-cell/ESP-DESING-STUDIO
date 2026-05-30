@@ -103,34 +103,30 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
     const [visibleCount, setVisibleCount] = useState<number>(50);
     const [isSyncingOneDrive, setIsSyncingOneDrive] = useState(false);
 
-    // URLs de compartido de OneDrive (configuradas en cloud_connector.py original)
-    const ONEDRIVE_URLS = {
-        designs: 'https://1drv.ms/x/c/06cc4035ad46ff97/IQClWg69qziUQZ4pcxlcyoF5AdzaFbqGWhkSVp1rxJKvfwQ?e=Zuk6P7',
-        scada:   'https://1drv.ms/x/c/06cc4035ad46ff97/IQCX60W0l5YeQbDd8jHpZlMJAa0JHU31uqYaXJU1Tawo8I8?e=SD43E4',
-    };
-
     // Carga directa desde OneDrive a través del proxy serverless (/api/onedrive-fetch)
     const loadFromOneDrive = useCallback(async (silent = false) => {
         if (!silent) setImportProgress({ current: 0, total: 100, label: language === 'es' ? 'Conectando con OneDrive...' : 'Connecting to OneDrive...' });
         try {
-            // 1. Descargar Excel de Diseños
+            // 1. Descargar Excel de Diseños (usa Microsoft Graph API via proxy)
             if (!silent) setImportProgress({ current: 10, total: 100, label: language === 'es' ? 'Descargando Base de Datos Maestra desde OneDrive...' : 'Downloading master database from OneDrive...' });
-            const resDesigns = await fetch(`/api/onedrive-fetch?url=${encodeURIComponent(ONEDRIVE_URLS.designs)}`);
+            const resDesigns = await fetch(`/api/onedrive-fetch?file=designs`);
             if (resDesigns.ok) {
                 const buf = await resDesigns.arrayBuffer();
                 await processExcelDesignsBufferRef.current(new Uint8Array(buf), true, false);
             } else {
-                throw new Error(`Error descargando diseños: ${resDesigns.status}`);
+                const errData = await resDesigns.json().catch(() => ({ error: `HTTP ${resDesigns.status}` }));
+                throw new Error(errData.detail || errData.error || `Error descargando diseños: ${resDesigns.status}`);
             }
 
             // 2. Descargar Excel de Pruebas de Producción / SCADA
             if (!silent) setImportProgress({ current: 60, total: 100, label: language === 'es' ? 'Descargando datos SCADA/Producción desde OneDrive...' : 'Downloading SCADA/Production data from OneDrive...' });
-            const resScada = await fetch(`/api/onedrive-fetch?url=${encodeURIComponent(ONEDRIVE_URLS.scada)}`);
+            const resScada = await fetch(`/api/onedrive-fetch?file=scada`);
             if (resScada.ok) {
                 const buf = await resScada.arrayBuffer();
                 await processScadaBufferRef.current(new Uint8Array(buf), true, false);
             } else {
-                throw new Error(`Error descargando SCADA: ${resScada.status}`);
+                const errData = await resScada.json().catch(() => ({ error: `HTTP ${resScada.status}` }));
+                throw new Error(errData.detail || errData.error || `Error descargando SCADA: ${resScada.status}`);
             }
 
             if (!silent) {
@@ -344,48 +340,12 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
         let mounted = true;
         const loadAutoFiles = async () => {
             try {
-                // 1. Intentar cargar desde los JSON pre-calculados locales (carga rápida)
-                setImportProgress({ current: 0, total: 100, label: language === 'es' ? 'Inicializando Centro de Control...' : 'Initializing Control Center...' });
-                await new Promise(r => setTimeout(r, 150));
-
-                setImportProgress({ current: 10, total: 100, label: language === 'es' ? 'Verificando base de datos local...' : 'Checking local database...' });
-                const resDesigns = await fetch(`/designs_precalc.json?t=${Date.now()}`).catch(() => null);
-                const resScada   = await fetch(`/scada_precalc.json?t=${Date.now()}`).catch(() => null);
-
-                const isJson = (res: Response | null) => {
-                    if (!res || !res.ok) return false;
-                    const ct = res.headers.get('content-type') || '';
-                    return ct.includes('application/json');
-                };
-
-                const hasLocal = isJson(resDesigns) || isJson(resScada);
-
-                if (hasLocal && mounted) {
-                    // Cargar desde JSON pre-calculados (instantáneo)
-                    setImportProgress({ current: 20, total: 100, label: language === 'es' ? 'Cargando base de datos maestra...' : 'Loading master database...' });
-                    if (isJson(resDesigns)) {
-                        const payload = await resDesigns!.json();
-                        await processExcelDesignsBufferRef.current(payload, true, true);
-                    }
-                    setImportProgress({ current: 60, total: 100, label: language === 'es' ? 'Cargando telemetría SCADA...' : 'Loading SCADA telemetry...' });
-                    if (isJson(resScada)) {
-                        const payload = await resScada!.json();
-                        await processScadaBufferRef.current(payload, true, true);
-                    }
-                } else if (mounted) {
-                    // Sin datos locales → sincronizar directamente desde OneDrive
-                    await loadFromOneDriveRef.current(false);
-                    return; // loadFromOneDrive ya maneja el setImportProgress final
-                }
-
+                // Cargar siempre directo desde OneDrive (datos siempre frescos del Excel)
                 if (mounted) {
-                    setImportProgress({ current: 100, total: 100, label: language === 'es' ? '¡Sistema Listo!' : 'System Ready!' });
-                    await new Promise(r => setTimeout(r, 400));
-                    setImportProgress(null);
-                    setDataLoaded(true);
+                    await loadFromOneDriveRef.current(false);
                 }
             } catch (err) {
-                console.error('[Auto-Load] Error cargando datos iniciales:', err);
+                console.error('[Auto-Load] Error cargando datos desde OneDrive:', err);
                 if (mounted) setImportProgress(null);
             }
         };
