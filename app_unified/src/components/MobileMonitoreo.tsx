@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { 
-    Activity, ChevronLeft, RefreshCw, Download, Database, Trash2, 
-    Monitor, Shield, Zap, Droplets, Thermometer, ShieldCheck, 
+import {
+    Activity, ChevronLeft, RefreshCw, Download, Database, Trash2,
+    Monitor, Shield, Zap, Droplets, Thermometer, ShieldCheck,
     TrendingUp, MessageSquare, Menu, X, Send, Sparkles, AlertTriangle,
     Layers, Compass, Target, Globe, FileSpreadsheet, Settings, Palette
 } from 'lucide-react';
@@ -33,7 +33,6 @@ interface Props {
     importDbRef: React.RefObject<HTMLInputElement | null>;
     importWellHistoryRef: React.RefObject<HTMLInputElement | null>;
     operationalResults: any;
-    // Core Parity States & Functions from Parent:
     onNavigateToDesign?: (wellParams: SystemParams, pump?: EspPump | null) => void;
     cycleTheme: () => void;
     toggleLanguage: () => void;
@@ -131,14 +130,12 @@ export const MobileMonitoreo: React.FC<Props> = ({
             }
         ];
     }, [selectedWell?.id, selectedWell?.name, selectedWell?.targetRate]);
-    
-    // Chat state
+
     const [msgs, setMsgs] = useState<{ role: string; text: string }[]>([]);
     const [chatInput, setChatInput] = useState('');
     const [chatLoading, setChatLoading] = useState(false);
     const chatEndRef = useRef<HTMLDivElement>(null);
 
-    // Initial greeting when changing wells
     useEffect(() => {
         const greet = selectedWell
             ? (language === 'es' ? `Hola. Analizando el pozo **${selectedWell.name}**. ¿Qué te gustaría verificar de su telemetría o simulación VSD?` : `Hello. Analyzing well **${selectedWell.name}**. What would you like to review?`)
@@ -152,10 +149,8 @@ export const MobileMonitoreo: React.FC<Props> = ({
         }
     }, [msgs, activeTab]);
 
-    // Active well health results
     const wellHealth = selectedWell ? (wellHealthMap[selectedWell.id] || 0) : 0;
 
-    // BHA calculations identical to PhaseMonitoreo
     const safeBhaResults = useMemo(() => {
         if (!selectedWell || !wellMatchParams) {
             return { fluidLevel: 0, fluidLevelMD: 0, submergenceFt: 0, pumpIntakePressure: 0, motorLoad: 0, pip: 0 };
@@ -166,14 +161,14 @@ export const MobileMonitoreo: React.FC<Props> = ({
         const ratio = f / baseFreq;
         const head = pump ? calculateBaseHead(q / ratio, pump) * Math.pow(ratio, 2) : 0;
         const hasMotorExact = !!wellMatchParams.selectedMotor;
-        
+
         const liveBhaResults = pump
             ? (calculateSystemResults(q, head, wellMatchParams, pump, f) || {
                 pip: selectedWell.productionTest.pip,
                 motorLoad: hasMotorExact ? Math.abs(selectedWell.consumptionReal) : 0
             })
             : null;
-            
+
         return liveBhaResults || { fluidLevel: 0, fluidLevelMD: 0, submergenceFt: 0, pumpIntakePressure: 0, motorLoad: 0, pip: 0 };
     }, [selectedWell?.id, pump?.id, wellMatchParams]);
 
@@ -247,126 +242,260 @@ export const MobileMonitoreo: React.FC<Props> = ({
         }
     };
 
+    // ─── Score helpers ────────────────────────────────────────────────────────
+    const getScoreColor = (score: number) => {
+        if (score >= 90) return { bar: '#22c55e', text: 'text-emerald-400', ring: 'border-emerald-500/40', bg: 'bg-emerald-500/10', label: 'HEALTHY' };
+        if (score >= 60) return { bar: '#f59e0b', text: 'text-amber-400', ring: 'border-amber-500/40', bg: 'bg-amber-500/10', label: 'CAUTION' };
+        return { bar: '#ef4444', text: 'text-red-400', ring: 'border-red-500/40', bg: 'bg-red-500/10', label: 'CRITICAL' };
+    };
+
+    // ─── Tab definitions ──────────────────────────────────────────────────────
+    const tabs = [
+        { id: 'fleet', icon: Menu, label: 'Flota' },
+        { id: 'analysis', icon: TrendingUp, label: 'Cotejo' },
+        { id: 'bha', icon: Layers, label: 'BHA/3D' },
+        { id: 'copilot', icon: MessageSquare, label: 'Copilot' },
+    ] as const;
+
     return (
         <div className="flex flex-col h-screen w-full bg-canvas text-txt-main overflow-hidden font-sans select-none pb-[64px]">
-            {/* TOP BAR BRAND */}
-            <header className="h-14 bg-surface border-b border-white/5 flex items-center justify-between px-4 shrink-0">
-                <div className="flex items-center gap-2">
-                    <button 
+
+            {/* ══════════════════════════════════════════════════════
+                TOP BAR — tira premium con acento de color
+            ══════════════════════════════════════════════════════ */}
+            <header className="relative h-14 bg-surface flex items-center justify-between px-3 shrink-0 overflow-hidden">
+                {/* línea de acento top */}
+                <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent opacity-70" />
+
+                <div className="flex items-center gap-2 min-w-0">
+                    <button
                         onClick={onBack}
-                        className="p-2 hover:bg-white/5 rounded-lg text-txt-muted hover:text-white"
+                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/10 text-txt-muted hover:text-white transition-colors active:scale-95"
                     >
-                        <ChevronLeft className="w-5 h-5" />
+                        <ChevronLeft className="w-4 h-4" />
                     </button>
-                    <div className="flex flex-col">
-                        <span className="text-xs font-black uppercase tracking-widest text-primary">ESP STUDIO MOBILE</span>
-                        {selectedWell && <span className="text-[10px] text-txt-muted font-bold uppercase truncate max-w-[120px]">{selectedWell.name}</span>}
+
+                    {/* Brand pill */}
+                    <div className="flex flex-col leading-none min-w-0">
+                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-primary">
+                            ESP STUDIO
+                        </span>
+                        {selectedWell ? (
+                            <span className="text-[11px] font-bold text-txt-main truncate max-w-[150px] leading-tight">
+                                {selectedWell.name}
+                            </span>
+                        ) : (
+                            <span className="text-[10px] text-txt-muted font-semibold leading-tight">
+                                {fleet.length} pozos monitoreados
+                            </span>
+                        )}
                     </div>
                 </div>
 
+                {/* Right controls */}
                 <div className="flex items-center gap-1.5">
-                    <button 
+                    {selectedWell && (
+                        <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full border text-[9px] font-black uppercase ${getScoreColor(wellHealth).bg} ${getScoreColor(wellHealth).ring} ${getScoreColor(wellHealth).text}`}>
+                            <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
+                            {wellHealth.toFixed(0)}%
+                        </div>
+                    )}
+                    <button
                         onClick={onForceSync}
                         disabled={isSyncingOneDrive}
-                        className="p-2 bg-white/5 border border-white/5 hover:bg-white/10 rounded-lg text-txt-muted active:scale-95 transition-all"
-                        title="OneDrive Sync"
+                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/10 text-txt-muted hover:text-primary transition-all active:scale-95"
                     >
-                        <RefreshCw className={`w-4 h-4 ${isSyncingOneDrive ? 'animate-spin' : ''}`} />
+                        <RefreshCw className={`w-3.5 h-3.5 ${isSyncingOneDrive ? 'animate-spin text-primary' : ''}`} />
                     </button>
                 </div>
+
+                {/* línea de acento bottom */}
+                <div className="absolute bottom-0 left-0 right-0 h-px bg-white/5" />
             </header>
 
-            {/* TAB CONTENTS */}
-            <main className="flex-1 overflow-y-auto p-3 min-h-0 custom-scrollbar pb-8">
+            {/* ══════════════════════════════════════════════════════
+                TAB INDICATOR BAR — delgada pero visible
+            ══════════════════════════════════════════════════════ */}
+            <div className="flex h-0.5 shrink-0 bg-white/5">
+                {tabs.map(tab => (
+                    <div
+                        key={tab.id}
+                        className="flex-1 transition-all duration-300"
+                        style={{ background: activeTab === tab.id ? 'rgb(var(--color-primary))' : 'transparent' }}
+                    />
+                ))}
+            </div>
+
+            {/* ══════════════════════════════════════════════════════
+                MAIN CONTENT
+            ══════════════════════════════════════════════════════ */}
+            <main className="flex-1 overflow-y-auto custom-scrollbar min-h-0">
+
+                {/* ── FLOTA ───────────────────────────────────────── */}
                 {activeTab === 'fleet' && (
-                    <div className="space-y-4 animate-fadeIn">
-                        {/* Fleet Import Actions */}
-                        <div className="flex gap-2 items-center bg-surface/50 p-2.5 border border-white/5">
-                            <button 
+                    <div className="animate-fadeIn">
+
+                        {/* Import action strip */}
+                        <div className="grid grid-cols-3 gap-px bg-white/5 border-b border-white/5">
+                            <button
                                 onClick={() => importDesignRef.current?.click()}
-                                className="flex-1 flex items-center justify-center gap-2 py-3 bg-primary/10 border border-primary/20 text-primary text-[10px] font-black uppercase tracking-wider active:bg-primary/20"
+                                className="flex flex-col items-center justify-center gap-1 py-3.5 bg-surface hover:bg-primary/10 active:bg-primary/20 transition-colors group"
                             >
-                                <Database className="w-3.5 h-3.5" />
-                                Diseños
+                                <Database className="w-4 h-4 text-primary group-hover:scale-110 transition-transform" />
+                                <span className="text-[8px] font-black uppercase tracking-widest text-txt-muted group-hover:text-primary">Diseños</span>
                             </button>
-                            <button 
+                            <button
                                 onClick={() => importDbRef.current?.click()}
-                                className="flex-1 flex items-center justify-center gap-2 py-3 bg-secondary/10 border border-secondary/20 text-secondary text-[10px] font-black uppercase tracking-wider active:bg-secondary/20"
+                                className="flex flex-col items-center justify-center gap-1 py-3.5 bg-surface hover:bg-secondary/10 active:bg-secondary/20 transition-colors group"
                             >
-                                <TrendingUp className="w-3.5 h-3.5" />
-                                SCADA
+                                <TrendingUp className="w-4 h-4 text-secondary group-hover:scale-110 transition-transform" />
+                                <span className="text-[8px] font-black uppercase tracking-widest text-txt-muted group-hover:text-secondary">SCADA</span>
                             </button>
-                            <button 
+                            <button
                                 onClick={clearFleet}
-                                className="p-3 bg-danger/10 hover:bg-danger text-danger hover:text-white border border-danger/20 active:scale-95 transition-all"
-                                title="Limpiar Flota"
+                                className="flex flex-col items-center justify-center gap-1 py-3.5 bg-surface hover:bg-danger/10 active:bg-danger/20 transition-colors group"
                             >
-                                <Trash2 className="w-4 h-4" />
+                                <Trash2 className="w-4 h-4 text-danger group-hover:scale-110 transition-transform" />
+                                <span className="text-[8px] font-black uppercase tracking-widest text-txt-muted group-hover:text-danger">Limpiar</span>
                             </button>
                         </div>
 
-                        {/* Search and Filters */}
-                        <div className="bg-surface/30 p-3 border border-white/5 space-y-2">
+                        {/* Search + Filters */}
+                        <div className="p-3 space-y-2.5 border-b border-white/5 bg-surface/40">
                             <DebouncedSearchInput
                                 value={searchTerm}
                                 onChange={setSearchTerm}
                                 placeholder="Buscar pozo..."
                             />
-                            
-                            {/* Filter Rows */}
-                            <div className="flex items-center gap-1 bg-canvas/50 p-0.5 border border-white/5">
-                                <button onClick={() => setDataFilter('all')} className={`h-7 px-2 rounded-md text-[7px] font-black uppercase tracking-widest flex-1 ${dataFilter === 'all' ? 'bg-primary text-white' : 'text-txt-muted'}`}>Datos: Todos</button>
-                                <button onClick={() => setDataFilter('complete')} className={`h-7 px-2 rounded-md text-[7px] font-black uppercase tracking-widest flex-1 ${dataFilter === 'complete' ? 'bg-success/20 text-success' : 'text-txt-muted'}`}>Completos</button>
-                                <button onClick={() => setDataFilter('missing')} className={`h-7 px-2 rounded-md text-[7px] font-black uppercase tracking-widest flex-1 ${dataFilter === 'missing' ? 'bg-warning/20 text-warning' : 'text-txt-muted'}`}>Faltan</button>
-                            </div>
-                            
-                            <div className="flex items-center gap-1 bg-canvas/50 p-0.5 border border-white/5">
-                                <button onClick={() => setHealthFilter('all')} className={`h-7 px-2 rounded-md text-[7px] font-black uppercase tracking-widest flex-1 ${healthFilter === 'all' ? 'bg-primary text-white' : 'text-txt-muted'}`}>Salud: Todos</button>
-                                <button onClick={() => setHealthFilter('healthy')} className={`h-7 px-2 rounded-md text-[7px] font-black uppercase tracking-widest flex-1 ${healthFilter === 'healthy' ? 'bg-success/20 text-success' : 'text-txt-muted'}`}>Healthy</button>
-                                <button onClick={() => setHealthFilter('caution')} className={`h-7 px-2 rounded-md text-[7px] font-black uppercase tracking-widest flex-1 ${healthFilter === 'caution' ? 'bg-warning/20 text-warning' : 'text-txt-muted'}`}>Caution</button>
-                                <button onClick={() => setHealthFilter('critical')} className={`h-7 px-2 rounded-md text-[7px] font-black uppercase tracking-widest flex-1 ${healthFilter === 'critical' ? 'bg-danger/20 text-danger' : 'text-txt-muted'}`}>Critical</button>
+
+                            {/* Data filter */}
+                            <div className="space-y-1">
+                                <span className="text-[7px] font-black uppercase tracking-[0.15em] text-txt-muted/60 px-0.5">Datos</span>
+                                <div className="flex gap-1">
+                                    {(['all', 'complete', 'missing'] as const).map(f => (
+                                        <button
+                                            key={f}
+                                            onClick={() => setDataFilter(f)}
+                                            className={`flex-1 py-1.5 rounded-md text-[7px] font-black uppercase tracking-wider transition-all ${dataFilter === f
+                                                    ? f === 'all' ? 'bg-primary text-white shadow-sm'
+                                                        : f === 'complete' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                                                            : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                                                    : 'bg-white/5 text-txt-muted hover:bg-white/10'
+                                                }`}
+                                        >
+                                            {f === 'all' ? 'Todos' : f === 'complete' ? 'Completos' : 'Faltan'}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
 
-                            <div className="flex items-center gap-1 bg-canvas/50 p-0.5 border border-white/5">
-                                <button onClick={() => setStatusFilter('all')} className={`h-7 px-1.5 rounded-md text-[6.5px] font-black uppercase tracking-wider flex-1 ${statusFilter === 'all' ? 'bg-primary text-white' : 'text-txt-muted'}`}>Estado: Todos</button>
-                                <button onClick={() => setStatusFilter('operativo')} className={`h-7 px-1.5 rounded-md text-[6.5px] font-black uppercase tracking-wider flex-1 ${statusFilter === 'operativo' ? 'bg-success/20 text-success' : 'text-txt-muted'}`}>Operativo</button>
-                                <button onClick={() => setStatusFilter('fallado')} className={`h-7 px-1.5 rounded-md text-[6.5px] font-black uppercase tracking-wider flex-1 ${statusFilter === 'fallado' ? 'bg-danger/20 text-danger' : 'text-txt-muted'}`}>Fallado</button>
-                                <button onClick={() => setStatusFilter('pendiente')} className={`h-7 px-1.5 rounded-md text-[6.5px] font-black uppercase tracking-wider flex-1 ${statusFilter === 'pendiente' ? 'bg-slate-500/20 text-slate-400' : 'text-txt-muted'}`}>Pendiente</button>
+                            {/* Health filter */}
+                            <div className="space-y-1">
+                                <span className="text-[7px] font-black uppercase tracking-[0.15em] text-txt-muted/60 px-0.5">Salud</span>
+                                <div className="flex gap-1">
+                                    {(['all', 'healthy', 'caution', 'critical'] as const).map(f => (
+                                        <button
+                                            key={f}
+                                            onClick={() => setHealthFilter(f)}
+                                            className={`flex-1 py-1.5 rounded-md text-[7px] font-black uppercase tracking-wider transition-all ${healthFilter === f
+                                                    ? f === 'all' ? 'bg-primary text-white'
+                                                        : f === 'healthy' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                                                            : f === 'caution' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                                                                : 'bg-red-500/20 text-red-400 border border-red-500/30'
+                                                    : 'bg-white/5 text-txt-muted hover:bg-white/10'
+                                                }`}
+                                        >
+                                            {f === 'all' ? 'Todos' : f}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Status filter */}
+                            <div className="space-y-1">
+                                <span className="text-[7px] font-black uppercase tracking-[0.15em] text-txt-muted/60 px-0.5">Estado</span>
+                                <div className="flex gap-1">
+                                    {(['all', 'operativo', 'fallado', 'pendiente'] as const).map(f => (
+                                        <button
+                                            key={f}
+                                            onClick={() => setStatusFilter(f)}
+                                            className={`flex-1 py-1.5 rounded-md text-[7px] font-black uppercase tracking-wider transition-all ${statusFilter === f
+                                                    ? f === 'all' ? 'bg-primary text-white'
+                                                        : f === 'operativo' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                                                            : f === 'fallado' ? 'bg-red-500/20 text-red-400 border border-red-500/30'
+                                                                : 'bg-slate-500/20 text-slate-400 border border-slate-500/30'
+                                                    : 'bg-white/5 text-txt-muted hover:bg-white/10'
+                                                }`}
+                                        >
+                                            {f === 'all' ? 'Todos' : f}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
                         </div>
 
-                        {/* Well List */}
-                        <div className="space-y-2">
-                            <h3 className="text-[10px] font-black text-txt-muted uppercase tracking-widest px-1">Pozos de la Flota ({sortedFleet.length})</h3>
+                        {/* Well list */}
+                        <div className="p-3 space-y-2">
+                            <div className="flex items-center justify-between px-1 mb-1">
+                                <span className="text-[9px] font-black uppercase tracking-[0.15em] text-txt-muted">
+                                    Pozos de la Flota
+                                </span>
+                                <span className="text-[9px] font-black text-primary tabular-nums">
+                                    {sortedFleet.length}
+                                </span>
+                            </div>
+
                             {sortedFleet.length === 0 ? (
-                                <div className="p-8 text-center bg-surface/30 border border-white/5">
-                                    <Activity className="w-8 h-8 mx-auto text-txt-muted/30 mb-2" />
-                                    <span className="text-xs text-txt-muted font-bold block">No hay pozos que coincidan con los filtros.</span>
+                                <div className="py-12 flex flex-col items-center justify-center gap-3 bg-surface/30 border border-white/5 rounded-xl">
+                                    <Activity className="w-7 h-7 text-txt-muted/30" />
+                                    <span className="text-[10px] text-txt-muted font-bold text-center px-6">
+                                        No hay pozos que coincidan con los filtros.
+                                    </span>
                                 </div>
                             ) : (
                                 sortedFleet.map(w => {
                                     const score = wellHealthMap[w.id] || 0;
-                                    const scoreColor = score >= 90 ? 'text-success border-success/30 bg-success/5' : score >= 60 ? 'text-warning border-warning/30 bg-warning/5' : 'text-danger border-danger/30 bg-danger/5';
-                                    const isCurrentSelected = selectedWell?.id === w.id;
+                                    const sc = getScoreColor(score);
+                                    const isSelected = selectedWell?.id === w.id;
+                                    const freq = w.productionTest?.freq || 0;
+                                    const rate = Math.round(w.currentRate || w.productionTest?.rate || 0);
 
                                     return (
-                                        <div 
+                                        <div
                                             key={w.id}
-                                            onClick={() => {
-                                                setSelectedWell(w.id);
-                                                setActiveTab('analysis');
-                                            }}
-                                            className={`p-4 border transition-all flex items-center justify-between cursor-pointer ${isCurrentSelected ? 'bg-primary/5 border-primary/40' : 'bg-surface/60 border-white/5 active:bg-surface'}`}
+                                            onClick={() => { setSelectedWell(w.id); setActiveTab('analysis'); }}
+                                            className={`relative flex items-center gap-3 p-3.5 rounded-xl border transition-all cursor-pointer active:scale-[0.98] overflow-hidden ${isSelected
+                                                    ? 'bg-primary/8 border-primary/30'
+                                                    : 'bg-surface/70 border-white/5 hover:border-white/10 hover:bg-surface'
+                                                }`}
                                         >
-                                            <div className="flex flex-col min-w-0">
-                                                <span className="text-sm font-black text-txt-main tracking-tight uppercase truncate">{w.name}</span>
-                                                <span className="text-[10px] text-txt-muted font-bold uppercase mt-1">
-                                                    {w.productionTest?.freq || 0} Hz · {Math.round(w.currentRate || w.productionTest?.rate || 0)} BPD
+                                            {/* Left accent bar */}
+                                            <div className={`absolute left-0 top-0 bottom-0 w-0.5 ${sc.bg.replace('/10', '')} rounded-l-xl`}
+                                                style={{ background: sc.bar }} />
+
+                                            {/* Score ring */}
+                                            <div className={`shrink-0 w-10 h-10 rounded-full border-2 flex items-center justify-center ${sc.ring} ${sc.bg}`}>
+                                                <span className={`text-[10px] font-black tabular-nums ${sc.text}`}>
+                                                    {score.toFixed(0)}
                                                 </span>
                                             </div>
-                                            <span className={`px-2.5 py-1 text-[10px] font-black font-mono border ${scoreColor}`}>
-                                                {score.toFixed(0)}%
-                                            </span>
+
+                                            {/* Well info */}
+                                            <div className="flex-1 min-w-0">
+                                                <div className="text-[13px] font-black text-txt-main tracking-tight uppercase truncate leading-tight">
+                                                    {w.name}
+                                                </div>
+                                                <div className="flex items-center gap-2 mt-0.5">
+                                                    <span className="text-[9px] text-txt-muted font-bold tabular-nums">{freq} Hz</span>
+                                                    <span className="text-white/10">·</span>
+                                                    <span className="text-[9px] text-txt-muted font-bold tabular-nums">{rate} BPD</span>
+                                                </div>
+                                            </div>
+
+                                            {/* Status label */}
+                                            <div className={`shrink-0 px-2 py-0.5 rounded-full text-[7px] font-black uppercase tracking-wider ${sc.bg} ${sc.text} border ${sc.ring}`}>
+                                                {sc.label}
+                                            </div>
                                         </div>
                                     );
                                 })
@@ -375,38 +504,43 @@ export const MobileMonitoreo: React.FC<Props> = ({
                     </div>
                 )}
 
+                {/* ── ANÁLISIS / COTEJO ────────────────────────────── */}
                 {activeTab === 'analysis' && (
-                    <div className="space-y-4 animate-fadeIn">
+                    <div className="animate-fadeIn">
                         {!selectedWell ? (
-                            <div className="p-8 text-center bg-surface/30 border border-white/5 mt-4">
-                                <TrendingUp className="w-8 h-8 mx-auto text-txt-muted/30 mb-2" />
-                                <span className="text-xs text-txt-muted font-bold block">Selecciona un pozo de la Flota para comenzar.</span>
+                            <div className="flex flex-col items-center justify-center gap-3 py-16 px-6 text-center">
+                                <div className="w-14 h-14 rounded-2xl bg-surface flex items-center justify-center border border-white/5">
+                                    <TrendingUp className="w-6 h-6 text-txt-muted/40" />
+                                </div>
+                                <span className="text-xs text-txt-muted font-bold">
+                                    Selecciona un pozo de la Flota para comenzar.
+                                </span>
                             </div>
                         ) : (
                             <>
-                                {/* Action row for Cotejo */}
-                                <div className="flex flex-wrap gap-1.5 bg-surface/40 p-2 border border-white/5">
-                                    <button 
+                                {/* Action toolbar — scroll horizontal si hace falta */}
+                                <div className="flex gap-2 p-3 overflow-x-auto scrollbar-none border-b border-white/5 bg-surface/40">
+                                    <button
                                         onClick={() => importDbRef.current?.click()}
-                                        className="h-8 px-2.5 bg-secondary/10 text-secondary border border-secondary/25 hover:bg-secondary/20 text-[8px] font-black uppercase tracking-wider flex items-center gap-1"
+                                        className="shrink-0 flex items-center gap-1.5 h-8 px-3 rounded-lg bg-secondary/10 text-secondary border border-secondary/25 hover:bg-secondary/20 active:scale-95 transition-all text-[8px] font-black uppercase tracking-wider"
                                     >
                                         <Database className="w-3 h-3" />
                                         Subir Prueba
                                     </button>
-                                    
+
                                     {onNavigateToDesign && (
-                                        <button 
+                                        <button
                                             onClick={() => onNavigateToDesign(wellMatchParams, pump)}
-                                            className="h-8 px-2.5 bg-primary/10 text-primary border border-primary/25 hover:bg-primary text-[8px] font-black uppercase tracking-wider flex items-center gap-1"
+                                            className="shrink-0 flex items-center gap-1.5 h-8 px-3 rounded-lg bg-primary/10 text-primary border border-primary/25 hover:bg-primary/20 active:scale-95 transition-all text-[8px] font-black uppercase tracking-wider"
                                         >
                                             <Settings className="w-3 h-3" />
                                             Diseño
                                         </button>
                                     )}
 
-                                    <button 
+                                    <button
                                         onClick={() => setWellViewMode(wellViewMode === 'history' ? 'monitoring' : 'history')}
-                                        className="h-8 px-2.5 bg-success/10 text-success border border-success/25 hover:bg-success/20 text-[8px] font-black uppercase tracking-wider flex items-center gap-1"
+                                        className="shrink-0 flex items-center gap-1.5 h-8 px-3 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 hover:bg-emerald-500/20 active:scale-95 transition-all text-[8px] font-black uppercase tracking-wider"
                                     >
                                         <TrendingUp className="w-3 h-3" />
                                         {wellViewMode === 'history' ? 'Monitoreo' : 'Histórico'}
@@ -416,31 +550,42 @@ export const MobileMonitoreo: React.FC<Props> = ({
                                         href="https://1drv.ms/x/c/06cc4035ad46ff97/IQClWg69qziUQZ4pcxlcyoF5AdzaFbqGWhkSVp1rxJKvfwQ?e=Zuk6P7"
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="h-8 px-2 bg-primary/10 hover:bg-primary text-primary hover:text-white border border-primary/25 text-[8px] font-black uppercase tracking-wider flex items-center gap-1"
+                                        className="shrink-0 flex items-center gap-1.5 h-8 px-3 rounded-lg bg-primary/10 text-primary border border-primary/25 hover:bg-primary/20 active:scale-95 transition-all text-[8px] font-black uppercase tracking-wider"
                                     >
                                         <FileSpreadsheet className="w-3 h-3" />
                                         Doc Diseño
                                     </a>
 
-                                    <button onClick={toggleLanguage} className="h-8 px-1.5 hover:bg-white/10 text-[8px] font-black uppercase flex items-center gap-1">
-                                        <Globe className="w-3 h-3" /> {language}
-                                    </button>
-
-                                    <button onClick={cycleTheme} className="h-8 w-8 flex items-center justify-center hover:bg-white/10 text-txt-muted hover:text-primary">
-                                        <Palette className="w-3.5 h-3.5" />
-                                    </button>
+                                    <div className="flex items-center gap-1 ml-auto shrink-0">
+                                        <button
+                                            onClick={toggleLanguage}
+                                            className="h-8 px-2 rounded-lg bg-white/5 hover:bg-white/10 text-[8px] font-black uppercase text-txt-muted flex items-center gap-1"
+                                        >
+                                            <Globe className="w-3 h-3" />
+                                            {language}
+                                        </button>
+                                        <button
+                                            onClick={cycleTheme}
+                                            className="h-8 w-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-txt-muted hover:text-primary transition-colors"
+                                        >
+                                            <Palette className="w-3.5 h-3.5" />
+                                        </button>
+                                    </div>
                                 </div>
 
-                                {/* Predictive Widget AI comment */}
-                                <PredictiveWidget
-                                    selectedWell={selectedWell}
-                                    wellMatchParams={wellMatchParams}
-                                    pump={pump}
-                                    computeWellCapacity={computeWellCapacity}
-                                    getOptimizationPath={getOptimizationPath}
-                                />
+                                {/* Predictive widget */}
+                                <div className="p-3">
+                                    <PredictiveWidget
+                                        selectedWell={selectedWell}
+                                        wellMatchParams={wellMatchParams}
+                                        pump={pump}
+                                        computeWellCapacity={computeWellCapacity}
+                                        getOptimizationPath={getOptimizationPath}
+                                    />
+                                </div>
 
-                                <div className="w-full overflow-x-auto min-w-0">
+                                {/* Main chart area */}
+                                <div className="px-3 pb-4 w-full overflow-x-auto min-w-0">
                                     {wellViewMode === 'history' ? (
                                         <MatchHistorico
                                             wellName={selectedWell.name}
@@ -466,22 +611,31 @@ export const MobileMonitoreo: React.FC<Props> = ({
                     </div>
                 )}
 
+                {/* ── BHA / 3D ────────────────────────────────────── */}
                 {activeTab === 'bha' && (
-                    <div className="space-y-6 animate-fadeIn">
+                    <div className="animate-fadeIn">
                         {!selectedWell ? (
-                            <div className="p-8 text-center bg-surface/30 border border-white/5 mt-4">
-                                <Layers className="w-8 h-8 mx-auto text-txt-muted/30 mb-2" />
-                                <span className="text-xs text-txt-muted font-bold block">Selecciona un pozo de la Flota para comenzar.</span>
+                            <div className="flex flex-col items-center justify-center gap-3 py-16 px-6 text-center">
+                                <div className="w-14 h-14 rounded-2xl bg-surface flex items-center justify-center border border-white/5">
+                                    <Layers className="w-6 h-6 text-txt-muted/40" />
+                                </div>
+                                <span className="text-xs text-txt-muted font-bold">
+                                    Selecciona un pozo de la Flota para comenzar.
+                                </span>
                             </div>
                         ) : (
-                            <div className="space-y-6">
-                                {/* ESP BHA Stack Visualization */}
-                                <div className="bg-surface/50 border border-white/5 p-4 rounded-none">
-                                    <div className="flex items-center gap-2 mb-3 border-b border-white/5 pb-2">
-                                        <Layers className="w-4 h-4 text-primary" />
-                                        <h3 className="text-xs font-black uppercase tracking-wider text-txt-main">Esquema BHA</h3>
+                            <div className="space-y-3 p-3">
+
+                                {/* ESP BHA Stack */}
+                                <section className="bg-surface/50 border border-white/8 rounded-xl overflow-hidden">
+                                    <div className="flex items-center gap-2 px-4 py-3 border-b border-white/5 bg-surface/60">
+                                        <div className="w-6 h-6 rounded-lg bg-primary/15 flex items-center justify-center border border-primary/20">
+                                            <Layers className="w-3.5 h-3.5 text-primary" />
+                                        </div>
+                                        <span className="text-[11px] font-black uppercase tracking-wider text-txt-main">Esquema BHA</span>
                                     </div>
-                                    <div className="w-full overflow-x-auto flex justify-center bg-canvas/30 py-4 min-h-[480px]">
+
+                                    <div className="flex justify-center items-start bg-canvas/30 py-5 min-h-[480px] overflow-x-auto">
                                         {pump ? (
                                             <div className="scale-[0.8] origin-top">
                                                 <VisualESPStack
@@ -495,57 +649,72 @@ export const MobileMonitoreo: React.FC<Props> = ({
                                                 />
                                             </div>
                                         ) : (
-                                            <div className="flex flex-col items-center justify-center p-8 opacity-50">
-                                                <AlertTriangle className="w-8 h-8 text-warning mb-2" />
-                                                <span className="text-xs font-bold text-txt-muted uppercase">Bomba no encontrada</span>
+                                            <div className="flex flex-col items-center justify-center p-8 opacity-50 gap-2">
+                                                <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+                                                    <AlertTriangle className="w-5 h-5 text-amber-400" />
+                                                </div>
+                                                <span className="text-[10px] font-black text-txt-muted uppercase tracking-wider">Bomba no encontrada</span>
                                             </div>
                                         )}
                                     </div>
-                                </div>
+                                </section>
 
-                                {/* 3D Trajectory Plot */}
-                                <div className="bg-surface/50 border border-white/5 p-4 rounded-none">
-                                    <div className="flex items-center gap-2 mb-3 border-b border-white/5 pb-2">
-                                        <Compass className="w-4 h-4 text-secondary animate-[spin_10s_linear_infinite]" />
-                                        <h3 className="text-xs font-black uppercase tracking-wider text-txt-main">Trayectoria y Desviación</h3>
+                                {/* 3D Trajectory */}
+                                <section className="bg-surface/50 border border-white/8 rounded-xl overflow-hidden">
+                                    <div className="flex items-center gap-2 px-4 py-3 border-b border-white/5 bg-surface/60">
+                                        <div className="w-6 h-6 rounded-lg bg-secondary/15 flex items-center justify-center border border-secondary/20">
+                                            <Compass className="w-3.5 h-3.5 text-secondary animate-[spin_10s_linear_infinite]" />
+                                        </div>
+                                        <span className="text-[11px] font-black uppercase tracking-wider text-txt-main">Trayectoria y Desviación</span>
                                     </div>
+
                                     <div className="w-full h-[450px]">
                                         {wellMatchParams.survey && wellMatchParams.survey.length > 0 ? (
-                                            <TrajectoryPlot 
-                                                survey={wellMatchParams.survey} 
-                                                params={wellMatchParams} 
-                                                isSidebar={false} 
+                                            <TrajectoryPlot
+                                                survey={wellMatchParams.survey}
+                                                params={wellMatchParams}
+                                                isSidebar={false}
                                             />
                                         ) : (
-                                            <div className="h-full flex flex-col items-center justify-center text-center opacity-40 bg-canvas/10 border border-white/5">
-                                                <AlertTriangle className="w-10 h-10 text-warning mb-2" />
-                                                <p className="text-xs font-black uppercase">Sin Datos de Trayectoria</p>
-                                                <p className="text-[9px] text-txt-muted uppercase mt-1.5 px-6">
-                                                    Asumiendo pozo vertical para el cálculo.
-                                                </p>
+                                            <div className="h-full flex flex-col items-center justify-center text-center gap-3 opacity-40">
+                                                <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+                                                    <AlertTriangle className="w-6 h-6 text-amber-400" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-[10px] font-black uppercase tracking-wider text-txt-main">Sin Datos de Trayectoria</p>
+                                                    <p className="text-[9px] text-txt-muted uppercase mt-1 px-6">
+                                                        Asumiendo pozo vertical para el cálculo.
+                                                    </p>
+                                                </div>
                                             </div>
                                         )}
                                     </div>
-                                </div>
+                                </section>
+
                             </div>
                         )}
                     </div>
                 )}
 
+                {/* ── COPILOT ─────────────────────────────────────── */}
                 {activeTab === 'copilot' && (
-                    <div className="flex flex-col h-[520px] bg-surface-raised/40 border border-white/5 overflow-hidden animate-fadeIn rounded-none">
-                        {/* Chat messages */}
-                        <div className="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar min-h-0">
+                    <div className="flex flex-col animate-fadeIn" style={{ height: 'calc(100vh - 64px - 56px - 2px - 3px)' }}>
+
+                        {/* Messages area */}
+                        <div className="flex-1 overflow-y-auto custom-scrollbar px-3 py-3 space-y-3 min-h-0">
                             {msgs.map((m, idx) => {
                                 const isUser = m.role === 'user';
                                 return (
-                                    <div key={idx} className={`flex gap-2 ${isUser ? 'justify-end' : 'justify-start'}`}>
+                                    <div key={idx} className={`flex gap-2.5 ${isUser ? 'justify-end' : 'justify-start'}`}>
                                         {!isUser && (
-                                            <div className="w-6 h-6 rounded-lg bg-primary/20 flex items-center justify-center border border-primary/30 shrink-0 mt-1">
+                                            <div className="w-7 h-7 rounded-xl bg-primary/15 flex items-center justify-center border border-primary/25 shrink-0 mt-0.5">
                                                 <Sparkles className="w-3.5 h-3.5 text-primary" />
                                             </div>
                                         )}
-                                        <div className={`max-w-[85%] px-3.5 py-2.5 rounded-xl text-xs leading-relaxed ${isUser ? 'bg-primary text-white rounded-tr-none' : 'bg-surface border border-white/5 rounded-tl-none'}`}>
+                                        <div className={`max-w-[85%] px-3.5 py-2.5 text-xs leading-relaxed ${isUser
+                                                ? 'bg-primary text-white rounded-2xl rounded-tr-sm'
+                                                : 'bg-surface border border-white/8 rounded-2xl rounded-tl-sm text-txt-main'
+                                            }`}>
                                             {isUser ? (
                                                 <div className="whitespace-pre-wrap">{m.text}</div>
                                             ) : (
@@ -557,47 +726,57 @@ export const MobileMonitoreo: React.FC<Props> = ({
                                     </div>
                                 );
                             })}
+
                             {chatLoading && (
-                                <div className="flex items-center gap-1.5 text-primary text-[10px] font-black uppercase tracking-widest pl-8">
-                                    <Sparkles className="w-3.5 h-3.5 animate-spin" />
-                                    IA Pensando...
+                                <div className="flex items-center gap-2 pl-9">
+                                    <div className="flex gap-1">
+                                        {[0, 1, 2].map(i => (
+                                            <span
+                                                key={i}
+                                                className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-bounce"
+                                                style={{ animationDelay: `${i * 0.12}s` }}
+                                            />
+                                        ))}
+                                    </div>
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-primary/60">IA Pensando</span>
                                 </div>
                             )}
                             <div ref={chatEndRef} />
                         </div>
 
-                        {/* Suggestions */}
+                        {/* Suggestion chips */}
                         {suggestions.length > 0 && msgs.length === 1 && (
-                            <div className="p-2 border-t border-white/5 bg-canvas/30 flex gap-1.5 overflow-x-auto whitespace-nowrap scrollbar-none shrink-0">
+                            <div className="px-3 pb-2 flex gap-2 overflow-x-auto whitespace-nowrap scrollbar-none shrink-0">
                                 {suggestions.map((s, idx) => (
-                                    <button 
+                                    <button
                                         key={idx}
                                         onClick={() => {
                                             setChatInput(s.prompt);
                                             sendChatMessage();
                                         }}
-                                        className="px-3 py-1.5 bg-white/5 border border-white/5 hover:bg-white/10 text-txt-muted hover:text-white rounded-full text-[9px] font-bold uppercase transition-all shrink-0"
+                                        className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/8 border border-primary/20 text-primary hover:bg-primary/15 active:scale-95 transition-all text-[9px] font-bold"
                                     >
+                                        <Sparkles className="w-2.5 h-2.5" />
                                         {language === 'es' ? s.es : s.en}
                                     </button>
                                 ))}
                             </div>
                         )}
 
-                        {/* Chat input */}
-                        <div className="p-2 border-t border-white/5 bg-surface shrink-0 flex gap-2 items-center">
-                            <input 
+                        {/* Input bar */}
+                        <div className="shrink-0 px-3 pb-3 pt-2 border-t border-white/5 bg-surface/80 backdrop-blur-sm flex gap-2 items-center">
+                            <input
                                 type="text"
                                 value={chatInput}
                                 onChange={(e) => setChatInput(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && sendChatMessage()}
                                 placeholder="Pregunta algo sobre el pozo..."
-                                className="flex-1 bg-canvas border border-white/5 px-3 py-2 rounded-xl text-xs font-bold text-txt-main outline-none focus:border-primary/40 placeholder:text-txt-muted/30"
+                                className="flex-1 bg-canvas border border-white/8 px-4 py-2.5 rounded-xl text-[11px] font-medium text-txt-main outline-none focus:border-primary/50 placeholder:text-txt-muted/40 transition-colors"
                             />
-                            <button 
+                            <button
                                 onClick={sendChatMessage}
                                 disabled={chatLoading || !chatInput.trim()}
-                                className="p-2.5 bg-primary text-white disabled:opacity-40 disabled:scale-100 active:scale-95 transition-all rounded-xl"
+                                className="w-9 h-9 shrink-0 rounded-xl bg-primary text-white disabled:opacity-30 active:scale-95 transition-all flex items-center justify-center shadow-lg shadow-primary/20"
                             >
                                 <Send className="w-3.5 h-3.5" />
                             </button>
@@ -606,39 +785,36 @@ export const MobileMonitoreo: React.FC<Props> = ({
                 )}
             </main>
 
-            {/* BOTTOM NAV TABS */}
-            <nav className="fixed bottom-0 left-0 right-0 h-[60px] bg-surface/95 backdrop-blur-xl border-t border-white/5 flex items-center justify-around z-[110] px-2">
-                <button 
-                    onClick={() => setActiveTab('fleet')}
-                    className={`flex flex-col items-center gap-1 py-1 px-3 ${activeTab === 'fleet' ? 'text-primary' : 'text-txt-muted'}`}
-                >
-                    <Menu className="w-5 h-5" />
-                    <span className="text-[8px] font-black uppercase tracking-widest">Flota</span>
-                </button>
-                <button 
-                    onClick={() => setActiveTab('analysis')}
-                    className={`flex flex-col items-center gap-1 py-1 px-3 ${activeTab === 'analysis' ? 'text-primary' : 'text-txt-muted'}`}
-                >
-                    <TrendingUp className="w-5 h-5" />
-                    <span className="text-[8px] font-black uppercase tracking-widest">Cotejo</span>
-                </button>
-                <button 
-                    onClick={() => setActiveTab('bha')}
-                    className={`flex flex-col items-center gap-1 py-1 px-3 ${activeTab === 'bha' ? 'text-primary' : 'text-txt-muted'}`}
-                >
-                    <Layers className="w-5 h-5" />
-                    <span className="text-[8px] font-black uppercase tracking-widest">BHA/3D</span>
-                </button>
-                <button 
-                    onClick={() => setActiveTab('copilot')}
-                    className={`flex flex-col items-center gap-1 py-1 px-3 ${activeTab === 'copilot' ? 'text-primary' : 'text-txt-muted'}`}
-                >
-                    <MessageSquare className="w-5 h-5" />
-                    <span className="text-[8px] font-black uppercase tracking-widest">Copilot</span>
-                </button>
+            {/* ══════════════════════════════════════════════════════
+                BOTTOM NAV — elevated, más limpia
+            ══════════════════════════════════════════════════════ */}
+            <nav className="fixed bottom-0 left-0 right-0 h-[64px] z-[110] bg-surface/96 backdrop-blur-xl border-t border-white/8 flex items-center px-2">
+                {tabs.map(({ id, icon: Icon, label }) => {
+                    const isActive = activeTab === id;
+                    return (
+                        <button
+                            key={id}
+                            onClick={() => setActiveTab(id)}
+                            className={`flex-1 flex flex-col items-center justify-center gap-1 py-2 rounded-xl mx-0.5 transition-all active:scale-95 ${isActive
+                                    ? 'bg-primary/12 text-primary'
+                                    : 'text-txt-muted hover:text-txt-main hover:bg-white/5'
+                                }`}
+                        >
+                            <Icon className={`w-[18px] h-[18px] transition-transform ${isActive ? 'scale-110' : ''}`} />
+                            <span className={`text-[7.5px] font-black uppercase tracking-widest transition-all ${isActive ? 'opacity-100' : 'opacity-50'}`}>
+                                {label}
+                            </span>
+                            {isActive && (
+                                <span className="absolute bottom-2 w-1 h-1 rounded-full bg-primary" />
+                            )}
+                        </button>
+                    );
+                })}
             </nav>
 
-            {/* FULL-SCREEN IMPORT PROGRESS OVERLAY FOR ONEDRIVE/CSV LOADS */}
+            {/* ══════════════════════════════════════════════════════
+                IMPORT PROGRESS OVERLAY
+            ══════════════════════════════════════════════════════ */}
             {importProgress && (
                 <div
                     className="fixed inset-0 z-[9999] flex flex-col items-center justify-center overflow-hidden"
@@ -649,9 +825,9 @@ export const MobileMonitoreo: React.FC<Props> = ({
                         backgroundPosition: 'center'
                     }}
                 >
-                    <div className="absolute inset-0 bg-radial-gradient from-primary/5 to-transparent pointer-events-none"></div>
+                    <div className="absolute inset-0 bg-radial-gradient from-primary/5 to-transparent pointer-events-none" />
                     <div className="flex flex-col items-center gap-10 max-w-sm w-full relative z-10">
-                        <div className="relative group animate-fadeIn">
+                        <div className="relative animate-fadeIn">
                             <img
                                 src="/LOGO.png"
                                 alt="Loading..."
@@ -660,17 +836,15 @@ export const MobileMonitoreo: React.FC<Props> = ({
                             />
                         </div>
                         <div className="w-full flex flex-col items-center gap-6 animate-fadeInUp">
-                            <div className="text-center space-y-1">
-                                <h3 className="text-xl font-bold text-primary uppercase tracking-[0.25em]">
-                                    {importProgress.label.replace('...', '')}
-                                </h3>
-                            </div>
-                            <div className="w-full space-y-3 px-8">
+                            <h3 className="text-xl font-bold text-primary uppercase tracking-[0.25em] text-center">
+                                {importProgress.label.replace('...', '')}
+                            </h3>
+                            <div className="w-full px-8">
                                 <div className="w-full h-[2px] bg-white/5 rounded-full overflow-hidden">
                                     <div
                                         className="h-full bg-primary transition-all duration-700 ease-out shadow-[0_0_8px_rgba(var(--color-primary),0.4)]"
                                         style={{ width: `${(importProgress.current / Math.max(1, importProgress.total)) * 100}%` }}
-                                    ></div>
+                                    />
                                 </div>
                             </div>
                         </div>

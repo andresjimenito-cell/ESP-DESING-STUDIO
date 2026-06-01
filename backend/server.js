@@ -171,7 +171,10 @@ function parseDesignsExcel(buffer) {
         let headerRow = 0;
         for (let i = 0; i < 20; i++) {
             const temp = XLSX.utils.sheet_to_json(surveySheet, { range: i, header: 1 });
-            if (temp.length > 0 && temp[0].some(c => String(c || '').toUpperCase().includes('DEPTH'))) {
+            if (temp.length > 0 && temp[0].some(c => {
+                const uc = String(c || '').toUpperCase();
+                return uc.includes('DEPTH') || uc.includes('MD') || uc.includes('PROF') || uc.includes('MEASURED') || uc.includes('MEDIDA');
+            })) {
                 headerRow = i; 
                 break;
             }
@@ -182,9 +185,9 @@ function parseDesignsExcel(buffer) {
         const surveyByWell = {};
         rawSurvey.forEach(row => {
             const wellKey = Object.keys(row).find(k => {
-                const uk = k.toUpperCase();
-                return uk === 'POZO' || uk === 'WELL' || uk === 'WELLNAME' || uk === 'WELL_NAME';
-            }) || 'WELL';
+                const nk = norm_ext(k);
+                return nk === 'pozo' || nk === 'well' || nk === 'wellname' || nk === 'nombrepozo' || nk === 'nombrewell' || nk === 'nick';
+            }) || Object.keys(row)[0] || 'WELL';
             const well = String(row[wellKey] || '').trim().toUpperCase();
             if (!surveyByWell[well]) surveyByWell[well] = [];
             surveyByWell[well].push(row);
