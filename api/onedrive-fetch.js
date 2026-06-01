@@ -28,8 +28,29 @@ const GRAPH_BASE = 'https://graph.microsoft.com/v1.0';
 const norm_ext = (str) => String(str || '').toLowerCase().replace(/[\s\-_#.]/g, '');
 
 function parseDesignsExcel(buffer) {
+    const tempWorkbook = XLSX.read(buffer, { bookSheets: true });
+    const sheetsToParse = [];
+    
+    if (tempWorkbook.SheetNames.length > 0) {
+        sheetsToParse.push(tempWorkbook.SheetNames[0]);
+    }
+    
+    const mechSheetName = tempWorkbook.SheetNames.find(s => norm_ext(s) === 'estadosmecanicos');
+    if (mechSheetName) {
+        sheetsToParse.push(mechSheetName);
+    }
+    
+    const surveySheetName = tempWorkbook.SheetNames.find(s => {
+        const sn = String(s).toUpperCase();
+        return sn.includes('SURVEY') || sn.includes('TRAYEC') || sn.includes('DESVIACI\u00d3N') || sn.includes('DESVIACION') || sn.includes('DESVIACI"N') || sn.includes('DESVIACI\"N');
+    });
+    if (surveySheetName) {
+        sheetsToParse.push(surveySheetName);
+    }
+
     const workbook = XLSX.read(buffer, {
         type: 'buffer',
+        sheets: sheetsToParse,
         cellFormula: false,
         cellHTML: false,
         cellText: false,
@@ -40,7 +61,6 @@ function parseDesignsExcel(buffer) {
     const sheet = workbook.Sheets[mainSheetName];
     const json = XLSX.utils.sheet_to_json(sheet);
 
-    const mechSheetName = workbook.SheetNames.find(s => norm_ext(s) === 'estadosmecanicos');
     let mechJson = [];
     if (mechSheetName) {
         const mechSheet = workbook.Sheets[mechSheetName];
@@ -59,10 +79,6 @@ function parseDesignsExcel(buffer) {
             : XLSX.utils.sheet_to_json(mechSheet);
     }
 
-    const surveySheetName = workbook.SheetNames.find(s => {
-        const sn = String(s).toUpperCase();
-        return sn.includes('SURVEY') || sn.includes('TRAYEC') || sn.includes('DESVIACI\u00d3N') || sn.includes('DESVIACION') || sn.includes('DESVIACI\"N') || sn.includes('DESVIACI"N');
-    });
     let jsonSurvey = [];
     if (surveySheetName) {
         const surveySheet = workbook.Sheets[surveySheetName];
@@ -85,17 +101,21 @@ function parseDesignsExcel(buffer) {
 }
 
 function parseScadaExcel(buffer) {
-    const workbook = XLSX.read(buffer, {
-        type: 'buffer',
-        cellFormula: false,
-        cellHTML: false,
-        cellText: false,
-        cellStyles: false
-    });
+    const tempWorkbook = XLSX.read(buffer, { bookSheets: true });
 
     let scadaJson = [];
-    for (const sheetName of workbook.SheetNames) {
-        const sheet = workbook.Sheets[sheetName];
+    for (const sheetName of tempWorkbook.SheetNames) {
+        const singleWorkbook = XLSX.read(buffer, {
+            type: 'buffer',
+            sheets: [sheetName],
+            cellFormula: false,
+            cellHTML: false,
+            cellText: false,
+            cellStyles: false
+        });
+        const sheet = singleWorkbook.Sheets[sheetName];
+        if (!sheet) continue;
+
         const previewRows = XLSX.utils.sheet_to_json(sheet, { header: 1, range: 0, blankrows: false });
         
         let headerRowIdx = -1;
