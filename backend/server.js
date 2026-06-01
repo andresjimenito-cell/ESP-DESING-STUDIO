@@ -49,7 +49,7 @@ function verifyToken(token) {
         if (signature !== expectedSignature) return null;
         const data = JSON.parse(payload);
         if (data.exp < Date.now()) return null;
-        if (!data.email || !data.email.toLowerCase().endsWith('@fronteraener.ca')) return null;
+        if (!data.email || !data.email.toLowerCase().endsWith('@fronteraenergy.ca')) return null;
         return data;
     } catch (e) {
         return null;
@@ -64,6 +64,8 @@ const authMiddleware = (req, res, next) => {
     next();
 };
 
+const usersPath = path.join(__dirname, '..', 'app_unified', 'users.json');
+
 app.post('/api/login', (req, res) => {
     const { email, password } = req.body;
     if (!email || !password) {
@@ -71,12 +73,32 @@ app.post('/api/login', (req, res) => {
     }
     
     const emailStr = String(email).trim().toLowerCase();
-    if (!emailStr.endsWith('@fronteraener.ca')) {
+    if (!emailStr.endsWith('@fronteraenergy.ca')) {
         return res.status(401).json({ error: 'No tienes acceso a archivos privados de la organización.' });
     }
 
-    if (password !== LOGIN_PASSWORD) {
-        return res.status(401).json({ error: 'No tienes acceso a archivos privados de la organización.' });
+    let users = {};
+    try {
+        if (fs.existsSync(usersPath)) {
+            users = JSON.parse(fs.readFileSync(usersPath, 'utf8'));
+        }
+    } catch (e) {
+        users = {};
+    }
+
+    if (!users[emailStr]) {
+        // First login: register user and password
+        users[emailStr] = password;
+        try {
+            fs.writeFileSync(usersPath, JSON.stringify(users, null, 2), 'utf8');
+        } catch (e) {
+            console.error('Error guardando usuario:', e);
+        }
+    } else {
+        // Subsequent login: check password
+        if (users[emailStr] !== password) {
+            return res.status(401).json({ error: 'No tienes acceso a archivos privados de la organización.' });
+        }
     }
 
     const token = generateToken(emailStr);

@@ -23,7 +23,7 @@ export const isSessionValid = (): boolean => {
             clearSession();
             return false;
         }
-        if (!payload.email || !payload.email.toLowerCase().endsWith('@fronteraener.ca')) {
+        if (!payload.email || !payload.email.toLowerCase().endsWith('@fronteraenergy.ca')) {
             clearSession();
             return false;
         }
@@ -333,7 +333,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                                         type="email"
                                         value={email}
                                         onChange={(e) => { setEmail(e.target.value); setError(''); }}
-                                        placeholder="usuario@fronteraener.ca"
+                                        placeholder="usuario@fronteraenergy.ca"
                                         required
                                         autoComplete="email"
                                         className="w-full px-4 py-3.5 rounded-xl text-sm font-semibold text-txt-main placeholder:text-txt-muted/30 outline-none transition-all duration-300 focus:ring-2"
@@ -392,6 +392,10 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                                             : <Eye className="w-4 h-4 text-txt-muted" />}
                                     </button>
                                 </div>
+                                <p className="text-[9px] font-semibold text-txt-muted/70 mt-1.5 flex items-center gap-1.5 px-1">
+                                    <span className="w-1 h-1 rounded-full bg-primary animate-pulse" />
+                                    Si es tu primer acceso, la contraseña ingresada será guardada como tu clave.
+                                </p>
                             </div>
 
                             {/* Error message */}

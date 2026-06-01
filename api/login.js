@@ -1,7 +1,9 @@
 import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'frontera-secret-key-129847129';
-const LOGIN_PASSWORD = process.env.LOGIN_PASSWORD || 'Frontera2026!';
+const usersPath = '/tmp/users.json';
 
 function generateToken(email) {
     const payload = JSON.stringify({ email, exp: Date.now() + 24 * 60 * 60 * 1000 });
@@ -28,12 +30,28 @@ export default function handler(req, res) {
     }
 
     const emailStr = String(email).trim().toLowerCase();
-    if (!emailStr.endsWith('@fronteraener.ca')) {
+    if (!emailStr.endsWith('@fronteraenergy.ca')) {
         return res.status(401).json({ error: 'No tienes acceso a archivos privados de la organización.' });
     }
 
-    if (password !== LOGIN_PASSWORD) {
-        return res.status(401).json({ error: 'No tienes acceso a archivos privados de la organización.' });
+    let users = {};
+    try {
+        if (fs.existsSync(usersPath)) {
+            users = JSON.parse(fs.readFileSync(usersPath, 'utf8'));
+        }
+    } catch (e) {
+        users = {};
+    }
+
+    if (!users[emailStr]) {
+        users[emailStr] = password;
+        try {
+            fs.writeFileSync(usersPath, JSON.stringify(users, null, 2), 'utf8');
+        } catch (e) {}
+    } else {
+        if (users[emailStr] !== password) {
+            return res.status(401).json({ error: 'No tienes acceso a archivos privados de la organización.' });
+        }
     }
 
     const token = generateToken(emailStr);

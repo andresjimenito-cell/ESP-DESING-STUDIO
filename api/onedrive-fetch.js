@@ -304,7 +304,7 @@ export default async function handler(req, res) {
             if (signature !== expectedSignature) return false;
             const data = JSON.parse(payload);
             if (data.exp < Date.now()) return false;
-            if (!data.email || !data.email.toLowerCase().endsWith('@fronteraener.ca')) return false;
+            if (!data.email || !data.email.toLowerCase().endsWith('@fronteraenergy.ca')) return false;
             return true;
         } catch (e) {
             return false;

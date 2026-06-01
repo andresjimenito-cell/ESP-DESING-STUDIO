@@ -350,10 +350,6 @@ const App: React.FC = () => {
         loadCatalog(true);
     }, []);
 
-    if (!isLoggedIn) {
-        return <Login onLoginSuccess={handleLoginSuccess} />;
-    }
-
     const steps = [
         { id: 'wellbore', label: t('nav.wellbore'), sub: t('nav.wellbore.sub'), icon: Ruler },
         { id: 'fluid', label: t('nav.fluids'), sub: t('nav.fluids.sub'), icon: Droplets },
@@ -532,6 +528,10 @@ const App: React.FC = () => {
         surveys: batchSurveys, setSurveys: setBatchSurveys,
         file: batchFile, setFile: setBatchFile
     }), [batchView, batchDesigns, batchSurveys, batchFile]);
+
+    if (!isLoggedIn) {
+        return <Login onLoginSuccess={handleLoginSuccess} />;
+    }
 
     let mainContent;
     if (appState.appMode === 'comparator') {
