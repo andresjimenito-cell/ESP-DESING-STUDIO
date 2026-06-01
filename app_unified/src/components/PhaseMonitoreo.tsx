@@ -907,9 +907,9 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                     const toolbarBtn = 'h-9 px-3.5 rounded-none text-[8px] font-black uppercase tracking-widest transition-all border flex items-center gap-1.5 shrink-0';
                     return (
                         <>
-                            <div className="sticky top-0 z-30 flex flex-wrap items-center gap-2.5 bg-surface/90 backdrop-blur-xl py-2.5 px-3 border border-white/10 border-t-2 border-t-primary/40 shadow-lg overflow-visible min-h-[44px]">
+                            <div className="sticky top-0 z-30 flex flex-nowrap items-center gap-2.5 bg-surface/90 backdrop-blur-xl py-2 px-3 border border-white/10 border-t-2 border-t-primary/40 shadow-lg overflow-x-auto md:overflow-x-visible scrollbar-hide min-h-[44px] w-full">
                                 {/* Left: back + well selector */}
-                                <div className="flex items-center gap-3 min-w-0">
+                                <div className="flex items-center gap-3 shrink-0">
                                     <button onClick={onBack} className="h-11 w-11 flex items-center justify-center bg-white/5 hover:bg-primary/15 border border-white/10 text-txt-muted hover:text-primary transition-all shrink-0" title="Regresar al Inicio">
                                         <ChevronLeft className="w-5 h-5" />
                                     </button>
@@ -933,10 +933,10 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                     </div>
                                 </div>
 
-                                <div className="hidden sm:block w-px h-7 bg-white/10 shrink-0" />
+                                <div className="hidden md:block w-px h-7 bg-white/10 shrink-0" />
 
                                 {/* Center: primary actions */}
-                                <div className="flex items-center gap-2 flex-1 min-w-0 justify-center flex-wrap">
+                                <div className="flex items-center gap-2 shrink-0 md:flex-1 justify-start md:justify-center flex-nowrap">
                                     <button
                                         onClick={() => importDbRef.current?.click()}
                                         className={`${toolbarBtn} bg-secondary/10 text-secondary border-secondary/25 hover:bg-secondary/20`}
@@ -980,10 +980,10 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                     </button>
                                 </div>
 
-                                <div className="hidden sm:block w-px h-7 bg-white/10 shrink-0" />
+                                <div className="hidden md:block w-px h-7 bg-white/10 shrink-0" />
 
                                 {/* Right: settings */}
-                                <div className="flex items-center gap-1.5 bg-white/5 p-1 border border-white/10 shrink-0 ml-auto">
+                                <div className="flex items-center gap-1.5 bg-white/5 p-1 border border-white/10 shrink-0 md:ml-auto">
                                     <a
                                         href="https://1drv.ms/x/c/06cc4035ad46ff97/IQClWg69qziUQZ4pcxlcyoF5AdzaFbqGWhkSVp1rxJKvfwQ?e=Zuk6P7"
                                         target="_blank"
@@ -1172,7 +1172,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
 
                             {/* OVERLAY: BHA DIGITAL TWIN */}
                             {!isBhaMinimized && (
-                                <div className="absolute left-[72px] top-0 bottom-0 w-[540px] max-w-[calc(100vw-120px)] z-40 glass-surface border border-white/10 shadow-3xl flex flex-col animate-slideRight">
+                                <div className="absolute md:left-[72px] left-0 top-0 bottom-0 w-full md:w-[540px] max-w-full md:max-w-[calc(100vw-120px)] z-40 glass-surface border border-white/10 shadow-3xl flex flex-col animate-slideRight">
                                     <div className="p-5 border-b border-white/5 flex justify-between items-center bg-white/5 backdrop-blur-md">
                                         <button
                                             onClick={() => setIsBhaMinimized(true)}
@@ -1220,7 +1220,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
 
                             {/* OVERLAY: TRAYECTORIA */}
                             {!isTrajectoryMinimized && (
-                                <div className="absolute left-[80px] top-0 h-[90vh] max-h-[950px] min-h-[600px] w-[1200px] max-w-[calc(100vw-120px)] z-40 glass-surface rounded-br-3xl rounded-tr-3xl overflow-hidden border border-white/10 shadow-[0_0_100px_rgba(0,0,0,0.6)] flex flex-col animate-slideRight animate-fadeIn">
+                                <div className="absolute md:left-[80px] left-0 top-0 h-[90vh] max-h-[950px] min-h-[600px] w-full md:w-[1200px] max-w-full md:max-w-[calc(100vw-120px)] z-40 glass-surface rounded-br-3xl rounded-tr-3xl overflow-hidden border border-white/10 shadow-[0_0_100px_rgba(0,0,0,0.6)] flex flex-col animate-slideRight animate-fadeIn">
                                     <div className="p-4 border-b border-white/5 flex justify-between items-center bg-surface-raised backdrop-blur-md">
                                         <button
                                             onClick={() => setIsTrajectoryMinimized(true)}
