@@ -54,7 +54,8 @@ function parseDesignsExcel(buffer) {
         cellFormula: false,
         cellHTML: false,
         cellText: false,
-        cellStyles: false
+        cellStyles: false,
+        dense: true
     });
 
     const mainSheetName = workbook.SheetNames[0];
@@ -92,7 +93,7 @@ function parseDesignsExcel(buffer) {
         }
         const rawSurvey = XLSX.utils.sheet_to_json(surveySheet, { range: headerRow });
         
-        // Group by well and downsample to keep every 8th point (ensuring first/last points are preserved)
+        // Group by well and downsample to keep every 20th point (ensuring first/last points are preserved)
         const surveyByWell = {};
         rawSurvey.forEach(row => {
             // Find key for well name dynamically
@@ -106,12 +107,12 @@ function parseDesignsExcel(buffer) {
         });
 
         Object.values(surveyByWell).forEach(wellRows => {
-            if (wellRows.length <= 10) {
+            if (wellRows.length <= 15) {
                 jsonSurvey.push(...wellRows);
             } else {
                 jsonSurvey.push(wellRows[0]);
                 for (let idx = 1; idx < wellRows.length - 1; idx++) {
-                    if (idx % 8 === 0) {
+                    if (idx % 20 === 0) {
                         jsonSurvey.push(wellRows[idx]);
                     }
                 }
@@ -139,7 +140,8 @@ function parseScadaExcel(buffer) {
             cellFormula: false,
             cellHTML: false,
             cellText: false,
-            cellStyles: false
+            cellStyles: false,
+            dense: true
         });
         const sheet = singleWorkbook.Sheets[sheetName];
         if (!sheet) continue;
@@ -337,7 +339,7 @@ export default async function handler(req, res) {
             }
             console.log(`[OneDrive] ✅ Parseo completado exitosamente`);
             res.setHeader('Content-Type', 'application/json');
-            res.setHeader('Cache-Control', 'no-store');
+            res.setHeader('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=600');
             return res.status(200).json(parsedData);
         }
 

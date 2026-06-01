@@ -132,6 +132,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     const batchFileRef = useRef<HTMLInputElement>(null);
     const [mousePos, setMousePos] = useState({ x: 0, y: 0, rawX: 0, rawY: 0 });
     const [isStartingNew, setIsStartingNew] = useState(false);
+    const [isMobile, setIsMobile] = useState(false);
+    useEffect(() => {
+        const handleResize = () => {
+            setIsMobile(window.innerWidth < 768);
+        };
+        handleResize();
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
     const { theme, cycleTheme, toggleLightMode } = useTheme();
 
     const [batchSearch, setBatchSearch] = useState('');
@@ -674,6 +683,191 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     // ─────────────────────────────────────────────────────────────────────────
     // LANDING PAGE — Visual Overhaul
     // ─────────────────────────────────────────────────────────────────────────
+    if (isMobile) {
+        return (
+            <div
+                className="min-h-screen flex flex-col justify-between p-4 relative overflow-y-auto font-sans text-txt-main selection:bg-primary/30 transition-colors duration-700 animate-landing-entry"
+                style={{
+                    backgroundColor: 'rgb(var(--color-canvas))',
+                    backgroundImage: 'radial-gradient(circle at top, rgb(var(--color-primary) / 0.1) 0%, transparent 60%), url(/main_bg.png)',
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                }}
+            >
+                {/* Header */}
+                <header className="flex justify-between items-center w-full z-45 py-3 border-b border-white/5 bg-canvas/30 backdrop-blur-md px-2">
+                    <div className="flex items-center gap-2">
+                        <img
+                            src="/LOGO.png"
+                            alt="EDS.IA"
+                            className="w-8 h-8 object-contain"
+                            style={{ filter: 'drop-shadow(0 0 6px rgba(var(--color-primary),0.4))' }}
+                        />
+                        <span className="text-lg font-black tracking-tighter text-txt-main">
+                            EDS<span className="text-primary">.IA</span>
+                        </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <button onClick={toggleLanguage} className="h-8 px-2.5 flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 text-[9px] font-black uppercase font-mono text-txt-main">
+                            <Globe className="w-3.5 h-3.5 text-primary" /> {language}
+                        </button>
+                        <button onClick={cycleTheme} className="h-8 w-8 flex items-center justify-center rounded-lg border border-white/10 bg-white/5 text-txt-muted">
+                            <Palette className="w-3.5 h-3.5" />
+                        </button>
+                    </div>
+                </header>
+
+                {/* Main Content */}
+                <main className="flex-1 flex flex-col justify-center items-center py-8 gap-6 z-30 w-full max-w-md mx-auto">
+                    <div className="text-center space-y-2">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-[0.2em] bg-primary/10 border border-primary/20 text-primary">
+                            <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+                            {t('lp.engineering')}
+                        </span>
+                        <h1 className="text-3xl font-black text-white tracking-tight leading-none uppercase">
+                            ESP DESIGN STUDIO
+                        </h1>
+                        <p className="text-[11px] text-txt-muted/80 max-w-xs mx-auto leading-relaxed">
+                            {t('lp.desc')}
+                        </p>
+                    </div>
+
+                    {/* Actions Menu */}
+                    <div className="w-full glass-surface border border-white/10 p-5 rounded-2xl space-y-4">
+                        {menuLevel === 'main' ? (
+                            <div className="space-y-3">
+                                {/* Monitoring (Active Operations Console) */}
+                                <button
+                                    onClick={() => onMonitoring()}
+                                    className="group relative w-full h-[96px] rounded-2xl flex items-center justify-between px-6 bg-gradient-to-tr from-secondary to-secondary/80 text-white shadow-lg active:scale-95 transition-all duration-300"
+                                >
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center border border-white/20">
+                                            <Activity className="w-6 h-6" />
+                                        </div>
+                                        <div className="text-left">
+                                            <span className="block text-[15px] font-black uppercase tracking-wider">Centro de Control</span>
+                                            <span className="block text-[8px] font-bold text-white/70 uppercase tracking-widest mt-0.5">Monitoring & Operations</span>
+                                        </div>
+                                    </div>
+                                    <ChevronRight className="w-5 h-5" />
+                                </button>
+
+                                {/* Design (Locked/Admin) */}
+                                <SecureWrapper isLocked={true} tooltip="Módulo de Diseño Bloqueado" className="w-full">
+                                    <button
+                                        onClick={() => setMenuLevel('design')}
+                                        className="w-full h-[64px] rounded-2xl flex items-center justify-between px-5 bg-white/5 border border-white/10 text-txt-main/70 hover:bg-white/10 active:scale-95 transition-all"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <Palette className="w-5 h-5 text-primary" />
+                                            <span className="text-xs font-black uppercase tracking-wide">Diseño e Ingeniería</span>
+                                        </div>
+                                        <ChevronRight className="w-4 h-4 text-txt-muted" />
+                                    </button>
+                                </SecureWrapper>
+
+                                {/* Performance Comparator */}
+                                <button
+                                    onClick={onCompare}
+                                    className="w-full h-[64px] rounded-2xl flex items-center justify-between px-5 bg-white/5 border border-white/10 text-txt-main/70 hover:bg-white/10 active:scale-95 transition-all"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <GitCompareArrows className="w-5 h-5 text-secondary" />
+                                        <span className="text-xs font-black uppercase tracking-wide">Comparador de Desempeño</span>
+                                    </div>
+                                    <ChevronRight className="w-4 h-4 text-txt-muted" />
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="space-y-4 animate-fadeIn">
+                                <button
+                                    onClick={() => setMenuLevel('main')}
+                                    className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-primary/70"
+                                >
+                                    <ChevronRight className="w-3.5 h-3.5 rotate-180" />
+                                    <span>Menú Principal</span>
+                                </button>
+
+                                <div className="space-y-2">
+                                    <button
+                                        onClick={() => setIsStartingNew(true)}
+                                        className="w-full py-3 bg-primary text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-md active:scale-95 transition-all"
+                                    >
+                                        Iniciar Nuevo Proyecto
+                                    </button>
+
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <button
+                                            onClick={() => fileInputRef.current?.click()}
+                                            className="py-3 bg-white/5 border border-white/10 rounded-xl flex flex-col items-center gap-1 text-[8px] font-black text-txt-main/70 uppercase tracking-widest active:scale-95 transition-all"
+                                        >
+                                            <UploadIcon className="w-4 h-4 text-primary" />
+                                            Importar JSON
+                                        </button>
+                                        <button
+                                            onClick={handleLoadMaster}
+                                            disabled={batchView === 'loading'}
+                                            className="py-3 bg-white/5 border border-white/10 rounded-xl flex flex-col items-center gap-1 text-[8px] font-black text-txt-main/70 uppercase tracking-widest active:scale-95 transition-all disabled:opacity-50"
+                                        >
+                                            <Database className="w-4 h-4 text-secondary" />
+                                            BD ALS Master
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {batchView === 'loading' && (
+                                    <div className="p-4 bg-white/5 border border-white/10 rounded-xl flex flex-col items-center gap-2">
+                                        <RefreshCw className="w-5 h-5 text-primary animate-spin" />
+                                        <span className="text-[9px] font-black uppercase tracking-widest text-primary">Procesando... {batchProgress}%</span>
+                                    </div>
+                                )}
+
+                                {batchView === 'list' && (
+                                    <div className="border border-white/10 rounded-xl bg-canvas/60 max-h-[220px] overflow-y-auto p-2 space-y-1">
+                                        <div className="relative mb-2">
+                                            <Search className="w-3.5 h-3.5 absolute left-2 top-1/2 -translate-y-1/2 text-txt-muted/50" />
+                                            <input
+                                                type="text"
+                                                value={batchSearch}
+                                                onChange={e => setBatchSearch(e.target.value)}
+                                                placeholder="Buscar pozo..."
+                                                className="w-full bg-transparent text-[10px] font-bold pl-7 pr-2 py-1.5 outline-none border border-white/5 rounded-lg"
+                                            />
+                                        </div>
+                                        {batchDesigns
+                                            .filter(d => _norm(d.metadata?.wellName || d.wellName || '').includes(_norm(batchSearch)))
+                                            .map((well, idx) => {
+                                                const wName = well.metadata?.wellName || well.wellName || `WELL-${idx}`;
+                                                return (
+                                                    <button
+                                                        key={idx}
+                                                        onClick={() => onQuickImport(_rowToParams(well, batchSurveys))}
+                                                        className="w-full p-2.5 text-left text-[11px] font-bold text-txt-main hover:bg-white/5 border-b border-white/5 last:border-b-0 uppercase truncate block"
+                                                    >
+                                                        {wName}
+                                                    </button>
+                                                );
+                                            })
+                                        }
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                </main>
+
+                {/* Footer */}
+                <footer className="text-center py-2 opacity-30 text-[8px] font-black uppercase tracking-widest text-txt-muted">
+                    EDS DESIGN STUDIO © 2026
+                </footer>
+                
+                {/* Hidden file input */}
+                <input type="file" ref={fileInputRef} onChange={onImportFile} accept=".json,.xlsx" className="hidden" />
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen xl:h-screen w-full relative flex items-center justify-center overflow-y-auto xl:overflow-hidden font-sans text-txt-main selection:bg-primary/30 transition-colors duration-700 animate-landing-entry py-20 xl:py-0">
 

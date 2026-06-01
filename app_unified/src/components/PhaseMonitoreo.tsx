@@ -269,8 +269,8 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
             if (wellDropdownPanelRef.current?.contains(target)) return;
             setIsWellDropdownOpen(false);
         };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
+        document.addEventListener('click', handleClickOutside);
+        return () => document.removeEventListener('click', handleClickOutside);
     }, []);
     const clearFleet = () => {
         setFleet([]);
@@ -849,36 +849,48 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
             <div className="space-y-2 animate-fadeIn px-1.5 py-1 pb-12 relative">
                 {/* NO MATCH DATA WARNING */}
                 {!isMatchComplete && (
-                    <div className="mb-4 bg-danger/10 border border-danger/30 p-10 rounded-none flex items-center justify-between shadow-glow-danger/5 animate-fadeIn">
-                        <div className="flex items-center gap-8">
-                            <div className="p-6 bg-danger/20 rounded-none border border-danger/20 text-danger"><AlertTriangle className="w-12 h-12" /></div>
+                    <div className="mb-3 bg-danger/10 border border-danger/20 p-4 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-glow-danger/5 animate-fadeIn backdrop-blur-md">
+                        <div className="flex items-center gap-4">
+                            <div className="p-2.5 bg-danger/20 rounded-lg border border-danger/25 text-danger shrink-0">
+                                <AlertTriangle className="w-5 h-5" />
+                            </div>
                             <div>
-                                <h3 className="text-3xl font-black text-danger uppercase mb-2 tracking-tighter italic">{language === 'es' ? 'Faltan Datos de Cotejo (Match)' : 'Missing Match Data'}</h3>
-                                <p className="text-sm font-bold text-danger/70 uppercase tracking-widest leading-relaxed max-w-2xl">
-                                    Complete los campos en el panel de match (tasa, frecuencia, THP, PIP) o suba un reporte Excel/CSV.
+                                <h3 className="text-sm font-black text-danger uppercase tracking-tight">
+                                    {language === 'es' ? 'Faltan Datos de Cotejo (Match)' : 'Missing Match Data'}
+                                </h3>
+                                <p className="text-[11px] font-medium text-danger/80 mt-0.5 leading-normal">
+                                    {language === 'es' 
+                                        ? 'Complete los campos de telemetría o suba un reporte para habilitar el análisis nodal.' 
+                                        : 'Please enter telemetry data or upload a report to enable nodal analysis.'}
                                 </p>
                             </div>
                         </div>
                         <button
                             type="button"
                             onClick={() => importDbRef.current?.click()}
-                            className="shrink-0 px-6 py-3 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 hover:border-primary/60 rounded-none font-black uppercase tracking-widest text-[10px] transition-all flex items-center gap-2"
+                            className="shrink-0 px-4 py-2 bg-danger/20 hover:bg-danger/30 text-danger border border-danger/30 rounded-lg font-black uppercase tracking-widest text-[9px] transition-all flex items-center gap-1.5 self-stretch sm:self-auto justify-center"
                         >
-                            <Database className="w-4 h-4" />
-                            Subir Reporte
+                            <Database className="w-3.5 h-3.5" />
+                            {language === 'es' ? 'Subir Reporte' : 'Upload Report'}
                         </button>
                     </div>
                 )}
 
                 {/* NO SURVEY DATA WARNING */}
                 {wellMatchParams.survey.length === 0 && (
-                    <div className="mb-4 bg-warning/10 border border-warning/30 p-8 rounded-none flex items-center justify-between shadow-glow-warning/5 animate-fadeIn">
-                        <div className="flex items-center gap-6">
-                            <div className="p-4 bg-warning/20 rounded-none border border-warning/20 text-warning"><Globe className="w-8 h-8" /></div>
-                            <div>
-                                <h3 className="text-xl font-black text-warning uppercase mb-1 tracking-tighter">Trayectoria (Survey) No Encontrada</h3>
-                                <p className="text-[10px] font-bold text-warning/70 uppercase tracking-widest leading-relaxed max-w-xl">No se pudo vincular automaticamente una trayectoria direccional para el pozo "{selectedWell.name}". Los calculos de TVD y presiones de fondo utilizaran aproximaciones verticales hasta que se cargue el survey correspondiente.</p>
-                            </div>
+                    <div className="mb-3 bg-warning/10 border border-warning/20 p-4 rounded-xl flex items-start gap-4 shadow-glow-warning/5 animate-fadeIn backdrop-blur-md">
+                        <div className="p-2.5 bg-warning/20 rounded-lg border border-warning/25 text-warning shrink-0">
+                            <Globe className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <h3 className="text-sm font-black text-warning uppercase tracking-tight">
+                                {language === 'es' ? 'Trayectoria No Vinculada' : 'No Survey Linked'}
+                            </h3>
+                            <p className="text-[11px] font-medium text-warning/80 mt-0.5 leading-normal">
+                                {language === 'es' 
+                                    ? `No se encontró trayectoria para "${selectedWell.name}". Se asume pozo vertical para cálculos de TVD.` 
+                                    : `No survey found for "${selectedWell.name}". Vertical wellpath assumed for TVD calculations.`}
+                            </p>
                         </div>
                     </div>
                 )}
@@ -890,118 +902,120 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                     const toolbarBtn = 'h-9 px-3.5 rounded-none text-[8px] font-black uppercase tracking-widest transition-all border flex items-center gap-1.5 shrink-0';
                     return (
                         <>
-                            <div className="sticky top-0 z-30 flex flex-nowrap items-center gap-2.5 bg-surface/90 backdrop-blur-xl py-2 px-3 border border-white/10 border-t-2 border-t-primary/40 shadow-lg overflow-x-auto md:overflow-x-visible scrollbar-hide min-h-[44px] w-full">
+                            <div className="sticky top-0 z-[100] flex flex-col md:flex-row md:items-center gap-3 bg-surface/95 backdrop-blur-xl py-3 px-3 border border-white/10 border-t-2 border-t-primary/40 shadow-lg w-full overflow-visible">
                                 {/* Left: back + well selector */}
-                                <div className="flex items-center gap-3 shrink-0">
-                                    <button onClick={onBack} className="h-11 w-11 flex items-center justify-center bg-white/5 hover:bg-primary/15 border border-white/10 text-txt-muted hover:text-primary transition-all shrink-0" title="Regresar al Inicio">
-                                        <ChevronLeft className="w-5 h-5" />
-                                    </button>
-
-                                    <div className="relative min-w-0 overflow-visible z-[60]" ref={wellDropdownRef}>
-                                        <button
-                                            onClick={() => {
-                                                if (!isWellDropdownOpen) {
-                                                    setVisibleCount(50);
-                                                }
-                                                setIsWellDropdownOpen(!isWellDropdownOpen);
-                                            }}
-                                            className={`h-11 flex items-center gap-3 pl-4 pr-3 border transition-all max-w-[min(400px,50vw)] ${isWellDropdownOpen ? 'bg-primary/15 border-primary/40 text-primary' : 'bg-white/5 hover:bg-white/10 border-white/10'}`}
-                                        >
-                                            <Monitor className="w-4 h-4 text-primary shrink-0" />
-                                            <span className="text-xl font-black text-txt-main tracking-tighter uppercase truncate drop-shadow-sm">{selectedWell.name}</span>
-                                            <span className={`hidden sm:inline text-[9px] font-black px-2 py-0.5 border uppercase tracking-widest shrink-0 ${healthClass}`}>{healthLabel}</span>
-                                            <ChevronRight className={`w-4 h-4 text-txt-muted shrink-0 transition-transform ${isWellDropdownOpen ? 'rotate-90' : ''}`} />
+                                <div className="flex items-center gap-3 w-full md:w-auto shrink-0 justify-between md:justify-start">
+                                    <div className="flex items-center gap-3">
+                                        <button onClick={onBack} className="h-11 w-11 flex items-center justify-center bg-white/5 hover:bg-primary/15 border border-white/10 text-txt-muted hover:text-primary transition-all shrink-0" title="Regresar al Inicio">
+                                            <ChevronLeft className="w-5 h-5" />
                                         </button>
 
-                                        {isWellDropdownOpen && (
-                                            <div
-                                                ref={wellDropdownPanelRef}
-                                                className="absolute left-0 mt-2 z-[500] flex flex-col bg-surface border border-white/15 border-t-2 border-t-primary/50 shadow-[0_28px_80px_rgba(0,0,0,0.55)] w-[90vw] sm:w-[580px] max-h-[82vh] overflow-hidden"
-                                                style={{ top: '100%' }}
+                                        <div className="relative min-w-0 overflow-visible z-[60]" ref={wellDropdownRef}>
+                                            <button
+                                                onClick={() => {
+                                                    if (!isWellDropdownOpen) {
+                                                        setVisibleCount(50);
+                                                    }
+                                                    setIsWellDropdownOpen(!isWellDropdownOpen);
+                                                }}
+                                                className={`h-11 flex items-center gap-3 pl-4 pr-3 border transition-all max-w-[min(400px,65vw)] ${isWellDropdownOpen ? 'bg-primary/15 border-primary/40 text-primary' : 'bg-white/5 hover:bg-white/10 border-white/10'}`}
                                             >
-                                                <div className="shrink-0 px-4 py-3 border-b border-white/10 bg-gradient-to-r from-primary/10 via-transparent to-secondary/5">
-                                                    <div className="flex items-center justify-between gap-3 mb-3">
-                                                        <div className="flex items-center gap-2">
-                                                            <div className="p-1.5 bg-primary/15 border border-primary/25 text-primary">
-                                                                <List className="w-4 h-4" />
+                                                <Monitor className="w-4 h-4 text-primary shrink-0" />
+                                                <span className="text-xl font-black text-txt-main tracking-tighter uppercase truncate drop-shadow-sm">{selectedWell.name}</span>
+                                                <span className={`hidden sm:inline text-[9px] font-black px-2 py-0.5 border uppercase tracking-widest shrink-0 ${healthClass}`}>{healthLabel}</span>
+                                                <ChevronRight className={`w-4 h-4 text-txt-muted shrink-0 transition-transform ${isWellDropdownOpen ? 'rotate-90' : ''}`} />
+                                            </button>
+
+                                            {isWellDropdownOpen && (
+                                                <div
+                                                    ref={wellDropdownPanelRef}
+                                                    className="fixed left-1/2 -translate-x-1/2 md:translate-x-0 md:left-0 top-[72px] md:top-full mt-2 z-[500] flex flex-col bg-surface border border-white/15 border-t-2 border-t-primary/50 shadow-[0_28px_80px_rgba(0,0,0,0.55)] w-[95vw] md:w-[580px] max-h-[82vh] overflow-hidden"
+                                                    style={typeof window !== 'undefined' && window.innerWidth < 768 ? {} : { top: '100%' }}
+                                                >
+                                                    <div className="shrink-0 px-4 py-3 border-b border-white/10 bg-gradient-to-r from-primary/10 via-transparent to-secondary/5">
+                                                        <div className="flex items-center justify-between gap-3 mb-3">
+                                                            <div className="flex items-center gap-2">
+                                                                <div className="p-1.5 bg-primary/15 border border-primary/25 text-primary">
+                                                                    <List className="w-4 h-4" />
+                                                                </div>
+                                                                <div>
+                                                                    <p className="text-[9px] font-black text-txt-muted uppercase tracking-[0.2em]">{language === 'es' ? 'Flota de Pozos' : 'Well Fleet'}</p>
+                                                                    <p className="text-xs font-black text-txt-main uppercase tracking-tight">{sortedFleet.length} {language === 'es' ? 'registros' : 'records'}</p>
+                                                                </div>
                                                             </div>
-                                                            <div>
-                                                                <p className="text-[9px] font-black text-txt-muted uppercase tracking-[0.2em]">{language === 'es' ? 'Flota de Pozos' : 'Well Fleet'}</p>
-                                                                <p className="text-xs font-black text-txt-main uppercase tracking-tight">{sortedFleet.length} {language === 'es' ? 'registros' : 'records'}</p>
-                                                            </div>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setIsWellDropdownOpen(false)}
+                                                                className="h-7 w-7 flex items-center justify-center border border-white/10 hover:border-primary/30 hover:bg-primary/10 text-txt-muted hover:text-primary transition-all"
+                                                            >
+                                                                <X className="w-3.5 h-3.5" />
+                                                            </button>
                                                         </div>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => setIsWellDropdownOpen(false)}
-                                                            className="h-7 w-7 flex items-center justify-center border border-white/10 hover:border-primary/30 hover:bg-primary/10 text-txt-muted hover:text-primary transition-all"
-                                                        >
-                                                            <X className="w-3.5 h-3.5" />
-                                                        </button>
+                                                        <DebouncedSearchInput
+                                                            value={searchTerm}
+                                                            onChange={setSearchTerm}
+                                                            placeholder={language === 'es' ? 'Buscar pozo...' : 'Search well...'}
+                                                        />
+                                                        <div className="flex items-center gap-1 bg-canvas/50 p-0.5 border border-white/5 mt-2">
+                                                            <button onClick={(e) => { e.stopPropagation(); setDataFilter('all'); }} className={`h-7 px-2.5 rounded-md flex items-center justify-center transition-all text-[7px] font-black uppercase tracking-widest flex-1 ${dataFilter === 'all' ? 'bg-primary text-white' : 'text-txt-muted hover:bg-white/5'}`}>Datos: Todos</button>
+                                                            <button onClick={(e) => { e.stopPropagation(); setDataFilter('complete'); }} className={`h-7 px-2.5 rounded-md flex items-center justify-center transition-all text-[7px] font-black uppercase tracking-widest flex-1 ${dataFilter === 'complete' ? 'bg-success/20 text-success' : 'text-txt-muted hover:bg-white/5'}`}>Completos</button>
+                                                            <button onClick={(e) => { e.stopPropagation(); setDataFilter('missing'); }} className={`h-7 px-2.5 rounded-md flex items-center justify-center transition-all text-[7px] font-black uppercase tracking-widest flex-1 ${dataFilter === 'missing' ? 'bg-warning/20 text-warning' : 'text-txt-muted hover:bg-white/5'}`}>Faltan</button>
+                                                        </div>
+                                                        <div className="flex items-center gap-1 bg-canvas/50 p-0.5 border border-white/5 mt-1.5">
+                                                            <button onClick={(e) => { e.stopPropagation(); setHealthFilter('all'); }} className={`h-7 px-2.5 rounded-md flex items-center justify-center transition-all text-[7px] font-black uppercase tracking-widest flex-1 ${healthFilter === 'all' ? 'bg-primary text-white' : 'text-txt-muted hover:bg-white/5'}`}>Salud: Todos</button>
+                                                            <button onClick={(e) => { e.stopPropagation(); setHealthFilter('healthy'); }} className={`h-7 px-2.5 rounded-md flex items-center justify-center transition-all text-[7px] font-black uppercase tracking-widest flex-1 ${healthFilter === 'healthy' ? 'bg-success/20 text-success' : 'text-txt-muted hover:bg-white/5'}`}>Healthy</button>
+                                                            <button onClick={(e) => { e.stopPropagation(); setHealthFilter('caution'); }} className={`h-7 px-2.5 rounded-md flex items-center justify-center transition-all text-[7px] font-black uppercase tracking-widest flex-1 ${healthFilter === 'caution' ? 'bg-warning/20 text-warning' : 'text-txt-muted hover:bg-white/5'}`}>Caution</button>
+                                                            <button onClick={(e) => { e.stopPropagation(); setHealthFilter('critical'); }} className={`h-7 px-2.5 rounded-md flex items-center justify-center transition-all text-[7px] font-black uppercase tracking-widest flex-1 ${healthFilter === 'critical' ? 'bg-danger/20 text-danger' : 'text-txt-muted hover:bg-white/5'}`}>Critical</button>
+                                                        </div>
+                                                        <div className="flex items-center gap-1 bg-canvas/50 p-0.5 border border-white/5 mt-1.5">
+                                                            <button onClick={(e) => { e.stopPropagation(); setStatusFilter('all'); }} className={`h-7 px-2.5 rounded-md flex items-center justify-center transition-all text-[7px] font-black uppercase tracking-widest flex-1 ${statusFilter === 'all' ? 'bg-primary text-white' : 'text-txt-muted hover:bg-white/5'}`}>Estado: Todos</button>
+                                                            <button onClick={(e) => { e.stopPropagation(); setStatusFilter('operativo'); }} className={`h-7 px-2.5 rounded-md flex items-center justify-center transition-all text-[7px] font-black uppercase tracking-widest flex-1 ${statusFilter === 'operativo' ? 'bg-success/20 text-success' : 'text-txt-muted hover:bg-white/5'}`}>Operativo</button>
+                                                            <button onClick={(e) => { e.stopPropagation(); setStatusFilter('fallado'); }} className={`h-7 px-2.5 rounded-md flex items-center justify-center transition-all text-[7px] font-black uppercase tracking-widest flex-1 ${statusFilter === 'fallado' ? 'bg-danger/20 text-danger' : 'text-txt-muted hover:bg-white/5'}`}>Fallado</button>
+                                                            <button onClick={(e) => { e.stopPropagation(); setStatusFilter('pull'); }} className={`h-7 px-2.5 rounded-md flex items-center justify-center transition-all text-[7px] font-black uppercase tracking-widest flex-1 ${statusFilter === 'pull' ? 'bg-warning/20 text-warning' : 'text-txt-muted hover:bg-white/5'}`}>Pull</button>
+                                                            <button onClick={(e) => { e.stopPropagation(); setStatusFilter('pendiente'); }} className={`h-7 px-2.5 rounded-md flex items-center justify-center transition-all text-[7px] font-black uppercase tracking-widest flex-1 ${statusFilter === 'pendiente' ? 'bg-slate-500/20 text-slate-400' : 'text-txt-muted hover:bg-white/5'}`}>Pendiente</button>
+                                                        </div>
                                                     </div>
-                                                    <DebouncedSearchInput
-                                                        value={searchTerm}
-                                                        onChange={setSearchTerm}
-                                                        placeholder={language === 'es' ? 'Buscar pozo...' : 'Search well...'}
-                                                    />
-                                                    <div className="flex items-center gap-1 bg-canvas/50 p-0.5 border border-white/5 mt-2">
-                                                        <button onClick={(e) => { e.stopPropagation(); setDataFilter('all'); }} className={`h-7 px-2.5 rounded-md flex items-center justify-center transition-all text-[7px] font-black uppercase tracking-widest flex-1 ${dataFilter === 'all' ? 'bg-primary text-white' : 'text-txt-muted hover:bg-white/5'}`}>Datos: Todos</button>
-                                                        <button onClick={(e) => { e.stopPropagation(); setDataFilter('complete'); }} className={`h-7 px-2.5 rounded-md flex items-center justify-center transition-all text-[7px] font-black uppercase tracking-widest flex-1 ${dataFilter === 'complete' ? 'bg-success/20 text-success' : 'text-txt-muted hover:bg-white/5'}`}>Completos</button>
-                                                        <button onClick={(e) => { e.stopPropagation(); setDataFilter('missing'); }} className={`h-7 px-2.5 rounded-md flex items-center justify-center transition-all text-[7px] font-black uppercase tracking-widest flex-1 ${dataFilter === 'missing' ? 'bg-warning/20 text-warning' : 'text-txt-muted hover:bg-white/5'}`}>Faltan</button>
-                                                    </div>
-                                                    <div className="flex items-center gap-1 bg-canvas/50 p-0.5 border border-white/5 mt-1.5">
-                                                        <button onClick={(e) => { e.stopPropagation(); setHealthFilter('all'); }} className={`h-7 px-2.5 rounded-md flex items-center justify-center transition-all text-[7px] font-black uppercase tracking-widest flex-1 ${healthFilter === 'all' ? 'bg-primary text-white' : 'text-txt-muted hover:bg-white/5'}`}>Salud: Todos</button>
-                                                        <button onClick={(e) => { e.stopPropagation(); setHealthFilter('healthy'); }} className={`h-7 px-2.5 rounded-md flex items-center justify-center transition-all text-[7px] font-black uppercase tracking-widest flex-1 ${healthFilter === 'healthy' ? 'bg-success/20 text-success' : 'text-txt-muted hover:bg-white/5'}`}>Healthy</button>
-                                                        <button onClick={(e) => { e.stopPropagation(); setHealthFilter('caution'); }} className={`h-7 px-2.5 rounded-md flex items-center justify-center transition-all text-[7px] font-black uppercase tracking-widest flex-1 ${healthFilter === 'caution' ? 'bg-warning/20 text-warning' : 'text-txt-muted hover:bg-white/5'}`}>Caution</button>
-                                                        <button onClick={(e) => { e.stopPropagation(); setHealthFilter('critical'); }} className={`h-7 px-2.5 rounded-md flex items-center justify-center transition-all text-[7px] font-black uppercase tracking-widest flex-1 ${healthFilter === 'critical' ? 'bg-danger/20 text-danger' : 'text-txt-muted hover:bg-white/5'}`}>Critical</button>
-                                                    </div>
-                                                    <div className="flex items-center gap-1 bg-canvas/50 p-0.5 border border-white/5 mt-1.5">
-                                                        <button onClick={(e) => { e.stopPropagation(); setStatusFilter('all'); }} className={`h-7 px-2.5 rounded-md flex items-center justify-center transition-all text-[7px] font-black uppercase tracking-widest flex-1 ${statusFilter === 'all' ? 'bg-primary text-white' : 'text-txt-muted hover:bg-white/5'}`}>Estado: Todos</button>
-                                                        <button onClick={(e) => { e.stopPropagation(); setStatusFilter('operativo'); }} className={`h-7 px-2.5 rounded-md flex items-center justify-center transition-all text-[7px] font-black uppercase tracking-widest flex-1 ${statusFilter === 'operativo' ? 'bg-success/20 text-success' : 'text-txt-muted hover:bg-white/5'}`}>Operativo</button>
-                                                        <button onClick={(e) => { e.stopPropagation(); setStatusFilter('fallado'); }} className={`h-7 px-2.5 rounded-md flex items-center justify-center transition-all text-[7px] font-black uppercase tracking-widest flex-1 ${statusFilter === 'fallado' ? 'bg-danger/20 text-danger' : 'text-txt-muted hover:bg-white/5'}`}>Fallado</button>
-                                                        <button onClick={(e) => { e.stopPropagation(); setStatusFilter('pull'); }} className={`h-7 px-2.5 rounded-md flex items-center justify-center transition-all text-[7px] font-black uppercase tracking-widest flex-1 ${statusFilter === 'pull' ? 'bg-warning/20 text-warning' : 'text-txt-muted hover:bg-white/5'}`}>Pull</button>
-                                                        <button onClick={(e) => { e.stopPropagation(); setStatusFilter('pendiente'); }} className={`h-7 px-2.5 rounded-md flex items-center justify-center transition-all text-[7px] font-black uppercase tracking-widest flex-1 ${statusFilter === 'pendiente' ? 'bg-slate-500/20 text-slate-400' : 'text-txt-muted hover:bg-white/5'}`}>Pendiente</button>
+                                                    <div className="flex-1 min-h-[420px] overflow-y-auto custom-scrollbar p-2 bg-canvas/25" onScroll={handleDropdownScroll}>
+                                                        {sortedFleet.length === 0 ? (
+                                                            <div className="h-full min-h-[200px] flex flex-col items-center justify-center text-center opacity-50 px-6">
+                                                                <Search className="w-8 h-8 text-txt-muted mb-3" />
+                                                                <p className="text-[10px] font-black uppercase tracking-widest text-txt-muted">{language === 'es' ? 'Sin pozos con ese filtro' : 'No wells match filters'}</p>
+                                                            </div>
+                                                        ) : (
+                                                            sortedFleet.slice(0, visibleCount).map(well => (
+                                                                <WellListItem
+                                                                    key={well.id}
+                                                                    well={well}
+                                                                    health={wellHealthMap[well.id] || 0}
+                                                                    isActive={well.id === selectedWellId}
+                                                                    isMechVerified={customDesigns[fuzzyWellName(well.name)]?.isMechVerified}
+                                                                    onSelect={(id: string) => {
+                                                                        setSelectedWellId(id);
+                                                                        setWellViewMode('monitoring');
+                                                                        setIsWellDropdownOpen(false);
+                                                                        setSearchTerm('');
+                                                                    }}
+                                                                />
+                                                            ))
+                                                        )}
                                                     </div>
                                                 </div>
-                                                <div className="flex-1 min-h-[420px] overflow-y-auto custom-scrollbar p-2 bg-canvas/25" onScroll={handleDropdownScroll}>
-                                                    {sortedFleet.length === 0 ? (
-                                                        <div className="h-full min-h-[200px] flex flex-col items-center justify-center text-center opacity-50 px-6">
-                                                            <Search className="w-8 h-8 text-txt-muted mb-3" />
-                                                            <p className="text-[10px] font-black uppercase tracking-widest text-txt-muted">{language === 'es' ? 'Sin pozos con ese filtro' : 'No wells match filters'}</p>
-                                                        </div>
-                                                    ) : (
-                                                        sortedFleet.slice(0, visibleCount).map(well => (
-                                                            <WellListItem
-                                                                key={well.id}
-                                                                well={well}
-                                                                health={wellHealthMap[well.id] || 0}
-                                                                isActive={well.id === selectedWellId}
-                                                                isMechVerified={customDesigns[fuzzyWellName(well.name)]?.isMechVerified}
-                                                                onSelect={(id: string) => {
-                                                                    setSelectedWellId(id);
-                                                                    setWellViewMode('monitoring');
-                                                                    setIsWellDropdownOpen(false);
-                                                                    setSearchTerm('');
-                                                                }}
-                                                            />
-                                                        ))
-                                                    )}
-                                                </div>
-                                            </div>
-                                        )}
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
 
                                 <div className="hidden md:block w-px h-7 bg-white/10 shrink-0" />
 
                                 {/* Center: primary actions */}
-                                <div className="flex items-center gap-2 shrink-0 md:flex-1 justify-start md:justify-center flex-nowrap">
+                                <div className="flex flex-wrap items-center gap-2 w-full md:w-auto md:flex-1 justify-start md:justify-center">
                                     <button
                                         onClick={() => importDbRef.current?.click()}
                                         className={`${toolbarBtn} bg-secondary/10 text-secondary border-secondary/25 hover:bg-secondary/20`}
                                         title="Subir prueba de produccion puntual (CSV/Excel)"
                                     >
                                         <Database className="w-3.5 h-3.5" />
-                                        <span className="hidden md:inline">{language === 'es' ? 'Subir Prueba' : 'Upload Test'}</span>
+                                        <span>{language === 'es' ? 'Subir Prueba' : 'Upload Test'}</span>
                                     </button>
 
                                     {onNavigateToDesign && (
@@ -1012,7 +1026,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                                 title="Ir a Diseno (Phase 5)"
                                             >
                                                 <Settings className="w-3.5 h-3.5" />
-                                                <span className="hidden md:inline">{language === 'es' ? 'Diseno' : 'Design'}</span>
+                                                <span>{language === 'es' ? 'Diseno' : 'Design'}</span>
                                             </button>
                                         </SecureWrapper>
                                     )}
@@ -1023,7 +1037,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                             className={`${toolbarBtn} ${wellViewMode === 'history' ? 'bg-primary text-white border-primary' : 'bg-success/10 text-success border-success/25 hover:bg-success/20'}`}
                                         >
                                             {wellViewMode === 'history' ? <Activity className="w-3.5 h-3.5" /> : <TrendingUp className="w-3.5 h-3.5" />}
-                                            <span className="hidden lg:inline">{wellViewMode === 'history' ? (language === 'es' ? 'Monitoreo' : 'Monitoring') : (language === 'es' ? 'Historico' : 'History')}</span>
+                                            <span>{wellViewMode === 'history' ? (language === 'es' ? 'Monitoreo' : 'Monitoring') : (language === 'es' ? 'Historico' : 'History')}</span>
                                         </button>
                                     </SecureWrapper>
 
@@ -1034,14 +1048,14 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                         title="Sincronizar OneDrive en Caliente"
                                     >
                                         <RefreshCw className={`w-3.5 h-3.5 ${isSyncingOneDrive ? 'animate-spin' : ''}`} />
-                                        <span className="hidden lg:inline">{isSyncingOneDrive ? (language === 'es' ? 'Sincronizando...' : 'Syncing...') : (language === 'es' ? 'Sincronizar' : 'Sync')}</span>
+                                        <span>{isSyncingOneDrive ? (language === 'es' ? 'Sincronizando...' : 'Syncing...') : (language === 'es' ? 'Sincronizar' : 'Sync')}</span>
                                     </button>
                                 </div>
 
                                 <div className="hidden md:block w-px h-7 bg-white/10 shrink-0" />
 
                                 {/* Right: settings */}
-                                <div className="flex items-center gap-1.5 bg-white/5 p-1 border border-white/10 shrink-0 md:ml-auto">
+                                <div className="flex flex-wrap items-center gap-1.5 bg-white/5 p-1 border border-white/10 w-full md:w-auto justify-between md:justify-start md:ml-auto">
                                     <a
                                         href="https://1drv.ms/x/c/06cc4035ad46ff97/IQClWg69qziUQZ4pcxlcyoF5AdzaFbqGWhkSVp1rxJKvfwQ?e=Zuk6P7"
                                         target="_blank"
