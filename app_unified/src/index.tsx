@@ -14,7 +14,7 @@ const _originalFetch = window.fetch.bind(window);
 window.fetch = function(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
     const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : (input as Request).url;
     if (url.startsWith('/api/') && !url.includes('/api/login')) {
-        const token = localStorage.getItem('esp_session_token');
+        const token = sessionStorage.getItem('esp_session_token');
         if (token) {
             const headers = new Headers(init?.headers || {});
             headers.set('x-session-token', token);

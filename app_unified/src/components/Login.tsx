@@ -4,12 +4,12 @@ import { Shield, Lock, Mail, Eye, EyeOff, AlertTriangle, Loader2 } from 'lucide-
 const SESSION_KEY = 'esp_session_token';
 const SESSION_EMAIL_KEY = 'esp_session_email';
 
-export const getSessionToken = (): string | null => localStorage.getItem(SESSION_KEY);
-export const getSessionEmail = (): string | null => localStorage.getItem(SESSION_EMAIL_KEY);
+export const getSessionToken = (): string | null => sessionStorage.getItem(SESSION_KEY);
+export const getSessionEmail = (): string | null => sessionStorage.getItem(SESSION_EMAIL_KEY);
 
 export const clearSession = () => {
-    localStorage.removeItem(SESSION_KEY);
-    localStorage.removeItem(SESSION_EMAIL_KEY);
+    sessionStorage.removeItem(SESSION_KEY);
+    sessionStorage.removeItem(SESSION_EMAIL_KEY);
 };
 
 export const isSessionValid = (): boolean => {
@@ -98,8 +98,8 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
 
             const data = await res.json();
             if (data.token) {
-                localStorage.setItem(SESSION_KEY, data.token);
-                localStorage.setItem(SESSION_EMAIL_KEY, email.trim().toLowerCase());
+                sessionStorage.setItem(SESSION_KEY, data.token);
+                sessionStorage.setItem(SESSION_EMAIL_KEY, email.trim().toLowerCase());
                 onLoginSuccess();
             } else {
                 setError('No tienes acceso a archivos privados de la organización.');
