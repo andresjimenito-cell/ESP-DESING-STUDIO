@@ -689,13 +689,77 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 className="min-h-screen flex flex-col justify-between p-4 relative overflow-y-auto font-sans text-txt-main selection:bg-primary/30 transition-colors duration-700 animate-landing-entry"
                 style={{
                     backgroundColor: 'rgb(var(--color-canvas))',
-                    backgroundImage: 'radial-gradient(circle at top, rgb(var(--color-primary) / 0.1) 0%, transparent 60%), url(/main_bg.png)',
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
                 }}
             >
+                {/* ══════════════════════════════════════════════════════
+                    BACKGROUND SYSTEM — Deep Space + Antigravity Field (Mobile Optimized)
+                ══════════════════════════════════════════════════════ */}
+                <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+                    {/* Primary radial atmosphere */}
+                    <div className="absolute inset-0"
+                        style={{
+                            background: 'radial-gradient(ellipse 80% 60% at 50% 30%, rgba(var(--color-primary), 0.08) 0%, transparent 65%), radial-gradient(ellipse 60% 50% at 20% 70%, rgba(var(--color-secondary), 0.05) 0%, transparent 60%)'
+                        }}
+                    />
+
+                    {/* Background image — very subtle */}
+                    <div
+                        className="absolute inset-0 opacity-10"
+                        style={{
+                            backgroundImage: "url('/main_bg.png')",
+                            backgroundSize: "cover",
+                            backgroundPosition: "center",
+                            filter: 'blur(2px) saturate(0.5)',
+                        }}
+                    />
+
+                    {/* Fine dot mesh */}
+                    <div className="absolute inset-0 opacity-20"
+                        style={{
+                            backgroundImage: 'radial-gradient(circle, rgba(var(--color-primary), 0.15) 1px, transparent 1px)',
+                            backgroundSize: '20px 20px',
+                            maskImage: 'radial-gradient(circle at center, black 40%, transparent 100%)',
+                        }}
+                    />
+
+                    {/* Perspective floor */}
+                    <div
+                        className="absolute bottom-[-15%] left-[-40%] right-[-40%] h-[30vh] opacity-20"
+                        style={{
+                            backgroundImage: 'linear-gradient(rgba(var(--color-primary),0.2) 1px, transparent 1px), linear-gradient(90deg, rgba(var(--color-primary),0.2) 1px, transparent 1px)',
+                            backgroundSize: '40px 40px',
+                            transform: 'perspective(600px) rotateX(65deg)',
+                            maskImage: 'linear-gradient(to top, black 10%, transparent 100%)',
+                        }}
+                    />
+
+                    {/* Antigravity particle field */}
+                    {fieldParticles.slice(0, 15).map(p => (
+                        <div
+                            key={p.id}
+                            className="absolute rounded-full"
+                            style={{
+                                left: `${p.x}%`,
+                                bottom: '-8px',
+                                width: p.size,
+                                height: p.size,
+                                background: `rgb(${p.color})`,
+                                boxShadow: `0 0 3px rgb(${p.color})`,
+                                '--op': p.opacity,
+                                '--drift': `${p.drift}px`,
+                                animationName: 'lp-particle-rise',
+                                animationDuration: `${p.speed}s`,
+                                animationDelay: `${p.delay}s`,
+                                animationTimingFunction: 'linear',
+                                animationIterationCount: 'infinite',
+                                opacity: 0,
+                            } as any}
+                        />
+                    ))}
+                </div>
+
                 {/* Header */}
-                <header className="flex justify-between items-center w-full z-45 py-3 border-b border-white/5 bg-canvas/30 backdrop-blur-md px-2">
+                <header className="flex justify-between items-center w-full z-45 py-3 border-b border-white/5 bg-canvas/30 backdrop-blur-md px-2 relative">
                     <div className="flex items-center gap-2">
                         <img
                             src="/LOGO.png"
@@ -718,16 +782,31 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 </header>
 
                 {/* Main Content */}
-                <main className="flex-1 flex flex-col justify-center items-center py-8 gap-6 z-30 w-full max-w-md mx-auto">
-                    <div className="text-center space-y-2">
+                <main className="flex-1 flex flex-col justify-center items-center py-8 gap-6 z-30 w-full max-w-md mx-auto relative">
+                    <div className="text-center space-y-2 relative">
                         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-[0.2em] bg-primary/10 border border-primary/20 text-primary">
                             <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
                             {t('lp.engineering')}
                         </span>
-                        <h1 className="text-3xl font-black text-white tracking-tight leading-none uppercase">
-                            ESP DESIGN STUDIO
+                        
+                        {/* Ambient glow behind text */}
+                        <div
+                            className="absolute left-1/2 -translate-x-1/2 top-4 w-40 h-40 rounded-full pointer-events-none"
+                            style={{ background: 'rgba(var(--color-primary), 0.08)', filter: 'blur(45px)', zIndex: 0 }}
+                        />
+
+                        <h1 className="text-3xl font-black text-txt-main tracking-tight leading-none uppercase relative z-10">
+                            ESP DESIGN <span
+                                className="text-transparent bg-clip-text"
+                                style={{
+                                    backgroundImage: 'linear-gradient(100deg, rgb(var(--color-primary)), rgb(var(--color-secondary)))',
+                                    WebkitTextFillColor: 'transparent',
+                                }}
+                            >
+                                STUDIO
+                            </span>
                         </h1>
-                        <p className="text-[11px] text-txt-muted/80 max-w-xs mx-auto leading-relaxed">
+                        <p className="text-[11px] text-txt-muted/80 max-w-xs mx-auto leading-relaxed relative z-10">
                             {t('lp.desc')}
                         </p>
                     </div>

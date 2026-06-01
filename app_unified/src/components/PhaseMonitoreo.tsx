@@ -104,6 +104,19 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
         }
         return 0.8;
     });
+    const [isMobile, setIsMobile] = useState(() => {
+        if (typeof window !== 'undefined') {
+            return window.innerWidth < 768;
+        }
+        return false;
+    });
+    useEffect(() => {
+        const handleResize = () => {
+            setIsMobile(window.innerWidth < 768);
+        };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
     const [visibleCount, setVisibleCount] = useState<number>(50);
     const [isSyncingOneDrive, setIsSyncingOneDrive] = useState(false);
 
@@ -926,90 +939,93 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                                 <ChevronRight className={`w-4 h-4 text-txt-muted shrink-0 transition-transform ${isWellDropdownOpen ? 'rotate-90' : ''}`} />
                                             </button>
 
-                                            {isWellDropdownOpen && (
-                                                <>
-                                                    {/* Backdrop for mobile to prevent background interactions and overlap issues */}
-                                                    <div 
-                                                        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[499] md:hidden"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setIsWellDropdownOpen(false);
-                                                        }}
-                                                    />
-                                                    <div
-                                                        ref={wellDropdownPanelRef}
-                                                        className="fixed md:absolute top-[8%] md:top-full left-4 right-4 md:left-0 md:right-auto mt-2 z-[500] flex flex-col bg-surface border border-white/15 border-t-2 border-t-primary/50 shadow-[0_28px_80px_rgba(0,0,0,0.55)] w-auto md:w-[580px] h-[80vh] md:h-auto max-h-[80vh] md:max-h-[82vh] overflow-hidden"
-                                                    >
-                                                    <div className="shrink-0 px-4 py-3 border-b border-white/10 bg-gradient-to-r from-primary/10 via-transparent to-secondary/5">
-                                                        <div className="flex items-center justify-between gap-3 mb-3">
-                                                            <div className="flex items-center gap-2">
-                                                                <div className="p-1.5 bg-primary/15 border border-primary/25 text-primary">
-                                                                    <List className="w-4 h-4" />
-                                                                </div>
-                                                                <div>
-                                                                    <p className="text-[9px] font-black text-txt-muted uppercase tracking-[0.2em]">{language === 'es' ? 'Flota de Pozos' : 'Well Fleet'}</p>
-                                                                    <p className="text-xs font-black text-txt-main uppercase tracking-tight">{sortedFleet.length} {language === 'es' ? 'registros' : 'records'}</p>
-                                                                </div>
-                                                            </div>
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => setIsWellDropdownOpen(false)}
-                                                                className="h-7 w-7 flex items-center justify-center border border-white/10 hover:border-primary/30 hover:bg-primary/10 text-txt-muted hover:text-primary transition-all"
-                                                            >
-                                                                <X className="w-3.5 h-3.5" />
-                                                            </button>
-                                                        </div>
-                                                        <DebouncedSearchInput
-                                                            value={searchTerm}
-                                                            onChange={setSearchTerm}
-                                                            placeholder={language === 'es' ? 'Buscar pozo...' : 'Search well...'}
+                                            {isWellDropdownOpen && (() => {
+                                                const dropdownContent = (
+                                                    <>
+                                                        {/* Backdrop for mobile to prevent background interactions and overlap issues */}
+                                                        <div 
+                                                            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] md:hidden"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setIsWellDropdownOpen(false);
+                                                            }}
                                                         />
-                                                        <div className="flex items-center gap-1 bg-canvas/50 p-0.5 border border-white/5 mt-2">
-                                                            <button onClick={(e) => { e.stopPropagation(); setDataFilter('all'); }} className={`h-7 px-2.5 rounded-md flex items-center justify-center transition-all text-[7px] font-black uppercase tracking-widest flex-1 ${dataFilter === 'all' ? 'bg-primary text-white' : 'text-txt-muted hover:bg-white/5'}`}>Datos: Todos</button>
-                                                            <button onClick={(e) => { e.stopPropagation(); setDataFilter('complete'); }} className={`h-7 px-2.5 rounded-md flex items-center justify-center transition-all text-[7px] font-black uppercase tracking-widest flex-1 ${dataFilter === 'complete' ? 'bg-success/20 text-success' : 'text-txt-muted hover:bg-white/5'}`}>Completos</button>
-                                                            <button onClick={(e) => { e.stopPropagation(); setDataFilter('missing'); }} className={`h-7 px-2.5 rounded-md flex items-center justify-center transition-all text-[7px] font-black uppercase tracking-widest flex-1 ${dataFilter === 'missing' ? 'bg-warning/20 text-warning' : 'text-txt-muted hover:bg-white/5'}`}>Faltan</button>
-                                                        </div>
-                                                        <div className="flex items-center gap-1 bg-canvas/50 p-0.5 border border-white/5 mt-1.5">
-                                                            <button onClick={(e) => { e.stopPropagation(); setHealthFilter('all'); }} className={`h-7 px-2.5 rounded-md flex items-center justify-center transition-all text-[7px] font-black uppercase tracking-widest flex-1 ${healthFilter === 'all' ? 'bg-primary text-white' : 'text-txt-muted hover:bg-white/5'}`}>Salud: Todos</button>
-                                                            <button onClick={(e) => { e.stopPropagation(); setHealthFilter('healthy'); }} className={`h-7 px-2.5 rounded-md flex items-center justify-center transition-all text-[7px] font-black uppercase tracking-widest flex-1 ${healthFilter === 'healthy' ? 'bg-success/20 text-success' : 'text-txt-muted hover:bg-white/5'}`}>Healthy</button>
-                                                            <button onClick={(e) => { e.stopPropagation(); setHealthFilter('caution'); }} className={`h-7 px-2.5 rounded-md flex items-center justify-center transition-all text-[7px] font-black uppercase tracking-widest flex-1 ${healthFilter === 'caution' ? 'bg-warning/20 text-warning' : 'text-txt-muted hover:bg-white/5'}`}>Caution</button>
-                                                            <button onClick={(e) => { e.stopPropagation(); setHealthFilter('critical'); }} className={`h-7 px-2.5 rounded-md flex items-center justify-center transition-all text-[7px] font-black uppercase tracking-widest flex-1 ${healthFilter === 'critical' ? 'bg-danger/20 text-danger' : 'text-txt-muted hover:bg-white/5'}`}>Critical</button>
-                                                        </div>
-                                                        <div className="flex items-center gap-1 bg-canvas/50 p-0.5 border border-white/5 mt-1.5">
-                                                            <button onClick={(e) => { e.stopPropagation(); setStatusFilter('all'); }} className={`h-7 px-2.5 rounded-md flex items-center justify-center transition-all text-[7px] font-black uppercase tracking-widest flex-1 ${statusFilter === 'all' ? 'bg-primary text-white' : 'text-txt-muted hover:bg-white/5'}`}>Estado: Todos</button>
-                                                            <button onClick={(e) => { e.stopPropagation(); setStatusFilter('operativo'); }} className={`h-7 px-2.5 rounded-md flex items-center justify-center transition-all text-[7px] font-black uppercase tracking-widest flex-1 ${statusFilter === 'operativo' ? 'bg-success/20 text-success' : 'text-txt-muted hover:bg-white/5'}`}>Operativo</button>
-                                                            <button onClick={(e) => { e.stopPropagation(); setStatusFilter('fallado'); }} className={`h-7 px-2.5 rounded-md flex items-center justify-center transition-all text-[7px] font-black uppercase tracking-widest flex-1 ${statusFilter === 'fallado' ? 'bg-danger/20 text-danger' : 'text-txt-muted hover:bg-white/5'}`}>Fallado</button>
-                                                            <button onClick={(e) => { e.stopPropagation(); setStatusFilter('pull'); }} className={`h-7 px-2.5 rounded-md flex items-center justify-center transition-all text-[7px] font-black uppercase tracking-widest flex-1 ${statusFilter === 'pull' ? 'bg-warning/20 text-warning' : 'text-txt-muted hover:bg-white/5'}`}>Pull</button>
-                                                            <button onClick={(e) => { e.stopPropagation(); setStatusFilter('pendiente'); }} className={`h-7 px-2.5 rounded-md flex items-center justify-center transition-all text-[7px] font-black uppercase tracking-widest flex-1 ${statusFilter === 'pendiente' ? 'bg-slate-500/20 text-slate-400' : 'text-txt-muted hover:bg-white/5'}`}>Pendiente</button>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex-1 min-h-[420px] overflow-y-auto custom-scrollbar p-2 bg-canvas/25" onScroll={handleDropdownScroll}>
-                                                        {sortedFleet.length === 0 ? (
-                                                            <div className="h-full min-h-[200px] flex flex-col items-center justify-center text-center opacity-50 px-6">
-                                                                <Search className="w-8 h-8 text-txt-muted mb-3" />
-                                                                <p className="text-[10px] font-black uppercase tracking-widest text-txt-muted">{language === 'es' ? 'Sin pozos con ese filtro' : 'No wells match filters'}</p>
-                                                            </div>
-                                                        ) : (
-                                                            sortedFleet.slice(0, visibleCount).map(well => (
-                                                                <WellListItem
-                                                                    key={well.id}
-                                                                    well={well}
-                                                                    health={wellHealthMap[well.id] || 0}
-                                                                    isActive={well.id === selectedWellId}
-                                                                    isMechVerified={customDesigns[fuzzyWellName(well.name)]?.isMechVerified}
-                                                                    onSelect={(id: string) => {
-                                                                        setSelectedWellId(id);
-                                                                        setWellViewMode('monitoring');
-                                                                        setIsWellDropdownOpen(false);
-                                                                        setSearchTerm('');
-                                                                    }}
+                                                        <div
+                                                            ref={wellDropdownPanelRef}
+                                                            className="fixed md:absolute top-[8%] md:top-full left-4 right-4 md:left-0 md:right-auto mt-2 z-[9999] md:z-[500] flex flex-col bg-surface border border-white/15 border-t-2 border-t-primary/50 shadow-[0_28px_80px_rgba(0,0,0,0.55)] w-[calc(100vw-32px)] md:w-[580px] h-[80vh] md:h-auto max-h-[80vh] md:max-h-[82vh] overflow-hidden"
+                                                        >
+                                                            <div className="shrink-0 px-4 py-3 border-b border-white/10 bg-gradient-to-r from-primary/10 via-transparent to-secondary/5">
+                                                                <div className="flex items-center justify-between gap-3 mb-3">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <div className="p-1.5 bg-primary/15 border border-primary/25 text-primary">
+                                                                            <List className="w-4 h-4" />
+                                                                        </div>
+                                                                        <div>
+                                                                            <p className="text-[9px] font-black text-txt-muted uppercase tracking-[0.2em]">{language === 'es' ? 'Flota de Pozos' : 'Well Fleet'}</p>
+                                                                            <p className="text-xs font-black text-txt-main uppercase tracking-tight">{sortedFleet.length} {language === 'es' ? 'registros' : 'records'}</p>
+                                                                        </div>
+                                                                    </div>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setIsWellDropdownOpen(false)}
+                                                                        className="h-7 w-7 flex items-center justify-center border border-white/10 hover:border-primary/30 hover:bg-primary/10 text-txt-muted hover:text-primary transition-all"
+                                                                    >
+                                                                        <X className="w-3.5 h-3.5" />
+                                                                    </button>
+                                                                </div>
+                                                                <DebouncedSearchInput
+                                                                    value={searchTerm}
+                                                                    onChange={setSearchTerm}
+                                                                    placeholder={language === 'es' ? 'Buscar pozo...' : 'Search well...'}
                                                                 />
-                                                            ))
-                                                        )}
-                                                    </div>
-                                                </div>
-                                                </>
-                                            )}
+                                                                <div className="flex items-center gap-1 bg-canvas/50 p-0.5 border border-white/5 mt-2">
+                                                                    <button onClick={(e) => { e.stopPropagation(); setDataFilter('all'); }} className={`h-7 px-2.5 rounded-md flex items-center justify-center transition-all text-[7px] font-black uppercase tracking-widest flex-1 ${dataFilter === 'all' ? 'bg-primary text-white' : 'text-txt-muted hover:bg-white/5'}`}>Datos: Todos</button>
+                                                                    <button onClick={(e) => { e.stopPropagation(); setDataFilter('complete'); }} className={`h-7 px-2.5 rounded-md flex items-center justify-center transition-all text-[7px] font-black uppercase tracking-widest flex-1 ${dataFilter === 'complete' ? 'bg-success/20 text-success' : 'text-txt-muted hover:bg-white/5'}`}>Completos</button>
+                                                                    <button onClick={(e) => { e.stopPropagation(); setDataFilter('missing'); }} className={`h-7 px-2.5 rounded-md flex items-center justify-center transition-all text-[7px] font-black uppercase tracking-widest flex-1 ${dataFilter === 'missing' ? 'bg-warning/20 text-warning' : 'text-txt-muted hover:bg-white/5'}`}>Faltan</button>
+                                                                </div>
+                                                                <div className="flex items-center gap-1 bg-canvas/50 p-0.5 border border-white/5 mt-1.5">
+                                                                    <button onClick={(e) => { e.stopPropagation(); setHealthFilter('all'); }} className={`h-7 px-2.5 rounded-md flex items-center justify-center transition-all text-[7px] font-black uppercase tracking-widest flex-1 ${healthFilter === 'all' ? 'bg-primary text-white' : 'text-txt-muted hover:bg-white/5'}`}>Salud: Todos</button>
+                                                                    <button onClick={(e) => { e.stopPropagation(); setHealthFilter('healthy'); }} className={`h-7 px-2.5 rounded-md flex items-center justify-center transition-all text-[7px] font-black uppercase tracking-widest flex-1 ${healthFilter === 'healthy' ? 'bg-success/20 text-success' : 'text-txt-muted hover:bg-white/5'}`}>Healthy</button>
+                                                                    <button onClick={(e) => { e.stopPropagation(); setHealthFilter('caution'); }} className={`h-7 px-2.5 rounded-md flex items-center justify-center transition-all text-[7px] font-black uppercase tracking-widest flex-1 ${healthFilter === 'caution' ? 'bg-warning/20 text-warning' : 'text-txt-muted hover:bg-white/5'}`}>Caution</button>
+                                                                    <button onClick={(e) => { e.stopPropagation(); setHealthFilter('critical'); }} className={`h-7 px-2.5 rounded-md flex items-center justify-center transition-all text-[7px] font-black uppercase tracking-widest flex-1 ${healthFilter === 'critical' ? 'bg-danger/20 text-danger' : 'text-txt-muted hover:bg-white/5'}`}>Critical</button>
+                                                                </div>
+                                                                <div className="flex items-center gap-1 bg-canvas/50 p-0.5 border border-white/5 mt-1.5">
+                                                                    <button onClick={(e) => { e.stopPropagation(); setStatusFilter('all'); }} className={`h-7 px-2.5 rounded-md flex items-center justify-center transition-all text-[7px] font-black uppercase tracking-widest flex-1 ${statusFilter === 'all' ? 'bg-primary text-white' : 'text-txt-muted hover:bg-white/5'}`}>Estado: Todos</button>
+                                                                    <button onClick={(e) => { e.stopPropagation(); setStatusFilter('operativo'); }} className={`h-7 px-2.5 rounded-md flex items-center justify-center transition-all text-[7px] font-black uppercase tracking-widest flex-1 ${statusFilter === 'operativo' ? 'bg-success/20 text-success' : 'text-txt-muted hover:bg-white/5'}`}>Operativo</button>
+                                                                    <button onClick={(e) => { e.stopPropagation(); setStatusFilter('fallado'); }} className={`h-7 px-2.5 rounded-md flex items-center justify-center transition-all text-[7px] font-black uppercase tracking-widest flex-1 ${statusFilter === 'fallado' ? 'bg-danger/20 text-danger' : 'text-txt-muted hover:bg-white/5'}`}>Fallado</button>
+                                                                    <button onClick={(e) => { e.stopPropagation(); setStatusFilter('pull'); }} className={`h-7 px-2.5 rounded-md flex items-center justify-center transition-all text-[7px] font-black uppercase tracking-widest flex-1 ${statusFilter === 'pull' ? 'bg-warning/20 text-warning' : 'text-txt-muted hover:bg-white/5'}`}>Pull</button>
+                                                                    <button onClick={(e) => { e.stopPropagation(); setStatusFilter('pendiente'); }} className={`h-7 px-2.5 rounded-md flex items-center justify-center transition-all text-[7px] font-black uppercase tracking-widest flex-1 ${statusFilter === 'pendiente' ? 'bg-slate-500/20 text-slate-400' : 'text-txt-muted hover:bg-white/5'}`}>Pendiente</button>
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex-1 min-h-[420px] overflow-y-auto custom-scrollbar p-2 bg-canvas/25" onScroll={handleDropdownScroll}>
+                                                                {sortedFleet.length === 0 ? (
+                                                                    <div className="h-full min-h-[200px] flex flex-col items-center justify-center text-center opacity-50 px-6">
+                                                                        <Search className="w-8 h-8 text-txt-muted mb-3" />
+                                                                        <p className="text-[10px] font-black uppercase tracking-widest text-txt-muted">{language === 'es' ? 'Sin pozos con ese filtro' : 'No wells match filters'}</p>
+                                                                    </div>
+                                                                ) : (
+                                                                    sortedFleet.slice(0, visibleCount).map(well => (
+                                                                        <WellListItem
+                                                                            key={well.id}
+                                                                            well={well}
+                                                                            health={wellHealthMap[well.id] || 0}
+                                                                            isActive={well.id === selectedWellId}
+                                                                            isMechVerified={customDesigns[fuzzyWellName(well.name)]?.isMechVerified}
+                                                                            onSelect={(id: string) => {
+                                                                                setSelectedWellId(id);
+                                                                                setWellViewMode('monitoring');
+                                                                                setIsWellDropdownOpen(false);
+                                                                                setSearchTerm('');
+                                                                            }}
+                                                                        />
+                                                                    ))
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </>
+                                                );
+                                                return isMobile ? createPortal(dropdownContent, document.body) : dropdownContent;
+                                            })()}
                                         </div>
                                     </div>
                                 </div>
