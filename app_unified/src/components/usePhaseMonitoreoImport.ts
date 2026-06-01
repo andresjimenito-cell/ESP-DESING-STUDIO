@@ -109,7 +109,10 @@ export const usePhaseMonitoreoImport = (
                     let headerRow = 0;
                     for (let i = 0; i < 20; i++) {
                         const temp = XLSX.utils.sheet_to_json(surveySheet, { range: i, header: 1 }) as any[][];
-                        if (temp.length > 0 && temp[0].some(c => String(c || '').toUpperCase().includes('DEPTH'))) {
+                        if (temp.length > 0 && temp[0].some(c => {
+                            const uc = String(c || '').toUpperCase();
+                            return uc.includes('DEPTH') || uc.includes('MD') || uc.includes('PROF') || uc.includes('MEASURED') || uc.includes('MEDIDA');
+                        })) {
                             headerRow = i; break;
                         }
                     }
