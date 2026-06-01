@@ -2060,19 +2060,19 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
 
 
             {/* HEADER */}
-            <div className={`flex justify-between items-center px-6 shrink-0 h-16 card-solid rounded-none border shadow-2xl relative overflow-hidden group transition-all duration-700 mb-4 ${isMaxCapActive ? 'border-success/60 ring-1 ring-success/20' : 'border-white/20'}`}>
-                <div className={`absolute left-0 top-0 w-2 h-full transition-colors duration-700 ${isMaxCapActive ? 'bg-success shadow-glow-success' : 'bg-secondary shadow-glow-secondary'}`}></div>
-                <div className="flex items-center gap-5 relative z-10 pl-2">
-                    <div className={`p-3 rounded-none border transition-all duration-700 ${isMaxCapActive ? 'bg-success/20 border-success/30 shadow-glow-success/20' : 'bg-secondary/20 border-white/10 shadow-glow-secondary'}`}>
-                        {isMaxCapActive ? <Zap className="w-6 h-6 text-success animate-pulse" /> : <ClipboardCheck className="w-6 h-6 text-secondary" />}
+            <div className={`flex flex-col md:flex-row justify-between items-start md:items-center px-4 py-4 md:py-0 md:px-6 shrink-0 md:h-16 card-solid rounded-none border shadow-2xl relative overflow-hidden group transition-all duration-700 mb-4 gap-4 ${isMaxCapActive ? 'border-success/60 ring-1 ring-success/20' : 'border-white/20'}`}>
+                <div className={`absolute left-0 top-0 w-2 md:w-2 h-2 md:h-full transition-colors duration-700 ${isMaxCapActive ? 'bg-success shadow-glow-success' : 'bg-secondary shadow-glow-secondary'}`}></div>
+                <div className="flex items-center gap-3 md:gap-5 relative z-10 pl-2">
+                    <div className={`p-2.5 md:p-3 rounded-none border transition-all duration-700 ${isMaxCapActive ? 'bg-success/20 border-success/30 shadow-glow-success/20' : 'bg-secondary/20 border-white/10 shadow-glow-secondary'}`}>
+                        {isMaxCapActive ? <Zap className="w-5 h-5 md:w-6 md:h-6 text-success animate-pulse" /> : <ClipboardCheck className="w-5 h-5 md:w-6 md:h-6 text-secondary" />}
                     </div>
                     <div>
-                        <h2 className="text-2xl font-black text-txt-main uppercase tracking-[0.2em] leading-none drop-shadow-[0_2px_8px_rgba(var(--color-primary-rgb),0.4)]">
+                        <h2 className="text-xl md:text-2xl font-black text-txt-main uppercase tracking-[0.2em] leading-none drop-shadow-[0_2px_8px_rgba(var(--color-primary-rgb),0.4)]">
                             {isMaxCapActive ? "CAPACITY " : (sensScenario.active ? "SENSITIVITY " : "MATCH")}
                         </h2>
-                        <div className="flex items-center gap-3 mt-1.5">
-                            <div className={`h-[1px] w-8 ${isMaxCapActive ? 'bg-success' : (sensScenario.active ? 'bg-primary' : 'bg-secondary')}`}></div>
-                            <p className="text-[10px] text-txt-muted font-black uppercase tracking-[0.3em] opacity-40">
+                        <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                            <div className={`hidden sm:block h-[1px] w-8 ${isMaxCapActive ? 'bg-success' : (sensScenario.active ? 'bg-primary' : 'bg-secondary')}`}></div>
+                            <p className="text-[9px] md:text-[10px] text-txt-muted font-black uppercase tracking-[0.2em] md:tracking-[0.3em] opacity-40">
                                 {isMaxCapActive ? "PREDICCION BASADA EN MUESTRA CALIBRADA" : (sensScenario.active ? "ANALISIS DE SENSIBILIDAD PRODUCTIVA" : t('p6.fieldSync'))}
                             </p>
                             <div className="w-1 h-1 rounded-none bg-txt-muted opacity-30 mx-1"></div>
@@ -2083,31 +2083,31 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
                         </div>
                     </div>
                 </div>
-                <div className="flex items-center gap-4 relative z-10 pr-2">
+                <div className="flex flex-wrap items-center gap-3 md:gap-4 relative z-10 pr-2 w-full md:w-auto justify-start md:justify-end">
                     {/* NEW COEFFICIENTS LOCATION (HEADER) */}
-                    <div className="flex items-center gap-4 mr-2 bg-surface px-5 py-1.5 rounded-none border border-surface-light shadow-lg">
+                    <div className="flex items-center gap-4 bg-surface px-4 py-1.5 rounded-none border border-surface-light shadow-lg">
                         <div className="flex flex-col items-end">
-                            <span className="text-[8px] font-black text-primary/60 uppercase tracking-widest">{chartMode === 'comparative' ? (language === 'es' ? 'Kh (Proyectado)' : 'Kh (Projected)') : (language === 'es' ? 'Kh (Actual)' : 'Kh (Current)')}</span>
-                            <span className="text-sm font-mono text-primary font-black leading-tight drop-shadow-sm">
+                            <span className="text-[7.5px] md:text-[8px] font-black text-primary/60 uppercase tracking-widest">{chartMode === 'comparative' ? (language === 'es' ? 'Kh (Proyectado)' : 'Kh (Projected)') : (language === 'es' ? 'Kh (Actual)' : 'Kh (Current)')}</span>
+                            <span className="text-xs md:text-sm font-mono text-primary font-black leading-tight drop-shadow-sm">
                                 {chartMode === 'comparative' ? khComparative.toFixed(3) : khFactor.toFixed(3)}
                             </span>
                         </div>
                         <div className="w-px h-6 bg-surface-light"></div>
                         <div className="flex flex-col items-end">
-                            <span className="text-[8px] font-black text-secondary/60 uppercase tracking-widest">{language === 'es' ? 'Kf (Friccion)' : 'Kf (Friction)'}</span>
-                            <span className="text-sm font-mono text-secondary font-black leading-tight drop-shadow-sm">
+                            <span className="text-[7.5px] md:text-[8px] font-black text-secondary/60 uppercase tracking-widest">{language === 'es' ? 'Kf (Friccion)' : 'Kf (Friction)'}</span>
+                            <span className="text-xs md:text-sm font-mono text-secondary font-black leading-tight drop-shadow-sm">
                                 {chartMode === 'comparative' ? '1.000 (IP Fijo)' : actualResSummary.sysCurveFrictionMultiplier.toFixed(3)}
                             </span>
                         </div>
                     </div>
 
-                    <div className="flex bg-canvas/40 p-1 rounded-none border border-white/10 shadow-inner shrink-0 relative overflow-hidden h-11 items-center px-1.5 mr-2">
+                    <div className="flex bg-canvas/40 p-1 rounded-none border border-white/10 shadow-inner shrink-0 relative overflow-hidden h-10 md:h-11 items-center px-1.5">
                         <button
                             onClick={() => {
                                 setChartMode('telemetry');
                                 setIsMaxCapActive(false);
                             }}
-                            className={`px-6 py-2 rounded-none text-[10px] font-black uppercase transition-all duration-500 relative z-10 ${chartMode === 'telemetry' && !isMaxCapActive
+                            className={`px-4 md:px-6 py-1.5 md:py-2 rounded-none text-[9px] md:text-[10px] font-black uppercase transition-all duration-500 relative z-10 ${chartMode === 'telemetry' && !isMaxCapActive
                                 ? 'bg-primary/20 text-primary shadow-glow-primary/20 border border-primary/20'
                                 : 'text-txt-muted hover:text-txt-main'
                                 }`}
@@ -2119,7 +2119,7 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
                                 setChartMode('comparative');
                                 setIsMaxCapActive(false);
                             }}
-                            className={`px-6 py-2 rounded-none text-[10px] font-black uppercase transition-all duration-500 relative z-10 ${chartMode === 'comparative'
+                            className={`px-4 md:px-6 py-1.5 md:py-2 rounded-none text-[9px] md:text-[10px] font-black uppercase transition-all duration-500 relative z-10 ${chartMode === 'comparative'
                                 ? 'bg-secondary/20 text-secondary shadow-glow-secondary/20 border border-secondary/20'
                                 : 'text-txt-muted hover:text-txt-main'
                                 }`}
@@ -2127,19 +2127,19 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
                             {language === 'es' ? 'Comparativa' : 'Comparative'}
                         </button>
                     </div>
-                    <div className="flex bg-canvas/40 p-1 rounded-none border border-white/10 shadow-inner shrink-0 relative overflow-hidden h-11 items-center px-1.5">
+                    <div className="flex bg-canvas/40 p-1 rounded-none border border-white/10 shadow-inner shrink-0 relative overflow-hidden h-10 md:h-11 items-center px-1.5">
                         {['min', 'target', 'max'].map(s => (
                             <button
                                 key={s}
                                 onClick={() => setCompareScenario(s as any)}
-                                className={`px-5 py-2 text-[10px] font-black uppercase rounded-none transition-all duration-500 relative z-10 ${compareScenario === s ? 'bg-secondary/20 text-secondary shadow-glow-secondary/20 border border-secondary/20' : 'text-txt-muted hover:text-txt-main'}`}
+                                className={`px-3 md:px-5 py-1.5 md:py-2 text-[9px] md:text-[10px] font-black uppercase rounded-none transition-all duration-500 relative z-10 ${compareScenario === s ? 'bg-secondary/20 text-secondary shadow-glow-secondary/20 border border-secondary/20' : 'text-txt-muted hover:text-txt-main'}`}
                             >
                                 {s === 'min' ? t('p5.min') : s === 'target' ? t('p5.target') : t('p5.max')}
                             </button>
                         ))}
                     </div>
-                    <button onClick={() => setShowReport(true)} className="bg-primary hover:bg-primary/80 text-white px-6 py-2.5 rounded-none border border-primary/40 text-[10px] font-black uppercase transition-all flex items-center gap-2.5 shadow-xl shadow-primary/20 hover:shadow-primary/40 active:scale-95 h-11">
-                        <Printer className="w-4 h-4" /> {t('p6.print')}
+                    <button onClick={() => setShowReport(true)} className="bg-primary hover:bg-primary/80 text-white px-4 md:px-6 py-2 md:py-2.5 rounded-none border border-primary/40 text-[9px] md:text-[10px] font-black uppercase transition-all flex items-center gap-2 shadow-xl shadow-primary/20 hover:shadow-primary/40 active:scale-95 h-10 md:h-11">
+                        <Printer className="w-3.5 h-3.5" /> {t('p6.print')}
                     </button>
                 </div>
             </div>
