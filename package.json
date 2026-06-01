@@ -15,7 +15,8 @@
   "dependencies": {
     "vite": "^6.2.0",
     "typescript": "~5.8.2",
-    "lightningcss": "^1.31.1"
+    "lightningcss": "^1.31.1",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

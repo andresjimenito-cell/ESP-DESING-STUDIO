@@ -42,8 +42,31 @@ export const usePhaseMonitoreoImport = (
                     if (n) mechDataMap[n] = row;
                 });
             } else {
+                // 1. Read sheet names first (extremely fast and memory efficient)
+                const tempWorkbook = XLSX.read(data, { bookSheets: true });
+                const sheetsToParse: string[] = [];
+                
+                if (tempWorkbook.SheetNames.length > 0) {
+                    sheetsToParse.push(tempWorkbook.SheetNames[0]);
+                }
+                
+                const mechSheetName = tempWorkbook.SheetNames.find(s => norm_ext(s) === 'ESTADOSMECANICOS');
+                if (mechSheetName) {
+                    sheetsToParse.push(mechSheetName);
+                }
+                
+                const surveySheetName = tempWorkbook.SheetNames.find(s => {
+                    const sn = String(s).toUpperCase();
+                    return sn.includes('SURVEY') || sn.includes('TRAYEC') || sn.includes('DESVIACI\u00d3N') || sn.includes('DESVIACION') || sn.includes('DESVIACI\"N');
+                });
+                if (surveySheetName) {
+                    sheetsToParse.push(surveySheetName);
+                }
+
+                // 2. Parse only the target sheets
                 const workbook = XLSX.read(data, {
                     type: 'array',
+                    sheets: sheetsToParse,
                     cellFormula: false,
                     cellHTML: false,
                     cellText: false,
@@ -56,7 +79,6 @@ export const usePhaseMonitoreoImport = (
                 json = XLSX.utils.sheet_to_json(sheet) as any[];
 
                 // --- NEW: Process Mechanical Status Sheet (ESTADOS MECANICOS) ---
-                const mechSheetName = workbook.SheetNames.find(s => norm_ext(s) === 'ESTADOSMECANICOS');
                 if (mechSheetName) {
                     const mechSheet = workbook.Sheets[mechSheetName];
 
@@ -81,11 +103,6 @@ export const usePhaseMonitoreoImport = (
                     });
                     console.log("[Mechanical Status] Pozos indexados:", Object.keys(mechDataMap));
                 }
-
-                const surveySheetName = workbook.SheetNames.find(s => {
-                    const sn = String(s).toUpperCase();
-                    return sn.includes('SURVEY') || sn.includes('TRAYEC') || sn.includes('DESVIACI\u00d3N') || sn.includes('DESVIACION') || sn.includes('DESVIACI\"N');
-                });
 
                 if (surveySheetName) {
                     const surveySheet = workbook.Sheets[surveySheetName];
@@ -651,20 +668,24 @@ export const usePhaseMonitoreoImport = (
             if (isPrecalcJson) {
                 json = data;
             } else {
-                const workbook = XLSX.read(data as Uint8Array, {
-                    type: 'array',
-                    cellFormula: false,
-                    cellHTML: false,
-                    cellText: false,
-                    cellStyles: false
-                });
-                await new Promise(r => setTimeout(r, 100));
-
-                setImportProgress({ current: 20, total: 100, label: 'Extrayendo hojas de telemetria...' });
+                // 1. Read sheet names first (extremely fast and memory efficient)
+                const tempWorkbook = XLSX.read(data as Uint8Array, { bookSheets: true });
                 await new Promise(r => setTimeout(r, 50));
 
-                for (const sheetName of workbook.SheetNames) {
-                    const sheet = workbook.Sheets[sheetName];
+                setImportProgress({ current: 20, total: 100, label: 'Buscando hoja de telemetria...' });
+                await new Promise(r => setTimeout(r, 50));
+
+                for (const sheetName of tempWorkbook.SheetNames) {
+                    // Parse only the single sheet under consideration
+                    const singleWorkbook = XLSX.read(data as Uint8Array, {
+                        type: 'array',
+                        sheets: [sheetName],
+                        cellFormula: false,
+                        cellHTML: false,
+                        cellText: false,
+                        cellStyles: false
+                    });
+                    const sheet = singleWorkbook.Sheets[sheetName];
 
                     // --- BUSCADOR DINAMICO DE ENCABEZADOS ---
                     const previewRows = XLSX.utils.sheet_to_json(sheet, { header: 1, range: 0, blankrows: false }) as any[][];
@@ -720,6 +741,7 @@ export const usePhaseMonitoreoImport = (
                             return obj;
                         });
 
+                        console.log(`[SCADA Import] Found valid sheet: ${sheetName}`);
                         if (json.length > 0) break;
                     }
                 }
@@ -892,7 +914,10 @@ export const usePhaseMonitoreoImport = (
             setWellsHistoricalData(prev => {
                 const updated = { ...prev };
                 Object.entries(newProductionData).forEach(([wellName, tests]) => {
-                    updated[fuzzyWellName(wellName)] = tests;
+                    // Sort tests by date ascending
+                    const sortedTests = [...tests].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+                    // Keep at most last 150 tests to prevent OOM on mobile devices
+                    updated[fuzzyWellName(wellName)] = sortedTests.slice(-150);
                 });
                 return updated;
             });
@@ -1004,7 +1029,8 @@ export const usePhaseMonitoreoImport = (
 
                 if (rawTests.length > 0) {
                     // Update historical records
-                    setWellsHistoricalData(prev => ({ ...prev, [norm_ext(activeWell.name)]: rawTests }));
+                    const sortedRawTests = [...rawTests].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+                    setWellsHistoricalData(prev => ({ ...prev, [norm_ext(activeWell.name)]: sortedRawTests.slice(-150) }));
 
                     // Automatically sync the fleet item and design with the LATEST record in the history file
                     const latest = rawTests[rawTests.length - 1];

@@ -109,10 +109,10 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
         try {
             // 1. Descargar Excel de Diseños (usa Microsoft Graph API via proxy)
             if (!silent) setImportProgress({ current: 10, total: 100, label: language === 'es' ? 'Descargando Base de Datos Maestra desde OneDrive...' : 'Downloading master database from OneDrive...' });
-            const resDesigns = await fetch(`/api/onedrive-fetch?file=designs`);
+            const resDesigns = await fetch(`/api/onedrive-fetch?file=designs&format=json`);
             if (resDesigns.ok) {
-                const buf = await resDesigns.arrayBuffer();
-                await processExcelDesignsBufferRef.current(new Uint8Array(buf), true, false);
+                const data = await resDesigns.json();
+                await processExcelDesignsBufferRef.current(data, true, true);
             } else {
                 const errData = await resDesigns.json().catch(() => ({ error: `HTTP ${resDesigns.status}` }));
                 throw new Error(errData.detail || errData.error || `Error descargando diseños: ${resDesigns.status}`);
@@ -120,10 +120,10 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
 
             // 2. Descargar Excel de Pruebas de Producción / SCADA
             if (!silent) setImportProgress({ current: 60, total: 100, label: language === 'es' ? 'Descargando datos SCADA/Producción desde OneDrive...' : 'Downloading SCADA/Production data from OneDrive...' });
-            const resScada = await fetch(`/api/onedrive-fetch?file=scada`);
+            const resScada = await fetch(`/api/onedrive-fetch?file=scada&format=json`);
             if (resScada.ok) {
-                const buf = await resScada.arrayBuffer();
-                await processScadaBufferRef.current(new Uint8Array(buf), true, false);
+                const data = await resScada.json();
+                await processScadaBufferRef.current(data, true, true);
             } else {
                 const errData = await resScada.json().catch(() => ({ error: `HTTP ${resScada.status}` }));
                 throw new Error(errData.detail || errData.error || `Error descargando SCADA: ${resScada.status}`);
@@ -1122,28 +1122,30 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                         />
 
                         {/* COMPACT ANALYTICS SECTION: PHASE 6 + BHA SCHEME */}
-                        <div className="flex gap-2 items-stretch w-full min-h-[900px] relative">
+                        <div className="flex flex-col md:flex-row gap-2 items-stretch w-full min-h-[900px] relative">
                             {/* NARROW SIDEBAR CONTROL AREA */}
-                            <div className="flex flex-col gap-3 shrink-0 w-16 bg-surface/40 border border-white/5 backdrop-blur-md p-2 justify-start items-center relative z-50">
+                            <div className="flex flex-row md:flex-col gap-3 shrink-0 w-full md:w-16 bg-surface/40 border border-white/5 backdrop-blur-md p-2 justify-center md:justify-start items-center relative z-50">
                                 {/* TAB: BHA */}
                                 <button
                                     onClick={() => {
                                         setIsBhaMinimized(!isBhaMinimized);
                                         if (isBhaMinimized) setIsTrajectoryMinimized(true); // Exclusión mutua
                                     }}
-                                    className={`w-12 rounded-none flex flex-col items-center justify-center gap-3 transition-all duration-300 border ${!isBhaMinimized
-                                        ? 'bg-primary border-primary shadow-glow-primary'
+                                    className={`w-full md:w-12 h-12 md:h-[350px] rounded-none flex flex-row md:flex-col items-center justify-center gap-2 md:gap-3 transition-all duration-300 border ${!isBhaMinimized
+                                        ? 'bg-primary border-primary shadow-glow-primary text-canvas'
                                         : 'bg-primary/5 text-txt-muted border-primary/10 hover:bg-primary/15 hover:text-primary hover:border-primary/25'
                                         }`}
                                     style={{
-                                        height: '350px',
                                         color: !isBhaMinimized ? 'rgb(var(--color-canvas))' : undefined
                                     }}
                                     title={language === 'es' ? 'Ver BHA ESP' : 'View ESP BHA'}
                                 >
-                                    <Layers className="w-4 h-4" />
-                                    <span className="[writing-mode:vertical-lr] text-[9px] font-black uppercase tracking-[0.2em] transform rotate-180 whitespace-nowrap">
+                                    <Layers className="w-4 h-4 shrink-0" />
+                                    <span className="hidden md:inline [writing-mode:vertical-lr] text-[9px] font-black uppercase tracking-[0.2em] transform rotate-180 whitespace-nowrap">
                                         {language === 'es' ? 'VER BHA ESP' : 'VIEW ESP BHA'}
+                                    </span>
+                                    <span className="inline md:hidden text-[9px] font-black uppercase tracking-[0.2em] whitespace-nowrap">
+                                        {language === 'es' ? 'BHA ESP' : 'ESP BHA'}
                                     </span>
                                 </button>
 
@@ -1153,18 +1155,20 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                         setIsTrajectoryMinimized(!isTrajectoryMinimized);
                                         if (isTrajectoryMinimized) setIsBhaMinimized(true); // Exclusión mutua
                                     }}
-                                    className={`w-12 rounded-none flex flex-col items-center justify-center gap-3 transition-all duration-300 border ${!isTrajectoryMinimized
-                                        ? 'bg-primary border-primary shadow-glow-primary'
+                                    className={`w-full md:w-12 h-12 md:h-[350px] rounded-none flex flex-row md:flex-col items-center justify-center gap-2 md:gap-3 transition-all duration-300 border ${!isTrajectoryMinimized
+                                        ? 'bg-primary border-primary shadow-glow-primary text-canvas'
                                         : 'bg-primary/5 text-txt-muted border-primary/10 hover:bg-primary/15 hover:text-primary hover:border-primary/25'
                                         }`}
                                     style={{
-                                        height: '350px',
                                         color: !isTrajectoryMinimized ? 'rgb(var(--color-canvas))' : undefined
                                     }}
                                     title={language === 'es' ? 'Ver Trayectoria' : 'View Trajectory'}
                                 >
-                                    <Compass className="w-4 h-4 animate-[spin_12s_linear_infinite]" />
-                                    <span className="[writing-mode:vertical-lr] text-[9px] font-black uppercase tracking-[0.2em] transform rotate-180 whitespace-nowrap">
+                                    <Compass className="w-4 h-4 animate-[spin_12s_linear_infinite] shrink-0" />
+                                    <span className="hidden md:inline [writing-mode:vertical-lr] text-[9px] font-black uppercase tracking-[0.2em] transform rotate-180 whitespace-nowrap">
+                                        {language === 'es' ? 'TRAYECTORIA' : 'TRAJECTORY'}
+                                    </span>
+                                    <span className="inline md:hidden text-[9px] font-black uppercase tracking-[0.2em] whitespace-nowrap">
                                         {language === 'es' ? 'TRAYECTORIA' : 'TRAJECTORY'}
                                     </span>
                                 </button>
