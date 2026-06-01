@@ -94,8 +94,33 @@ function parseDesignsExcel(buffer) {
         }
         const rawSurvey = XLSX.utils.sheet_to_json(surveySheet, { range: headerRow });
         
-        jsonSurvey = rawSurvey;
-        console.log(`[OneDrive Backend] Loaded full survey data with ${jsonSurvey.length} rows.`);
+        // Group by well and dynamically downsample to keep ~250 points for high-fidelity smooth trajectory
+        const surveyByWell = {};
+        rawSurvey.forEach(row => {
+            const wellKey = Object.keys(row).find(k => {
+                const uk = k.toUpperCase();
+                return uk === 'POZO' || uk === 'WELL' || uk === 'WELLNAME' || uk === 'WELL_NAME';
+            }) || 'WELL';
+            const well = String(row[wellKey] || '').trim().toUpperCase();
+            if (!surveyByWell[well]) surveyByWell[well] = [];
+            surveyByWell[well].push(row);
+        });
+
+        Object.values(surveyByWell).forEach(wellRows => {
+            const step = Math.max(1, Math.floor(wellRows.length / 250));
+            if (wellRows.length <= 15) {
+                jsonSurvey.push(...wellRows);
+            } else {
+                jsonSurvey.push(wellRows[0]);
+                for (let idx = 1; idx < wellRows.length - 1; idx++) {
+                    if (idx % step === 0) {
+                        jsonSurvey.push(wellRows[idx]);
+                    }
+                }
+                jsonSurvey.push(wellRows[wellRows.length - 1]);
+            }
+        });
+        console.log(`[OneDrive Backend] High-fidelity downsampled survey from ${rawSurvey.length} to ${jsonSurvey.length} rows.`);
     }
 
     return {
