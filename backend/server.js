@@ -19,6 +19,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 import crypto from 'crypto';
+import * as XLSX from 'xlsx';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -110,33 +111,267 @@ app.post('/api/ai-memory', authMiddleware, (req, res) => {
     }
 });
 
-// ── ONEDRIVE PROXY (bypass CORS para dev local) ────────────────────────────
+const norm_ext = (str) => String(str || '').toLowerCase().replace(/[\s\-_#.]/g, '');
+
+function parseDesignsExcel(buffer) {
+    const tempWorkbook = XLSX.read(buffer, { bookSheets: true });
+    const sheetsToParse = [];
+    
+    if (tempWorkbook.SheetNames.length > 0) {
+        sheetsToParse.push(tempWorkbook.SheetNames[0]);
+    }
+    
+    const mechSheetName = tempWorkbook.SheetNames.find(s => norm_ext(s) === 'estadosmecanicos');
+    if (mechSheetName) {
+        sheetsToParse.push(mechSheetName);
+    }
+    
+    const surveySheetName = tempWorkbook.SheetNames.find(s => {
+        const sn = String(s).toUpperCase();
+        return sn.includes('SURVEY') || sn.includes('TRAYEC') || sn.includes('DESVIACI\u00d3N') || sn.includes('DESVIACION') || sn.includes('DESVIACI"N') || sn.includes('DESVIACI\"N');
+    });
+    if (surveySheetName) {
+        sheetsToParse.push(surveySheetName);
+    }
+
+    const workbook = XLSX.read(buffer, {
+        type: 'buffer',
+        sheets: sheetsToParse,
+        cellFormula: false,
+        cellHTML: false,
+        cellText: false,
+        cellStyles: false,
+        dense: true
+    });
+
+    const mainSheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[mainSheetName];
+    const json = XLSX.utils.sheet_to_json(sheet);
+
+    let mechJson = [];
+    if (mechSheetName) {
+        const mechSheet = workbook.Sheets[mechSheetName];
+        const rows = XLSX.utils.sheet_to_json(mechSheet, { header: 1 });
+        let headerRowIdx = -1;
+        for (let r = 0; r < Math.min(20, rows.length); r++) {
+            const rowArr = (rows[r] || []).map(c => norm_ext(String(c || '')));
+            if (rowArr.includes('nick') || rowArr.includes('intakemd') || rowArr.includes('pest') || rowArr.includes('intake')) {
+                headerRowIdx = r;
+                break;
+            }
+        }
+        mechJson = (headerRowIdx !== -1)
+            ? XLSX.utils.sheet_to_json(mechSheet, { range: headerRowIdx })
+            : XLSX.utils.sheet_to_json(mechSheet);
+    }
+
+    let jsonSurvey = [];
+    if (surveySheetName) {
+        const surveySheet = workbook.Sheets[surveySheetName];
+        let headerRow = 0;
+        for (let i = 0; i < 20; i++) {
+            const temp = XLSX.utils.sheet_to_json(surveySheet, { range: i, header: 1 });
+            if (temp.length > 0 && temp[0].some(c => String(c || '').toUpperCase().includes('DEPTH'))) {
+                headerRow = i; 
+                break;
+            }
+        }
+        jsonSurvey = XLSX.utils.sheet_to_json(surveySheet, { range: headerRow });
+    }
+
+    return {
+        data: json,
+        survey: jsonSurvey,
+        mech: mechJson
+    };
+}
+
+function parseScadaExcel(buffer) {
+    const tempWorkbook = XLSX.read(buffer, { bookSheets: true });
+
+    let scadaJson = [];
+    for (const sheetName of tempWorkbook.SheetNames) {
+        const singleWorkbook = XLSX.read(buffer, {
+            type: 'buffer',
+            sheets: [sheetName],
+            cellFormula: false,
+            cellHTML: false,
+            cellText: false,
+            cellStyles: false,
+            dense: true
+        });
+        const sheet = singleWorkbook.Sheets[sheetName];
+        if (!sheet) continue;
+
+        const previewRows = XLSX.utils.sheet_to_json(sheet, { header: 1, range: 0, blankrows: false });
+        
+        let headerRowIdx = -1;
+        let dualHeaderRow = [];
+
+        for (let i = 0; i < Math.min(40, previewRows.length); i++) {
+            const row = (previewRows[i] || []).map(c => String(c || '').toUpperCase().trim());
+            const hasPozo = row.includes('POZO') || row.includes('WELL');
+            const hasFecha = row.includes('FECHA') || row.includes('DATE');
+            const hasRate = row.includes('BFPD') || row.includes('BOPD') || row.includes('PRODUCCION');
+
+            if (hasPozo && (hasFecha || hasRate)) {
+                headerRowIdx = i;
+                if (i > 0) {
+                    dualHeaderRow = (previewRows[i - 1] || []).map(c => String(c || '').toUpperCase().trim());
+                }
+                break;
+            }
+        }
+
+        if (headerRowIdx !== -1) {
+            const rowsRaw = XLSX.utils.sheet_to_json(sheet, { range: headerRowIdx, header: 1 });
+            let lastTopHeader = '';
+            const headers = (rowsRaw[0] || []).map((h, idx) => {
+                const sub = String(h || '').toUpperCase().trim();
+                const top = String(dualHeaderRow[idx] || '').toUpperCase().trim();
+
+                if (top) lastTopHeader = top;
+                const currentTop = top || lastTopHeader;
+
+                if (sub && currentTop) {
+                    if (['PSI', '°F', 'HZ', 'DIA', 'OPER', 'UNIT'].includes(sub)) return currentTop;
+                    if (sub !== currentTop) return `${currentTop}_${sub}`;
+                    return sub;
+                }
+
+                return sub || currentTop || `COL_${idx}`;
+            });
+
+            scadaJson = rowsRaw.slice(1).map(row => {
+                const obj = {};
+                headers.forEach((h, idx) => { obj[h] = row[idx]; });
+                return obj;
+            });
+
+            if (scadaJson.length > 0) break;
+        }
+    }
+
+    return scadaJson;
+}
+
+const TENANT = 'consumers';
+const TOKEN_URL = `https://login.microsoftonline.com/${TENANT}/oauth2/v2.0/token`;
+const GRAPH_BASE = 'https://graph.microsoft.com/v1.0';
+
+async function getAccessToken() {
+    const {
+        ONEDRIVE_CLIENT_ID: clientId,
+        ONEDRIVE_CLIENT_SECRET: clientSecret,
+        ONEDRIVE_REFRESH_TOKEN: refreshToken,
+    } = process.env;
+
+    if (!clientId || !clientSecret || !refreshToken) {
+        throw new Error(
+            'Faltan variables de entorno. Configura ONEDRIVE_CLIENT_ID, ONEDRIVE_CLIENT_SECRET y ONEDRIVE_REFRESH_TOKEN.'
+        );
+    }
+
+    const res = await fetch(TOKEN_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+            client_id: clientId,
+            client_secret: clientSecret,
+            refresh_token: refreshToken,
+            grant_type: 'refresh_token',
+            scope: 'https://graph.microsoft.com/Files.Read offline_access',
+        }).toString(),
+    });
+
+    const data = await res.json();
+
+    if (data.error) {
+        throw new Error(`OAuth error: ${data.error} - ${data.error_description}`);
+    }
+
+    return {
+        accessToken: data.access_token,
+        newRefreshToken: data.refresh_token,
+    };
+}
+
+async function downloadOneDriveFile(fileId, accessToken) {
+    const downloadUrl = `${GRAPH_BASE}/me/drive/items/${fileId}/content`;
+
+    const res = await fetch(downloadUrl, {
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+            Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        },
+        redirect: 'follow',
+    });
+
+    if (!res.ok) {
+        const errText = await res.text().catch(() => '');
+        throw new Error(`Graph API ${res.status}: ${errText.substring(0, 200)}`);
+    }
+
+    const buffer = await res.arrayBuffer();
+    return buffer;
+}
+
+// ── ONEDRIVE PROXY (bypass CORS para dev local y unificado) ────────────────────────────
 app.get('/api/onedrive-fetch', authMiddleware, async (req, res) => {
-    const { url } = req.query;
-    if (!url) return res.status(400).json({ error: 'Parámetro "url" requerido.' });
+    const { file, format, url } = req.query;
+
+    if (!file && !url) {
+        return res.status(400).json({ error: 'Parámetro "file" o "url" requerido.' });
+    }
 
     try {
-        // Convertir la URL compartida de OneDrive a formato base64 compatible con la API de Microsoft
-        const base64Url = Buffer.from(url).toString('base64')
-            .replace(/=/g, '')
-            .replace(/\//g, '_')
-            .replace(/\+/g, '-');
-        
-        const directUrl = `https://api.onedrive.com/v1.0/shares/u!${base64Url}/root/content`;
+        let buffer;
+        if (url) {
+            const base64Url = Buffer.from(url).toString('base64')
+                .replace(/=/g, '')
+                .replace(/\//g, '_')
+                .replace(/\+/g, '-');
+            
+            const directUrl = `https://api.onedrive.com/v1.0/shares/u!${base64Url}/root/content`;
+            console.log(`[OneDrive Proxy] Descargando desde URL compartida: ${directUrl}`);
+            const fileRes = await fetch(directUrl, {
+                headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
+            });
+            if (!fileRes.ok) throw new Error(`Descarga fallida: HTTP ${fileRes.status}`);
+            buffer = await fileRes.arrayBuffer();
+        } else {
+            let fileId;
+            if (file === 'designs') {
+                fileId = process.env.ONEDRIVE_FILE_ID_DESIGNS;
+            } else if (file === 'scada') {
+                fileId = process.env.ONEDRIVE_FILE_ID_SCADA;
+            }
 
-        // Descargar el archivo
-        console.log(`[OneDrive Proxy] Descargando desde la API de OneDrive: ${directUrl}`);
-        const fileRes = await fetch(directUrl, {
-            headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
-        });
+            if (!fileId) {
+                return res.status(500).json({
+                    error: `Variable de entorno no configurada: ${file === 'designs' ? 'ONEDRIVE_FILE_ID_DESIGNS' : 'ONEDRIVE_FILE_ID_SCADA'}`
+                });
+            }
 
-        if (!fileRes.ok) throw new Error(`Descarga fallida: HTTP ${fileRes.status}`);
+            console.log(`[OneDrive Proxy] Descargando por ID: ${file} (ID: ${fileId})`);
+            const { accessToken } = await getAccessToken();
+            buffer = await downloadOneDriveFile(fileId, accessToken);
+        }
 
-        const buffer = await fileRes.arrayBuffer();
-        const contentType = fileRes.headers.get('content-type') ||
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+        if (format === 'json') {
+            console.log(`[OneDrive Proxy] Parseando archivo a JSON en el servidor...`);
+            let parsedData;
+            if (file === 'designs' || url) {
+                parsedData = parseDesignsExcel(buffer);
+            } else {
+                parsedData = parseScadaExcel(buffer);
+            }
+            res.setHeader('Content-Type', 'application/json');
+            res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+            return res.status(200).json(parsedData);
+        }
 
-        console.log(`[OneDrive Proxy] ✅ Archivo descargado (${(buffer.byteLength / 1024 / 1024).toFixed(1)} MB)`);
+        const contentType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
         res.setHeader('Content-Type', contentType);
         res.setHeader('Content-Length', buffer.byteLength);
         res.setHeader('Cache-Control', 'no-store');
