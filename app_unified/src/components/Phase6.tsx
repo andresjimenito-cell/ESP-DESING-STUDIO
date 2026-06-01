@@ -2538,29 +2538,37 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
                     )}
 
                     {/* CONSOLIDATED CENTRAL OPERATION BAR */}
-                    <div className="flex items-center justify-center gap-6 px-4 relative z-50 h-0 overflow-visible">
-                        <div className="flex bg-surface/80 backdrop-blur-xl p-1 rounded-none border border-white/10 absolute top-1/2 -translate-y-1/2 z-50 pointer-events-auto">
+                    <div className="flex items-center justify-center gap-2 md:gap-6 px-2 md:px-4 relative z-50 h-auto md:h-0 overflow-visible my-3 md:my-0">
+                        <div className="flex bg-surface/80 backdrop-blur-xl p-0.5 md:p-1 rounded-none border border-white/10 md:absolute md:top-1/2 md:-translate-y-1/2 z-50 pointer-events-auto flex-wrap justify-center gap-0.5 md:gap-1">
                             <button
                                 onClick={() => setViewMode('telemetry')}
-                                className={`flex items-center gap-3 px-6 py-2.5 rounded-none text-[10px] font-black uppercase transition-all duration-500 ${viewMode === 'telemetry' ? 'bg-secondary text-black shadow-glow-secondary/20 scale-[1.02]' : 'text-txt-muted hover:text-white hover:bg-white/5'}`}
+                                className={`flex items-center gap-1.5 md:gap-3 px-3 py-1.5 md:px-6 md:py-2.5 rounded-none text-[9px] md:text-[10px] font-black uppercase transition-all duration-500 ${viewMode === 'telemetry' ? 'bg-secondary text-black shadow-glow-secondary/20 scale-[1.02]' : 'text-txt-muted hover:text-white hover:bg-white/5'}`}
                             >
-                                <Monitor className="w-3.5 h-3.5" /> {language === 'es' ? 'Telemetria' : 'Telemetry'}
+                                <Monitor className="w-3 h-3 md:w-3.5 md:h-3.5" />
+                                <span>{language === 'es' ? 'Telemetria' : 'Telemetry'}</span>
                             </button>
                             <button
                                 onClick={() => setViewMode('sensitivity')}
-                                className={`flex items-center gap-3 px-6 py-2.5 rounded-none text-[10px] font-black uppercase transition-all duration-500 ${viewMode === 'sensitivity' ? 'bg-primary text-white shadow-glow-primary/20 scale-[1.02]' : 'text-txt-muted hover:text-white hover:bg-white/5'}`}
+                                className={`flex items-center gap-1.5 md:gap-3 px-3 py-1.5 md:px-6 md:py-2.5 rounded-none text-[9px] md:text-[10px] font-black uppercase transition-all duration-500 ${viewMode === 'sensitivity' ? 'bg-primary text-white shadow-glow-primary/20 scale-[1.02]' : 'text-txt-muted hover:text-white hover:bg-white/5'}`}
                             >
-                                <TrendingUp className="w-3.5 h-3.5" /> {language === 'es' ? 'Sensibilidad VSD' : 'VSD Sensitivity'}
+                                <TrendingUp className="w-3 h-3 md:w-3.5 md:h-3.5" />
+                                <span className="hidden sm:inline">{language === 'es' ? 'Sensibilidad VSD' : 'VSD Sensitivity'}</span>
+                                <span className="sm:hidden">{language === 'es' ? 'Sensibilidad' : 'Sens.'}</span>
                             </button>
 
-                            <div className="w-px h-6 bg-white/10 mx-2 self-center"></div>
+                            <div className="w-px h-5 md:h-6 bg-white/10 mx-1 md:mx-2 self-center"></div>
 
                             <button
                                 onClick={() => setIsVsdTableExpanded(!isVsdTableExpanded)}
-                                className={`flex items-center gap-2 px-6 py-2.5 rounded-none text-[10px] font-black uppercase transition-all duration-500 ${isVsdTableExpanded ? 'bg-warning/20 text-warning border border-warning/30 shadow-glow-warning/10' : 'text-txt-muted hover:text-txt-main hover:bg-white/5'}`}
+                                className={`flex items-center gap-1.5 md:gap-2 px-3 py-1.5 md:px-6 md:py-2.5 rounded-none text-[9px] md:text-[10px] font-black uppercase transition-all duration-500 ${isVsdTableExpanded ? 'bg-warning/20 text-warning border border-warning/30 shadow-glow-warning/10' : 'text-txt-muted hover:text-txt-main hover:bg-white/5'}`}
                             >
-                                <Activity className="w-3.5 h-3.5 text-warning" />
-                                {isVsdTableExpanded ? (language === 'es' ? 'Modo Simple' : 'Simple Mode') : (language === 'es' ? 'Modo Detallado (1Hz)' : 'Detailed Mode (1Hz)')}
+                                <Activity className="w-3 h-3 md:w-3.5 md:h-3.5 text-warning" />
+                                <span className="hidden sm:inline">
+                                    {isVsdTableExpanded ? (language === 'es' ? 'Modo Simple' : 'Simple Mode') : (language === 'es' ? 'Modo Detallado (1Hz)' : 'Detailed Mode (1Hz)')}
+                                </span>
+                                <span className="sm:hidden">
+                                    {isVsdTableExpanded ? (language === 'es' ? 'Simple' : 'Simple') : (language === 'es' ? 'Detallado' : 'Detailed')}
+                                </span>
                             </button>
                         </div>
                     </div>

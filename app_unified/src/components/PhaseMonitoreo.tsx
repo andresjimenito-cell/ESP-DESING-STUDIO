@@ -100,7 +100,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
     const [importProgress, setImportProgress] = useState<{ current: number, total: number, label: string } | null>(null);
     const [zoomLevel, setZoomLevel] = useState<number>(() => {
         if (typeof window !== 'undefined' && window.innerWidth < 768) {
-            return 0.65; // Zoom out on mobile viewports so everything fits nicely
+            return 0.55; // Zoom out on mobile viewports so everything fits nicely
         }
         return 0.8;
     });
@@ -1110,11 +1110,23 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                         <Palette className="w-3.5 h-3.5" />
                                     </button>
                                     <button
-                                        onClick={() => setZoomLevel(zoomLevel === 1 ? 0.8 : 1)}
+                                        onClick={() => {
+                                            if (isMobile) {
+                                                setZoomLevel(prev => prev <= 0.6 ? 0.75 : 0.55);
+                                            } else {
+                                                setZoomLevel(prev => prev === 1 ? 0.8 : 1);
+                                            }
+                                        }}
                                         className="h-8 w-8 flex items-center justify-center hover:bg-white/10 rounded-none transition-all text-txt-muted hover:text-primary"
-                                        title={zoomLevel === 1 ? "Reducir Escala (80%)" : "Aumentar Escala (100%)"}
+                                        title={isMobile 
+                                            ? (zoomLevel <= 0.6 ? "Aumentar Escala (75%)" : "Reducir Escala (55%)")
+                                            : (zoomLevel === 1 ? "Reducir Escala (80%)" : "Aumentar Escala (100%)")
+                                        }
                                     >
-                                        {zoomLevel === 1 ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+                                        {isMobile 
+                                            ? (zoomLevel <= 0.6 ? <Maximize2 className="w-3.5 h-3.5" /> : <Minimize2 className="w-3.5 h-3.5" />)
+                                            : (zoomLevel === 1 ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />)
+                                        }
                                     </button>
                                 </div>
                             </div>
