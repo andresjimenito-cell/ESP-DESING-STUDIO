@@ -927,11 +927,19 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                             </button>
 
                                             {isWellDropdownOpen && (
-                                                <div
-                                                    ref={wellDropdownPanelRef}
-                                                    className="fixed left-1/2 -translate-x-1/2 md:translate-x-0 md:left-0 top-[72px] md:top-full mt-2 z-[500] flex flex-col bg-surface border border-white/15 border-t-2 border-t-primary/50 shadow-[0_28px_80px_rgba(0,0,0,0.55)] w-[95vw] md:w-[580px] max-h-[82vh] overflow-hidden"
-                                                    style={typeof window !== 'undefined' && window.innerWidth < 768 ? {} : { top: '100%' }}
-                                                >
+                                                <>
+                                                    {/* Backdrop for mobile to prevent background interactions and overlap issues */}
+                                                    <div 
+                                                        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[499] md:hidden"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setIsWellDropdownOpen(false);
+                                                        }}
+                                                    />
+                                                    <div
+                                                        ref={wellDropdownPanelRef}
+                                                        className="fixed md:absolute top-[8%] md:top-full left-4 right-4 md:left-0 md:right-auto mt-2 z-[500] flex flex-col bg-surface border border-white/15 border-t-2 border-t-primary/50 shadow-[0_28px_80px_rgba(0,0,0,0.55)] w-auto md:w-[580px] h-[80vh] md:h-auto max-h-[80vh] md:max-h-[82vh] overflow-hidden"
+                                                    >
                                                     <div className="shrink-0 px-4 py-3 border-b border-white/10 bg-gradient-to-r from-primary/10 via-transparent to-secondary/5">
                                                         <div className="flex items-center justify-between gap-3 mb-3">
                                                             <div className="flex items-center gap-2">
@@ -1000,6 +1008,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                                         )}
                                                     </div>
                                                 </div>
+                                                </>
                                             )}
                                         </div>
                                     </div>
