@@ -1158,7 +1158,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                         />
 
                         <h1
-                            className="text-[3.5rem] sm:text-[5.5rem] md:text-[8rem] xl:text-[9rem] font-black text-txt-main leading-[0.82] tracking-[-0.03em] select-none relative"
+                            className="text-[2.2rem] sm:text-[4.5rem] md:text-[6rem] xl:text-[9rem] font-black text-txt-main leading-[0.82] tracking-[-0.03em] select-none relative"
                             style={{
                                 transform: `translate3d(${mousePos.x * 0.08}px, ${mousePos.y * 0.08}px, 0)`,
                                 transition: 'transform 0.25s ease-out',

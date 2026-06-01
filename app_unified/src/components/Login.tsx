@@ -216,7 +216,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                     transition: 'opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1), transform 0.15s ease-out',
                     animation: mounted ? 'login-glow-pulse 5s ease-in-out infinite' : 'none',
                 }}
-                className="relative z-10 w-full max-w-[420px] mx-4"
+                className="relative z-10 w-full max-w-[420px] mx-4 max-h-[92vh] overflow-y-auto custom-scrollbar"
             >
                 {/* Glass card */}
                 <div

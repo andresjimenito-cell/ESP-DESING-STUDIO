@@ -19,7 +19,7 @@ import { DesignDataImport } from './components/DesignDataImport';
 import { BatchDesignProcessor } from './components/BatchDesignProcessor';
 import { TUBING_CATALOG, CASING_CATALOG, STANDARD_PUMPS, STANDARD_MOTORS, CABLE_CATALOG, VSD_CATALOG } from '@/data';
 import {
-    Activity, RotateCcw, Ruler, Droplets, Target, Hexagon, CheckCircle2, Clock, ClipboardCheck, Maximize, Minimize, Globe, AlertCircle, Sparkles, RefreshCw, Send, ChevronDown, ChevronRight, AlertTriangle, Layers, Palette, FileSpreadsheet, Maximize2, Minimize2, Printer, GitCompareArrows, Zap, Settings, ArrowLeft, Brain, X
+    Activity, RotateCcw, Ruler, Droplets, Target, Hexagon, CheckCircle2, Clock, ClipboardCheck, Maximize, Minimize, Globe, AlertCircle, Sparkles, RefreshCw, Send, ChevronDown, ChevronRight, AlertTriangle, Layers, Palette, FileSpreadsheet, Maximize2, Minimize2, Printer, GitCompareArrows, Zap, Settings, ArrowLeft, Brain, X, Menu
 } from 'lucide-react';
 import { EspPump, EspMotor, SystemParams, SurveyPoint } from '@/types';
 import { useLanguage } from '@/i18n';
@@ -110,6 +110,21 @@ const App: React.FC = () => {
     const [appState, setAppState] = useState<{ appMode: 'landing' | 'main' | 'comparator' | 'monitoring' }>({ appMode: 'landing' });
     const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
     const [showInstallBanner, setShowInstallBanner] = useState(false);
+    const [isMobile, setIsMobile] = useState(() => {
+        if (typeof window !== 'undefined') {
+            return window.innerWidth < 768;
+        }
+        return false;
+    });
+    useEffect(() => {
+        const handleResize = () => {
+            setIsMobile(window.innerWidth < 768);
+        };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+    const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+    const [isMobileChatOpen, setIsMobileChatOpen] = useState(false);
 
     useEffect(() => {
         const handleBeforeInstallPrompt = (e: Event) => {
@@ -697,7 +712,13 @@ const App: React.FC = () => {
                 }}
             />
 
-            <aside className="w-[300px] flex-none border-r border-white/5 bg-canvas/80 backdrop-blur-3xl flex flex-col z-30 shadow-[10px_0_50px_rgba(0,0,0,0.5)] relative overflow-hidden group">
+            {isMobile && isMobileNavOpen && (
+                <div
+                    className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[998]"
+                    onClick={() => setIsMobileNavOpen(false)}
+                />
+            )}
+            <aside className={`${isMobile ? `fixed inset-y-0 left-0 w-[285px] z-[999] transition-transform duration-300 ${isMobileNavOpen ? 'translate-x-0' : '-translate-x-full'}` : 'w-[300px] flex-none'} border-r border-white/5 bg-canvas/95 md:bg-canvas/80 backdrop-blur-3xl flex flex-col shadow-[10px_0_50px_rgba(0,0,0,0.5)] relative overflow-hidden group`}>
                 {/* Brillo de borde lateral */}
                 <div className="absolute right-0 top-0 w-[1px] h-full bg-gradient-to-b from-white/10 via-white/5 to-transparent"></div>
                 <div className="p-8 pb-6 bg-gradient-to-b from-surface/40 to-transparent shrink-0 relative z-10">
@@ -713,13 +734,13 @@ const App: React.FC = () => {
                             <button
                                 onClick={() => {
                                     const msg = language === 'es'
-                                        ? "Â¿EstÃ¡s seguro de volver al menÃº principal? Se perderÃ¡n los cambios no guardados."
+                                        ? "¿Estás seguro de volver al menú principal? Se perderán los cambios no guardados."
                                         : "Are you sure you want to return to the main menu? Unsaved changes will be lost.";
                                     if (window.confirm(msg)) {
                                         setAppState({ appMode: 'landing' });
                                     }
                                 }}
-                                title="Volver al MenÃº"
+                                title="Volver al Menú"
                                 className="w-10 h-10 rounded-full glass-surface hover:bg-red-500/10 border border-white/5 hover:border-red-500/30 flex items-center justify-center transition-all duration-500 group/back active:scale-90 shadow-lg"
                             >
                                 <ArrowLeft className="w-5 h-5 text-txt-muted group-hover:text-red-500 group-hover:-translate-x-1 transition-all" />
@@ -736,7 +757,7 @@ const App: React.FC = () => {
                         const isActive = activeStep === idx;
                         const isCompleted = idx < activeStep;
                         return (
-                            <button key={step.id} onClick={() => setActiveStep(idx)} className={`w-full flex items-center gap-2.5 p-2 rounded-xl transition-all duration-500 group relative overflow-hidden light-sweep ${isActive ? 'bg-gradient-to-r from-primary/20 to-secondary/10 border border-primary/40 shadow-glow-primary scale-[1.02] z-10' : isCompleted ? 'bg-surface/40 border border-surface-light/30 hover:bg-surface/80 text-txt-muted grayscale' : 'hover:bg-surface/50 border border-transparent opacity-60 grayscale hover:grayscale-0'}`}>
+                            <button key={step.id} onClick={() => { setActiveStep(idx); if (isMobile) setIsMobileNavOpen(false); }} className={`w-full flex items-center gap-2.5 p-2 rounded-xl transition-all duration-500 group relative overflow-hidden light-sweep ${isActive ? 'bg-gradient-to-r from-primary/20 to-secondary/10 border border-primary/40 shadow-glow-primary scale-[1.02] z-10' : isCompleted ? 'bg-surface/40 border border-surface-light/30 hover:bg-surface/80 text-txt-muted grayscale' : 'hover:bg-surface/50 border border-transparent opacity-60 grayscale hover:grayscale-0'}`}>
                                 <div className={`relative w-7 h-7 rounded-lg flex items-center justify-center transition-all duration-500 ${isActive ? 'bg-primary text-white shadow-glow-primary' : isCompleted ? 'bg-primary/10 text-primary border border-primary/20' : 'bg-surface-light text-txt-muted group-hover:text-txt-main'}`}>
                                     {isCompleted ? <CheckCircle2 className="w-3.5 h-3.5" /> : <step.icon className="w-3.5 h-3.5" />}
                                 </div>
@@ -754,18 +775,27 @@ const App: React.FC = () => {
             </aside>
 
             <div className="flex-1 flex flex-col overflow-hidden relative">
-                <header className="relative h-14 bg-canvas/60 backdrop-blur-md border-b border-surface-light/30 px-6 flex items-center justify-between z-20">
-                    <div className="flex items-center gap-4">
+                <header className="relative h-14 bg-canvas/60 backdrop-blur-md border-b border-surface-light/30 px-4 md:px-6 flex items-center justify-between z-20">
+                    <div className="flex items-center gap-2 md:gap-4">
+                        {isMobile && (
+                            <button
+                                onClick={() => setIsMobileNavOpen(true)}
+                                className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-txt-muted shrink-0 mr-1"
+                                title="Menu de Fases"
+                            >
+                                <Menu className="w-5 h-5 text-primary" />
+                            </button>
+                        )}
                         {cameFromMonitoring && (
                             <button
                                 onClick={() => {
                                     setCameFromMonitoring(false);
                                     setAppState({ appMode: 'monitoring' });
                                 }}
-                                className="flex items-center gap-2 px-4 py-2 bg-secondary/10 hover:bg-secondary text-secondary hover:text-white rounded-xl border border-secondary/20 transition-all text-[10px] font-black uppercase tracking-widest hover:shadow-glow-secondary/30 active:scale-95"
+                                className="flex items-center gap-2 px-3 py-2 bg-secondary/10 hover:bg-secondary text-secondary hover:text-white rounded-xl border border-secondary/20 transition-all text-[9px] font-black uppercase tracking-widest hover:shadow-glow-secondary/30 active:scale-95"
                             >
-                                <Activity className="w-4 h-4" />
-                                Volver a Flota
+                                <Activity className="w-3.5 h-3.5" />
+                                <span className="hidden sm:inline">Volver a Flota</span>
                             </button>
                         )}
                         <span className="text-txt-muted font-mono text-[10px] font-black tracking-widest opacity-60">P0{activeStep + 1}</span>
@@ -846,103 +876,30 @@ const App: React.FC = () => {
                 </footer>
             </div>
 
-            <aside className={`${isChatMinimized ? 'w-[64px]' : 'w-[400px]'} flex-none glass-surface flex flex-col overflow-hidden relative border-l border-surface-light/30 transition-all duration-500 ease-in-out shadow-glow-primary z-10`}>
-                <div className="p-4 bg-gradient-to-b from-surface/40 to-transparent border-b border-surface-light/20 shadow-lg z-10 space-y-3 backdrop-blur-md shrink-0">
-                    {isChatMinimized ? (
-                        /* ── MINIMIZED: vertical icon + expand button ── */
-                        <div className="flex flex-col items-center gap-3 py-1">
-                            <div className="p-2.5 bg-gradient-to-br from-primary via-primary to-secondary rounded-[10px] shadow-glow-primary ring-2 ring-white/5">
-                                <Sparkles className="w-5 h-5 text-white" />
-                            </div>
-                            <button
-                                onClick={() => setIsChatMinimized(false)}
-                                title="Abrir Asistente IA"
-                                className="p-2 bg-primary/10 hover:bg-primary text-primary hover:text-white rounded-xl border border-primary/30 transition-all active:scale-95 shadow-sm"
-                            >
-                                <Maximize2 className="w-4 h-4" />
-                            </button>
+            {isMobile && !isMobileChatOpen && (
+                <button
+                    onClick={() => setIsMobileChatOpen(true)}
+                    className="fixed bottom-20 right-6 z-[990] w-12 h-12 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white shadow-glow-primary active:scale-95 transition-all animate-bounce"
+                >
+                    <Sparkles className="w-5 h-5 animate-pulse" />
+                </button>
+            )}
+
+            {isMobile && isMobileChatOpen && (
+                <div className="fixed inset-0 z-[9999] bg-canvas flex flex-col animate-fadeIn text-txt-main">
+                    <div className="p-4 bg-surface border-b border-surface-light/20 flex justify-between items-center shrink-0">
+                        <div className="flex items-center gap-2">
+                            <div className="p-2.5 bg-gradient-to-br from-primary via-primary to-secondary rounded-[10px] shadow-glow-primary"><Sparkles className="w-4 h-4 text-white" /></div>
+                            <span className="text-sm font-black text-txt-main uppercase tracking-widest">Antigravity AI</span>
                         </div>
-                    ) : (
-                        /* ── EXPANDED: full header ── */
-                        <>
-                            <div className="flex justify-between items-center">
-                                <div className="flex items-center gap-2">
-                                    <div className="p-2.5 bg-gradient-to-br from-primary via-primary to-secondary rounded-[10px] shadow-glow-primary ring-2 ring-white/5"><Sparkles className="w-5 h-5 text-white" /></div>
-                                    <div onClick={() => setIsChatMinimized(true)} className="cursor-pointer group flex flex-col gap-0.5">
-                                        <h3 className="text-sm font-black text-txt-main uppercase tracking-widest flex items-center gap-2 group-hover:text-primary transition-colors">ANTIGRAVITY AI <span className="inline-block w-2 h-2 rounded-full bg-primary animate-ping"></span></h3>
-                                        <p className="text-xs font-black text-primary tracking-widest opacity-80 uppercase leading-none">{t('ai.copilot')}</p>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                    <button
-                                        onClick={() => setAiViewMode(v => v === 'chat' ? 'memory' : 'chat')}
-                                        title={language === 'es' ? 'Gestionar Memoria IA' : 'Manage AI Memory'}
-                                        className={`p-2 hover:bg-surface-light rounded-xl transition-all active:scale-95 ${aiViewMode === 'memory' ? 'text-primary' : 'text-txt-muted hover:text-primary'}`}
-                                    >
-                                        <Brain className="w-5 h-5" />
-                                    </button>
-                                    <button
-                                        onClick={() => setShowAiSettings(!showAiSettings)}
-                                        title={language === 'es' ? 'Configurar API Key' : 'Configure API Key'}
-                                        className={`p-2 hover:bg-surface-light rounded-xl transition-all active:scale-95 ${showAiSettings ? 'text-primary' : 'text-txt-muted hover:text-primary'}`}
-                                    >
-                                        <Settings className="w-5 h-5" />
-                                    </button>
-                                    <button onClick={() => setIsChatMinimized(true)} className="p-2 hover:bg-surface-light rounded-xl text-txt-muted hover:text-primary transition-all active:scale-95"><ChevronDown className="w-5 h-5" /></button>
-                                </div>
-                            </div>
-                            {showAiSettings && (
-                                <div className="p-4 bg-surface-light/20 border border-surface-light/40 rounded-xl animate-fadeIn text-[10px] space-y-2">
-                                    <label className="block font-black text-txt-muted uppercase tracking-widest">
-                                        {language === 'es' ? 'Clave API OpenRouter (Opcional)' : 'OpenRouter API Key (Optional)'}
-                                    </label>
-                                    <div className="flex gap-2">
-                                        <input
-                                            type="password"
-                                            value={aiApiKeyInput}
-                                            onChange={(e) => {
-                                                setAiApiKeyInput(e.target.value);
-                                                localStorage.setItem('openrouter_api_key', e.target.value);
-                                            }}
-                                            placeholder="sk-or-v1-..."
-                                            className="flex-1 bg-canvas border border-surface-light px-3 py-2 text-[11px] text-txt-main outline-none focus:border-primary/50 transition-all font-semibold rounded-lg"
-                                        />
-                                        {aiApiKeyInput && (
-                                            <button
-                                                onClick={() => {
-                                                    setAiApiKeyInput('');
-                                                    localStorage.removeItem('openrouter_api_key');
-                                                }}
-                                                className="px-2.5 bg-danger/10 hover:bg-danger text-danger hover:text-white transition-all text-[9px] font-black uppercase rounded-lg"
-                                            >
-                                                {language === 'es' ? 'Borrar' : 'Clear'}
-                                            </button>
-                                        )}
-                                    </div>
-                                    <p className="text-[9px] text-txt-muted/80 leading-normal">
-                                        {language === 'es'
-                                            ? 'Si se deja en blanco, se utilizará la clave gratuita por defecto configurada en el servidor.'
-                                            : 'If left blank, the default free server key will be used.'}
-                                    </p>
-                                </div>
-                            )}
-                            {aiViewMode !== 'memory' && (
-                                <div className="relative group">
-                                    <select value={aiScope} onChange={(e) => setAiScope(e.target.value === 'current' ? 'current' : parseInt(e.target.value))} className="w-full bg-surface/50 text-sm font-black text-txt-main border border-surface-light rounded-xl py-3 pl-4 pr-10 outline-none focus:border-primary/50 appearance-none cursor-pointer hover:bg-surface-light transition-all uppercase tracking-widest">
-                                        <option value="current">⚡ Current Phase</option>
-                                        <hr />
-                                        {steps.map((s, i) => <option key={s.id} value={i}>Phase {i + 1}: {s.label}</option>)}
-                                    </select>
-                                    <ChevronDown className="w-5 h-5 text-txt-muted absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none group-hover:text-primary transition-colors" />
-                                </div>
-                            )}
-                        </>
-                    )}
-                </div>
-
-
-                {!isChatMinimized && (
-                    <>
+                        <button 
+                            onClick={() => setIsMobileChatOpen(false)}
+                            className="p-2 hover:bg-white/5 rounded-lg text-txt-muted hover:text-white border border-white/10"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
+                    </div>
+                    <div className="flex-1 overflow-hidden flex flex-col bg-canvas/30">
                         {aiViewMode === 'memory' ? (
                             <div className="flex-1 overflow-hidden p-4 bg-canvas/30">
                                 <AiMemoryManager language={language} onClose={() => setAiViewMode('chat')} />
@@ -969,9 +926,133 @@ const App: React.FC = () => {
                                 </div>
                             </>
                         )}
-                    </>
-                )}
-            </aside>
+                    </div>
+                </div>
+            )}
+
+            {!isMobile && (
+                <aside className={`${isChatMinimized ? 'w-[64px]' : 'w-[400px]'} flex-none glass-surface flex flex-col overflow-hidden relative border-l border-surface-light/30 transition-all duration-500 ease-in-out shadow-glow-primary z-10`}>
+                    <div className="p-4 bg-gradient-to-b from-surface/40 to-transparent border-b border-surface-light/20 shadow-lg z-10 space-y-3 backdrop-blur-md shrink-0">
+                        {isChatMinimized ? (
+                            /* ── MINIMIZED: vertical icon + expand button ── */
+                            <div className="flex flex-col items-center gap-3 py-1">
+                                <div className="p-2.5 bg-gradient-to-br from-primary via-primary to-secondary rounded-[10px] shadow-glow-primary ring-2 ring-white/5">
+                                    <Sparkles className="w-5 h-5 text-white" />
+                                </div>
+                                <button
+                                    onClick={() => setIsChatMinimized(false)}
+                                    title="Abrir Asistente IA"
+                                    className="p-2 bg-primary/10 hover:bg-primary text-primary hover:text-white rounded-xl border border-primary/30 transition-all active:scale-95 shadow-sm"
+                                >
+                                    <Maximize2 className="w-4 h-4" />
+                                </button>
+                            </div>
+                        ) : (
+                            /* ── EXPANDED: full header ── */
+                            <>
+                                <div className="flex justify-between items-center">
+                                    <div className="flex items-center gap-2">
+                                        <div className="p-2.5 bg-gradient-to-br from-primary via-primary to-secondary rounded-[10px] shadow-glow-primary ring-2 ring-white/5"><Sparkles className="w-5 h-5 text-white" /></div>
+                                        <div onClick={() => setIsChatMinimized(true)} className="cursor-pointer group flex flex-col gap-0.5">
+                                            <h3 className="text-sm font-black text-txt-main uppercase tracking-widest flex items-center gap-2 group-hover:text-primary transition-colors">ANTIGRAVITY AI <span className="inline-block w-2 h-2 rounded-full bg-primary animate-ping"></span></h3>
+                                            <p className="text-xs font-black text-primary tracking-widest opacity-80 uppercase leading-none">{t('ai.copilot')}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                        <button
+                                            onClick={() => setAiViewMode(v => v === 'chat' ? 'memory' : 'chat')}
+                                            title={language === 'es' ? 'Gestionar Memoria IA' : 'Manage AI Memory'}
+                                            className={`p-2 hover:bg-surface-light rounded-xl transition-all active:scale-95 ${aiViewMode === 'memory' ? 'text-primary' : 'text-txt-muted hover:text-primary'}`}
+                                        >
+                                            <Brain className="w-5 h-5" />
+                                        </button>
+                                        <button
+                                            onClick={() => setShowAiSettings(!showAiSettings)}
+                                            title={language === 'es' ? 'Configurar API Key' : 'Configure API Key'}
+                                            className={`p-2 hover:bg-surface-light rounded-xl transition-all active:scale-95 ${showAiSettings ? 'text-primary' : 'text-txt-muted hover:text-primary'}`}
+                                        >
+                                            <Settings className="w-5 h-5" />
+                                        </button>
+                                        <button onClick={() => setIsChatMinimized(true)} className="p-2 hover:bg-surface-light rounded-xl text-txt-muted hover:text-primary transition-all active:scale-95"><ChevronDown className="w-5 h-5" /></button>
+                                    </div>
+                                </div>
+                                {showAiSettings && (
+                                    <div className="p-4 bg-surface-light/20 border border-surface-light/40 rounded-xl animate-fadeIn text-[10px] space-y-2">
+                                        <label className="block font-black text-txt-muted uppercase tracking-widest">
+                                            {language === 'es' ? 'Clave API OpenRouter (Opcional)' : 'OpenRouter API Key (Optional)'}
+                                        </label>
+                                        <div className="flex gap-2">
+                                            <input
+                                                type="password"
+                                                value={aiApiKeyInput}
+                                                onChange={(e) => {
+                                                    setAiApiKeyInput(e.target.value);
+                                                    localStorage.setItem('openrouter_api_key', e.target.value);
+                                                }}
+                                                placeholder="sk-or-v1-..."
+                                                className="flex-1 bg-canvas border border-surface-light px-3 py-2 text-[11px] text-txt-main outline-none focus:border-primary/50 transition-all font-semibold rounded-lg"
+                                            />
+                                            {aiApiKeyInput && (
+                                                <button
+                                                    onClick={() => {
+                                                        setAiApiKeyInput('');
+                                                        localStorage.removeItem('openrouter_api_key');
+                                                    }}
+                                                    className="px-2.5 bg-danger/10 hover:bg-danger text-danger hover:text-white transition-all text-[9px] font-black uppercase rounded-lg"
+                                                >
+                                                    {language === 'es' ? 'Borrar' : 'Clear'}
+                                                </button>
+                                            )}
+                                        </div>
+                                        <p className="text-[9px] text-txt-muted/80 leading-normal">
+                                            {language === 'es'
+                                                ? 'Si se deja en blanco, se utilizará la clave gratuita por defecto configurada en el servidor.'
+                                                : 'If left blank, the default free server key will be used.'}
+                                        </p>
+                                    </div>
+                                )}
+                                {aiViewMode !== 'memory' && (
+                                    <div className="relative group">
+                                        <select value={aiScope} onChange={(e) => setAiScope(e.target.value === 'current' ? 'current' : parseInt(e.target.value))} className="w-full bg-surface/50 text-sm font-black text-txt-main border border-surface-light rounded-xl py-3 pl-4 pr-10 outline-none focus:border-primary/50 appearance-none cursor-pointer hover:bg-surface-light transition-all uppercase tracking-widest">
+                                            <option value="current">⚡ Current Phase</option>
+                                            <hr />
+                                            {steps.map((s, i) => <option key={s.id} value={i}>Phase {i + 1}: {s.label}</option>)}
+                                        </select>
+                                        <ChevronDown className="w-5 h-5 text-txt-muted absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none group-hover:text-primary transition-colors" />
+                                    </div>
+                                )}
+                            </>
+                        )}
+                    </div>
+
+                    {aiViewMode === 'memory' ? (
+                        <div className="flex-1 overflow-hidden p-4 bg-canvas/30">
+                            <AiMemoryManager language={language} onClose={() => setAiViewMode('chat')} />
+                        </div>
+                    ) : (
+                        <>
+                            <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar bg-canvas scroll-smooth text-sm">
+                                {messages.length === 0 && <div className="h-full flex flex-col items-center justify-center opacity-40 space-y-2 py-8"><div className="w-12 h-12 bg-surface rounded-xl flex items-center justify-center border border-surface-light animate-pulse"><Sparkles className="w-6 h-6 text-primary/50" /></div><p className="text-[10px] font-black uppercase text-txt-muted tracking-widest">{t('ai.ready')}</p></div>}
+                                {messages.map((msg) => (
+                                    <div key={msg.id} className={`flex flex-col gap-1.5 animate-fadeIn ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+                                        <div className={`max-w-[95%] p-4 rounded-2xl text-sm font-medium leading-relaxed shadow-sm border ${msg.role === 'user' ? 'bg-primary text-white border-primary/20 rounded-br-none' : 'bg-surface text-txt-main border-surface-light rounded-bl-none'}`}>
+                                            <div className="markdown-content"><MarkdownRenderer content={msg.text} isStreaming={aiLoading && msg.id === messages[messages.length - 1]?.id} /></div>
+                                        </div>
+                                        <span className="text-[10px] font-black text-txt-muted px-3 uppercase opacity-60 tracking-widest">{msg.role === 'user' ? t('ai.user') : t('ai.ai')} • {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                    </div>
+                                ))}
+                                <div ref={chatEndRef}></div>
+                            </div>
+                            <div className="p-3 bg-surface border-t border-surface-light mt-auto">
+                                <div className="flex items-center gap-2 bg-canvas border border-surface-light rounded-xl px-3 py-1.5 focus-within:border-primary/50 transition-all shadow-inner">
+                                    <input type="text" value={userInput} onChange={(e) => setUserInput(e.target.value)} onKeyDown={handleKeyPress} placeholder={language === 'es' ? "Pregunte..." : "Ask..."} className="bg-transparent w-full text-xs font-bold text-txt-main outline-none placeholder:text-txt-muted/50" disabled={aiLoading} />
+                                    <button onClick={handleSendMessage} disabled={!userInput.trim() || aiLoading} className="p-2 bg-primary hover:bg-primary/90 text-white rounded-lg disabled:opacity-50 transition-all active:scale-95"><Send className="w-3.5 h-3.5" /></button>
+                                </div>
+                            </div>
+                        </>
+                    )}
+                </aside>
+            )}
             {showGlobalReportSelector && <ReportSelectorModal isOpen={showGlobalReportSelector} onClose={() => setShowGlobalReportSelector(false)} onSelect={(type: string) => { setShowGlobalReportSelector(false); setGlobalReportConfig({ isOpen: true, type }); }} />}
             {globalReportConfig.isOpen && <DesignReport onClose={() => setGlobalReportConfig({ isOpen: false, type: 'target' })} type={globalReportConfig.type} params={params} pump={customPump} results={designResults} frequency={currentFrequency} motor={params.selectedMotor} cable={params.selectedCable} />}
             <style>{`.custom-scrollbar::-webkit-scrollbar { width: 6px; } .custom-scrollbar::-webkit-scrollbar-track { background: transparent; } .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(var(--color-surface-light), 0.8); border-radius: 3px; } .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(var(--color-primary), 0.5); }`}</style>
