@@ -1374,7 +1374,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
             <MobileMonitoreo
                 fleet={fleet}
                 selectedWell={selectedWell || null}
-                setSelectedWell={(w) => setSelectedWellId(w ? w.id : null)}
+                setSelectedWell={setSelectedWellId}
                 language={language}
                 t={t}
                 wellMatchParams={wellMatchParams}
@@ -1389,6 +1389,23 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                 importDbRef={importDbRef}
                 importWellHistoryRef={importWellHistoryRef}
                 operationalResults={operationalResults}
+                onNavigateToDesign={onNavigateToDesign}
+                cycleTheme={cycleTheme}
+                toggleLanguage={toggleLanguage}
+                wellViewMode={wellViewMode}
+                setWellViewMode={setWellViewMode}
+                wellsHistoricalData={wellsHistoricalData}
+                searchTerm={searchTerm}
+                setSearchTerm={setSearchTerm}
+                dataFilter={dataFilter}
+                setDataFilter={setDataFilter}
+                healthFilter={healthFilter}
+                setHealthFilter={setHealthFilter}
+                statusFilter={statusFilter}
+                setStatusFilter={setStatusFilter}
+                sortedFleet={sortedFleet}
+                importProgress={importProgress}
+                wellHealthMap={wellHealthMap}
             />
         );
     }

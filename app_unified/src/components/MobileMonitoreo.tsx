@@ -3,20 +3,22 @@ import {
     Activity, ChevronLeft, RefreshCw, Download, Database, Trash2, 
     Monitor, Shield, Zap, Droplets, Thermometer, ShieldCheck, 
     TrendingUp, MessageSquare, Menu, X, Send, Sparkles, AlertTriangle,
-    Layers, Compass, Target, Globe
+    Layers, Compass, Target, Globe, FileSpreadsheet, Settings, Palette
 } from 'lucide-react';
-import { WellFleetItem, EspPump, SystemParams } from '@/types';
-import { getWellHealthScore } from './PhaseMonitoreo.helpers';
+import { WellFleetItem, EspPump, SystemParams, HistoryMatchData } from '@/types';
+import { getWellHealthScore, computeWellCapacity, getOptimizationPath } from './PhaseMonitoreo.helpers';
 import { calculateSystemResults, calculateBaseHead } from '../utils';
 import { MarkdownRenderer } from './MarkdownRenderer';
 import { VisualESPStack } from './VisualESPStack';
 import { TrajectoryPlot } from './TrajectoryPlot';
 import { Phase6 } from './Phase6';
+import { MatchHistorico } from './MatchHistorico';
+import { PredictiveWidget, DebouncedSearchInput } from './PhaseMonitoreo.subcomponents';
 
 interface Props {
     fleet: WellFleetItem[];
     selectedWell: WellFleetItem | null;
-    setSelectedWell: (w: WellFleetItem | null) => void;
+    setSelectedWell: (w: string | null) => void;
     language: string;
     t: any;
     wellMatchParams: SystemParams;
@@ -31,13 +33,25 @@ interface Props {
     importDbRef: React.RefObject<HTMLInputElement | null>;
     importWellHistoryRef: React.RefObject<HTMLInputElement | null>;
     operationalResults: any;
+    // Core Parity States & Functions from Parent:
+    onNavigateToDesign?: (wellParams: SystemParams, pump?: EspPump | null) => void;
+    cycleTheme: () => void;
+    toggleLanguage: () => void;
+    wellViewMode: 'monitoring' | 'history';
+    setWellViewMode: (mode: 'monitoring' | 'history') => void;
+    wellsHistoricalData: any;
+    searchTerm: string;
+    setSearchTerm: (term: string) => void;
+    dataFilter: string;
+    setDataFilter: (filter: 'all' | 'complete' | 'missing') => void;
+    healthFilter: string;
+    setHealthFilter: (filter: 'all' | 'healthy' | 'caution' | 'critical') => void;
+    statusFilter: string;
+    setStatusFilter: (filter: 'all' | 'operativo' | 'fallado' | 'pull' | 'pendiente') => void;
+    sortedFleet: WellFleetItem[];
+    importProgress: any;
+    wellHealthMap: Record<string, number>;
 }
-
-const suggestions = [
-    { es: "Riesgo de Gas", en: "Gas Risk", prompt: "¿Cuál es el riesgo de gas en este pozo y el PIP actual?" },
-    { es: "Optimización VSD", en: "VSD Opt", prompt: "¿Qué frecuencia sugieres para optimizar la producción?" },
-    { es: "Salud Bomba", en: "Pump Health", prompt: "¿Cuál es el estado de degradación actual de la bomba?" }
-];
 
 export const MobileMonitoreo: React.FC<Props> = ({
     fleet,
@@ -56,9 +70,67 @@ export const MobileMonitoreo: React.FC<Props> = ({
     importDesignRef,
     importDbRef,
     importWellHistoryRef,
-    operationalResults
+    operationalResults,
+    onNavigateToDesign,
+    cycleTheme,
+    toggleLanguage,
+    wellViewMode,
+    setWellViewMode,
+    wellsHistoricalData,
+    searchTerm,
+    setSearchTerm,
+    dataFilter,
+    setDataFilter,
+    healthFilter,
+    setHealthFilter,
+    statusFilter,
+    setStatusFilter,
+    sortedFleet,
+    importProgress,
+    wellHealthMap
 }) => {
     const [activeTab, setActiveTab] = useState<'fleet' | 'analysis' | 'bha' | 'copilot'>('fleet');
+
+    const suggestions = useMemo(() => {
+        return selectedWell ? [
+            {
+                es: `Analizar telemetría de ${selectedWell.name}`,
+                en: `Analyze telemetry of ${selectedWell.name}`,
+                prompt: `Analiza la telemetría actual del pozo ${selectedWell.name} y dime si el punto de operación es óptimo o si tiene problemas de downthrust o sobrecarga.`
+            },
+            {
+                es: `Simular VSD a 70 Hz en ${selectedWell.name}`,
+                en: `Simulate VSD at 70 Hz on ${selectedWell.name}`,
+                prompt: `Simula un cambio de frecuencia a 70 Hz en el pozo ${selectedWell.name}. ¿Cuál sería el nuevo caudal estimado y cómo afectaría la carga del eje de la bomba?`
+            },
+            {
+                es: `Evaluar sumergencia y presiones`,
+                en: `Evaluate submergence and pressures`,
+                prompt: `Evalúa la sumergencia actual en pies de la bomba de ${selectedWell.name}. ¿Es suficiente para evitar problemas de gas o cavitación?`
+            },
+            {
+                es: `Recomendar optimización de producción`,
+                en: `Recommend production optimization`,
+                prompt: `Recomienda una estrategia de optimización para el pozo ${selectedWell.name} basada en su caudal objetivo de ${selectedWell.targetRate || 0} BPD.`
+            }
+        ] : [
+            {
+                es: "Resumen de estado de la flota",
+                en: "Fleet status summary",
+                prompt: "Haz un resumen rápido del estado de toda la flota de pozos y dime cuáles tienen alertas o problemas críticos."
+            },
+            {
+                es: "Pozos con mayor desviación de caudal",
+                en: "Wells with highest flow rate deviation",
+                prompt: "Identifica qué pozos de la flota tienen la mayor diferencia negativa entre su caudal actual y su caudal objetivo."
+            },
+            {
+                es: "Problemas recurrentes en la flota",
+                en: "Recurrent issues in the fleet",
+                prompt: "Analiza el estado general de los sensores y componentes de la flota. ¿Cuáles son las fallas predictivas más comunes hoy?"
+            }
+        ];
+    }, [selectedWell?.id, selectedWell?.name, selectedWell?.targetRate]);
     
     // Chat state
     const [msgs, setMsgs] = useState<{ role: string; text: string }[]>([]);
@@ -81,7 +153,7 @@ export const MobileMonitoreo: React.FC<Props> = ({
     }, [msgs, activeTab]);
 
     // Active well health results
-    const wellHealth = selectedWell ? getWellHealthScore(selectedWell) : 0;
+    const wellHealth = selectedWell ? (wellHealthMap[selectedWell.id] || 0) : 0;
 
     // BHA calculations identical to PhaseMonitoreo
     const safeBhaResults = useMemo(() => {
@@ -106,14 +178,14 @@ export const MobileMonitoreo: React.FC<Props> = ({
     }, [selectedWell?.id, pump?.id, wellMatchParams]);
 
     const physicalHealth = useMemo(() => {
-        if (!selectedWell) return { pump: 'normal', motor: 'normal', seal: 'normal', cable: 'normal', vsd: 'normal' } as any;
+        if (!selectedWell) return { pump: 'normal', motor: 'normal', seal: 'normal', cable: 'normal', vsd: 'normal' };
         return {
             pump: selectedWell.health.pump,
             motor: selectedWell.health.motor,
             seal: selectedWell.health.seal,
             cable: selectedWell.health.cable,
             vsd: (selectedWell.predictive.vsdStatus === 'alert') ? 'alert' : (selectedWell.predictive.vsdStatus === 'caution' ? 'caution' : 'normal')
-        } as any;
+        };
     }, [selectedWell]);
 
     const sendChatMessage = async () => {
@@ -192,11 +264,12 @@ export const MobileMonitoreo: React.FC<Props> = ({
                     </div>
                 </div>
 
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1.5">
                     <button 
                         onClick={onForceSync}
                         disabled={isSyncingOneDrive}
-                        className="p-2.5 bg-white/5 border border-white/5 hover:bg-white/10 rounded-lg text-txt-muted active:scale-95 transition-all"
+                        className="p-2 bg-white/5 border border-white/5 hover:bg-white/10 rounded-lg text-txt-muted active:scale-95 transition-all"
+                        title="OneDrive Sync"
                     >
                         <RefreshCw className={`w-4 h-4 ${isSyncingOneDrive ? 'animate-spin' : ''}`} />
                     </button>
@@ -207,35 +280,72 @@ export const MobileMonitoreo: React.FC<Props> = ({
             <main className="flex-1 overflow-y-auto p-3 min-h-0 custom-scrollbar pb-8">
                 {activeTab === 'fleet' && (
                     <div className="space-y-4 animate-fadeIn">
-                        {/* Fleet Actions */}
-                        <div className="grid grid-cols-2 gap-2 bg-surface/50 p-2.5 border border-white/5">
+                        {/* Fleet Import Actions */}
+                        <div className="flex gap-2 items-center bg-surface/50 p-2.5 border border-white/5">
                             <button 
                                 onClick={() => importDesignRef.current?.click()}
-                                className="flex items-center justify-center gap-2 py-3 bg-primary/10 border border-primary/20 text-primary text-[10px] font-black uppercase tracking-wider active:bg-primary/20"
+                                className="flex-1 flex items-center justify-center gap-2 py-3 bg-primary/10 border border-primary/20 text-primary text-[10px] font-black uppercase tracking-wider active:bg-primary/20"
                             >
                                 <Database className="w-3.5 h-3.5" />
                                 Diseños
                             </button>
                             <button 
                                 onClick={() => importDbRef.current?.click()}
-                                className="flex items-center justify-center gap-2 py-3 bg-secondary/10 border border-secondary/20 text-secondary text-[10px] font-black uppercase tracking-wider active:bg-secondary/20"
+                                className="flex-1 flex items-center justify-center gap-2 py-3 bg-secondary/10 border border-secondary/20 text-secondary text-[10px] font-black uppercase tracking-wider active:bg-secondary/20"
                             >
                                 <TrendingUp className="w-3.5 h-3.5" />
-                                Historial
+                                SCADA
                             </button>
+                            <button 
+                                onClick={clearFleet}
+                                className="p-3 bg-danger/10 hover:bg-danger text-danger hover:text-white border border-danger/20 active:scale-95 transition-all"
+                                title="Limpiar Flota"
+                            >
+                                <Trash2 className="w-4 h-4" />
+                            </button>
+                        </div>
+
+                        {/* Search and Filters */}
+                        <div className="bg-surface/30 p-3 border border-white/5 space-y-2">
+                            <DebouncedSearchInput
+                                value={searchTerm}
+                                onChange={setSearchTerm}
+                                placeholder="Buscar pozo..."
+                            />
+                            
+                            {/* Filter Rows */}
+                            <div className="flex items-center gap-1 bg-canvas/50 p-0.5 border border-white/5">
+                                <button onClick={() => setDataFilter('all')} className={`h-7 px-2 rounded-md text-[7px] font-black uppercase tracking-widest flex-1 ${dataFilter === 'all' ? 'bg-primary text-white' : 'text-txt-muted'}`}>Datos: Todos</button>
+                                <button onClick={() => setDataFilter('complete')} className={`h-7 px-2 rounded-md text-[7px] font-black uppercase tracking-widest flex-1 ${dataFilter === 'complete' ? 'bg-success/20 text-success' : 'text-txt-muted'}`}>Completos</button>
+                                <button onClick={() => setDataFilter('missing')} className={`h-7 px-2 rounded-md text-[7px] font-black uppercase tracking-widest flex-1 ${dataFilter === 'missing' ? 'bg-warning/20 text-warning' : 'text-txt-muted'}`}>Faltan</button>
+                            </div>
+                            
+                            <div className="flex items-center gap-1 bg-canvas/50 p-0.5 border border-white/5">
+                                <button onClick={() => setHealthFilter('all')} className={`h-7 px-2 rounded-md text-[7px] font-black uppercase tracking-widest flex-1 ${healthFilter === 'all' ? 'bg-primary text-white' : 'text-txt-muted'}`}>Salud: Todos</button>
+                                <button onClick={() => setHealthFilter('healthy')} className={`h-7 px-2 rounded-md text-[7px] font-black uppercase tracking-widest flex-1 ${healthFilter === 'healthy' ? 'bg-success/20 text-success' : 'text-txt-muted'}`}>Healthy</button>
+                                <button onClick={() => setHealthFilter('caution')} className={`h-7 px-2 rounded-md text-[7px] font-black uppercase tracking-widest flex-1 ${healthFilter === 'caution' ? 'bg-warning/20 text-warning' : 'text-txt-muted'}`}>Caution</button>
+                                <button onClick={() => setHealthFilter('critical')} className={`h-7 px-2 rounded-md text-[7px] font-black uppercase tracking-widest flex-1 ${healthFilter === 'critical' ? 'bg-danger/20 text-danger' : 'text-txt-muted'}`}>Critical</button>
+                            </div>
+
+                            <div className="flex items-center gap-1 bg-canvas/50 p-0.5 border border-white/5">
+                                <button onClick={() => setStatusFilter('all')} className={`h-7 px-1.5 rounded-md text-[6.5px] font-black uppercase tracking-wider flex-1 ${statusFilter === 'all' ? 'bg-primary text-white' : 'text-txt-muted'}`}>Estado: Todos</button>
+                                <button onClick={() => setStatusFilter('operativo')} className={`h-7 px-1.5 rounded-md text-[6.5px] font-black uppercase tracking-wider flex-1 ${statusFilter === 'operativo' ? 'bg-success/20 text-success' : 'text-txt-muted'}`}>Operativo</button>
+                                <button onClick={() => setStatusFilter('fallado')} className={`h-7 px-1.5 rounded-md text-[6.5px] font-black uppercase tracking-wider flex-1 ${statusFilter === 'fallado' ? 'bg-danger/20 text-danger' : 'text-txt-muted'}`}>Fallado</button>
+                                <button onClick={() => setStatusFilter('pendiente')} className={`h-7 px-1.5 rounded-md text-[6.5px] font-black uppercase tracking-wider flex-1 ${statusFilter === 'pendiente' ? 'bg-slate-500/20 text-slate-400' : 'text-txt-muted'}`}>Pendiente</button>
+                            </div>
                         </div>
 
                         {/* Well List */}
                         <div className="space-y-2">
-                            <h3 className="text-[10px] font-black text-txt-muted uppercase tracking-widest px-1">Pozos de la Flota ({fleet.length})</h3>
-                            {fleet.length === 0 ? (
+                            <h3 className="text-[10px] font-black text-txt-muted uppercase tracking-widest px-1">Pozos de la Flota ({sortedFleet.length})</h3>
+                            {sortedFleet.length === 0 ? (
                                 <div className="p-8 text-center bg-surface/30 border border-white/5">
                                     <Activity className="w-8 h-8 mx-auto text-txt-muted/30 mb-2" />
-                                    <span className="text-xs text-txt-muted font-bold block">No hay pozos cargados. Usa los botones de arriba.</span>
+                                    <span className="text-xs text-txt-muted font-bold block">No hay pozos que coincidan con los filtros.</span>
                                 </div>
                             ) : (
-                                fleet.map(w => {
-                                    const score = getWellHealthScore(w);
+                                sortedFleet.map(w => {
+                                    const score = wellHealthMap[w.id] || 0;
                                     const scoreColor = score >= 90 ? 'text-success border-success/30 bg-success/5' : score >= 60 ? 'text-warning border-warning/30 bg-warning/5' : 'text-danger border-danger/30 bg-danger/5';
                                     const isCurrentSelected = selectedWell?.id === w.id;
 
@@ -243,7 +353,7 @@ export const MobileMonitoreo: React.FC<Props> = ({
                                         <div 
                                             key={w.id}
                                             onClick={() => {
-                                                setSelectedWell(w);
+                                                setSelectedWell(w.id);
                                                 setActiveTab('analysis');
                                             }}
                                             className={`p-4 border transition-all flex items-center justify-between cursor-pointer ${isCurrentSelected ? 'bg-primary/5 border-primary/40' : 'bg-surface/60 border-white/5 active:bg-surface'}`}
@@ -273,16 +383,85 @@ export const MobileMonitoreo: React.FC<Props> = ({
                                 <span className="text-xs text-txt-muted font-bold block">Selecciona un pozo de la Flota para comenzar.</span>
                             </div>
                         ) : (
-                            <div className="w-full overflow-x-auto min-w-0">
-                                <Phase6
-                                    key={selectedWell.id}
-                                    params={wellMatchParams}
-                                    syncParams={false}
-                                    onHistoryMatchChange={onHistoryMatchChange}
+                            <>
+                                {/* Action row for Cotejo */}
+                                <div className="flex flex-wrap gap-1.5 bg-surface/40 p-2 border border-white/5">
+                                    <button 
+                                        onClick={() => importDbRef.current?.click()}
+                                        className="h-8 px-2.5 bg-secondary/10 text-secondary border border-secondary/25 hover:bg-secondary/20 text-[8px] font-black uppercase tracking-wider flex items-center gap-1"
+                                    >
+                                        <Database className="w-3 h-3" />
+                                        Subir Prueba
+                                    </button>
+                                    
+                                    {onNavigateToDesign && (
+                                        <button 
+                                            onClick={() => onNavigateToDesign(wellMatchParams, pump)}
+                                            className="h-8 px-2.5 bg-primary/10 text-primary border border-primary/25 hover:bg-primary text-[8px] font-black uppercase tracking-wider flex items-center gap-1"
+                                        >
+                                            <Settings className="w-3 h-3" />
+                                            Diseño
+                                        </button>
+                                    )}
+
+                                    <button 
+                                        onClick={() => setWellViewMode(wellViewMode === 'history' ? 'monitoring' : 'history')}
+                                        className="h-8 px-2.5 bg-success/10 text-success border border-success/25 hover:bg-success/20 text-[8px] font-black uppercase tracking-wider flex items-center gap-1"
+                                    >
+                                        <TrendingUp className="w-3 h-3" />
+                                        {wellViewMode === 'history' ? 'Monitoreo' : 'Histórico'}
+                                    </button>
+
+                                    <a
+                                        href="https://1drv.ms/x/c/06cc4035ad46ff97/IQClWg69qziUQZ4pcxlcyoF5AdzaFbqGWhkSVp1rxJKvfwQ?e=Zuk6P7"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="h-8 px-2 bg-primary/10 hover:bg-primary text-primary hover:text-white border border-primary/25 text-[8px] font-black uppercase tracking-wider flex items-center gap-1"
+                                    >
+                                        <FileSpreadsheet className="w-3 h-3" />
+                                        Doc Diseño
+                                    </a>
+
+                                    <button onClick={toggleLanguage} className="h-8 px-1.5 hover:bg-white/10 text-[8px] font-black uppercase flex items-center gap-1">
+                                        <Globe className="w-3 h-3" /> {language}
+                                    </button>
+
+                                    <button onClick={cycleTheme} className="h-8 w-8 flex items-center justify-center hover:bg-white/10 text-txt-muted hover:text-primary">
+                                        <Palette className="w-3.5 h-3.5" />
+                                    </button>
+                                </div>
+
+                                {/* Predictive Widget AI comment */}
+                                <PredictiveWidget
+                                    selectedWell={selectedWell}
+                                    wellMatchParams={wellMatchParams}
                                     pump={pump}
-                                    designFreq={selectedWell.productionTest.freq || 60}
+                                    computeWellCapacity={computeWellCapacity}
+                                    getOptimizationPath={getOptimizationPath}
                                 />
-                            </div>
+
+                                <div className="w-full overflow-x-auto min-w-0">
+                                    {wellViewMode === 'history' ? (
+                                        <MatchHistorico
+                                            wellName={selectedWell.name}
+                                            pump={pump}
+                                            designParams={wellMatchParams}
+                                            productionHistory={wellsHistoricalData[selectedWell.name]}
+                                            onImport={() => importWellHistoryRef.current?.click()}
+                                            onClose={() => setWellViewMode('monitoring')}
+                                        />
+                                    ) : (
+                                        <Phase6
+                                            key={selectedWell.id}
+                                            params={wellMatchParams}
+                                            syncParams={false}
+                                            onHistoryMatchChange={onHistoryMatchChange}
+                                            pump={pump}
+                                            designFreq={selectedWell.productionTest.freq || 60}
+                                        />
+                                    )}
+                                </div>
+                            </>
                         )}
                     </div>
                 )}
@@ -311,7 +490,7 @@ export const MobileMonitoreo: React.FC<Props> = ({
                                                     params={wellMatchParams}
                                                     results={safeBhaResults}
                                                     frequency={selectedWell.productionTest.freq || 60}
-                                                    health={physicalHealth}
+                                                    health={physicalHealth as any}
                                                     selectedVSD={wellMatchParams.selectedVSD}
                                                 />
                                             </div>
@@ -387,6 +566,24 @@ export const MobileMonitoreo: React.FC<Props> = ({
                             <div ref={chatEndRef} />
                         </div>
 
+                        {/* Suggestions */}
+                        {suggestions.length > 0 && msgs.length === 1 && (
+                            <div className="p-2 border-t border-white/5 bg-canvas/30 flex gap-1.5 overflow-x-auto whitespace-nowrap scrollbar-none shrink-0">
+                                {suggestions.map((s, idx) => (
+                                    <button 
+                                        key={idx}
+                                        onClick={() => {
+                                            setChatInput(s.prompt);
+                                            sendChatMessage();
+                                        }}
+                                        className="px-3 py-1.5 bg-white/5 border border-white/5 hover:bg-white/10 text-txt-muted hover:text-white rounded-full text-[9px] font-bold uppercase transition-all shrink-0"
+                                    >
+                                        {language === 'es' ? s.es : s.en}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+
                         {/* Chat input */}
                         <div className="p-2 border-t border-white/5 bg-surface shrink-0 flex gap-2 items-center">
                             <input 
@@ -440,6 +637,46 @@ export const MobileMonitoreo: React.FC<Props> = ({
                     <span className="text-[8px] font-black uppercase tracking-widest">Copilot</span>
                 </button>
             </nav>
+
+            {/* FULL-SCREEN IMPORT PROGRESS OVERLAY FOR ONEDRIVE/CSV LOADS */}
+            {importProgress && (
+                <div
+                    className="fixed inset-0 z-[9999] flex flex-col items-center justify-center overflow-hidden"
+                    style={{
+                        backgroundColor: 'rgb(var(--color-canvas))',
+                        backgroundImage: 'linear-gradient(rgb(var(--color-canvas) / 0.85), rgb(var(--color-canvas) / 0.85)), url(/main_bg.png)',
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center'
+                    }}
+                >
+                    <div className="absolute inset-0 bg-radial-gradient from-primary/5 to-transparent pointer-events-none"></div>
+                    <div className="flex flex-col items-center gap-10 max-w-sm w-full relative z-10">
+                        <div className="relative group animate-fadeIn">
+                            <img
+                                src="/LOGO.png"
+                                alt="Loading..."
+                                className="w-84 h-84 object-contain"
+                                style={{ filter: 'drop-shadow(0 0 50px rgba(var(--color-primary), 0.4))' }}
+                            />
+                        </div>
+                        <div className="w-full flex flex-col items-center gap-6 animate-fadeInUp">
+                            <div className="text-center space-y-1">
+                                <h3 className="text-xl font-bold text-primary uppercase tracking-[0.25em]">
+                                    {importProgress.label.replace('...', '')}
+                                </h3>
+                            </div>
+                            <div className="w-full space-y-3 px-8">
+                                <div className="w-full h-[2px] bg-white/5 rounded-full overflow-hidden">
+                                    <div
+                                        className="h-full bg-primary transition-all duration-700 ease-out shadow-[0_0_8px_rgba(var(--color-primary),0.4)]"
+                                        style={{ width: `${(importProgress.current / Math.max(1, importProgress.total)) * 100}%` }}
+                                    ></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
