@@ -915,14 +915,14 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                     const toolbarBtn = 'h-8 md:h-9 px-2.5 md:px-3.5 rounded-none text-[8px] font-black uppercase tracking-widest transition-all border flex items-center gap-1 md:gap-1.5 shrink-0';
                     return (
                         <>
-                            <div className="sticky top-0 z-[100] flex flex-col md:flex-row md:items-center gap-2 md:gap-3 bg-surface/95 backdrop-blur-xl py-2 md:py-3 px-2 md:px-3 border border-white/10 border-t-2 border-t-primary/40 shadow-lg w-full overflow-visible">
+                            <div className="sticky top-0 z-[100] flex flex-row items-center justify-between gap-2 md:gap-3 bg-surface/95 backdrop-blur-xl py-2 px-2 md:py-3 md:px-3 border border-white/10 border-t-2 border-t-primary/40 shadow-lg w-full overflow-x-auto custom-scrollbar-h overflow-y-visible">
                                 {/* Left: back + well selector */}
-                                <div className="flex items-center gap-3 w-full md:w-auto shrink-0 justify-between md:justify-start">
-                                    <div className="flex items-center gap-3">
-                                        <button onClick={onBack} className="h-11 w-11 flex items-center justify-center bg-white/5 hover:bg-primary/15 border border-white/10 text-txt-muted hover:text-primary transition-all shrink-0" title="Regresar al Inicio">
-                                            <ChevronLeft className="w-5 h-5" />
+                                <div className="flex items-center gap-1.5 md:gap-3 shrink-0">
+                                    <div className="flex items-center gap-1.5 md:gap-3">
+                                        <button onClick={onBack} className="h-8 w-8 md:h-11 md:w-11 flex items-center justify-center bg-white/5 hover:bg-primary/15 border border-white/10 text-txt-muted hover:text-primary transition-all shrink-0" title="Regresar al Inicio">
+                                            <ChevronLeft className="w-4 h-4 md:w-5 md:h-5" />
                                         </button>
-
+ 
                                         <div className="relative min-w-0 overflow-visible z-[60]" ref={wellDropdownRef}>
                                             <button
                                                 onClick={() => {
@@ -931,14 +931,14 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                                     }
                                                     setIsWellDropdownOpen(!isWellDropdownOpen);
                                                 }}
-                                                className={`h-11 flex items-center gap-3 pl-4 pr-3 border transition-all max-w-[min(400px,65vw)] ${isWellDropdownOpen ? 'bg-primary/15 border-primary/40 text-primary' : 'bg-white/5 hover:bg-white/10 border-white/10'}`}
+                                                className={`h-8 md:h-11 flex items-center gap-1.5 md:gap-3 pl-2.5 pr-2 md:pl-4 md:pr-3 border transition-all max-w-[160px] md:max-w-[min(400px,65vw)] ${isWellDropdownOpen ? 'bg-primary/15 border-primary/40 text-primary' : 'bg-white/5 hover:bg-white/10 border-white/10'}`}
                                             >
-                                                <Monitor className="w-4 h-4 text-primary shrink-0" />
-                                                <span className="text-xl font-black text-txt-main tracking-tighter uppercase truncate drop-shadow-sm">{selectedWell.name}</span>
+                                                <Monitor className="w-3.5 h-3.5 md:w-4 md:h-4 text-primary shrink-0" />
+                                                <span className="text-xs md:text-xl font-black text-txt-main tracking-tighter uppercase truncate drop-shadow-sm">{selectedWell.name}</span>
                                                 <span className={`hidden sm:inline text-[9px] font-black px-2 py-0.5 border uppercase tracking-widest shrink-0 ${healthClass}`}>{healthLabel}</span>
-                                                <ChevronRight className={`w-4 h-4 text-txt-muted shrink-0 transition-transform ${isWellDropdownOpen ? 'rotate-90' : ''}`} />
+                                                <ChevronRight className={`w-3.5 h-3.5 md:w-4 md:h-4 text-txt-muted shrink-0 transition-transform ${isWellDropdownOpen ? 'rotate-90' : ''}`} />
                                             </button>
-
+ 
                                             {isWellDropdownOpen && (() => {
                                                 const dropdownContent = (
                                                     <>
@@ -1029,11 +1029,11 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                         </div>
                                     </div>
                                 </div>
-
-                                <div className="hidden md:block w-px h-7 bg-white/10 shrink-0" />
-
+ 
+                                <div className="w-px h-6 bg-white/10 shrink-0" />
+ 
                                 {/* Center: primary actions */}
-                                <div className="flex flex-wrap items-center gap-2 w-full md:w-auto md:flex-1 justify-start md:justify-center">
+                                <div className="flex items-center gap-1.5 md:gap-2 shrink-0">
                                     <button
                                         onClick={() => importDbRef.current?.click()}
                                         className={`${toolbarBtn} bg-secondary/10 text-secondary border-secondary/25 hover:bg-secondary/20`}
@@ -1077,10 +1077,10 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                     </button>
                                 </div>
  
-                                <div className="hidden md:block w-px h-7 bg-white/10 shrink-0" />
+                                <div className="w-px h-6 bg-white/10 shrink-0" />
  
                                 {/* Right: settings */}
-                                <div className="flex flex-wrap items-center gap-1.5 bg-white/5 p-1 border border-white/10 w-full md:w-auto justify-between md:justify-start md:ml-auto">
+                                <div className="flex items-center gap-1 md:gap-1.5 bg-white/5 p-0.5 md:p-1 border border-white/10 shrink-0 ml-auto">
                                     <a
                                         href="https://1drv.ms/x/c/06cc4035ad46ff97/IQClWg69qziUQZ4pcxlcyoF5AdzaFbqGWhkSVp1rxJKvfwQ?e=Zuk6P7"
                                         target="_blank"
@@ -1102,9 +1102,9 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                         <FileSpreadsheet className="w-3.5 h-3.5" />
                                         <span className="hidden sm:inline">{language === 'es' ? 'Pruebas' : 'Tests'}</span>
                                     </a>
-
+ 
                                     <button onClick={toggleLanguage} className="h-8 px-2.5 hover:bg-white/10 rounded-none transition-all text-[8px] font-black font-mono text-txt-main tracking-widest uppercase flex items-center gap-1">
-                                        <Globe className="w-3 h-3 text-primary" /> {language}
+                                        <Globe className="w-3 text-primary" /> {language}
                                     </button>
                                     <button onClick={cycleTheme} className="h-8 w-8 flex items-center justify-center hover:bg-white/10 rounded-none transition-all text-txt-muted hover:text-primary" title="Cambiar Tema">
                                         <Palette className="w-3.5 h-3.5" />
