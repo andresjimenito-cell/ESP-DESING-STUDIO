@@ -675,7 +675,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     // LANDING PAGE — Visual Overhaul
     // ─────────────────────────────────────────────────────────────────────────
     return (
-        <div className="h-screen w-full relative flex items-center justify-center overflow-hidden font-sans text-txt-main selection:bg-primary/30 transition-colors duration-700 animate-landing-entry">
+        <div className="min-h-screen xl:h-screen w-full relative flex items-center justify-center overflow-y-auto xl:overflow-hidden font-sans text-txt-main selection:bg-primary/30 transition-colors duration-700 animate-landing-entry py-20 xl:py-0">
 
             {/* ══════════════════════════════════════════════════════
                 BACKGROUND SYSTEM — Deep Space + Antigravity Field
@@ -761,7 +761,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             {/* ══════════════════════════════════════════════════════
                 HEADER
             ══════════════════════════════════════════════════════ */}
-            <header className="absolute top-0 left-0 w-full px-8 py-6 z-50 flex justify-between items-center animate-fadeIn">
+            <header className="absolute top-0 left-0 w-full px-4 sm:px-8 py-4 sm:py-6 z-50 flex justify-between items-center animate-fadeIn">
                 {/* Logo + wordmark */}
                 <div className="flex items-center gap-3 group cursor-default">
                     <div
@@ -847,7 +847,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             {/* ══════════════════════════════════════════════════════
                 MAIN CONTENT
             ══════════════════════════════════════════════════════ */}
-            <main className="relative z-30 w-full max-w-[1380px] px-10 grid grid-cols-1 xl:grid-cols-12 gap-12 items-center">
+            <main className="relative z-30 w-full max-w-[1380px] px-4 sm:px-10 grid grid-cols-1 xl:grid-cols-12 gap-12 items-center">
 
                 {/* ── LEFT: HERO TEXT ── */}
                 <div className="xl:col-span-7 space-y-8 animate-fadeInLeft">
@@ -880,7 +880,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                         />
 
                         <h1
-                            className="text-[6.5rem] md:text-[8rem] xl:text-[9rem] font-black text-txt-main leading-[0.82] tracking-[-0.03em] select-none relative"
+                            className="text-[3.5rem] sm:text-[5.5rem] md:text-[8rem] xl:text-[9rem] font-black text-txt-main leading-[0.82] tracking-[-0.03em] select-none relative"
                             style={{
                                 transform: `translate3d(${mousePos.x * 0.08}px, ${mousePos.y * 0.08}px, 0)`,
                                 transition: 'transform 0.25s ease-out',
@@ -909,7 +909,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                                 STUDIO
                             </span>
                             <span
-                                className="text-transparent bg-clip-text ml-3 text-[5rem]"
+                                className="text-transparent bg-clip-text ml-3 text-[2rem] sm:text-[4rem] md:text-[5rem]"
                                 style={{
                                     backgroundImage: 'linear-gradient(100deg, rgb(var(--color-primary)), rgb(var(--color-secondary)))',
                                     WebkitTextFillColor: 'transparent',
