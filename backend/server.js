@@ -67,13 +67,10 @@ const authMiddleware = (req, res, next) => {
 const usersPath = path.join(__dirname, '..', 'app_unified', 'users.json');
 
 app.post('/api/login', (req, res) => {
-    const { email, password } = req.body;
-    if (!email || !password) {
-        return res.status(400).json({ error: 'No tienes acceso a archivos privados de la organización.' });
-    }
+    const { email, password, mode } = req.body;
+    const emailStr = String(email || '').trim().toLowerCase();
     
-    const emailStr = String(email).trim().toLowerCase();
-    if (!emailStr.endsWith('@fronteraenergy.ca')) {
+    if (!emailStr || !emailStr.endsWith('@fronteraenergy.ca')) {
         return res.status(401).json({ error: 'No tienes acceso a archivos privados de la organización.' });
     }
 
@@ -86,17 +83,20 @@ app.post('/api/login', (req, res) => {
         users = {};
     }
 
-    if (!users[emailStr]) {
-        // First login: register user and password
-        users[emailStr] = password;
+    if (mode === 'register') {
+        if (password !== '2026') {
+            return res.status(401).json({ error: 'No tienes acceso a archivos privados de la organización.' });
+        }
+        // Register user in users list
+        users[emailStr] = true;
         try {
             fs.writeFileSync(usersPath, JSON.stringify(users, null, 2), 'utf8');
         } catch (e) {
             console.error('Error guardando usuario:', e);
         }
     } else {
-        // Subsequent login: check password
-        if (users[emailStr] !== password) {
+        // Mode is login: check if email exists in users list
+        if (!users[emailStr]) {
             return res.status(401).json({ error: 'No tienes acceso a archivos privados de la organización.' });
         }
     }

@@ -915,7 +915,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                     const toolbarBtn = 'h-8 md:h-9 px-2.5 md:px-3.5 rounded-none text-[8px] font-black uppercase tracking-widest transition-all border flex items-center gap-1 md:gap-1.5 shrink-0';
                     return (
                         <>
-                            <div className="sticky top-0 z-[100] flex flex-row items-center justify-between gap-2 md:gap-3 bg-surface/95 backdrop-blur-xl py-2 px-2 md:py-3 md:px-3 border border-white/10 border-t-2 border-t-primary/40 shadow-lg w-full overflow-x-auto custom-scrollbar-h overflow-y-visible">
+                            <div className="sticky top-0 z-[100] flex flex-row items-center justify-between gap-2 md:gap-3 bg-surface/95 backdrop-blur-xl py-2 px-2 md:py-3 md:px-3 border border-white/10 border-t-2 border-t-primary/40 shadow-lg w-full overflow-x-auto md:overflow-visible custom-scrollbar-h overflow-y-visible">
                                 {/* Left: back + well selector */}
                                 <div className="flex items-center gap-1.5 md:gap-3 shrink-0">
                                     <div className="flex items-center gap-1.5 md:gap-3">

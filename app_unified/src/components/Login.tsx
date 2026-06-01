@@ -46,6 +46,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     const [loading, setLoading] = useState(false);
     const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
     const [mounted, setMounted] = useState(false);
+    const [mode, setMode] = useState<'login' | 'register'>('login');
 
     useEffect(() => {
         requestAnimationFrame(() => setMounted(true));
@@ -85,7 +86,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
             const res = await fetch('/api/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: email.trim(), password }),
+                body: JSON.stringify({ email: email.trim(), password, mode }),
             });
 
             if (!res.ok) {
@@ -319,6 +320,32 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                             </div>
                         </div>
 
+                        {/* ── MODE TABS ── */}
+                        <div className="flex border-b border-white/10 mb-6 bg-canvas/30 p-0.5 rounded-xl">
+                            <button
+                                type="button"
+                                onClick={() => { setMode('login'); setError(''); }}
+                                className={`flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${mode === 'login' ? 'bg-primary text-white shadow-md font-bold' : 'text-txt-muted hover:text-txt-main'}`}
+                                style={{
+                                    backgroundColor: mode === 'login' ? 'rgb(var(--color-primary))' : 'transparent',
+                                    color: mode === 'login' ? 'white' : undefined,
+                                }}
+                            >
+                                Iniciar Sesión
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => { setMode('register'); setError(''); }}
+                                className={`flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${mode === 'register' ? 'bg-primary text-white shadow-md font-bold' : 'text-txt-muted hover:text-txt-main'}`}
+                                style={{
+                                    backgroundColor: mode === 'register' ? 'rgb(var(--color-primary))' : 'transparent',
+                                    color: mode === 'register' ? 'white' : undefined,
+                                }}
+                            >
+                                Crear Usuario
+                            </button>
+                        </div>
+
                         {/* ── FORM ── */}
                         <form onSubmit={handleSubmit} className="space-y-5">
                             {/* Email */}
@@ -354,49 +381,51 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                             </div>
 
                             {/* Password */}
-                            <div className="space-y-2">
-                                <label className="text-[9px] font-black uppercase tracking-[0.2em] text-txt-muted flex items-center gap-2">
-                                    <Lock className="w-3 h-3" style={{ color: 'rgb(var(--color-primary))' }} />
-                                    Contraseña
-                                </label>
-                                <div className="relative">
-                                    <input
-                                        id="login-password"
-                                        type={showPassword ? 'text' : 'password'}
-                                        value={password}
-                                        onChange={(e) => { setPassword(e.target.value); setError(''); }}
-                                        placeholder="••••••••••"
-                                        required
-                                        autoComplete="current-password"
-                                        className="w-full px-4 py-3.5 pr-12 rounded-xl text-sm font-semibold text-txt-main placeholder:text-txt-muted/30 outline-none transition-all duration-300"
-                                        style={{
-                                            background: 'rgba(var(--color-canvas), 0.6)',
-                                            border: '1px solid rgba(var(--color-primary), 0.1)',
-                                        }}
-                                        onFocus={(e) => {
-                                            e.target.style.borderColor = 'rgba(var(--color-primary), 0.4)';
-                                            e.target.style.boxShadow = '0 0 0 3px rgba(var(--color-primary), 0.1), 0 0 20px rgba(var(--color-primary), 0.05)';
-                                        }}
-                                        onBlur={(e) => {
-                                            e.target.style.borderColor = 'rgba(var(--color-primary), 0.1)';
-                                            e.target.style.boxShadow = 'none';
-                                        }}
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg transition-all hover:bg-white/5"
-                                    >
-                                        {showPassword
-                                            ? <EyeOff className="w-4 h-4 text-txt-muted" />
-                                            : <Eye className="w-4 h-4 text-txt-muted" />}
-                                    </button>
+                            {mode === 'register' && (
+                                <div className="space-y-2">
+                                    <label className="text-[9px] font-black uppercase tracking-[0.2em] text-txt-muted flex items-center gap-2">
+                                        <Lock className="w-3 h-3" style={{ color: 'rgb(var(--color-primary))' }} />
+                                        Clave de Activación
+                                    </label>
+                                    <div className="relative">
+                                        <input
+                                            id="login-password"
+                                            type={showPassword ? 'text' : 'password'}
+                                            value={password}
+                                            onChange={(e) => { setPassword(e.target.value); setError(''); }}
+                                            placeholder="Introduce la clave 2026"
+                                            required
+                                            autoComplete="current-password"
+                                            className="w-full px-4 py-3.5 pr-12 rounded-xl text-sm font-semibold text-txt-main placeholder:text-txt-muted/30 outline-none transition-all duration-300"
+                                            style={{
+                                                background: 'rgba(var(--color-canvas), 0.6)',
+                                                border: '1px solid rgba(var(--color-primary), 0.1)',
+                                            }}
+                                            onFocus={(e) => {
+                                                e.target.style.borderColor = 'rgba(var(--color-primary), 0.4)';
+                                                e.target.style.boxShadow = '0 0 0 3px rgba(var(--color-primary), 0.1), 0 0 20px rgba(var(--color-primary), 0.05)';
+                                            }}
+                                            onBlur={(e) => {
+                                                e.target.style.borderColor = 'rgba(var(--color-primary), 0.1)';
+                                                e.target.style.boxShadow = 'none';
+                                            }}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg transition-all hover:bg-white/5"
+                                        >
+                                            {showPassword
+                                                ? <EyeOff className="w-4 h-4 text-txt-muted" />
+                                                : <Eye className="w-4 h-4 text-txt-muted" />}
+                                        </button>
+                                    </div>
+                                    <p className="text-[9px] font-semibold text-txt-muted/70 mt-1.5 flex items-center gap-1.5 px-1">
+                                        <span className="w-1 h-1 rounded-full bg-primary animate-pulse" />
+                                        Usa la clave corporativa 2026 para registrar tu correo.
+                                    </p>
                                 </div>
-                                <p className="text-[9px] font-semibold text-txt-muted/70 mt-1.5 flex items-center gap-1.5 px-1">
-                                    <span className="w-1 h-1 rounded-full bg-primary animate-pulse" />
-                                    Si es tu primer acceso, la contraseña ingresada será guardada como tu clave.
-                                </p>
-                            </div>
+                            )}
 
                             {/* Error message */}
                             {error && (
@@ -417,7 +446,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                             <button
                                 id="login-submit"
                                 type="submit"
-                                disabled={loading || !email || !password}
+                                disabled={loading || !email || (mode === 'register' && !password)}
                                 className="w-full py-4 rounded-xl font-black text-sm uppercase tracking-[0.2em] transition-all duration-500 relative overflow-hidden group disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.98]"
                                 style={{
                                     background: loading
@@ -443,7 +472,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                                     ) : (
                                         <>
                                             <Shield className="w-4 h-4" />
-                                            Iniciar Sesión
+                                            {mode === 'login' ? 'Iniciar Sesión' : 'Registrar Cuenta'}
                                         </>
                                     )}
                                 </span>
