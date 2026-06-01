@@ -1,13 +1,16 @@
 const XLSX = require('xlsx');
 
 async function checkFile(file) {
-    const url = `https://espdesing.vercel.app/api/onedrive-fetch?file=${file}`;
+    const url = `https://espdesing.vercel.app/api/onedrive-fetch?file=${file}&format=json`;
     console.log(`\n==========================================`);
-    console.log(`Checking live endpoint for file: ${file}`);
+    console.log(`Checking live endpoint for file: ${file} (JSON)`);
     console.log(`URL: ${url}`);
     console.log(`==========================================`);
+    const start = Date.now();
     try {
         const res = await fetch(url);
+        const duration = Date.now() - start;
+        console.log(`Request completed in ${duration}ms.`);
         if (!res.ok) {
             console.error(`HTTP Error: ${res.status}`);
             try {
@@ -20,18 +23,14 @@ async function checkFile(file) {
             return;
         }
 
-        const buf = await res.arrayBuffer();
-        console.log(`Downloaded ${buf.byteLength} bytes.`);
-        
-        const workbook = XLSX.read(new Uint8Array(buf), { type: 'array' });
-        console.log('Workbook Sheet Names:', workbook.SheetNames);
-        
-        const firstSheetName = workbook.SheetNames[0];
-        const sheet = workbook.Sheets[firstSheetName];
-        const rows = XLSX.utils.sheet_to_json(sheet);
-        console.log(`First sheet "${firstSheetName}" has ${rows.length} rows.`);
-        if (rows.length > 0) {
-            console.log('First row columns/keys:', Object.keys(rows[0]));
+        const data = await res.json();
+        if (file === 'designs') {
+            console.log(`Designs Data structure keys:`, Object.keys(data));
+            console.log(`Designs rows count:`, data.data?.length);
+            console.log(`Survey rows count:`, data.survey?.length);
+            console.log(`Mech rows count:`, data.mech?.length);
+        } else {
+            console.log(`SCADA rows count:`, data?.length);
         }
     } catch (e) {
         console.error('Error during fetch/parse:', e);
