@@ -100,11 +100,21 @@ const INITIAL_PARAMS: SystemParams = {
 
 import { MarkdownRenderer } from './components/MarkdownRenderer';
 import { AiMemoryManager } from './components/AiMemoryManager';
+import { Login, isSessionValid, clearSession, getSessionEmail } from './components/Login';
+import { AiMemoryService } from './services/AiMemoryService';
 
 const App: React.FC = () => {
     const { t, language, setLanguage } = useLanguage();
     const { theme, cycleTheme } = useTheme();
+    const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => isSessionValid());
     const [appState, setAppState] = useState<{ appMode: 'landing' | 'main' | 'comparator' | 'monitoring' }>({ appMode: 'landing' });
+
+    const handleLoginSuccess = () => {
+        setIsLoggedIn(true);
+        // Re-init AI Memory now that we have a valid token
+        AiMemoryService.init();
+    };
+
 
     const [activeStep, setActiveStep] = useState(0);
     const [initialDesignForComparator, setInitialDesignForComparator] = useState<any>(null);
@@ -339,6 +349,10 @@ const App: React.FC = () => {
     useEffect(() => {
         loadCatalog(true);
     }, []);
+
+    if (!isLoggedIn) {
+        return <Login onLoginSuccess={handleLoginSuccess} />;
+    }
 
     const steps = [
         { id: 'wellbore', label: t('nav.wellbore'), sub: t('nav.wellbore.sub'), icon: Ruler },

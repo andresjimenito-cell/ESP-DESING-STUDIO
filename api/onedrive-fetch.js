@@ -15,6 +15,7 @@
  */
 
 import * as XLSX from 'xlsx';
+import crypto from 'crypto';
 
 export const config = {
     maxDuration: 60,
@@ -278,6 +279,7 @@ export default async function handler(req, res) {
     if (req.method === 'OPTIONS') {
         res.setHeader('Access-Control-Allow-Origin', '*');
         res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-session-token');
         return res.status(200).end();
     }
 
@@ -288,6 +290,31 @@ export default async function handler(req, res) {
     // Cabeceras CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-session-token');
+
+    function verifyToken(token) {
+        try {
+            if (!token) return false;
+            const parts = token.split('.');
+            if (parts.length !== 2) return false;
+            const JWT_SECRET = process.env.JWT_SECRET || 'frontera-secret-key-129847129';
+            const payload = Buffer.from(parts[0], 'base64').toString('utf8');
+            const signature = parts[1];
+            const expectedSignature = crypto.createHmac('sha256', JWT_SECRET).update(payload).digest('hex');
+            if (signature !== expectedSignature) return false;
+            const data = JSON.parse(payload);
+            if (data.exp < Date.now()) return false;
+            if (!data.email || !data.email.toLowerCase().endsWith('@fronteraener.ca')) return false;
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    const token = req.headers['x-session-token'];
+    if (!verifyToken(token)) {
+        return res.status(401).json({ error: 'No tienes acceso a archivos privados de la organización.' });
+    }
 
     // Determinar qué archivo descargar
     const { file } = req.query;

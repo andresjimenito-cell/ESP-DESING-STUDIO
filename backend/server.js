@@ -18,6 +18,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
+import crypto from 'crypto';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -28,10 +29,64 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
+const JWT_SECRET = process.env.JWT_SECRET || 'frontera-secret-key-129847129';
+const LOGIN_PASSWORD = process.env.LOGIN_PASSWORD || 'Frontera2026!';
+
+function generateToken(email) {
+    const payload = JSON.stringify({ email, exp: Date.now() + 24 * 60 * 60 * 1000 });
+    const signature = crypto.createHmac('sha256', JWT_SECRET).update(payload).digest('hex');
+    return Buffer.from(payload).toString('base64') + '.' + signature;
+}
+
+function verifyToken(token) {
+    try {
+        if (!token) return null;
+        const parts = token.split('.');
+        if (parts.length !== 2) return null;
+        const payload = Buffer.from(parts[0], 'base64').toString('utf8');
+        const signature = parts[1];
+        const expectedSignature = crypto.createHmac('sha256', JWT_SECRET).update(payload).digest('hex');
+        if (signature !== expectedSignature) return null;
+        const data = JSON.parse(payload);
+        if (data.exp < Date.now()) return null;
+        if (!data.email || !data.email.toLowerCase().endsWith('@fronteraener.ca')) return null;
+        return data;
+    } catch (e) {
+        return null;
+    }
+}
+
+const authMiddleware = (req, res, next) => {
+    const token = req.headers['x-session-token'];
+    if (!token || !verifyToken(token)) {
+        return res.status(401).json({ error: 'No tienes acceso a archivos privados de la organización.' });
+    }
+    next();
+};
+
+app.post('/api/login', (req, res) => {
+    const { email, password } = req.body;
+    if (!email || !password) {
+        return res.status(400).json({ error: 'No tienes acceso a archivos privados de la organización.' });
+    }
+    
+    const emailStr = String(email).trim().toLowerCase();
+    if (!emailStr.endsWith('@fronteraener.ca')) {
+        return res.status(401).json({ error: 'No tienes acceso a archivos privados de la organización.' });
+    }
+
+    if (password !== LOGIN_PASSWORD) {
+        return res.status(401).json({ error: 'No tienes acceso a archivos privados de la organización.' });
+    }
+
+    const token = generateToken(emailStr);
+    res.json({ token });
+});
+
 // ── AI MEMORY (fichero local para dev) ─────────────────────────────────────
 const memoryPath = path.join(__dirname, '..', 'app_unified', 'ai_memory.json');
 
-app.get('/api/ai-memory', (req, res) => {
+app.get('/api/ai-memory', authMiddleware, (req, res) => {
     try {
         if (fs.existsSync(memoryPath)) {
             const data = fs.readFileSync(memoryPath, 'utf-8');
@@ -45,7 +100,7 @@ app.get('/api/ai-memory', (req, res) => {
     }
 });
 
-app.post('/api/ai-memory', (req, res) => {
+app.post('/api/ai-memory', authMiddleware, (req, res) => {
     try {
         const body = typeof req.body === 'string' ? req.body : JSON.stringify(req.body, null, 2);
         fs.writeFileSync(memoryPath, body, 'utf-8');
@@ -57,7 +112,7 @@ app.post('/api/ai-memory', (req, res) => {
 });
 
 // ── ONEDRIVE PROXY (bypass CORS para dev local) ────────────────────────────
-app.get('/api/onedrive-fetch', async (req, res) => {
+app.get('/api/onedrive-fetch', authMiddleware, async (req, res) => {
     const { url } = req.query;
     if (!url) return res.status(400).json({ error: 'Parámetro "url" requerido.' });
 
@@ -95,7 +150,7 @@ app.get('/api/onedrive-fetch', async (req, res) => {
 });
 
 // ── AI COPILOT STREAM ──────────────────────────────────────────────────────
-app.post('/api/copilot/stream', async (req, res) => {
+app.post('/api/copilot/stream', authMiddleware, async (req, res) => {
     const { prompt, messages, systemInstruction } = req.body;
 
     let apiKey = process.env.OPENROUTER_API_KEY;
