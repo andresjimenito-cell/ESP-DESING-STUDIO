@@ -2060,9 +2060,9 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
 
 
             {/* HEADER */}
-            <div className={`flex flex-col md:flex-row justify-between items-start md:items-center px-4 py-4 md:py-0 md:px-6 shrink-0 md:h-16 card-solid rounded-none border shadow-2xl relative overflow-hidden group transition-all duration-700 mb-4 gap-4 ${isMaxCapActive ? 'border-success/60 ring-1 ring-success/20' : 'border-white/20'}`}>
-                <div className={`absolute left-0 top-0 w-2 md:w-2 h-2 md:h-full transition-colors duration-700 ${isMaxCapActive ? 'bg-success shadow-glow-success' : 'bg-secondary shadow-glow-secondary'}`}></div>
-                <div className="flex items-center gap-3 md:gap-5 relative z-10 pl-2">
+            <div className={`flex flex-row justify-between items-center px-4 md:px-6 shrink-0 h-16 card-solid rounded-none border shadow-2xl relative overflow-x-auto md:overflow-x-visible overflow-y-hidden gap-4 flex-nowrap custom-scrollbar-h group transition-all duration-700 mb-4 ${isMaxCapActive ? 'border-success/60 ring-1 ring-success/20' : 'border-white/20'}`}>
+                <div className={`absolute left-0 top-0 w-2 md:w-2 h-full transition-colors duration-700 ${isMaxCapActive ? 'bg-success shadow-glow-success' : 'bg-secondary shadow-glow-secondary'}`}></div>
+                <div className="flex items-center gap-3 md:gap-5 relative z-10 pl-2 shrink-0">
                     <div className={`p-2.5 md:p-3 rounded-none border transition-all duration-700 ${isMaxCapActive ? 'bg-success/20 border-success/30 shadow-glow-success/20' : 'bg-secondary/20 border-white/10 shadow-glow-secondary'}`}>
                         {isMaxCapActive ? <Zap className="w-5 h-5 md:w-6 md:h-6 text-success animate-pulse" /> : <ClipboardCheck className="w-5 h-5 md:w-6 md:h-6 text-secondary" />}
                     </div>
@@ -2070,20 +2070,20 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
                         <h2 className="text-xl md:text-2xl font-black text-txt-main uppercase tracking-[0.2em] leading-none drop-shadow-[0_2px_8px_rgba(var(--color-primary-rgb),0.4)]">
                             {isMaxCapActive ? "CAPACITY " : (sensScenario.active ? "SENSITIVITY " : "MATCH")}
                         </h2>
-                        <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                        <div className="flex flex-nowrap items-center gap-2 mt-1.5">
                             <div className={`hidden sm:block h-[1px] w-8 ${isMaxCapActive ? 'bg-success' : (sensScenario.active ? 'bg-primary' : 'bg-secondary')}`}></div>
-                            <p className="text-[9px] md:text-[10px] text-txt-muted font-black uppercase tracking-[0.2em] md:tracking-[0.3em] opacity-40">
+                            <p className="text-[9px] md:text-[10px] text-txt-muted font-black uppercase tracking-[0.2em] md:tracking-[0.3em] opacity-40 whitespace-nowrap">
                                 {isMaxCapActive ? "PREDICCION BASADA EN MUESTRA CALIBRADA" : (sensScenario.active ? "ANALISIS DE SENSIBILIDAD PRODUCTIVA" : t('p6.fieldSync'))}
                             </p>
                             <div className="w-1 h-1 rounded-none bg-txt-muted opacity-30 mx-1"></div>
-                            <span className={`px-2 py-0.5 rounded-none text-[8px] font-black uppercase tracking-widest flex items-center gap-1.5 ${params.isMechVerified ? 'bg-cyan-500/10 text-cyan-500 border border-cyan-500/30' : 'bg-white/5 text-txt-muted border border-white/10'}`}>
+                            <span className={`px-2 py-0.5 rounded-none text-[8px] font-black uppercase tracking-widest flex items-center gap-1.5 whitespace-nowrap ${params.isMechVerified ? 'bg-cyan-500/10 text-cyan-500 border border-cyan-500/30' : 'bg-white/5 text-txt-muted border border-white/10'}`}>
                                 <Database className="w-2.5 h-2.5" />
                                 {params.isMechVerified ? "ESTADOS MECANICOS" : "DISENO ORIGINAL"}
                             </span>
                         </div>
                     </div>
                 </div>
-                <div className="flex flex-wrap items-center gap-3 md:gap-4 relative z-10 pr-2 w-full md:w-auto justify-start md:justify-end">
+                <div className="flex items-center gap-3 md:gap-4 relative z-10 pr-2 shrink-0 flex-nowrap">
                     {/* NEW COEFFICIENTS LOCATION (HEADER) */}
                     <div className="flex items-center gap-4 bg-surface px-4 py-1.5 rounded-none border border-surface-light shadow-lg">
                         <div className="flex flex-col items-end">

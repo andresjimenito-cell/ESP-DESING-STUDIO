@@ -157,9 +157,23 @@ export const FloatingAiPanel = ({
     const lastInteractionRef = useRef(Date.now());
     const touchActivity = () => { lastInteractionRef.current = Date.now(); };
 
-    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+    const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 768);
     const [memoryList, setMemoryList] = useState<any[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
+
+    useEffect(() => {
+        const handleResize = () => {
+            const mobile = window.innerWidth < 768;
+            setIsMobile(mobile);
+        };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    useEffect(() => {
+        setIsSidebarOpen(!isMobile);
+    }, [isMobile]);
 
     const reloadMemoryList = () => {
         setMemoryList(AiMemoryService.getMemory());
@@ -701,38 +715,44 @@ RULE 10 — RESPONSE FORMAT & QUALITY STANDARDS
     };
 
     return (
-        <div className="fixed bottom-8 right-8 z-[100] flex flex-col items-end pointer-events-none">
+        <div className={`fixed z-[100] flex flex-col items-end pointer-events-none ${isMobile && isOpen ? 'inset-0 w-full h-full' : 'bottom-8 right-8'}`}>
             <div style={{
-                marginBottom: 14,
+                marginBottom: isMobile ? 0 : 14,
                 transformOrigin: 'bottom right',
                 transition: 'transform 0.4s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s ease',
                 transform: isOpen ? 'scale(1) translateY(0)' : 'scale(0.88) translateY(16px)',
                 opacity: isOpen ? 1 : 0,
                 pointerEvents: isOpen ? 'auto' : 'none',
+                width: isMobile && isOpen ? '100%' : 'auto',
+                height: isMobile && isOpen ? '100%' : 'auto',
             }}>
                 <div
                     onMouseMove={touchActivity}
                     onKeyDown={touchActivity}
                     style={{
-                        width: 'min(95vw, 1100px)',
-                        height: 'min(90vh, 880px)',
+                        width: isMobile ? '100vw' : 'min(95vw, 1100px)',
+                        height: isMobile ? '100vh' : 'min(90vh, 880px)',
                         display: 'flex',
                         flexDirection: 'row',
                         overflow: 'hidden',
-                        borderRadius: 28,
+                        borderRadius: isMobile ? 0 : 28,
                         background: 'rgb(var(--color-surface) / 92%)',
-                        border: '1px solid rgb(var(--color-primary) / 15%)',
+                        border: isMobile ? 'none' : '1px solid rgb(var(--color-primary) / 15%)',
                         boxShadow: '0 32px 64px rgba(0,0,0,0.45), 0 0 0 1px rgb(var(--color-primary) / 5%), inset 0 1px 0 rgb(var(--color-text-main) / 10%)',
                         backdropFilter: 'blur(32px) saturate(150%)',
+                        position: isMobile ? 'fixed' : 'relative',
+                        inset: isMobile ? 0 : 'auto',
                     }}
                 >
                     {/* SIDEBAR */}
                     <div
                         className={`flex flex-col h-full border-r border-surface-light/40 transition-all duration-300 overflow-hidden shrink-0`}
                         style={{
-                            width: isSidebarOpen ? 280 : 68,
-                            background: 'rgb(var(--color-canvas) / 60%)',
+                            width: isSidebarOpen ? (isMobile ? '100%' : 280) : (isMobile ? 0 : 68),
+                            background: 'rgb(var(--color-canvas) / 95%)',
                             backdropFilter: 'blur(16px)',
+                            position: isMobile && isSidebarOpen ? 'absolute' : 'relative',
+                            zIndex: 40,
                         }}
                     >
                         {isSidebarOpen ? (

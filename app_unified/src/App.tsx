@@ -19,7 +19,7 @@ import { DesignDataImport } from './components/DesignDataImport';
 import { BatchDesignProcessor } from './components/BatchDesignProcessor';
 import { TUBING_CATALOG, CASING_CATALOG, STANDARD_PUMPS, STANDARD_MOTORS, CABLE_CATALOG, VSD_CATALOG } from '@/data';
 import {
-    Activity, RotateCcw, Ruler, Droplets, Target, Hexagon, CheckCircle2, Clock, ClipboardCheck, Maximize, Minimize, Globe, AlertCircle, Sparkles, RefreshCw, Send, ChevronDown, ChevronRight, AlertTriangle, Layers, Palette, FileSpreadsheet, Maximize2, Minimize2, Printer, GitCompareArrows, Zap, Settings, ArrowLeft, Brain
+    Activity, RotateCcw, Ruler, Droplets, Target, Hexagon, CheckCircle2, Clock, ClipboardCheck, Maximize, Minimize, Globe, AlertCircle, Sparkles, RefreshCw, Send, ChevronDown, ChevronRight, AlertTriangle, Layers, Palette, FileSpreadsheet, Maximize2, Minimize2, Printer, GitCompareArrows, Zap, Settings, ArrowLeft, Brain, X
 } from 'lucide-react';
 import { EspPump, EspMotor, SystemParams, SurveyPoint } from '@/types';
 import { useLanguage } from '@/i18n';
@@ -108,6 +108,27 @@ const App: React.FC = () => {
     const { theme, cycleTheme } = useTheme();
     const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => isSessionValid());
     const [appState, setAppState] = useState<{ appMode: 'landing' | 'main' | 'comparator' | 'monitoring' }>({ appMode: 'landing' });
+    const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+    const [showInstallBanner, setShowInstallBanner] = useState(false);
+
+    useEffect(() => {
+        const handleBeforeInstallPrompt = (e: Event) => {
+            e.preventDefault();
+            setDeferredPrompt(e);
+            setShowInstallBanner(true);
+        };
+        window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt as any);
+        return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt as any);
+    }, []);
+
+    const handleInstallClick = async () => {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        console.log(`User choice: ${outcome}`);
+        setDeferredPrompt(null);
+        setShowInstallBanner(false);
+    };
 
     const handleLoginSuccess = () => {
         setIsLoggedIn(true);
@@ -605,16 +626,51 @@ const App: React.FC = () => {
         </div>
     );
 
+    const installBanner = showInstallBanner && deferredPrompt && (
+        <div className="fixed bottom-6 left-6 z-[9999] max-w-sm w-full bg-surface-raised/95 backdrop-blur-xl border border-primary/20 p-5 shadow-2xl flex flex-col gap-3 animate-fadeIn text-txt-main">
+            <div className="flex items-start gap-3">
+                <div className="p-2 bg-primary/20 rounded-xl text-primary border border-primary/30 shrink-0">
+                    <Sparkles className="w-5 h-5 animate-pulse" />
+                </div>
+                <div className="flex-1">
+                    <h4 className="text-xs font-black uppercase tracking-wider text-txt-main">Instalar ESP Design Studio</h4>
+                    <p className="text-[10px] font-bold text-txt-muted leading-relaxed uppercase mt-1 opacity-70">
+                        Acceso rápido y rendimiento óptimo desde tu pantalla de inicio.
+                    </p>
+                </div>
+                <button onClick={() => setShowInstallBanner(false)} className="text-txt-muted hover:text-txt-main">
+                    <X className="w-4 h-4" />
+                </button>
+            </div>
+            <div className="flex gap-2">
+                <button
+                    onClick={handleInstallClick}
+                    className="flex-1 bg-primary hover:bg-primary/80 text-white text-[10px] font-black uppercase py-2.5 rounded-none tracking-widest text-center shadow-lg transition-all"
+                >
+                    Instalar App
+                </button>
+                <button
+                    onClick={() => setShowInstallBanner(false)}
+                    className="flex-1 bg-white/5 hover:bg-white/10 text-txt-muted text-[10px] font-black uppercase py-2.5 rounded-none border border-white/10 transition-all text-center"
+                >
+                    Más Tarde
+                </button>
+            </div>
+        </div>
+    );
+
     if (mainContent) return (
         <div className="relative min-h-screen">
             {globalBackground}
             {mainContent}
+            {installBanner}
         </div>
     );
 
     return (
         <div className="flex h-screen font-sans overflow-hidden text-txt-main selection:bg-primary/30 transition-colors duration-500 relative">
             {globalBackground}
+            {installBanner}
 
             {toast.show && (
                 <div className="fixed top-20 right-8 z-[100] animate-fadeIn">
