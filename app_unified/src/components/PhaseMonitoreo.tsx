@@ -912,10 +912,10 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                     const currentHealth = wellHealthMap[selectedWell.id] || 0;
                     const healthLabel = currentHealth >= 90 ? 'OPTIMAL' : currentHealth >= 60 ? 'CAUTION' : 'CRITICAL';
                     const healthClass = currentHealth >= 90 ? 'text-success bg-success/10 border-success/25' : currentHealth >= 60 ? 'text-warning bg-warning/10 border-warning/25' : 'text-danger bg-danger/10 border-danger/25';
-                    const toolbarBtn = 'h-9 px-3.5 rounded-none text-[8px] font-black uppercase tracking-widest transition-all border flex items-center gap-1.5 shrink-0';
+                    const toolbarBtn = 'h-8 md:h-9 px-2.5 md:px-3.5 rounded-none text-[8px] font-black uppercase tracking-widest transition-all border flex items-center gap-1 md:gap-1.5 shrink-0';
                     return (
                         <>
-                            <div className="sticky top-0 z-[100] flex flex-col md:flex-row md:items-center gap-3 bg-surface/95 backdrop-blur-xl py-3 px-3 border border-white/10 border-t-2 border-t-primary/40 shadow-lg w-full overflow-visible">
+                            <div className="sticky top-0 z-[100] flex flex-col md:flex-row md:items-center gap-2 md:gap-3 bg-surface/95 backdrop-blur-xl py-2 md:py-3 px-2 md:px-3 border border-white/10 border-t-2 border-t-primary/40 shadow-lg w-full overflow-visible">
                                 {/* Left: back + well selector */}
                                 <div className="flex items-center gap-3 w-full md:w-auto shrink-0 justify-between md:justify-start">
                                     <div className="flex items-center gap-3">
@@ -1040,9 +1040,9 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                         title="Subir prueba de produccion puntual (CSV/Excel)"
                                     >
                                         <Database className="w-3.5 h-3.5" />
-                                        <span>{language === 'es' ? 'Subir Prueba' : 'Upload Test'}</span>
+                                        <span className="hidden sm:inline">{language === 'es' ? 'Subir Prueba' : 'Upload Test'}</span>
                                     </button>
-
+ 
                                     {onNavigateToDesign && (
                                         <SecureWrapper isLocked={true} tooltip="Modulo de Diseno Restringido">
                                             <button
@@ -1051,21 +1051,21 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                                 title="Ir a Diseno (Phase 5)"
                                             >
                                                 <Settings className="w-3.5 h-3.5" />
-                                                <span>{language === 'es' ? 'Diseno' : 'Design'}</span>
+                                                <span className="hidden sm:inline">{language === 'es' ? 'Diseno' : 'Design'}</span>
                                             </button>
                                         </SecureWrapper>
                                     )}
-
+ 
                                     <SecureWrapper isLocked={true} tooltip="Modulo de Ajuste Historico Restringido">
                                         <button
                                             onClick={() => setWellViewMode(wellViewMode === 'history' ? 'monitoring' : 'history')}
                                             className={`${toolbarBtn} ${wellViewMode === 'history' ? 'bg-primary text-white border-primary' : 'bg-success/10 text-success border-success/25 hover:bg-success/20'}`}
                                         >
                                             {wellViewMode === 'history' ? <Activity className="w-3.5 h-3.5" /> : <TrendingUp className="w-3.5 h-3.5" />}
-                                            <span>{wellViewMode === 'history' ? (language === 'es' ? 'Monitoreo' : 'Monitoring') : (language === 'es' ? 'Historico' : 'History')}</span>
+                                            <span className="hidden sm:inline">{wellViewMode === 'history' ? (language === 'es' ? 'Monitoreo' : 'Monitoring') : (language === 'es' ? 'Historico' : 'History')}</span>
                                         </button>
                                     </SecureWrapper>
-
+ 
                                     <button
                                         onClick={handleForceSync}
                                         disabled={isSyncingOneDrive}
@@ -1073,12 +1073,12 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                         title="Sincronizar OneDrive en Caliente"
                                     >
                                         <RefreshCw className={`w-3.5 h-3.5 ${isSyncingOneDrive ? 'animate-spin' : ''}`} />
-                                        <span>{isSyncingOneDrive ? (language === 'es' ? 'Sincronizando...' : 'Syncing...') : (language === 'es' ? 'Sincronizar' : 'Sync')}</span>
+                                        <span className="hidden sm:inline">{isSyncingOneDrive ? (language === 'es' ? 'Sincronizando...' : 'Syncing...') : (language === 'es' ? 'Sincronizar' : 'Sync')}</span>
                                     </button>
                                 </div>
-
+ 
                                 <div className="hidden md:block w-px h-7 bg-white/10 shrink-0" />
-
+ 
                                 {/* Right: settings */}
                                 <div className="flex flex-wrap items-center gap-1.5 bg-white/5 p-1 border border-white/10 w-full md:w-auto justify-between md:justify-start md:ml-auto">
                                     <a
@@ -1089,9 +1089,9 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                         title={language === 'es' ? 'Abrir Excel de Diseño' : 'Open Design Excel'}
                                     >
                                         <FileSpreadsheet className="w-3.5 h-3.5" />
-                                        <span>{language === 'es' ? 'Diseño' : 'Design'}</span>
+                                        <span className="hidden sm:inline">{language === 'es' ? 'Diseño' : 'Design'}</span>
                                     </a>
-
+ 
                                     <a
                                         href="https://1drv.ms/x/c/06cc4035ad46ff97/IQCX60W0l5YeQbDd8jHpZlMJAa0JHU31uqYaXJU1Tawo8I8?e=SD43E4"
                                         target="_blank"
@@ -1100,7 +1100,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                         title={language === 'es' ? 'Abrir Excel de Pruebas' : 'Open Tests Excel'}
                                     >
                                         <FileSpreadsheet className="w-3.5 h-3.5" />
-                                        <span>{language === 'es' ? 'Pruebas' : 'Tests'}</span>
+                                        <span className="hidden sm:inline">{language === 'es' ? 'Pruebas' : 'Tests'}</span>
                                     </a>
 
                                     <button onClick={toggleLanguage} className="h-8 px-2.5 hover:bg-white/10 rounded-none transition-all text-[8px] font-black font-mono text-txt-main tracking-widest uppercase flex items-center gap-1">

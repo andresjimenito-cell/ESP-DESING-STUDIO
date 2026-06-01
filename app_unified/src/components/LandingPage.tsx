@@ -818,7 +818,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                                 {/* Monitoring (Active Operations Console) */}
                                 <button
                                     onClick={() => onMonitoring()}
-                                    className="group relative w-full h-[96px] rounded-2xl flex items-center justify-between px-6 bg-gradient-to-tr from-secondary to-secondary/80 text-white shadow-lg active:scale-95 transition-all duration-300"
+                                    className="group relative w-full h-[96px] rounded-2xl flex items-center justify-between px-6 text-white active:scale-95 transition-all duration-300"
+                                    style={{
+                                        background: 'linear-gradient(135deg, rgb(var(--color-secondary)), rgb(var(--color-secondary) / 0.8))',
+                                        border: '1px solid rgb(var(--color-secondary) / 0.5)',
+                                        boxShadow: '0 10px 30px -10px rgb(var(--color-secondary) / 0.3)',
+                                    }}
                                 >
                                     <div className="flex items-center gap-4">
                                         <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center border border-white/20">
