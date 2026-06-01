@@ -360,7 +360,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                                         type="email"
                                         value={email}
                                         onChange={(e) => { setEmail(e.target.value); setError(''); }}
-                                        placeholder="usuario@fronteraenergy.ca"
+                                        placeholder="Introduce tu correo corporativo"
                                         required
                                         autoComplete="email"
                                         className="w-full px-4 py-3.5 rounded-xl text-sm font-semibold text-txt-main placeholder:text-txt-muted/30 outline-none transition-all duration-300 focus:ring-2"
@@ -393,7 +393,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                                             type={showPassword ? 'text' : 'password'}
                                             value={password}
                                             onChange={(e) => { setPassword(e.target.value); setError(''); }}
-                                            placeholder="Introduce la clave 2026"
+                                            placeholder="••••••••••"
                                             required
                                             autoComplete="current-password"
                                             className="w-full px-4 py-3.5 pr-12 rounded-xl text-sm font-semibold text-txt-main placeholder:text-txt-muted/30 outline-none transition-all duration-300"
@@ -422,7 +422,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                                     </div>
                                     <p className="text-[9px] font-semibold text-txt-muted/70 mt-1.5 flex items-center gap-1.5 px-1">
                                         <span className="w-1 h-1 rounded-full bg-primary animate-pulse" />
-                                        Usa la clave corporativa 2026 para registrar tu correo.
+                                        Introduce la clave de activación corporativa para registrar tu correo.
                                     </p>
                                 </div>
                             )}
