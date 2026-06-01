@@ -58,6 +58,7 @@ import { FloatingAiPanel } from './FloatingAiPanel';
 
 // Custom Hook de importacion
 import { usePhaseMonitoreoImport } from './usePhaseMonitoreoImport';
+import { MobileMonitoreo } from './MobileMonitoreo';
 
 // --- PERFORMANCE OPTIMIZED SUB-COMPONENTS ---
 
@@ -1367,6 +1368,30 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
             </div>
         );
     };
+
+    if (isMobile) {
+        return (
+            <MobileMonitoreo
+                fleet={fleet}
+                selectedWell={selectedWell || null}
+                setSelectedWell={(w) => setSelectedWellId(w ? w.id : null)}
+                language={language}
+                t={t}
+                wellMatchParams={wellMatchParams}
+                pump={pump}
+                onBack={onBack}
+                onForceSync={handleForceSync}
+                isSyncingOneDrive={isSyncingOneDrive}
+                onHistoryMatchChange={handleHistoryMatchChange}
+                vsdCatalog={vsdCatalog}
+                clearFleet={clearFleet}
+                importDesignRef={importDesignRef}
+                importDbRef={importDbRef}
+                importWellHistoryRef={importWellHistoryRef}
+                operationalResults={operationalResults}
+            />
+        );
+    }
 
     return (
         <div style={{ zoom: zoomLevel }} className="min-h-full pb-12 px-2 py-0 transition-all duration-700">
