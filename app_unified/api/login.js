@@ -24,36 +24,15 @@ export default function handler(req, res) {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    const { email, password, mode } = req.body;
+    const { email, password } = req.body;
     const emailStr = String(email || '').trim().toLowerCase();
 
     if (!emailStr || !emailStr.endsWith('@fronteraenergy.ca')) {
         return res.status(401).json({ error: 'No tienes acceso a archivos privados de la organización.' });
     }
 
-    let users = {};
-    try {
-        if (fs.existsSync(usersPath)) {
-            users = JSON.parse(fs.readFileSync(usersPath, 'utf8'));
-        }
-    } catch (e) {
-        users = {};
-    }
-
-    if (mode === 'register') {
-        if (password !== '2026') {
-            return res.status(401).json({ error: 'No tienes acceso a archivos privados de la organización.' });
-        }
-        // Register user in users list
-        users[emailStr] = true;
-        try {
-            fs.writeFileSync(usersPath, JSON.stringify(users, null, 2), 'utf8');
-        } catch (e) {}
-    } else {
-        // Mode is login: check if email exists in users list
-        if (!users[emailStr]) {
-            return res.status(401).json({ error: 'No tienes acceso a archivos privados de la organización.' });
-        }
+    if (password !== '2026') {
+        return res.status(401).json({ error: 'No tienes acceso a archivos privados de la organización.' });
     }
 
     const token = generateToken(emailStr);
