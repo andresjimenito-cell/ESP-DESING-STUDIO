@@ -2,13 +2,17 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { 
     Activity, ChevronLeft, RefreshCw, Download, Database, Trash2, 
     Monitor, Shield, Zap, Droplets, Thermometer, ShieldCheck, 
-    TrendingUp, MessageSquare, Menu, X, Send, Sparkles, AlertTriangle
+    TrendingUp, MessageSquare, Menu, X, Send, Sparkles, AlertTriangle,
+    Layers, Compass, Target, Globe
 } from 'lucide-react';
 import { WellFleetItem, EspPump, SystemParams } from '@/types';
-import { getWellHealthScore } from './PhaseMonitoreo.helpers';
-import { generateMultiCurveData, findIntersection, calculateSystemResults, getShaftLimitHp } from '../utils';
+import { getWellHealthScore, isWellMatchComplete } from './PhaseMonitoreo.helpers';
+import { generateMultiCurveData, findIntersection, calculateSystemResults, getShaftLimitHp, calculateTDH, calculateBaseHead } from '../utils';
 import { AiMemoryService } from '../services/AiMemoryService';
 import { MarkdownRenderer } from './MarkdownRenderer';
+import { PerformanceCurveMultiAxis } from './PerformanceCurveMultiAxis';
+import { VisualESPStack } from './VisualESPStack';
+import { TrajectoryPlot } from './TrajectoryPlot';
 
 interface Props {
     fleet: WellFleetItem[];
@@ -55,7 +59,7 @@ export const MobileMonitoreo: React.FC<Props> = ({
     importWellHistoryRef,
     operationalResults
 }) => {
-    const [activeTab, setActiveTab] = useState<'fleet' | 'telemetry' | 'simulation' | 'copilot'>('fleet');
+    const [activeTab, setActiveTab] = useState<'fleet' | 'telemetry' | 'simulation' | 'bha' | 'copilot'>('fleet');
     const [simFreq, setSimFreq] = useState<number>(60);
     
     // Chat state
@@ -70,6 +74,9 @@ export const MobileMonitoreo: React.FC<Props> = ({
             ? (language === 'es' ? `Hola. Analizando el pozo **${selectedWell.name}**. ¿Qué te gustaría verificar de su telemetría o simulación VSD?` : `Hello. Analyzing well **${selectedWell.name}**. What would you like to review?`)
             : (language === 'es' ? `Hola. Monitoreando **${fleet.length}** pozos. ¿Cómo te puedo ayudar hoy?` : `Hello. Monitoring **${fleet.length}** wells. How can I help?`);
         setMsgs([{ role: 'model', text: greet }]);
+        if (selectedWell?.productionTest?.freq) {
+            setSimFreq(selectedWell.productionTest.freq);
+        }
     }, [selectedWell?.id, language]);
 
     useEffect(() => {
@@ -78,21 +85,93 @@ export const MobileMonitoreo: React.FC<Props> = ({
         }
     }, [msgs, activeTab]);
 
-    // Active well results
+    // Active well health results
     const wellHealth = selectedWell ? getWellHealthScore(selectedWell) : 0;
     const isRunning = selectedWell ? (selectedWell.estadoActual === 'operativo' || (selectedWell.productionTest?.freq || 0) > 20) : false;
 
-    // Simulation math
-    const simResults = useMemo(() => {
-        if (!selectedWell || !pump || !wellMatchParams) return null;
-        try {
-            const cData = generateMultiCurveData(pump, wellMatchParams, simFreq, 60);
-            const m = findIntersection(cData);
-            if (!m || m.flow <= 0) return null;
-            return calculateSystemResults(m.flow, m.head, wellMatchParams, pump, simFreq);
-        } catch {
-            return null;
+    // BHA calculations identical to PhaseMonitoreo
+    const safeBhaResults = useMemo(() => {
+        if (!selectedWell || !wellMatchParams) {
+            return { fluidLevel: 0, fluidLevelMD: 0, submergenceFt: 0, pumpIntakePressure: 0, motorLoad: 0, pip: 0 };
         }
+        const q = selectedWell.productionTest.rate || 0.1;
+        const f = selectedWell.productionTest.freq || 60;
+        const baseFreq = pump?.nameplateFrequency || 60;
+        const ratio = f / baseFreq;
+        const head = pump ? calculateBaseHead(q / ratio, pump) * Math.pow(ratio, 2) : 0;
+        const hasMotorExact = !!wellMatchParams.selectedMotor;
+        
+        const liveBhaResults = pump
+            ? (calculateSystemResults(q, head, wellMatchParams, pump, f) || {
+                pip: selectedWell.productionTest.pip,
+                motorLoad: hasMotorExact ? Math.abs(selectedWell.consumptionReal) : 0
+            })
+            : null;
+            
+        return liveBhaResults || { fluidLevel: 0, fluidLevelMD: 0, submergenceFt: 0, pumpIntakePressure: 0, motorLoad: 0, pip: 0 };
+    }, [selectedWell?.id, pump?.id, wellMatchParams]);
+
+    const physicalHealth = useMemo(() => {
+        if (!selectedWell) return { pump: 'normal', motor: 'normal', seal: 'normal', cable: 'normal', vsd: 'normal' } as any;
+        return {
+            pump: selectedWell.health.pump,
+            motor: selectedWell.health.motor,
+            seal: selectedWell.health.seal,
+            cable: selectedWell.health.cable,
+            vsd: (selectedWell.predictive.vsdStatus === 'alert') ? 'alert' : (selectedWell.predictive.vsdStatus === 'caution' ? 'caution' : 'normal')
+        } as any;
+    }, [selectedWell]);
+
+    // Dynamic curve data and intersection matching for the simulated slider frequency
+    const { curveData, matchPoint, simResults } = useMemo(() => {
+        if (!selectedWell || !pump || !wellMatchParams) return { curveData: [], matchPoint: null, simResults: null };
+
+        const test = selectedWell.productionTest;
+        const steps = 50;
+        const maxQ = (pump.maxRate || (pump as any).maxFlow || 3000) * 1.5;
+        const data: any[] = [];
+
+        for (let i = 0; i <= steps; i++) {
+            const q = (maxQ / steps) * i;
+            const point: any = { flow: q };
+
+            // Design Curve at 60Hz
+            const dH = (pump.h0 + pump.h1 * q + pump.h2 * q ** 2 + pump.h3 * q ** 3 + pump.h4 * q ** 4 + pump.h5 * q ** 5 + pump.h6 * q ** 6) * pump.stages;
+            point.headNew = dH > 0 ? dH : null;
+
+            // Actual Curve at simulated frequency
+            const fRatio = simFreq / 60;
+            const qAdj = q / fRatio;
+            const hBase = (pump.h0 + pump.h1 * qAdj + pump.h2 * qAdj ** 2 + pump.h3 * qAdj ** 3 + pump.h4 * qAdj ** 4 + pump.h5 * qAdj ** 5 + pump.h6 * qAdj ** 6) * pump.stages;
+            const hActual = hBase * (fRatio ** 2);
+            point.headCurr = hActual > 0 ? hActual : null;
+
+            try {
+                const sysH = calculateTDH(q, wellMatchParams);
+                point.systemCurve = sysH;
+            } catch (e) { }
+
+            data.push(point);
+        }
+
+        const actualTDH = (test.pdp > 0 && test.pip > 0)
+            ? (test.pdp - test.pip) / 0.43
+            : (test.thp * 2.31 + selectedWell.depthMD * 0.43 - test.pip * 2.31) / 0.43;
+
+        // Simulated intersection results
+        let currentSim = null;
+        try {
+            const m = findIntersection(data);
+            if (m && m.flow > 0) {
+                currentSim = calculateSystemResults(m.flow, m.head, wellMatchParams, pump, simFreq);
+            }
+        } catch {}
+
+        return {
+            curveData: data,
+            matchPoint: { flow: test.rate, head: actualTDH },
+            simResults: currentSim
+        };
     }, [selectedWell?.id, pump?.id, wellMatchParams, simFreq]);
 
     const sendChatMessage = async () => {
@@ -120,7 +199,7 @@ export const MobileMonitoreo: React.FC<Props> = ({
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    systemInstruction: `Responde en español de forma extremadamente concisa y directa. Eres un ingeniero experto en Levantamiento Artificial (ESP). Limítate a 2 párrafos máximos por respuesta para lectura rápida en celulares.`,
+                    systemInstruction: `Responde en español de forma extremadamente concisa y directa. Eres un ingeniero experto en Levantamiento Artificial (ESP). Limítate a 2 párrafos máximos por respuesta para lectura rápida en celulares. Contexto actual: ${contextData}`,
                     messages: [
                         ...msgs.map(m => ({ role: m.role === 'model' ? 'assistant' : m.role, content: m.text })),
                         { role: 'user', content: text }
@@ -189,7 +268,7 @@ export const MobileMonitoreo: React.FC<Props> = ({
             </header>
 
             {/* TAB CONTENTS */}
-            <main className="flex-1 overflow-y-auto p-3 min-h-0">
+            <main className="flex-1 overflow-y-auto p-3 min-h-0 custom-scrollbar pb-8">
                 {activeTab === 'fleet' && (
                     <div className="space-y-4 animate-fadeIn">
                         {/* Fleet Actions */}
@@ -394,13 +473,92 @@ export const MobileMonitoreo: React.FC<Props> = ({
                                         <span className="text-[10px] text-txt-muted mt-1 block">A la frecuencia simulada, la bomba no puede vencer la contrapresión del sistema.</span>
                                     </div>
                                 )}
+
+                                {/* Nodal & Performance Curve Chart - FULL INTERACTION ON MOBILE */}
+                                {pump && (
+                                    <div className="w-full h-[400px] mt-4 select-none">
+                                        <PerformanceCurveMultiAxis
+                                            data={curveData}
+                                            currentFlow={selectedWell.productionTest.rate}
+                                            pump={pump}
+                                            frequency={simFreq}
+                                            minHeight={360}
+                                        />
+                                    </div>
+                                )}
                             </>
                         )}
                     </div>
                 )}
 
+                {activeTab === 'bha' && (
+                    <div className="space-y-6 animate-fadeIn">
+                        {!selectedWell ? (
+                            <div className="p-8 text-center bg-surface/30 border border-white/5 mt-4">
+                                <Layers className="w-8 h-8 mx-auto text-txt-muted/30 mb-2" />
+                                <span className="text-xs text-txt-muted font-bold block">Selecciona un pozo de la Flota para comenzar.</span>
+                            </div>
+                        ) : (
+                            <div className="space-y-6">
+                                {/* ESP BHA Stack Visualization */}
+                                <div className="bg-surface/50 border border-white/5 p-4 rounded-none">
+                                    <div className="flex items-center gap-2 mb-3 border-b border-white/5 pb-2">
+                                        <Layers className="w-4 h-4 text-primary" />
+                                        <h3 className="text-xs font-black uppercase tracking-wider text-txt-main">Esquema BHA</h3>
+                                    </div>
+                                    <div className="w-full overflow-x-auto flex justify-center bg-canvas/30 py-4 min-h-[480px]">
+                                        {pump ? (
+                                            <div className="scale-[0.8] origin-top">
+                                                <VisualESPStack
+                                                    pump={pump}
+                                                    motor={wellMatchParams.selectedMotor || undefined}
+                                                    params={wellMatchParams}
+                                                    results={safeBhaResults}
+                                                    frequency={selectedWell.productionTest.freq || 60}
+                                                    health={physicalHealth}
+                                                    selectedVSD={wellMatchParams.selectedVSD}
+                                                />
+                                            </div>
+                                        ) : (
+                                            <div className="flex flex-col items-center justify-center p-8 opacity-50">
+                                                <AlertTriangle className="w-8 h-8 text-warning mb-2" />
+                                                <span className="text-xs font-bold text-txt-muted uppercase">Bomba no encontrada</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* 3D Trajectory Plot */}
+                                <div className="bg-surface/50 border border-white/5 p-4 rounded-none">
+                                    <div className="flex items-center gap-2 mb-3 border-b border-white/5 pb-2">
+                                        <Compass className="w-4 h-4 text-secondary animate-[spin_10s_linear_infinite]" />
+                                        <h3 className="text-xs font-black uppercase tracking-wider text-txt-main">Trayectoria y Desviación</h3>
+                                    </div>
+                                    <div className="w-full h-[450px]">
+                                        {wellMatchParams.survey && wellMatchParams.survey.length > 0 ? (
+                                            <TrajectoryPlot 
+                                                survey={wellMatchParams.survey} 
+                                                params={wellMatchParams} 
+                                                isSidebar={false} 
+                                            />
+                                        ) : (
+                                            <div className="h-full flex flex-col items-center justify-center text-center opacity-40 bg-canvas/10 border border-white/5">
+                                                <AlertTriangle className="w-10 h-10 text-warning mb-2" />
+                                                <p className="text-xs font-black uppercase">Sin Datos de Trayectoria</p>
+                                                <p className="text-[9px] text-txt-muted uppercase mt-1.5 px-6">
+                                                    Asumiendo pozo vertical para el cálculo.
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
                 {activeTab === 'copilot' && (
-                    <div className="flex flex-col h-full bg-surface-raised/40 border border-white/5 overflow-hidden animate-fadeIn">
+                    <div className="flex flex-col h-[520px] bg-surface-raised/40 border border-white/5 overflow-hidden animate-fadeIn rounded-none">
                         {/* Chat messages */}
                         <div className="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar min-h-0">
                             {msgs.map((m, idx) => {
@@ -432,24 +590,6 @@ export const MobileMonitoreo: React.FC<Props> = ({
                             )}
                             <div ref={chatEndRef} />
                         </div>
-
-                        {/* Suggestions */}
-                        {suggestions.length > 0 && msgs.length === 1 && (
-                            <div className="p-2 border-t border-white/5 bg-canvas/30 flex gap-1.5 overflow-x-auto whitespace-nowrap scrollbar-none shrink-0">
-                                {suggestions.map((s, idx) => (
-                                    <button 
-                                        key={idx}
-                                        onClick={() => {
-                                            setChatInput(s.prompt);
-                                            sendChatMessage();
-                                        }}
-                                        className="px-3 py-1.5 bg-white/5 border border-white/5 hover:bg-white/10 text-txt-muted hover:text-white rounded-full text-[9px] font-bold uppercase transition-all shrink-0"
-                                    >
-                                        {language === 'es' ? s.es : s.en}
-                                    </button>
-                                ))}
-                            </div>
-                        )}
 
                         {/* Chat input */}
                         <div className="p-2 border-t border-white/5 bg-surface shrink-0 flex gap-2 items-center">
@@ -494,7 +634,14 @@ export const MobileMonitoreo: React.FC<Props> = ({
                     className={`flex flex-col items-center gap-1 py-1 px-3 ${activeTab === 'simulation' ? 'text-primary' : 'text-txt-muted'}`}
                 >
                     <TrendingUp className="w-5 h-5" />
-                    <span className="text-[8px] font-black uppercase tracking-widest">Simulación</span>
+                    <span className="text-[8px] font-black uppercase tracking-widest">Nodal</span>
+                </button>
+                <button 
+                    onClick={() => setActiveTab('bha')}
+                    className={`flex flex-col items-center gap-1 py-1 px-3 ${activeTab === 'bha' ? 'text-primary' : 'text-txt-muted'}`}
+                >
+                    <Layers className="w-5 h-5" />
+                    <span className="text-[8px] font-black uppercase tracking-widest">BHA/3D</span>
                 </button>
                 <button 
                     onClick={() => setActiveTab('copilot')}
