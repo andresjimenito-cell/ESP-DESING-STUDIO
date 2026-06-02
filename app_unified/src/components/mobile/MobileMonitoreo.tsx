@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { WellFleetItem, EspPump, SystemParams, HistoryMatchData } from '@/types';
 import { getWellHealthScore, computeWellCapacity, getOptimizationPath } from '../PhaseMonitoreo.helpers';
-import { calculateSystemResults, calculateBaseHead } from '../../utils';
+import { calculateSystemResults, calculateBaseHead, interpolateTVD } from '../../utils';
 import { MarkdownRenderer } from '../MarkdownRenderer';
 import { VisualESPStack } from '../VisualESPStack';
 import { TrajectoryPlot } from '../TrajectoryPlot';
@@ -89,6 +89,15 @@ export const MobileMonitoreo: React.FC<Props> = ({
     wellHealthMap
 }) => {
     const [activeTab, setActiveTab] = useState<'fleet' | 'analysis' | 'bha' | 'copilot'>('fleet');
+    const [showInstallPrompt, setShowInstallPrompt] = useState(false);
+
+    useEffect(() => {
+        const dismissed = sessionStorage.getItem('pwa-prompt-dismissed');
+        if (!dismissed) {
+            const timer = setTimeout(() => setShowInstallPrompt(true), 2500);
+            return () => clearTimeout(timer);
+        }
+    }, []);
 
     const suggestions = useMemo(() => {
         return selectedWell ? [
@@ -335,33 +344,10 @@ export const MobileMonitoreo: React.FC<Props> = ({
                 {activeTab === 'fleet' && (
                     <div className="animate-fadeIn">
 
-                        {/* Import action strip */}
-                        <div className="grid grid-cols-3 gap-px bg-white/5 border-b border-white/5">
-                            <button
-                                onClick={() => importDesignRef.current?.click()}
-                                className="flex flex-col items-center justify-center gap-1 py-3.5 bg-surface hover:bg-primary/10 active:bg-primary/20 transition-colors group"
-                            >
-                                <Database className="w-4 h-4 text-primary group-hover:scale-110 transition-transform" />
-                                <span className="text-[8px] font-black uppercase tracking-widest text-txt-muted group-hover:text-primary">Diseños</span>
-                            </button>
-                            <button
-                                onClick={() => importDbRef.current?.click()}
-                                className="flex flex-col items-center justify-center gap-1 py-3.5 bg-surface hover:bg-secondary/10 active:bg-secondary/20 transition-colors group"
-                            >
-                                <TrendingUp className="w-4 h-4 text-secondary group-hover:scale-110 transition-transform" />
-                                <span className="text-[8px] font-black uppercase tracking-widest text-txt-muted group-hover:text-secondary">SCADA</span>
-                            </button>
-                            <button
-                                onClick={clearFleet}
-                                className="flex flex-col items-center justify-center gap-1 py-3.5 bg-surface hover:bg-danger/10 active:bg-danger/20 transition-colors group"
-                            >
-                                <Trash2 className="w-4 h-4 text-danger group-hover:scale-110 transition-transform" />
-                                <span className="text-[8px] font-black uppercase tracking-widest text-txt-muted group-hover:text-danger">Limpiar</span>
-                            </button>
-                        </div>
+                        {/* Action buttons removed for cleaner space-efficient mobile list */}
 
                         {/* Search + Filters */}
-                        <div className="p-3 space-y-2.5 border-b border-white/5 bg-surface/40">
+                        <div className="p-2 px-2.5 space-y-1.5 border-b border-white/5 bg-surface/40">
                             <DebouncedSearchInput
                                 value={searchTerm}
                                 onChange={setSearchTerm}
@@ -369,14 +355,14 @@ export const MobileMonitoreo: React.FC<Props> = ({
                             />
 
                             {/* Data filter */}
-                            <div className="space-y-1">
+                            <div className="space-y-0.5">
                                 <span className="text-[7px] font-black uppercase tracking-[0.15em] text-txt-muted/60 px-0.5">Datos</span>
                                 <div className="flex gap-1">
                                     {(['all', 'complete', 'missing'] as const).map(f => (
                                         <button
                                             key={f}
                                             onClick={() => setDataFilter(f)}
-                                            className={`flex-1 py-1.5 rounded-md text-[7px] font-black uppercase tracking-wider transition-all ${dataFilter === f
+                                            className={`flex-1 py-1 rounded-md text-[7px] font-black uppercase tracking-wider transition-all ${dataFilter === f
                                                     ? f === 'all' ? 'bg-primary text-white shadow-sm'
                                                         : f === 'complete' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
                                                             : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
@@ -390,14 +376,14 @@ export const MobileMonitoreo: React.FC<Props> = ({
                             </div>
 
                             {/* Health filter */}
-                            <div className="space-y-1">
+                            <div className="space-y-0.5">
                                 <span className="text-[7px] font-black uppercase tracking-[0.15em] text-txt-muted/60 px-0.5">Salud</span>
                                 <div className="flex gap-1">
                                     {(['all', 'healthy', 'caution', 'critical'] as const).map(f => (
                                         <button
                                             key={f}
                                             onClick={() => setHealthFilter(f)}
-                                            className={`flex-1 py-1.5 rounded-md text-[7px] font-black uppercase tracking-wider transition-all ${healthFilter === f
+                                            className={`flex-1 py-1 rounded-md text-[7px] font-black uppercase tracking-wider transition-all ${healthFilter === f
                                                     ? f === 'all' ? 'bg-primary text-white'
                                                         : f === 'healthy' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
                                                             : f === 'caution' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
@@ -412,14 +398,14 @@ export const MobileMonitoreo: React.FC<Props> = ({
                             </div>
 
                             {/* Status filter */}
-                            <div className="space-y-1">
+                            <div className="space-y-0.5">
                                 <span className="text-[7px] font-black uppercase tracking-[0.15em] text-txt-muted/60 px-0.5">Estado</span>
                                 <div className="flex gap-1">
                                     {(['all', 'operativo', 'fallado', 'pendiente'] as const).map(f => (
                                         <button
                                             key={f}
                                             onClick={() => setStatusFilter(f)}
-                                            className={`flex-1 py-1.5 rounded-md text-[7px] font-black uppercase tracking-wider transition-all ${statusFilter === f
+                                            className={`flex-1 py-1 rounded-md text-[7px] font-black uppercase tracking-wider transition-all ${statusFilter === f
                                                     ? f === 'all' ? 'bg-primary text-white'
                                                         : f === 'operativo' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
                                                             : f === 'fallado' ? 'bg-red-500/20 text-red-400 border border-red-500/30'
@@ -435,7 +421,7 @@ export const MobileMonitoreo: React.FC<Props> = ({
                         </div>
 
                         {/* Well list */}
-                        <div className="p-3 space-y-2">
+                        <div className="p-2.5 space-y-1.5">
                             <div className="flex items-center justify-between px-1 mb-1">
                                 <span className="text-[9px] font-black uppercase tracking-[0.15em] text-txt-muted">
                                     Pozos de la Flota
@@ -464,7 +450,7 @@ export const MobileMonitoreo: React.FC<Props> = ({
                                         <div
                                             key={w.id}
                                             onClick={() => { setSelectedWell(w.id); setActiveTab('analysis'); }}
-                                            className={`relative flex items-center gap-3 p-3.5 rounded-xl border transition-all cursor-pointer active:scale-[0.98] overflow-hidden ${isSelected
+                                            className={`relative flex items-center gap-2.5 p-2.5 rounded-xl border transition-all cursor-pointer active:scale-[0.98] overflow-hidden ${isSelected
                                                     ? 'bg-primary/8 border-primary/30'
                                                     : 'bg-surface/70 border-white/5 hover:border-white/10 hover:bg-surface'
                                                 }`}
@@ -473,11 +459,9 @@ export const MobileMonitoreo: React.FC<Props> = ({
                                             <div className={`absolute left-0 top-0 bottom-0 w-0.5 ${sc.bg.replace('/10', '')} rounded-l-xl`}
                                                 style={{ background: sc.bar }} />
 
-                                            {/* Score ring */}
-                                            <div className={`shrink-0 w-10 h-10 rounded-full border-2 flex items-center justify-center ${sc.ring} ${sc.bg}`}>
-                                                <span className={`text-[10px] font-black tabular-nums ${sc.text}`}>
-                                                    {score.toFixed(0)}
-                                                </span>
+                                            {/* Compact status indicator dot */}
+                                            <div className="shrink-0 flex items-center justify-center pl-1">
+                                                <span className="w-3.5 h-3.5 rounded-full border-2 border-canvas shadow-lg" style={{ backgroundColor: sc.bar }} />
                                             </div>
 
                                             {/* Well info */}
@@ -625,20 +609,63 @@ export const MobileMonitoreo: React.FC<Props> = ({
                                 </span>
                             </div>
                         ) : (
-                            <div className="space-y-3 p-3">
+                            <div className="space-y-2.5 p-2.5">
+                                {/* Grid of BHA / Trajectory KPI Cards ("cuadritos") */}
+                                <div className="grid grid-cols-2 gap-2 mb-1.5">
+                                    <div className="bg-surface/50 border border-white/8 rounded-xl p-2.5 flex flex-col justify-between h-16 shadow-sm backdrop-blur-md">
+                                        <span className="text-[8px] font-black text-txt-muted uppercase tracking-widest opacity-60">BOMBA MD</span>
+                                        <span className="text-xs font-mono font-black text-txt-main mt-0.5">
+                                            {wellMatchParams?.pressures?.pumpDepthMD ? `${Math.round(wellMatchParams.pressures.pumpDepthMD)} ft` : '-'}
+                                        </span>
+                                    </div>
+                                    <div className="bg-surface/50 border border-white/8 rounded-xl p-2.5 flex flex-col justify-between h-16 shadow-sm backdrop-blur-md">
+                                        <span className="text-[8px] font-black text-txt-muted uppercase tracking-widest opacity-60">BOMBA TVD</span>
+                                        <span className="text-xs font-mono font-black text-primary mt-0.5">
+                                            {wellMatchParams?.pressures?.pumpDepthMD && wellMatchParams.survey?.length > 0 
+                                                ? `${Math.round(interpolateTVD(wellMatchParams.pressures.pumpDepthMD, wellMatchParams.survey))} ft`
+                                                : wellMatchParams?.pressures?.pumpDepthMD ? `${Math.round(wellMatchParams.pressures.pumpDepthMD)} ft` : '-'}
+                                        </span>
+                                    </div>
+                                    <div className="bg-surface/50 border border-white/8 rounded-xl p-2.5 flex flex-col justify-between h-16 shadow-sm backdrop-blur-md">
+                                        <span className="text-[8px] font-black text-txt-muted uppercase tracking-widest opacity-60">PERFORACIONES MD</span>
+                                        <span className="text-xs font-mono font-black text-txt-main mt-0.5">
+                                            {wellMatchParams?.wellbore?.midPerfsMD ? `${Math.round(wellMatchParams.wellbore.midPerfsMD)} ft` : '-'}
+                                        </span>
+                                    </div>
+                                    <div className="bg-surface/50 border border-white/8 rounded-xl p-2.5 flex flex-col justify-between h-16 shadow-sm backdrop-blur-md">
+                                        <span className="text-[8px] font-black text-txt-muted uppercase tracking-widest opacity-60">PERFORACIONES TVD</span>
+                                        <span className="text-xs font-mono font-black text-primary mt-0.5">
+                                            {wellMatchParams?.wellbore?.midPerfsMD && wellMatchParams.survey?.length > 0 
+                                                ? `${Math.round(interpolateTVD(wellMatchParams.wellbore.midPerfsMD, wellMatchParams.survey))} ft`
+                                                : wellMatchParams?.wellbore?.midPerfsMD ? `${Math.round(wellMatchParams.wellbore.midPerfsMD)} ft` : '-'}
+                                        </span>
+                                    </div>
+                                    <div className="bg-surface/50 border border-white/8 rounded-xl p-2.5 flex flex-col justify-between h-16 shadow-sm backdrop-blur-md">
+                                        <span className="text-[8px] font-black text-txt-muted uppercase tracking-widest opacity-60">SUMERGENCIA</span>
+                                        <span className="text-xs font-mono font-black text-success mt-0.5">
+                                            {safeBhaResults.submergenceFt ? `${Math.round(safeBhaResults.submergenceFt)} ft` : '0 ft'}
+                                        </span>
+                                    </div>
+                                    <div className="bg-surface/50 border border-white/8 rounded-xl p-2.5 flex flex-col justify-between h-16 shadow-sm backdrop-blur-md">
+                                        <span className="text-[8px] font-black text-txt-muted uppercase tracking-widest opacity-60">NIVEL FLUIDO MD</span>
+                                        <span className="text-xs font-mono font-black text-secondary mt-0.5">
+                                            {safeBhaResults.fluidLevelMD ? `${Math.round(safeBhaResults.fluidLevelMD)} ft` : '0 ft'}
+                                        </span>
+                                    </div>
+                                </div>
 
                                 {/* ESP BHA Stack */}
-                                <section className="bg-surface/50 border border-white/8 rounded-xl overflow-hidden">
-                                    <div className="flex items-center gap-2 px-4 py-3 border-b border-white/5 bg-surface/60">
-                                        <div className="w-6 h-6 rounded-lg bg-primary/15 flex items-center justify-center border border-primary/20">
-                                            <Layers className="w-3.5 h-3.5 text-primary" />
+                                <section className="bg-surface/50 border border-white/8 rounded-xl overflow-hidden shadow-md">
+                                    <div className="flex items-center gap-2 px-3.5 py-2.5 border-b border-white/5 bg-surface/60">
+                                        <div className="w-5.5 h-5.5 rounded-lg bg-primary/15 flex items-center justify-center border border-primary/20">
+                                            <Layers className="w-3 h-3 text-primary" />
                                         </div>
-                                        <span className="text-[11px] font-black uppercase tracking-wider text-txt-main">Esquema BHA</span>
+                                        <span className="text-[10px] font-black uppercase tracking-wider text-txt-main">Esquema BHA</span>
                                     </div>
 
-                                    <div className="flex justify-center items-start bg-canvas/30 py-5 min-h-[480px] overflow-x-auto">
+                                    <div className="flex justify-center items-start bg-canvas/30 py-3 min-h-[380px] overflow-x-auto">
                                         {pump ? (
-                                            <div className="scale-[0.8] origin-top">
+                                            <div className="scale-[0.7] origin-top">
                                                 <VisualESPStack
                                                     pump={pump}
                                                     motor={wellMatchParams.selectedMotor || undefined}
@@ -650,26 +677,26 @@ export const MobileMonitoreo: React.FC<Props> = ({
                                                 />
                                             </div>
                                         ) : (
-                                            <div className="flex flex-col items-center justify-center p-8 opacity-50 gap-2">
-                                                <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
-                                                    <AlertTriangle className="w-5 h-5 text-amber-400" />
+                                            <div className="flex flex-col items-center justify-center p-6 opacity-50 gap-1.5">
+                                                <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+                                                    <AlertTriangle className="w-4 h-4 text-amber-400" />
                                                 </div>
-                                                <span className="text-[10px] font-black text-txt-muted uppercase tracking-wider">Bomba no encontrada</span>
+                                                <span className="text-[9px] font-black text-txt-muted uppercase tracking-wider">Bomba no encontrada</span>
                                             </div>
                                         )}
                                     </div>
                                 </section>
 
                                 {/* 3D Trajectory */}
-                                <section className="bg-surface/50 border border-white/8 rounded-xl overflow-hidden">
-                                    <div className="flex items-center gap-2 px-4 py-3 border-b border-white/5 bg-surface/60">
-                                        <div className="w-6 h-6 rounded-lg bg-secondary/15 flex items-center justify-center border border-secondary/20">
-                                            <Compass className="w-3.5 h-3.5 text-secondary animate-[spin_10s_linear_infinite]" />
+                                <section className="bg-surface/50 border border-white/8 rounded-xl overflow-hidden shadow-md">
+                                    <div className="flex items-center gap-2 px-3.5 py-2.5 border-b border-white/5 bg-surface/60">
+                                        <div className="w-5.5 h-5.5 rounded-lg bg-secondary/15 flex items-center justify-center border border-secondary/20">
+                                            <Compass className="w-3 h-3 text-secondary animate-[spin_10s_linear_infinite]" />
                                         </div>
-                                        <span className="text-[11px] font-black uppercase tracking-wider text-txt-main">Trayectoria y Desviación</span>
+                                        <span className="text-[10px] font-black uppercase tracking-wider text-txt-main">Trayectoria y Desviación</span>
                                     </div>
 
-                                    <div className="w-full h-[450px]">
+                                    <div className="w-full h-[360px]">
                                         {wellMatchParams.survey && wellMatchParams.survey.length > 0 ? (
                                             <TrajectoryPlot
                                                 survey={wellMatchParams.survey}
@@ -849,6 +876,59 @@ export const MobileMonitoreo: React.FC<Props> = ({
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* PWA Install Shortcut Banner */}
+            {showInstallPrompt && (
+                <div className="fixed bottom-[80px] left-3 right-3 z-[9999] bg-surface/95 border border-primary/30 rounded-2xl p-4 shadow-[0_20px_50px_rgba(0,0,0,0.5)] backdrop-blur-xl animate-slideUp flex flex-col gap-3">
+                    <div className="flex items-start gap-3">
+                        <div className="p-2.5 bg-primary/20 rounded-xl text-primary border border-primary/30 shrink-0">
+                            <Sparkles className="w-5 h-5 text-primary animate-pulse" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <h4 className="text-xs font-black text-white uppercase tracking-wider">
+                                {language === 'es' ? 'Instalar App / Acceso Directo' : 'Install App / Desktop Shortcut'}
+                            </h4>
+                            <p className="text-[10px] text-txt-muted font-semibold mt-1 leading-normal">
+                                {language === 'es' 
+                                    ? 'Agrega esta app a tu pantalla de inicio o escritorio para abrirla al instante y usarla en pantalla completa.' 
+                                    : 'Add this app to your home screen or desktop for instant access and full-screen experience.'}
+                            </p>
+                        </div>
+                        <button 
+                            onClick={() => {
+                                sessionStorage.setItem('pwa-prompt-dismissed', 'true');
+                                setShowInstallPrompt(false);
+                            }}
+                            className="p-1 text-txt-muted hover:text-white rounded-lg hover:bg-white/5 transition-colors"
+                        >
+                            <X className="w-4 h-4" />
+                        </button>
+                    </div>
+                    <div className="flex gap-2 justify-end">
+                        <button 
+                            onClick={() => {
+                                sessionStorage.setItem('pwa-prompt-dismissed', 'true');
+                                setShowInstallPrompt(false);
+                            }}
+                            className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-[9px] font-black uppercase text-txt-muted transition-colors"
+                        >
+                            {language === 'es' ? 'Quizás más tarde' : 'Maybe Later'}
+                        </button>
+                        <button 
+                            onClick={() => {
+                                alert(language === 'es' 
+                                    ? 'Para instalar: En Chrome presiona los tres puntos superiores y selecciona "Instalar aplicación" o "Agregar a pantalla principal". En Safari presiona el botón "Compartir" y selecciona "Agregar a Inicio".' 
+                                    : 'To install: In Chrome tap the three dots menu and select "Install app" or "Add to Home screen". In Safari tap "Share" and select "Add to Home Screen".');
+                                sessionStorage.setItem('pwa-prompt-dismissed', 'true');
+                                setShowInstallPrompt(false);
+                            }}
+                            className="px-4 py-1.5 rounded-lg bg-primary text-white text-[9px] font-black uppercase shadow-glow-primary/20 hover:scale-105 active:scale-95 transition-all"
+                        >
+                            {language === 'es' ? 'Cómo Instalar' : 'How to Install'}
+                        </button>
                     </div>
                 </div>
             )}

@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Activity, Gauge, Thermometer, ShieldCheck, Clock, AlertTriangle, Brain, Minimize2, Search } from 'lucide-react';
 import { WellFleetItem, SystemParams, EspPump } from '@/types';
 import { useLanguage } from '@/i18n';
@@ -84,12 +84,13 @@ export const PredictiveWidget = React.memo(({ selectedWell, wellMatchParams, pum
 
     if (isMinimized) {
         return (
-            <div className="absolute top-24 right-8 z-50 pointer-events-auto">
+            <div className="relative lg:absolute lg:top-24 lg:right-8 z-50 pointer-events-auto flex justify-end mb-2 pr-1">
                 <button
                     onClick={() => setIsMinimized(false)}
-                    className="glass-surface border border-primary/30 bg-gradient-to-tr from-primary/20 to-transparent rounded-none p-4 shadow-[0_20px_40px_rgba(34,211,238,0.4)] hover:bg-primary/20 transition-all flex items-center justify-center animate-pulse"
+                    className="glass-surface border border-primary/30 bg-gradient-to-tr from-primary/20 to-transparent rounded-xl p-3 shadow-lg hover:bg-primary/20 transition-all flex items-center gap-2 animate-pulse text-[10px] font-black text-primary uppercase tracking-widest"
                 >
-                    <Brain className="w-6 h-6 text-primary drop-shadow-[0_0_5px_rgba(34,211,238,0.8)]" />
+                    <Brain className="w-4 h-4 text-primary drop-shadow-[0_0_5px_rgba(34,211,238,0.8)]" />
+                    <span>Ver Análisis IA</span>
                 </button>
             </div>
         );
@@ -101,8 +102,8 @@ export const PredictiveWidget = React.memo(({ selectedWell, wellMatchParams, pum
     const thrustMsg = (!isDownthrust && !isUpthrust) ? (language === 'es' ? 'en su Ventana Operativa' : 'within its Operating Window') : (isDownthrust ? (language === 'es' ? 'en Zona de Downthrust' : 'in Downthrust Zone') : (language === 'es' ? 'en Zona de Upthrust' : 'in Upthrust Zone'));
 
     return (
-        <div className="absolute top-24 right-8 z-40 pointer-events-none animate-slideUp">
-            <div className="glass-surface border border-primary/30 bg-gradient-to-br from-primary/10 via-surface to-surface rounded-none rounded-none p-6 shadow-[0_30px_50px_-10px_rgba(34,211,238,0.4)] w-[420px] flex flex-col gap-4 group transition-all backdrop-blur-3xl relative pointer-events-auto">
+        <div className="relative lg:absolute lg:top-24 lg:right-8 z-40 pointer-events-none animate-slideUp w-full lg:w-auto">
+            <div className="glass-surface border border-primary/30 bg-gradient-to-br from-primary/10 via-surface to-surface rounded-2xl p-4 md:p-6 shadow-2xl w-full lg:w-[420px] flex flex-col gap-3 group transition-all backdrop-blur-3xl relative pointer-events-auto">
                 <button onClick={() => setIsMinimized(true)} className="absolute top-5 right-5 p-2 rounded-none hover:bg-white/10 text-primary border border-primary/20 bg-primary/5 transition-all z-10">
                     <Minimize2 className="w-4 h-4" />
                 </button>
