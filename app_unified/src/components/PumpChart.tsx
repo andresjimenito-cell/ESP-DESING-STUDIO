@@ -509,7 +509,7 @@ export const PumpChart: React.FC<PumpChartProps> = ({ data, pump, currentFrequen
             )}
 
             {/* --- LIMIT INTERSECTION DOTS (Red Points) --- */}
-            {limitDots.map((dot, idx) => (
+            {limitDots.filter(dot => Number.isFinite(dot.x) && Number.isFinite(dot.y)).map((dot, idx) => (
               <ReferenceDot
                 key={`limit-dot-${idx}`}
                 yAxisId="left"
@@ -524,7 +524,7 @@ export const PumpChart: React.FC<PumpChartProps> = ({ data, pump, currentFrequen
             {/* --- REFERENCE LINES & DOTS --- */}
 
             {/* Target Flow Line - TRANSPARENT GRAY --- */}
-            {targetFlow && targetFlow > 0 && (
+            {Number.isFinite(targetFlow) && targetFlow > 0 && (
               <ReferenceLine
                 yAxisId="left"
                 x={targetFlow}
@@ -537,7 +537,7 @@ export const PumpChart: React.FC<PumpChartProps> = ({ data, pump, currentFrequen
             )}
 
             {/* Intersection Point (Operating Point) */}
-            {intersectionPoint && (
+            {intersectionPoint && Number.isFinite(intersectionPoint.flow) && Number.isFinite(intersectionPoint.head) && (
               <ReferenceDot
                 yAxisId="left"
                 x={intersectionPoint.flow}
@@ -549,7 +549,7 @@ export const PumpChart: React.FC<PumpChartProps> = ({ data, pump, currentFrequen
             )}
 
             {/* Reference Points (e.g., from History Match) */}
-            {referencePoints && referencePoints.map((pt, i) => (
+            {referencePoints && referencePoints.filter(pt => Number.isFinite(pt.flow) && Number.isFinite(pt.head)).map((pt, i) => (
               <ReferenceDot
                 key={i}
                 yAxisId="left"

@@ -106,11 +106,15 @@ export const MotorCurveMultiAxis: React.FC<Props> = ({ motor, currentLoad, start
             <Line yAxisId="left" type="monotone" dataKey="amps" stroke={colorAmps} strokeWidth={2} strokeDasharray="4 4" dot={false} name="Amps %" isAnimationActive={false} />
             <Line yAxisId="temp" type="monotone" dataKey="temp" stroke={colorTemp} strokeWidth={3} dot={false} name="Temp °F" isAnimationActive={false} />
 
-            {opPoint && (
+            {opPoint && Number.isFinite(currentLoad) && (
               <>
                 <ReferenceLine yAxisId="left" x={currentLoad} stroke="rgba(255,255,255,0.2)" strokeWidth={1} />
-                <ReferenceDot yAxisId="left" x={currentLoad} y={opPoint.eff} r={4} fill={colorEff} stroke="white" strokeWidth={1} isFront={true} />
-                <ReferenceDot yAxisId="temp" x={currentLoad} y={currentTemp} r={4} fill={colorTemp} stroke="white" strokeWidth={1} isFront={true} />
+                {Number.isFinite(opPoint.eff) && (
+                  <ReferenceDot yAxisId="left" x={currentLoad} y={opPoint.eff} r={4} fill={colorEff} stroke="white" strokeWidth={1} isFront={true} />
+                )}
+                {Number.isFinite(currentTemp) && (
+                  <ReferenceDot yAxisId="temp" x={currentLoad} y={currentTemp} r={4} fill={colorTemp} stroke="white" strokeWidth={1} isFront={true} />
+                )}
               </>
             )}
           </ComposedChart>

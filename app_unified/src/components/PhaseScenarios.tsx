@@ -362,7 +362,9 @@ export const PhaseScenarios: React.FC<Props> = ({ params, setParams, results }) 
                                     ) : null}
                                     cursor={{ stroke: colorPrimary, strokeWidth: 2, strokeDasharray: '6 6', opacity: 0.3 }}
                                 />
-                                <ReferenceLine x={aof} stroke="rgb(var(--color-danger))" strokeDasharray="10 5" strokeWidth={3} opacity={0.5} label={{ position: 'insideTopRight', value: 'AOF LIMIT', fill: 'rgb(var(--color-danger))', fontSize: 11, fontWeight: '950', style: { letterSpacing: '0.4em' }, offset: 20 }} />
+                                {Number.isFinite(aof) && (
+                                    <ReferenceLine x={aof} stroke="rgb(var(--color-danger))" strokeDasharray="10 5" strokeWidth={3} opacity={0.5} label={{ position: 'insideTopRight', value: 'AOF LIMIT', fill: 'rgb(var(--color-danger))', fontSize: 11, fontWeight: '950', style: { letterSpacing: '0.4em' }, offset: 20 }} />
+                                )}
                                 
                                 {/* Stable Zone Fill */}
                                 <Area type="monotone" dataKey="targetP" fill="url(#iprGradArea)" stroke="none" />
@@ -371,7 +373,7 @@ export const PhaseScenarios: React.FC<Props> = ({ params, setParams, results }) 
                                 <Line type="monotone" dataKey="maxP" name="MAX CURVE" stroke={colorPrimary} strokeWidth={2.5} strokeDasharray="8 4" dot={false} activeDot={false} isAnimationActive={false} opacity={0.2} />
                                 <Area type="monotone" dataKey="targetP" name="OPERATIONAL" stroke={colorPrimary} strokeWidth={6} fill="url(#iprGradTarget)" filter="url(#chartGlow)" animationDuration={2500} isAnimationActive={true} />
                                 
-                                {points.map((p, i) => (
+                                {points.filter(p => Number.isFinite(p.flow) && Number.isFinite(p.pwf)).map((p, i) => (
                                     <ReferenceDot key={i} x={p.flow} y={p.pwf} r={8} fill={p.color} stroke="white" strokeWidth={3} fillOpacity={1} style={{ filter: `drop-shadow(0 0 12px ${p.color})` }}>
                                         <Label value={p.label} position="top" fill={p.color} fontSize={11} fontWeight="950" offset={18} style={{ letterSpacing: '0.1em' }} />
                                     </ReferenceDot>
