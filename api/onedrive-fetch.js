@@ -85,42 +85,63 @@ function parseDesignsExcel(buffer) {
     if (surveySheetName) {
         const surveySheet = workbook.Sheets[surveySheetName];
         let headerRow = 0;
+        let detectedWellName = '';
         for (let i = 0; i < 20; i++) {
             const temp = XLSX.utils.sheet_to_json(surveySheet, { range: i, header: 1 });
-            if (temp.length > 0 && temp[0].some(c => String(c || '').toUpperCase().includes('DEPTH'))) {
-                headerRow = i; 
-                break;
+            if (temp.length > 0) {
+                const rowArr = temp[0];
+                for (let c = 0; c < rowArr.length; c++) {
+                    const cellVal = String(rowArr[c] || '').trim().toUpperCase();
+                    if (cellVal === 'POZO' || cellVal === 'WELL' || cellVal.includes('POZO:') || cellVal.includes('WELL:')) {
+                        const nextVal = String(rowArr[c + 1] || '').trim();
+                        if (nextVal && nextVal.length > 1) {
+                            detectedWellName = nextVal.toUpperCase();
+                        }
+                    }
+                }
+                if (rowArr.some(c => {
+                    const uc = String(c || '').toUpperCase();
+                    return uc.includes('DEPTH') || uc.includes('MD') || uc.includes('PROF') || uc.includes('MEASURED') || uc.includes('MEDIDA');
+                })) {
+                    headerRow = i; 
+                    break;
+                }
             }
         }
         const rawSurvey = XLSX.utils.sheet_to_json(surveySheet, { range: headerRow });
         
-        // Group by well and downsample to keep every 20th point (ensuring first/last points are preserved)
         const surveyByWell = {};
+        let lastWellName = detectedWellName || 'UNKNOWN';
+
         rawSurvey.forEach(row => {
-            // Find key for well name dynamically
             const wellKey = Object.keys(row).find(k => {
-                const uk = k.toUpperCase();
-                return uk === 'POZO' || uk === 'WELL' || uk === 'WELLNAME' || uk === 'WELL_NAME';
-            }) || 'WELL';
-            const well = String(row[wellKey] || '').trim().toUpperCase();
+                const nk = norm_ext(k);
+                return nk === 'pozo' || nk === 'well' || nk === 'wellname' || nk === 'nombrepozo' || nk === 'nombrewell' || nk === 'nick';
+            });
+            
+            let well = '';
+            if (wellKey) {
+                well = String(row[wellKey] || '').trim().toUpperCase();
+            }
+            
+            if (well && well !== 'UNKNOWN' && well.length > 1) {
+                lastWellName = well;
+            } else {
+                well = lastWellName;
+            }
+            
+            // Assign the resolved well name back to the row so that client can map it
+            const targetKey = wellKey || 'POZO';
+            row[targetKey] = well;
+
             if (!surveyByWell[well]) surveyByWell[well] = [];
             surveyByWell[well].push(row);
         });
 
         Object.values(surveyByWell).forEach(wellRows => {
-            if (wellRows.length <= 15) {
-                jsonSurvey.push(...wellRows);
-            } else {
-                jsonSurvey.push(wellRows[0]);
-                for (let idx = 1; idx < wellRows.length - 1; idx++) {
-                    if (idx % 20 === 0) {
-                        jsonSurvey.push(wellRows[idx]);
-                    }
-                }
-                jsonSurvey.push(wellRows[wellRows.length - 1]);
-            }
+            jsonSurvey.push(...wellRows);
         });
-        console.log(`[OneDrive Backend] Downsampled survey from ${rawSurvey.length} to ${jsonSurvey.length} rows.`);
+        console.log(`[OneDrive Backend] Imported full survey: ${jsonSurvey.length} rows.`);
     }
 
     return {
