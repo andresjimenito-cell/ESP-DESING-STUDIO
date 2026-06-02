@@ -55,13 +55,11 @@ export default defineConfig(({ mode }) => {
       'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
     },
     optimizeDeps: {
-      exclude: ['jspdf', 'html2canvas']
+      exclude: []
     },
     resolve: {
       alias: {
         '@': path.resolve('./src'),
-        'jspdf': 'https://esm.sh/jspdf@2.5.1',
-        'html2canvas': 'https://esm.sh/html2canvas@1.4.1',
       }
     }
   };
