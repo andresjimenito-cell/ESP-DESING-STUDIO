@@ -21,10 +21,6 @@ import {
 const SESSION_KEY = 'esp_session_token';
 const SESSION_EMAIL_KEY = 'esp_session_email';
 
-const CORPORATE_DOMAIN = '@fronteraenergy.ca';
-const DEMO_EMAIL = `correo${CORPORATE_DOMAIN}`;
-const DEMO_PASSWORD = '2026';
-
 const PARTICLE_COUNT = 25;
 const MOUSE_TILT_FACTOR = 0.2;
 const MOUSE_THROTTLE_MS = 30;
@@ -55,9 +51,8 @@ export const isSessionValid = (): boolean => {
         const payload = JSON.parse(atob(parts[0]));
 
         const expiredOrMissing = !payload.exp || payload.exp < Date.now();
-        const wrongDomain = !payload.email?.toLowerCase().endsWith(CORPORATE_DOMAIN);
 
-        if (expiredOrMissing || wrongDomain) {
+        if (expiredOrMissing) {
             clearSession();
             return false;
         }
@@ -255,18 +250,37 @@ const ANIMATIONS = `
   }
 
   .login-card {
-    background:       rgba(11,18,32,.5) !important;
-    backdrop-filter:  blur(40px) saturate(220%) !important;
-    border:           1px solid rgba(var(--color-primary),.15) !important;
+    background:       rgba(10, 15, 30, 0.7) !important;
+    backdrop-filter:  blur(35px) saturate(210%) !important;
+    border:           1px solid rgba(var(--color-primary), 0.25) !important;
     transition:       border-color .4s ease, box-shadow .4s ease !important;
+    box-shadow:       0 20px 50px rgba(0, 0, 0, 0.65), 0 0 40px rgba(var(--color-primary), 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
   }
-  .login-card:hover { border-color: rgba(var(--color-primary),.35) !important; }
+  .login-card:hover { 
+    border-color: rgba(var(--color-primary), 0.45) !important; 
+    box-shadow:   0 25px 60px rgba(0, 0, 0, 0.75), 0 0 60px rgba(var(--color-primary), 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+  }
 
-  .input-premium:focus-within {
-    border-color: rgba(var(--color-primary),.5) !important;
-    box-shadow:   0 0 20px rgba(var(--color-primary),.12), inset 0 0 10px rgba(var(--color-primary),.05) !important;
-    background:   rgba(var(--color-canvas),.7) !important;
+  .input-premium {
+    border: 1px solid rgba(var(--color-primary), 0.18) !important;
+    background: rgba(var(--color-canvas), 0.4) !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
   }
+  .input-premium:focus-within {
+    border-color: rgb(var(--color-primary)) !important;
+    box-shadow:   0 0 25px rgba(var(--color-primary), 0.25), inset 0 0 10px rgba(var(--color-primary), 0.1) !important;
+    background:   rgba(var(--color-canvas), 0.8) !important;
+  }
+  .input-premium input {
+    background: transparent !important;
+    border: none !important;
+    color: #ffffff !important;
+    outline: none !important;
+  }
+  .input-premium input::placeholder {
+    color: rgba(255, 255, 255, 0.35) !important;
+  }
+
   .btn-premium::after {
     content:        '';
     position:       absolute;
@@ -277,6 +291,12 @@ const ANIMATIONS = `
     pointer-events: none;
   }
   .btn-premium:hover::after { animation: login-sheen 1.8s infinite; }
+  .btn-premium:disabled {
+    opacity: 0.35 !important;
+    cursor: not-allowed !important;
+    box-shadow: none !important;
+  }
+
 `;
 
 // ─── Main component ───────────────────────────────────────────────────────────
@@ -288,7 +308,6 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     const [error, setError] = useState('');
     const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
     const [loading, setLoading] = useState(false);
-    const [quickFilled, setQuickFilled] = useState(false);
     const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
     const [mounted, setMounted] = useState(false);
 
@@ -337,13 +356,11 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
         const errs: FieldErrors = {};
 
         if (!EMAIL_REGEX.test(email.trim())) {
-            errs.email = 'Ingresa un correo válido.';
-        } else if (!email.trim().toLowerCase().endsWith(CORPORATE_DOMAIN)) {
-            errs.email = `El correo debe ser de ${CORPORATE_DOMAIN}`;
+            errs.email = 'Ingresa un correo corporativo válido.';
         }
 
-        if (password.length < 3) {
-            errs.password = 'La contraseña es demasiado corta.';
+        if (password.length < 1) {
+            errs.password = 'Por favor, ingresa tu contraseña.';
         }
 
         setFieldErrors(errs);
@@ -391,14 +408,6 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
             setLoading(false);
         }
     }, [email, password, clearErrors, validateFields, onLoginSuccess]);
-
-    const handleQuickFill = useCallback(() => {
-        setEmail(DEMO_EMAIL);
-        setPassword(DEMO_PASSWORD);
-        clearErrors();
-        setQuickFilled(true);
-        setTimeout(() => setQuickFilled(false), 2000);
-    }, [clearErrors]);
 
     const toggleShowPassword = useCallback(() => setShowPassword(v => !v), []);
 
@@ -496,7 +505,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                             </h1>
                             <p className="mt-1.5 text-[9px] font-black uppercase tracking-[0.35em]"
                                 style={{ color: 'rgba(var(--color-primary), 0.65)' }}>
-                                FRONTERA ENERGY — PLATAFORMA PRIVADA
+                                ACCESO PRIVADO — SISTEMA DE INGENIERÍA Y DISEÑO
                             </p>
                         </div>
                     </div>
@@ -526,7 +535,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                             >
                                 <span className="flex items-center gap-2">
                                     <Mail className="w-3 h-3 text-primary" aria-hidden />
-                                    Correo Corporativo
+                                    Correo Electrónico
                                 </span>
                                 <span
                                     className="w-1.5 h-1.5 rounded-full transition-all duration-300"
@@ -543,16 +552,12 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                                     type="email"
                                     value={email}
                                     onChange={e => { setEmail(e.target.value); clearErrors(); }}
-                                    placeholder={DEMO_EMAIL}
+                                    placeholder="Ingresa tu correo electrónico"
                                     required
                                     autoComplete="email"
                                     aria-describedby={fieldErrors.email ? 'email-error' : undefined}
                                     aria-invalid={!!fieldErrors.email}
-                                    className="w-full px-4 py-3 rounded-xl text-sm font-semibold text-txt-main placeholder:text-txt-muted/20 outline-none transition-all duration-300"
-                                    style={{
-                                        background: 'rgba(var(--color-canvas), .45)',
-                                        border: '1px solid rgba(var(--color-primary), .15)',
-                                    }}
+                                    className="w-full px-4 py-3 rounded-xl text-sm font-semibold outline-none transition-all duration-300"
                                 />
                             </div>
 
@@ -588,16 +593,12 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                                     type={showPassword ? 'text' : 'password'}
                                     value={password}
                                     onChange={e => { setPassword(e.target.value); clearErrors(); }}
-                                    placeholder="••••••••••"
+                                    placeholder="Ingresa tu contraseña"
                                     required
                                     autoComplete="current-password"
                                     aria-describedby={fieldErrors.password ? 'password-error' : undefined}
                                     aria-invalid={!!fieldErrors.password}
-                                    className="w-full px-4 py-3 pr-12 rounded-xl text-sm font-semibold text-txt-main placeholder:text-txt-muted/20 outline-none transition-all duration-300"
-                                    style={{
-                                        background: 'rgba(var(--color-canvas), .45)',
-                                        border: '1px solid rgba(var(--color-primary), .15)',
-                                    }}
+                                    className="w-full px-4 py-3 pr-12 rounded-xl text-sm font-semibold outline-none transition-all duration-300"
                                 />
                                 <button
                                     type="button"
@@ -640,14 +641,15 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                             type="submit"
                             disabled={loading || !email || !password}
                             aria-busy={loading}
-                            className="w-full py-3.5 rounded-xl font-black text-xs uppercase tracking-[0.22em] transition-all duration-500 relative overflow-hidden group disabled:opacity-30 disabled:cursor-not-allowed active:scale-[0.98] btn-premium mt-2"
+                            className="w-full py-4 rounded-xl font-black text-xs uppercase tracking-[0.22em] transition-all duration-300 relative overflow-hidden group disabled:opacity-30 disabled:cursor-not-allowed hover:scale-[1.02] active:scale-[0.98] btn-premium mt-4"
                             style={{
                                 background: loading
                                     ? 'rgba(var(--color-primary), .25)'
                                     : 'linear-gradient(135deg, rgb(var(--color-primary)), rgb(var(--color-secondary)))',
-                                color: 'white',
-                                boxShadow: '0 4px 24px rgba(var(--color-primary),.28), inset 0 1px 0 rgba(255,255,255,.15)',
-                                border: '1px solid rgba(var(--color-primary),.2)',
+                                color: '#ffffff',
+                                boxShadow: '0 8px 32px rgba(var(--color-primary), 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
+                                border: '1px solid rgb(var(--color-primary))',
+                                cursor: 'pointer',
                             }}
                         >
                             <span className="relative z-10 flex items-center justify-center gap-3">
@@ -656,7 +658,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                                         <Loader2 className="w-4 h-4 animate-spin" aria-hidden />
                                         Verificando…
                                     </>
-                                ) : (
+                               ) : (
                                     <>
                                         <Shield className="w-4 h-4 transition-transform group-hover:scale-110" aria-hidden />
                                         Iniciar Sesión
@@ -665,40 +667,6 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                             </span>
                         </button>
                     </form>
-
-                    {/* ── DEMO CREDENTIALS TERMINAL ── */}
-                    <div
-                        onClick={handleQuickFill}
-                        role="button"
-                        tabIndex={0}
-                        onKeyDown={e => e.key === 'Enter' && handleQuickFill()}
-                        aria-label="Autocompletar credenciales de demo"
-                        className="mt-5 p-3.5 rounded-xl border border-white/5 font-mono text-[10px] cursor-pointer group/term hover:border-primary/30 transition-all duration-300 select-none shrink-0"
-                        style={{ background: 'rgba(var(--color-canvas), .45)' }}
-                    >
-                        <div className="flex items-center justify-between mb-1.5 border-b border-white/5 pb-1 opacity-70">
-                            <span className="text-[8px] font-black uppercase text-txt-muted tracking-wider flex items-center gap-1.5">
-                                <span
-                                    className="w-1.5 h-1.5 rounded-full bg-primary"
-                                    style={{ animation: 'login-pulse-green 1.5s infinite' }}
-                                />
-                                Terminal: Credenciales Demo
-                            </span>
-
-                            <span className="text-[8px] font-bold text-primary flex items-center gap-1 group-hover/term:underline">
-                                {quickFilled ? (
-                                    <><CheckCircle2 className="w-3 h-3" aria-hidden /> Completado</>
-                                ) : (
-                                    'Click para autocompletar'
-                                )}
-                            </span>
-                        </div>
-
-                        <div className="space-y-0.5 text-txt-muted/80">
-                            <div><span style={{ color: 'rgb(var(--color-primary))' }}>CORREO:</span> {DEMO_EMAIL}</div>
-                            <div><span style={{ color: 'rgb(var(--color-primary))' }}>CLAVE:</span> {DEMO_PASSWORD}</div>
-                        </div>
-                    </div>
                 </div>
 
                 {/* ── FOOTER ── */}

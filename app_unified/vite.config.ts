@@ -29,6 +29,9 @@ export default defineConfig(({ mode }) => {
       VitePWA({
         registerType: 'autoUpdate',
         includeAssets: ['favicon.ico', 'app-logo.png', 'robots.txt', 'apple-touch-icon.png'],
+        workbox: {
+          maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
+        },
         manifest: {
           name: 'ESP DESIGN PRO',
           short_name: 'ESP PRO',
