@@ -245,50 +245,7 @@ export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params, 
             rawSurvey.unshift({ md: 0, tvd: 0, inc: 0, azim: rawSurvey[0].azim, dogleg: 0 });
         }
         
-        // Interpolate to at least 40 points if survey is too short/low-res
-        if (rawSurvey.length >= 2 && rawSurvey.length < 30) {
-            const targetCount = 40;
-            const minMd = rawSurvey[0].md;
-            const maxMd = rawSurvey[rawSurvey.length - 1].md;
-            const step = (maxMd - minMd) / (targetCount - 1);
-            const newSurvey: SurveyPoint[] = [];
-            
-            for (let k = 0; k < targetCount; k++) {
-                const targetMd = minMd + k * step;
-                let idx = 0;
-                while (idx < rawSurvey.length - 1 && rawSurvey[idx + 1].md < targetMd) {
-                    idx++;
-                }
-                const p0 = rawSurvey[idx];
-                const p1 = rawSurvey[idx + 1] || p0;
-                
-                const dMd = p1.md - p0.md;
-                const ratio = dMd > 0 ? (targetMd - p0.md) / dMd : 0;
-                
-                const interp = (v0: number | undefined, v1: number | undefined) => {
-                    const val0 = v0 ?? 0;
-                    const val1 = v1 ?? 0;
-                    return val0 + (val1 - val0) * ratio;
-                };
-                
-                newSurvey.push({
-                    md: targetMd,
-                    tvd: interp(p0.tvd, p1.tvd),
-                    inc: interp(p0.inc, p1.inc),
-                    azim: interp(p0.azim, p1.azim),
-                    subSea: interp(p0.subSea, p1.subSea),
-                    northing: interp(p0.northing, p1.northing),
-                    ns: ratio < 0.5 ? p0.ns : p1.ns,
-                    easting: interp(p0.easting, p1.easting),
-                    ew: ratio < 0.5 ? p0.ew : p1.ew,
-                    northingM: interp(p0.northingM, p1.northingM),
-                    eastingM: interp(p0.eastingM, p1.eastingM),
-                    verticalSection: interp(p0.verticalSection, p1.verticalSection),
-                    dogleg: interp(p0.dogleg, p1.dogleg)
-                });
-            }
-            rawSurvey = newSurvey;
-        }
+        // Use raw survey points directly without visual interpolation (fictitious data generation)
 
         let departure = 0; let curX = 0; let curY = 0;
         const raw = rawSurvey.map((pt, i) => {
