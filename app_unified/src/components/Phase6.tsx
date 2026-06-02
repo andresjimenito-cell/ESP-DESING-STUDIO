@@ -2042,17 +2042,15 @@ const Phase6Component: React.FC<Props & { isMobile?: boolean }> = ({ params, set
         <>
             {/* FULL SCREEN MODAL */}
             {isChartExpanded && createPortal(
-                <div className="fixed inset-0 z-[9999] bg-surface/95 backdrop-blur-xl p-8 flex flex-col animate-fadeIn">
-                    <div className="flex justify-between items-center mb-6 pb-6 border-b border-surface-light">
-                        <div>
-                            <h2 className="text-4xl font-black text-txt-main uppercase tracking-tighter">{t('p6.perfComp')}</h2>
-                            <p className="text-base font-bold text-txt-muted uppercase tracking-widest">{t('p6.history')} | FULL SCREEN VIEW</p>
-                        </div>
-                        <button onClick={() => setIsChartExpanded(false)} className="p-4 bg-surface rounded-none border border-surface-light text-txt-muted hover:text-white hover:bg-surface-light transition-colors">
-                            <Minimize2 className="w-10 h-10" />
-                        </button>
-                    </div>
-                    <div className="flex-1 min-h-0 bg-surface rounded-none border border-surface-light p-4 shadow-2xl relative overflow-hidden">
+                <div className="fixed inset-0 z-[9999] bg-surface/95 backdrop-blur-xl p-2 md:p-4 flex flex-col animate-fadeIn">
+                    <button
+                        onClick={() => setIsChartExpanded(false)}
+                        className="absolute top-4 right-4 z-[10000] p-3 bg-surface/80 hover:bg-surface border border-white/10 rounded-full text-txt-muted hover:text-white hover:scale-105 transition-all shadow-xl backdrop-blur-md"
+                        title="Cerrar pantalla completa"
+                    >
+                        <Minimize2 className="w-5 h-5 md:w-6 md:h-6" />
+                    </button>
+                    <div className="flex-1 min-h-0 bg-surface rounded-xl border border-white/10 p-2 md:p-4 shadow-2xl relative overflow-hidden">
                         <PumpChart data={chartData} pump={safePump} currentFrequency={fieldData.frequency} referencePoints={trail || referencePoints} targetFlow={fieldData.rate} className="w-full h-full" isDiagnosticMode={chartMode === 'comparative'} />
                     </div>
                 </div>,
