@@ -127,7 +127,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
         try {
             // 1. Descargar Excel de Diseños (usa Microsoft Graph API via proxy)
             if (!silent) setImportProgress({ current: 10, total: 100, label: language === 'es' ? 'Descargando Base de Datos Maestra desde OneDrive...' : 'Downloading master database from OneDrive...' });
-            const resDesigns = await fetch(`/api/onedrive-fetch?file=designs&format=json`);
+            const resDesigns = await fetch(`/api/onedrive-fetch?file=designs&format=json&t=${Date.now()}`);
             if (resDesigns.ok) {
                 const data = await resDesigns.json();
                 await processExcelDesignsBufferRef.current(data, true, true);
@@ -138,7 +138,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
 
             // 2. Descargar Excel de Pruebas de Producción / SCADA
             if (!silent) setImportProgress({ current: 60, total: 100, label: language === 'es' ? 'Descargando datos SCADA/Producción desde OneDrive...' : 'Downloading SCADA/Production data from OneDrive...' });
-            const resScada = await fetch(`/api/onedrive-fetch?file=scada&format=json`);
+            const resScada = await fetch(`/api/onedrive-fetch?file=scada&format=json&t=${Date.now()}`);
             if (resScada.ok) {
                 const data = await resScada.json();
                 await processScadaBufferRef.current(data, true, true);

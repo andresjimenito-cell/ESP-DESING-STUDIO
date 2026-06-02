@@ -29,6 +29,7 @@ export const usePhaseMonitoreoImport = (
 
             let json: any[] = [];
             let jsonSurvey: any[] = [];
+            let bestDetectedWellName = '';
             const surveyDataByWell: Record<string, SurveyPoint[]> = {};
             const mechDataMap: Record<string, any> = {};
 
@@ -55,12 +56,12 @@ export const usePhaseMonitoreoImport = (
                     sheetsToParse.push(mechSheetName);
                 }
                 
-                const surveySheetName = tempWorkbook.SheetNames.find(s => {
+                const surveySheetNames = tempWorkbook.SheetNames.filter(s => {
                     const sn = String(s).toUpperCase();
                     return sn.includes('SURVEY') || sn.includes('TRAYEC') || sn.includes('DESVIACI\u00d3N') || sn.includes('DESVIACION') || sn.includes('DESVIACI\"N');
                 });
-                if (surveySheetName) {
-                    sheetsToParse.push(surveySheetName);
+                if (surveySheetNames.length > 0) {
+                    surveySheetNames.forEach(s => sheetsToParse.push(s));
                 }
 
                 // 2. Parse only the target sheets
@@ -104,19 +105,40 @@ export const usePhaseMonitoreoImport = (
                     console.log("[Mechanical Status] Pozos indexados:", Object.keys(mechDataMap));
                 }
 
-                if (surveySheetName) {
-                    const surveySheet = workbook.Sheets[surveySheetName];
-                    let headerRow = 0;
-                    for (let i = 0; i < 20; i++) {
-                        const temp = XLSX.utils.sheet_to_json(surveySheet, { range: i, header: 1 }) as any[][];
-                        if (temp.length > 0 && temp[0].some(c => {
-                            const uc = String(c || '').toUpperCase();
-                            return uc.includes('DEPTH') || uc.includes('MD') || uc.includes('PROF') || uc.includes('MEASURED') || uc.includes('MEDIDA');
-                        })) {
-                            headerRow = i; break;
+                if (surveySheetNames.length > 0) {
+                    let bestRawSurvey: any[] = [];
+                    for (const sName of surveySheetNames) {
+                        const surveySheet = workbook.Sheets[sName];
+                        let headerRow = 0;
+                        let detectedWellName = '';
+                        for (let i = 0; i < 20; i++) {
+                            const temp = XLSX.utils.sheet_to_json(surveySheet, { range: i, header: 1 }) as any[][];
+                            if (temp.length > 0) {
+                                const rowArr = temp[0];
+                                for (let c = 0; c < rowArr.length; c++) {
+                                    const cellVal = String(rowArr[c] || '').trim().toUpperCase();
+                                    if (cellVal === 'POZO' || cellVal === 'WELL' || cellVal.includes('POZO:') || cellVal.includes('WELL:')) {
+                                        const nextVal = String(rowArr[c + 1] || '').trim();
+                                        if (nextVal && nextVal.length > 1) {
+                                            detectedWellName = nextVal.toUpperCase();
+                                        }
+                                    }
+                                }
+                                if (rowArr.some(c => {
+                                    const uc = String(c || '').toUpperCase();
+                                    return uc.includes('DEPTH') || uc.includes('MD') || uc.includes('PROF') || uc.includes('MEASURED') || uc.includes('MEDIDA');
+                                })) {
+                                    headerRow = i; break;
+                                }
+                            }
+                        }
+                        const currentSurvey = XLSX.utils.sheet_to_json(surveySheet, { range: headerRow }) as any[];
+                        if (currentSurvey.length > bestRawSurvey.length) {
+                            bestRawSurvey = currentSurvey;
+                            bestDetectedWellName = detectedWellName;
                         }
                     }
-                    jsonSurvey = XLSX.utils.sheet_to_json(surveySheet, { range: headerRow }) as any[];
+                    jsonSurvey = bestRawSurvey;
                 }
             }
 
@@ -172,9 +194,16 @@ export const usePhaseMonitoreoImport = (
             }
 
             // Bucle para extraer de forma unificada e identificar campos de survey avanzados (en espanol)
+            let lastWellName = bestDetectedWellName || 'UNKNOWN';
             jsonSurvey.forEach((row: any) => {
                 const wellColRaw = get_ext(row, ['POZO', 'WELL', 'Pozo']);
-                const wName = fuzzyWellName(wellColRaw || 'UNKNOWN');
+                let rawName = String(wellColRaw || '').trim();
+                let wName = fuzzyWellName(rawName);
+                if (wName && wName !== 'UNKNOWN' && wName.length > 1) {
+                    lastWellName = wName;
+                } else {
+                    wName = lastWellName;
+                }
 
                 // Acceso directo ultra veloz O(1)
                 const md = mdKey ? row[mdKey] : null;

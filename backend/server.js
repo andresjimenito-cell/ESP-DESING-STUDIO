@@ -126,12 +126,12 @@ function parseDesignsExcel(buffer) {
         sheetsToParse.push(mechSheetName);
     }
     
-    const surveySheetName = tempWorkbook.SheetNames.find(s => {
+    const surveySheetNames = tempWorkbook.SheetNames.filter(s => {
         const sn = String(s).toUpperCase();
         return sn.includes('SURVEY') || sn.includes('TRAYEC') || sn.includes('DESVIACI\u00d3N') || sn.includes('DESVIACION') || sn.includes('DESVIACI"N') || sn.includes('DESVIACI\"N');
     });
-    if (surveySheetName) {
-        sheetsToParse.push(surveySheetName);
+    if (surveySheetNames.length > 0) {
+        surveySheetNames.forEach(s => sheetsToParse.push(s));
     }
 
     const workbook = XLSX.read(buffer, {
@@ -166,48 +166,76 @@ function parseDesignsExcel(buffer) {
     }
 
     let jsonSurvey = [];
-    if (surveySheetName) {
-        const surveySheet = workbook.Sheets[surveySheetName];
-        let headerRow = 0;
-        for (let i = 0; i < 20; i++) {
-            const temp = XLSX.utils.sheet_to_json(surveySheet, { range: i, header: 1 });
-            if (temp.length > 0 && temp[0].some(c => {
-                const uc = String(c || '').toUpperCase();
-                return uc.includes('DEPTH') || uc.includes('MD') || uc.includes('PROF') || uc.includes('MEASURED') || uc.includes('MEDIDA');
-            })) {
-                headerRow = i; 
-                break;
+    if (surveySheetNames.length > 0) {
+        let bestRawSurvey = [];
+        let bestDetectedWellName = '';
+        
+        for (const sName of surveySheetNames) {
+            const surveySheet = workbook.Sheets[sName];
+            let headerRow = 0;
+            let detectedWellName = '';
+            for (let i = 0; i < 20; i++) {
+                const temp = XLSX.utils.sheet_to_json(surveySheet, { range: i, header: 1 });
+                if (temp.length > 0) {
+                    const rowArr = temp[0];
+                    for (let c = 0; c < rowArr.length; c++) {
+                        const cellVal = String(rowArr[c] || '').trim().toUpperCase();
+                        if (cellVal === 'POZO' || cellVal === 'WELL' || cellVal.includes('POZO:') || cellVal.includes('WELL:')) {
+                            const nextVal = String(rowArr[c + 1] || '').trim();
+                            if (nextVal && nextVal.length > 1) {
+                                detectedWellName = nextVal.toUpperCase();
+                            }
+                        }
+                    }
+                    if (rowArr.some(c => {
+                        const uc = String(c || '').toUpperCase();
+                        return uc.includes('DEPTH') || uc.includes('MD') || uc.includes('PROF') || uc.includes('MEASURED') || uc.includes('MEDIDA');
+                    })) {
+                        headerRow = i; 
+                        break;
+                    }
+                }
+            }
+            const currentSurvey = XLSX.utils.sheet_to_json(surveySheet, { range: headerRow });
+            if (currentSurvey.length > bestRawSurvey.length) {
+                bestRawSurvey = currentSurvey;
+                bestDetectedWellName = detectedWellName;
             }
         }
-        const rawSurvey = XLSX.utils.sheet_to_json(surveySheet, { range: headerRow });
         
-        // Group by well and dynamically downsample to keep ~250 points for high-fidelity smooth trajectory
+        const rawSurvey = bestRawSurvey;
         const surveyByWell = {};
+        let lastWellName = bestDetectedWellName || 'UNKNOWN';
+
         rawSurvey.forEach(row => {
             const wellKey = Object.keys(row).find(k => {
                 const nk = norm_ext(k);
                 return nk === 'pozo' || nk === 'well' || nk === 'wellname' || nk === 'nombrepozo' || nk === 'nombrewell' || nk === 'nick';
-            }) || Object.keys(row)[0] || 'WELL';
-            const well = String(row[wellKey] || '').trim().toUpperCase();
+            });
+            
+            let well = '';
+            if (wellKey) {
+                well = String(row[wellKey] || '').trim().toUpperCase();
+            }
+            
+            if (well && well !== 'UNKNOWN' && well.length > 1) {
+                lastWellName = well;
+            } else {
+                well = lastWellName;
+            }
+            
+            // Assign the resolved well name back to the row so that client can map it
+            const targetKey = wellKey || 'POZO';
+            row[targetKey] = well;
+
             if (!surveyByWell[well]) surveyByWell[well] = [];
             surveyByWell[well].push(row);
         });
 
         Object.values(surveyByWell).forEach(wellRows => {
-            const step = Math.max(1, Math.floor(wellRows.length / 250));
-            if (wellRows.length <= 15) {
-                jsonSurvey.push(...wellRows);
-            } else {
-                jsonSurvey.push(wellRows[0]);
-                for (let idx = 1; idx < wellRows.length - 1; idx++) {
-                    if (idx % step === 0) {
-                        jsonSurvey.push(wellRows[idx]);
-                    }
-                }
-                jsonSurvey.push(wellRows[wellRows.length - 1]);
-            }
+            jsonSurvey.push(...wellRows);
         });
-        console.log(`[OneDrive Proxy] High-fidelity downsampled survey from ${rawSurvey.length} to ${jsonSurvey.length} rows.`);
+        console.log(`[OneDrive Proxy] Imported full survey: ${jsonSurvey.length} rows.`);
     }
 
     return {

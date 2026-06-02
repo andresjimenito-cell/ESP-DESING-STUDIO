@@ -257,12 +257,34 @@ export const BatchDesignProcessor: React.FC<BatchDesignProcessorProps> = ({
         const surveyMap: Record<string, SurveyPoint[]> = {};
         const surveySheet = wb.SheetNames.find(n => n.toUpperCase().includes('SURVEY') || n.toUpperCase().includes('TRAYEC'));
         if (surveySheet) {
+            let detectedWellName = '';
+            const tempAoA: any[][] = xlsxUtils.sheet_to_json(wb.Sheets[surveySheet], { header: 1, defval: '' });
+            for (let i = 0; i < Math.min(20, tempAoA.length); i++) {
+                const rowArr = tempAoA[i] || [];
+                for (let c = 0; c < rowArr.length; c++) {
+                    const cellVal = String(rowArr[c] || '').trim().toUpperCase();
+                    if (cellVal === 'POZO' || cellVal === 'WELL' || cellVal.includes('POZO:') || cellVal.includes('WELL:')) {
+                        const nextVal = String(rowArr[c + 1] || '').trim();
+                        if (nextVal && nextVal.length > 1) {
+                            detectedWellName = nextVal.toUpperCase();
+                        }
+                    }
+                }
+            }
+
             const rows: any[] = xlsxUtils.sheet_to_json(wb.Sheets[surveySheet], { defval: '' });
+            let lastWellName = detectedWellName || 'UNKNOWN';
             rows.forEach(row => {
-                const well = s(get(row, ['POZO', 'WELL']));
+                const wellColRaw = get(row, ['POZO', 'WELL']);
+                let well = s(wellColRaw);
+                if (well && well !== 'UNKNOWN' && well.length > 1) {
+                    lastWellName = well;
+                } else {
+                    well = lastWellName;
+                }
                 const md = n(get(row, ['MEASURED DEPTH (FT)', 'MEASURED DEPTH', 'MD (FT)', 'MD']));
                 const tvd = n(get(row, ['VERTICAL DEPTH (FT)', 'VERTICAL DEPTH', 'TVD (FT)', 'TVD']));
-                if (well && md > 0) {
+                if (well && md >= 0) {
                     if (!surveyMap[well]) surveyMap[well] = [];
                     surveyMap[well].push({ md, tvd });
                 }
