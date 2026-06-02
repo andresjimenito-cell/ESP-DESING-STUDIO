@@ -173,7 +173,7 @@ const SpoolerPolarChart: React.FC<{ processedData: ProcessedPoint[]; limitMD: nu
     const degreeLabels = useMemo(() => { const l: number[] = []; for (let d = 0; d < 360; d += 4) if (d !== 0 && d !== 90 && d !== 180 && d !== 270) l.push(d); return l; }, []);
 
     return (
-        <svg viewBox={`0 0 ${size} ${size}`} className="w-full max-w-[130px] h-[130px] select-none overflow-visible">
+        <svg viewBox={`0 0 ${size} ${size}`} className="w-full max-w-[280px] h-[280px] select-none overflow-visible">
             {sector.draw && (
                 <path
                     d={`M ${cx} ${cy} L ${cx + Math.cos(toRad(sector.start)) * R} ${cy + Math.sin(toRad(sector.start)) * R} A ${R} ${R} 0 ${(sector.end - sector.start + 360) % 360 > 180 ? 1 : 0} 1 ${cx + Math.cos(toRad(sector.end)) * R} ${cy + Math.sin(toRad(sector.end)) * R} Z`}
@@ -1141,7 +1141,7 @@ export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params, 
                     </div>
 
                     {/* Selector de Modo de Visualización */}
-                    <div className="absolute top-4 right-4 flex items-center gap-1 bg-surface/80 backdrop-blur-md p-1 rounded-xl border border-surface-light/30 z-20">
+                    <div className="absolute top-4 left-[90px] flex items-center gap-1 bg-surface/80 backdrop-blur-md p-1 rounded-xl border border-surface-light/30 z-20">
                         {[
                             { mode: 'depth' as const, label: 'Estructura' },
                             { mode: 'inc' as const, label: 'Inc (°)' },
@@ -1161,52 +1161,15 @@ export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params, 
                         ))}
                     </div>
 
-                    <canvas
-                        ref={canvasRef}
-                        onMouseDown={handleMouseDown}
-                        onMouseMove={handleMouseMove}
-                        onMouseUp={handleMouseUp}
-                        onMouseLeave={handleMouseUp}
-                        onWheel={handleWheel}
-                        className="w-full h-full cursor-grab active:cursor-grabbing block relative z-10"
-                    />
-                </div>
-
-                {/* ── RIGHT: Charts & Analytics ── */}
-                <div className={`flex flex-col bg-canvas/40 p-5 gap-5 h-full min-h-0 ${isSidebar ? 'border-t border-surface-light/30' : 'border-l border-surface-light/30'}`}>
-
-                    {/* Polar Chart - Compact Horizontal Banner */}
-                    <div className="flex flex-row items-center justify-around border border-surface-light/30 rounded-xl p-4 bg-surface/40 backdrop-blur-md h-[160px] shrink-0">
-                        <div className="flex flex-col justify-center">
-                            <h2 className="text-[10px] font-black text-primary tracking-widest uppercase mb-1">
-                                Optimización de Azimut
-                            </h2>
-                            <p className="text-[14px] font-black text-txt-main tracking-tighter uppercase">
-                                Spooler ALS
-                            </p>
-                            <div className="mt-2 space-y-1">
-                                <div className="text-[9px] font-bold text-txt-muted uppercase">
-                                    Promedio: <span className="text-txt-main font-mono font-black">{spoolerAzimuth}°</span>
-                                </div>
-                                <div className="text-[9px] font-bold text-txt-muted uppercase">
-                                    Límite MD: <span className="text-txt-main font-mono font-black">{Math.round(limitMD)} ft</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="h-full flex items-center justify-center">
-                            <SpoolerPolarChart processedData={processedData} limitMD={limitMD} isDark={isDark} />
-                        </div>
-                    </div>
-
-                    {/* Recharts Trajectory Curves */}
-                    <div className="flex-1 min-h-0 flex flex-col border border-surface-light/30 rounded-xl p-4 bg-surface/40 backdrop-blur-md">
+                    {/* Overlay del Gráfico de Perfil Hidráulico de Trayectoria vs TVD */}
+                    <div className="absolute right-4 top-16 bottom-16 w-[320px] bg-surface/80 backdrop-blur-md border border-surface-light/30 rounded-[1.5rem] p-4 z-20 flex flex-col pointer-events-auto shadow-2xl">
                         <h2 className="text-[9px] font-bold text-txt-muted uppercase tracking-widest mb-3 text-center">
-                            Perfil Hidráulico de Trayectoria vs TVD
+                            Perfil Hidráulico: TVD vs Inc/DLS
                         </h2>
-                        <div className="flex-1 w-full min-h-0 flex items-center justify-center">
+                        <div className="flex-1 min-h-0 flex items-center justify-center">
                             {chartData.length > 0 ? (
                                 <ResponsiveContainer width="100%" height="100%">
-                                    <ComposedChart layout="vertical" data={chartData} margin={{ top: 10, right: 5, left: -20, bottom: 5 }}>
+                                    <ComposedChart layout="vertical" data={chartData} margin={{ top: 10, right: 5, left: -25, bottom: 10 }}>
                                         <CartesianGrid stroke={colorSurfaceLight} strokeDasharray="3 3" opacity={0.06} horizontal={false} />
                                         <XAxis type="number" domain={[0, 90]} orientation="top" tick={{ fill: 'rgb(var(--color-primary))', fontSize: 8 }} tickLine={false} />
                                         <XAxis xAxisId="dls" type="number" domain={[0, maxDLS]} orientation="bottom" tick={{ fill: 'rgb(var(--color-warning))', fontSize: 8 }} tickLine={false} />
@@ -1227,6 +1190,40 @@ export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params, 
                         </div>
                     </div>
 
+                    <canvas
+                        ref={canvasRef}
+                        onMouseDown={handleMouseDown}
+                        onMouseMove={handleMouseMove}
+                        onMouseUp={handleMouseUp}
+                        onMouseLeave={handleMouseUp}
+                        onWheel={handleWheel}
+                        className="w-full h-full cursor-grab active:cursor-grabbing block relative z-10"
+                    />
+                </div>
+
+                {/* ── RIGHT: Charts & Analytics ── */}
+                <div className={`flex flex-col bg-canvas/40 p-6 gap-6 justify-center items-center ${isSidebar ? 'border-t border-surface-light/30' : 'border-l border-surface-light/30'}`}>
+                    <div className="flex flex-col items-center justify-center border border-surface-light/30 rounded-[2rem] p-6 bg-surface/40 backdrop-blur-md w-full max-w-[420px] shadow-xl">
+                        <h2 className="text-[12px] font-black text-primary tracking-[0.2em] text-center mb-4 uppercase">
+                            Optimización de Azimut - Spooler ALS
+                        </h2>
+                        <SpoolerPolarChart processedData={processedData} limitMD={limitMD} isDark={isDark} />
+                        
+                        <div className="mt-6 w-full border-t border-white/5 pt-4 space-y-3">
+                            <div className="flex justify-between items-center text-xs">
+                                <span className="font-bold text-txt-muted uppercase">Dirección Promedio:</span>
+                                <span className="font-mono font-black text-txt-main">{spoolerAzimuth}°</span>
+                            </div>
+                            <div className="flex justify-between items-center text-xs">
+                                <span className="font-bold text-txt-muted uppercase">Límite de Profundidad MD:</span>
+                                <span className="font-mono font-black text-txt-main">{Math.round(limitMD)} ft</span>
+                            </div>
+                            <div className="flex justify-between items-center text-xs">
+                                <span className="font-bold text-txt-muted uppercase">Severidad Máxima (DLS):</span>
+                                <span className="font-mono font-black text-warning">{maxCurveDLS.toFixed(2)} °/100ft</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
