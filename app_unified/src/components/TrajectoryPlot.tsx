@@ -325,6 +325,10 @@ export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params, 
 
     const spoolerAzimuth = useMemo(() => Math.round(avgAzimuth), [avgAzimuth]);
 
+    const chartData = useMemo(() => {
+        return processedData.filter(pt => Number.isFinite(pt.tvd) && Number.isFinite(pt.inc) && Number.isFinite(pt.dogleg));
+    }, [processedData]);
+
     // ── Single RAF-based Canvas Loop ───────────────────────────────────────────
 
     useEffect(() => {
@@ -1174,15 +1178,19 @@ export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params, 
                         </h2>
                         <div className="h-[240px] w-full">
                             <ResponsiveContainer width="100%" height="100%">
-                                <ComposedChart layout="vertical" data={processedData} margin={{ top: 10, right: 5, left: -20, bottom: 5 }}>
+                                <ComposedChart layout="vertical" data={chartData} margin={{ top: 10, right: 5, left: -20, bottom: 5 }}>
                                     <CartesianGrid stroke={colorSurfaceLight} strokeDasharray="3 3" opacity={0.06} horizontal={false} />
                                     <XAxis xAxisId="inc" type="number" domain={[0, 90]} orientation="top" tick={{ fill: 'rgb(var(--color-primary))', fontSize: 8 }} tickLine={false} />
-                                    <XAxis xAxisId="dls" type="number" domain={[0, (max: number) => Math.max(5, Math.ceil(max))]} orientation="bottom" tick={{ fill: 'rgb(var(--color-warning))', fontSize: 8 }} tickLine={false} />
+                                    <XAxis xAxisId="dls" type="number" domain={[0, (max: number) => Number.isFinite(max) ? Math.max(5, Math.ceil(max)) : 5]} orientation="bottom" tick={{ fill: 'rgb(var(--color-warning))', fontSize: 8 }} tickLine={false} />
                                     <YAxis yAxisId="tvd" dataKey="tvd" type="number" reversed={true} tick={{ fill: 'rgb(var(--color-text-muted))', fontSize: 8 }} tickLine={false} />
                                     <Line xAxisId="inc" yAxisId="tvd" type="monotone" dataKey="inc" stroke="rgb(var(--color-primary))" strokeWidth={2.0} dot={false} />
                                     <Line xAxisId="dls" yAxisId="tvd" type="stepAfter" dataKey="dogleg" stroke="rgb(var(--color-warning))" strokeWidth={1.5} dot={false} strokeOpacity={0.8} />
-                                    <ReferenceLine yAxisId="tvd" y={pumpDepthTVD} stroke="rgb(var(--color-primary))" strokeWidth={1.2} strokeDasharray="3 3" />
-                                    <ReferenceLine yAxisId="tvd" y={casingBottomTVD} stroke="rgb(var(--color-danger))" strokeWidth={1.2} strokeDasharray="3 3" />
+                                    {Number.isFinite(pumpDepthTVD) && (
+                                        <ReferenceLine yAxisId="tvd" y={pumpDepthTVD} stroke="rgb(var(--color-primary))" strokeWidth={1.2} strokeDasharray="3 3" />
+                                    )}
+                                    {Number.isFinite(casingBottomTVD) && (
+                                        <ReferenceLine yAxisId="tvd" y={casingBottomTVD} stroke="rgb(var(--color-danger))" strokeWidth={1.2} strokeDasharray="3 3" />
+                                    )}
                                 </ComposedChart>
                             </ResponsiveContainer>
                         </div>
