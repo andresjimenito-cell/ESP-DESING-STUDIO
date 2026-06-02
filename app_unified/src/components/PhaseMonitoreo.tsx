@@ -58,7 +58,7 @@ import { FloatingAiPanel } from './FloatingAiPanel';
 
 // Custom Hook de importacion
 import { usePhaseMonitoreoImport } from './usePhaseMonitoreoImport';
-import { MobileMonitoreo } from './MobileMonitoreo';
+import { MobileMonitoreo } from './mobile/MobileMonitoreo';
 
 // --- PERFORMANCE OPTIMIZED SUB-COMPONENTS ---
 

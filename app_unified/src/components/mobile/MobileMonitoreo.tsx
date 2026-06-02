@@ -6,14 +6,14 @@ import {
     Layers, Compass, Target, Globe, FileSpreadsheet, Settings, Palette
 } from 'lucide-react';
 import { WellFleetItem, EspPump, SystemParams, HistoryMatchData } from '@/types';
-import { getWellHealthScore, computeWellCapacity, getOptimizationPath } from './PhaseMonitoreo.helpers';
-import { calculateSystemResults, calculateBaseHead } from '../utils';
-import { MarkdownRenderer } from './MarkdownRenderer';
-import { VisualESPStack } from './VisualESPStack';
-import { TrajectoryPlot } from './TrajectoryPlot';
-import { Phase6 } from './Phase6';
-import { MatchHistorico } from './MatchHistorico';
-import { PredictiveWidget, DebouncedSearchInput } from './PhaseMonitoreo.subcomponents';
+import { getWellHealthScore, computeWellCapacity, getOptimizationPath } from '../PhaseMonitoreo.helpers';
+import { calculateSystemResults, calculateBaseHead } from '../../utils';
+import { MarkdownRenderer } from '../MarkdownRenderer';
+import { VisualESPStack } from '../VisualESPStack';
+import { TrajectoryPlot } from '../TrajectoryPlot';
+import { Phase6 } from '../Phase6';
+import { MatchHistorico } from '../MatchHistorico';
+import { PredictiveWidget, DebouncedSearchInput } from '../PhaseMonitoreo.subcomponents';
 
 interface Props {
     fleet: WellFleetItem[];
@@ -603,6 +603,7 @@ export const MobileMonitoreo: React.FC<Props> = ({
                                             onHistoryMatchChange={onHistoryMatchChange}
                                             pump={pump}
                                             designFreq={selectedWell.productionTest.freq || 60}
+                                            isMobile={true}
                                         />
                                     )}
                                 </div>

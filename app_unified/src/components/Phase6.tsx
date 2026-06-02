@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Activity, Gauge, Printer, Download, Droplets, ArrowDown, ClipboardCheck, X, Hammer, Thermometer, RefreshCw, Maximize2, Minimize2, Brain, Calendar, Play, Zap, TrendingDown, TrendingUp, Monitor, Layers, Repeat, Cpu, Target, Info, ShieldCheck, ChevronDown, ChevronUp, AlertTriangle, Database, Clock } from 'lucide-react';
+import { Activity, Gauge, Printer, Download, Droplets, ArrowDown, ClipboardCheck, X, Hammer, Thermometer, RefreshCw, Maximize2, Minimize2, Brain, Calendar, Play, Zap, TrendingDown, TrendingUp, Monitor, Layers, Repeat, Cpu, Target, Info, ShieldCheck, ChevronDown, ChevronUp, AlertTriangle, Database, Clock, Settings } from 'lucide-react';
 import { SystemParams, EspPump, ScenarioData, HistoryMatchData } from '../types';
 import { calculateTDH, calculateSystemResults, calculateBaseHead, calculateBasePowerPerStage, calculatePDP, calculatePIP, calculateFluidProperties, interpolateTVD, generateMultiCurveData, findIntersection, getShaftLimitHp, calculatePwf, getDownloadFilename } from '../utils';
 import { PumpChart } from './PumpChart';
@@ -38,7 +38,7 @@ const getScenarioParams = (baseParams: SystemParams, scenario: ScenarioData): Sy
 };
 
 const DesignMetric = ({ label, value }: any) => (
-        <div className={`bg-surface border border-primary/20 rounded-none p-3 flex flex-col justify-between transition-all hover:bg-white/5 shadow-sm`}>
+    <div className={`bg-surface/50 backdrop-blur-md border border-primary/20 rounded-xl p-3 flex flex-col justify-between transition-all hover:bg-white/5 shadow-sm`}>
         <span className="text-[10px] text-txt-muted font-black uppercase tracking-[0.1em] mb-1">{label}</span>
         <span className="text-sm font-mono font-black text-txt-main tracking-tighter">{value}</span>
     </div>
@@ -46,10 +46,10 @@ const DesignMetric = ({ label, value }: any) => (
 
 const PremiumField = ({ label, value, unit, icon: Icon, onChange, color = 'primary' }: any) => {
     const colorClasses = {
-        primary: { border: 'border-primary/30', line: 'bg-primary', icon: 'text-primary', unit: 'text-primary' },
-        secondary: { border: 'border-secondary/30', line: 'bg-secondary', icon: 'text-secondary', unit: 'text-secondary' },
-        success: { border: 'border-success/30', line: 'bg-success', icon: 'text-success', unit: 'text-success' },
-    }[color] || { border: 'border-primary/30', line: 'bg-primary', icon: 'text-primary', unit: 'text-primary' };
+        primary: { border: 'border-primary/30 focus-within:border-primary/60 focus-within:ring-primary/20', line: 'bg-primary', icon: 'text-primary', unit: 'text-primary' },
+        secondary: { border: 'border-secondary/30 focus-within:border-secondary/60 focus-within:ring-secondary/20', line: 'bg-secondary', icon: 'text-secondary', unit: 'text-secondary' },
+        success: { border: 'border-success/30 focus-within:border-success/60 focus-within:ring-success/20', line: 'bg-success', icon: 'text-success', unit: 'text-success' },
+    }[color] || { border: 'border-primary/30 focus-within:border-primary/60 focus-within:ring-primary/20', line: 'bg-primary', icon: 'text-primary', unit: 'text-primary' };
 
     const [isFocused, setIsFocused] = useState(false);
     const [draft, setDraft] = useState('');
@@ -73,7 +73,7 @@ const PremiumField = ({ label, value, unit, icon: Icon, onChange, color = 'prima
     const displayValue = isFocused ? draft : formatForInput(value);
 
     return (
-        <div className={`bg-surface border ${colorClasses.border} rounded-none p-3 flex flex-col justify-between group h-20 transition-all shadow-sm relative overflow-hidden focus-within:border-white/40`}>
+        <div className={`bg-surface/50 backdrop-blur-md border ${colorClasses.border} rounded-xl p-3 flex flex-col justify-between group h-20 transition-all shadow-[0_4px_30px_rgba(0,0,0,0.15)] relative overflow-hidden focus-within:ring-1`}>
             <div className={`absolute top-0 left-0 w-1 h-full ${colorClasses.line}`}></div>
             <div className="flex justify-between items-center mb-0.5 relative z-10">
                 <label className="text-[10px] font-black text-txt-muted uppercase tracking-[0.1em]">{label}</label>
@@ -127,7 +127,7 @@ const normalizeDateForInput = (value: any): string => {
 };
 
 const PremiumDate = ({ label, value, icon: Icon, onChange }: any) => (
-    <div className="bg-surface border border-primary/20 rounded-none p-3 flex flex-col justify-between group h-20 transition-all shadow-inner relative overflow-hidden focus-within:border-white/40">
+    <div className="bg-surface/50 backdrop-blur-md border border-primary/20 rounded-xl p-3 flex flex-col justify-between group h-20 transition-all shadow-[0_4px_30px_rgba(0,0,0,0.15)] relative overflow-hidden focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/20">
         <div className="flex justify-between items-center mb-0.5 relative z-10">
             <label className="text-[10px] font-black text-txt-muted uppercase tracking-[0.1em]">{label}</label>
             <Icon className="w-3 h-3 text-primary opacity-80" />
@@ -144,7 +144,7 @@ const PremiumDate = ({ label, value, icon: Icon, onChange }: any) => (
 );
 
 const RunLifeCard = ({ label, value, sub }: { label: string; value: string; sub: string }) => (
-    <div className="bg-surface border border-primary/20 rounded-none p-3 flex flex-col justify-between group h-20 transition-all shadow-inner relative overflow-hidden">
+    <div className="bg-surface/50 backdrop-blur-md border border-primary/20 rounded-xl p-3 flex flex-col justify-between group h-20 transition-all shadow-[0_4px_30px_rgba(0,0,0,0.15)] relative overflow-hidden">
         <div className="flex justify-between items-center mb-0.5 relative z-10">
             <label className="text-[10px] font-black text-txt-muted uppercase tracking-[0.1em]">{label}</label>
             <Clock className="w-3 h-3 text-primary opacity-80" />
@@ -159,7 +159,7 @@ const RunLifeCard = ({ label, value, sub }: { label: string; value: string; sub:
 const PremiumMetricCardComponent = ({ label, value, subValue, icon: Icon, color, alert }: any) => {
     const IconComponent = Icon || Activity;
     return (
-        <div className={`card-solid rounded-none border ${alert ? 'border-danger' : 'border-white/10'} p-5 flex flex-col justify-between relative overflow-hidden h-[130px]`}>
+        <div className={`card-solid rounded-2xl border ${alert ? 'border-danger/60 bg-danger/5' : 'border-white/10 bg-surface/50 backdrop-blur-md'} p-5 flex flex-col justify-between relative overflow-hidden h-[130px] shadow-[0_8px_32px_rgba(0,0,0,0.15)]`}>
             <div className={`absolute -right-6 -top-6 w-20 h-20 ${color === 'secondary' ? 'bg-secondary/10' : color === 'primary' ? 'bg-primary/10' : 'bg-danger/10'} blur-3xl rounded-none`}></div>
             <div className="flex justify-between items-start relative z-10">
                 <span className="text-[9px] font-black text-txt-muted uppercase tracking-[0.2em] opacity-80">{label}</span>
@@ -179,11 +179,11 @@ const CompPremium = ({ label, design, actual, unit, color }: any) => {
     const diff = design > 0 ? ((actual - design) / design) * 100 : 0;
     const isOver = diff > 0;
     return (
-        <div className="card-solid rounded-none border border-white/10 shadow-2xl p-5 flex flex-col justify-between relative overflow-hidden group hover:scale-[1.02] transition-all h-[130px] light-sweep">
+        <div className="card-solid rounded-2xl border border-white/10 bg-surface/50 backdrop-blur-md shadow-2xl p-5 flex flex-col justify-between relative overflow-hidden group hover:scale-[1.02] transition-all h-[130px] light-sweep">
             <div className={`absolute -right-6 -top-6 w-20 h-20 shadow-glow-${color}/10 blur-3xl rounded-none`}></div>
             <div className="flex justify-between items-start relative z-10">
                 <span className="text-[9px] font-black text-txt-muted uppercase tracking-widest opacity-80">{label}</span>
-                <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-none text-[8px] font-black border ${Math.abs(diff) < 5 ? 'bg-success/20 text-success border-success/20' : 'bg-danger/20 text-danger border-danger/20'}`}>
+                <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[8px] font-black border ${Math.abs(diff) < 5 ? 'bg-success/20 text-success border-success/20' : 'bg-danger/20 text-danger border-danger/20'}`}>
                     {Math.abs(diff).toFixed(1)}% {isOver ? 'UP' : 'DN'}
                 </div>
             </div>
@@ -914,8 +914,10 @@ const SimulatedMetric = ({ label, value, sub, color = "primary", badge }: any) =
     );
 };
 
-const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true, onHistoryMatchChange, pump, designFreq, trail }) => {
+const Phase6Component: React.FC<Props & { isMobile?: boolean }> = ({ params, setParams, syncParams = true, onHistoryMatchChange, pump, designFreq, trail, isMobile }) => {
     const { t, language } = useLanguage();
+    const isMobileView = isMobile || (typeof window !== 'undefined' && window.innerWidth < 768);
+    const [mobileSubTab, setMobileSubTab] = useState<'chart' | 'params' | 'results'>('chart');
     const [showReport, setShowReport] = useState(false);
     const [isChartExpanded, setIsChartExpanded] = useState(false);
     const [compareScenario, setCompareScenario] = useState<'min' | 'target' | 'max'>('target');
@@ -2144,206 +2146,247 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
                 </div>
             </div>
 
-            <div className="grid grid-cols-12 gap-6 flex-1">
-                <div className="col-span-12 lg:col-span-4 flex flex-col gap-6 overflow-y-auto custom-scrollbar pr-2 min-h-0">
+            {isMobileView && (
+                <div className="flex bg-surface/80 backdrop-blur-xl p-1 rounded-xl border border-white/10 shadow-lg mb-3 mx-1 shrink-0">
+                    <button
+                        onClick={() => setMobileSubTab('chart')}
+                        className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-[10px] font-black uppercase transition-all duration-300 ${
+                            mobileSubTab === 'chart'
+                                ? 'bg-primary text-white shadow-glow-primary/20'
+                                : 'text-txt-muted hover:text-white'
+                        }`}
+                    >
+                        <TrendingUp className="w-3.5 h-3.5" />
+                        <span>{language === 'es' ? 'Gráfica' : 'Chart'}</span>
+                    </button>
+                    <button
+                        onClick={() => setMobileSubTab('params')}
+                        className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-[10px] font-black uppercase transition-all duration-300 ${
+                            mobileSubTab === 'params'
+                                ? 'bg-primary text-white shadow-glow-primary/20'
+                                : 'text-txt-muted hover:text-white'
+                        }`}
+                    >
+                        <Settings className="w-3.5 h-3.5" />
+                        <span>{language === 'es' ? 'Parámetros' : 'Params'}</span>
+                    </button>
+                    <button
+                        onClick={() => setMobileSubTab('results')}
+                        className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-[10px] font-black uppercase transition-all duration-300 ${
+                            mobileSubTab === 'results'
+                                ? 'bg-primary text-white shadow-glow-primary/20'
+                                : 'text-txt-muted hover:text-white'
+                        }`}
+                    >
+                        <Activity className="w-3.5 h-3.5" />
+                        <span>{language === 'es' ? 'Resultados' : 'Results'}</span>
+                    </button>
+                </div>
+            )}
 
-                    <div className={`card-solid rounded-none border p-6 shadow-2xl relative overflow-hidden flex flex-col gap-6 min-h-0 transition-all duration-700 ${isMaxCapActive ? 'border-success/40 ring-1 ring-success/20 bg-success/[0.04]' : 'border-white/10'}`}>
-                        <div className={`absolute inset-0 bg-gradient-to-b transition-colors duration-700 ${isMaxCapActive ? 'from-success/10 to-transparent' : 'from-primary/5 to-transparent'}`}></div>
-                        <div className="relative z-10">
-                            <div className="flex items-center gap-3 mb-4 bg-primary/10 -mx-6 -mt-6 p-3 border-b border-primary/20 rounded-none">
-                                <div className="p-1.5 bg-primary/20 rounded-none text-primary border border-primary/30"><Activity className="w-3.5 h-3.5" /></div>
-                                <h3 className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">{t('p6.surfaceData')}</h3>
-                            </div>
-                            <div className="grid grid-cols-2 gap-2.5">
-                                <PremiumField label={t('p6.testRate')} value={fieldData.rate} unit="BPD" icon={Droplets} onChange={(v: any) => updateField('rate', v)} color="secondary" />
-                                <PremiumField
-                                    label={t('p5.freq')}
-                                    value={displayFreq}
-                                    unit="Hz"
-                                    icon={Activity}
-                                    onChange={(v: any) => isMaxCapActive ? setSimFreq(v) : updateField('frequency', v)}
-                                    color={isMaxCapActive ? 'success' : 'secondary'}
-                                />
-                                <PremiumField label={t('p6.measThp')} value={fieldData.thp} unit="psi" icon={Gauge} onChange={(v: any) => updateField('thp', v)} color="secondary" />
-                                <PremiumField label={t('p6.measTht')} value={fieldData.tht} unit="°F" icon={Thermometer} onChange={(v: any) => updateField('tht', v)} color="secondary" />
-                                <div className="col-span-2">
-                                    <PremiumField label={t('p2.waterCut')} value={fieldData.waterCut} unit="%" icon={Droplets} onChange={(v: any) => updateField('waterCut', v)} color="secondary" />
-                                </div>
-                                <div className="col-span-2 grid grid-cols-3 gap-3 mt-2 pt-5 border-t border-white/5">
-                                    <PremiumDate label={t('p6.startDate')} value={fieldData.startDate} icon={Calendar} onChange={(v: any) => updateField('startDate', v)} />
-                                    <PremiumDate label={t('p6.matchDate')} value={fieldData.matchDate} icon={Calendar} onChange={(v: any) => updateField('matchDate', v)} />
-                                    {runLifeInfo ? (
-                                        <RunLifeCard label={runLifeInfo.label} value={runLifeInfo.value} sub={runLifeInfo.sub} />
-                                    ) : (
-                                        <div className="bg-surface/30 border border-white/5 rounded-none h-20" />
-                                    )}
-                                </div>
-                            </div>
-                        </div>
+            <div className="grid grid-cols-12 gap-4 md:gap-6 flex-1 min-h-0">
+                {(!isMobileView || mobileSubTab === 'params') && (
+                    <div className="col-span-12 lg:col-span-4 flex flex-col gap-6 overflow-y-auto custom-scrollbar pr-2 min-h-0">
 
-                        <div className="relative z-10 mt-6">
-                            <div className="flex items-center gap-3 mb-4 bg-primary/10 -mx-6 p-3 border-y border-primary/20">
-                                <div className="p-1.5 bg-primary/20 rounded-none text-primary border border-primary/30"><ArrowDown className="w-3.5 h-3.5" /></div>
-                                <h3 className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">{t('p6.downholeData')}</h3>
-                            </div>
-                            <div className="grid grid-cols-2 gap-3 mt-4">
-                                <div className="col-span-2 grid grid-cols-2 gap-3">
-                                    <PremiumField label="P. Estatica" value={(fieldData.pStatic > 0) ? fieldData.pStatic : (params.inflow.pStatic || 0)} unit="psi" icon={Layers} onChange={(v: any) => updateField('pStatic', v)} color="primary" />
-                                    <PremiumField label={t('p6.measPip')} value={fieldData.pip} unit="psi" icon={Gauge} onChange={(v: any) => updateField('pip', v)} color="primary" />
+                        <div className={`card-solid rounded-2xl border p-6 shadow-2xl relative overflow-hidden flex flex-col gap-6 min-h-0 transition-all duration-700 ${isMaxCapActive ? 'border-success/40 ring-1 ring-success/20 bg-success/[0.04]' : 'border-white/10 bg-surface/50 backdrop-blur-md'}`}>
+                            <div className={`absolute inset-0 bg-gradient-to-b transition-colors duration-700 ${isMaxCapActive ? 'from-success/10 to-transparent' : 'from-primary/5 to-transparent'}`}></div>
+                            <div className="relative z-10">
+                                <div className="flex items-center gap-3 mb-4 bg-primary/10 -mx-6 -mt-6 p-3 border-b border-primary/20 rounded-none">
+                                    <div className="p-1.5 bg-primary/20 rounded-none text-primary border border-primary/30"><Activity className="w-3.5 h-3.5" /></div>
+                                    <h3 className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">{t('p6.surfaceData')}</h3>
                                 </div>
-                                <div className={`col-span-2 rounded-none p-4 flex flex-col justify-between group transition-all duration-500 shadow-2xl relative overflow-hidden ${sensScenario.active ? 'bg-primary/20 border-2 border-primary/40 ring-1 ring-primary/20' : 'bg-surface/50 border border-white/10'}`}>
-                                    <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
-                                    <div className="flex justify-between items-center mb-3 relative z-10">
-                                        <div className="flex flex-col">
-                                            <label className="text-[9px] font-black text-txt-muted uppercase tracking-widest opacity-60">
-                                                {sensScenario.active ? "IP SIMULADO" : t('p6.calcIp')}
-                                            </label>
-                                            <span className="text-[8px] font-black text-primary/60 uppercase tracking-tighter">Calibrado: {calculatedIP?.toFixed(2)}</span>
+                                <div className="grid grid-cols-2 gap-2.5">
+                                    <PremiumField label={t('p6.testRate')} value={fieldData.rate} unit="BPD" icon={Droplets} onChange={(v: any) => updateField('rate', v)} color="secondary" />
+                                    <PremiumField
+                                        label={t('p5.freq')}
+                                        value={displayFreq}
+                                        unit="Hz"
+                                        icon={Activity}
+                                        onChange={(v: any) => isMaxCapActive ? setSimFreq(v) : updateField('frequency', v)}
+                                        color={isMaxCapActive ? 'success' : 'secondary'}
+                                    />
+                                    <PremiumField label={t('p6.measThp')} value={fieldData.thp} unit="psi" icon={Gauge} onChange={(v: any) => updateField('thp', v)} color="secondary" />
+                                    <PremiumField label={t('p6.measTht')} value={fieldData.tht} unit="°F" icon={Thermometer} onChange={(v: any) => updateField('tht', v)} color="secondary" />
+                                    <div className="col-span-2">
+                                        <PremiumField label={t('p2.waterCut')} value={fieldData.waterCut} unit="%" icon={Droplets} onChange={(v: any) => updateField('waterCut', v)} color="secondary" />
+                                    </div>
+                                    <div className="col-span-2 grid grid-cols-3 gap-3 mt-2 pt-5 border-t border-white/5">
+                                        <PremiumDate label={t('p6.startDate')} value={fieldData.startDate} icon={Calendar} onChange={(v: any) => updateField('startDate', v)} />
+                                        <PremiumDate label={t('p6.matchDate')} value={fieldData.matchDate} icon={Calendar} onChange={(v: any) => updateField('matchDate', v)} />
+                                        {runLifeInfo ? (
+                                            <RunLifeCard label={runLifeInfo.label} value={runLifeInfo.value} sub={runLifeInfo.sub} />
+                                        ) : (
+                                            <div className="bg-surface/30 border border-white/5 rounded-xl h-20" />
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="relative z-10 mt-6">
+                                <div className="flex items-center gap-3 mb-4 bg-primary/10 -mx-6 p-3 border-y border-primary/20">
+                                    <div className="p-1.5 bg-primary/20 rounded-none text-primary border border-primary/30"><ArrowDown className="w-3.5 h-3.5" /></div>
+                                    <h3 className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">{t('p6.downholeData')}</h3>
+                                </div>
+                                <div className="grid grid-cols-2 gap-3 mt-4">
+                                    <div className="col-span-2 grid grid-cols-2 gap-3">
+                                        <PremiumField label="P. Estatica" value={(fieldData.pStatic > 0) ? fieldData.pStatic : (params.inflow.pStatic || 0)} unit="psi" icon={Layers} onChange={(v: any) => updateField('pStatic', v)} color="primary" />
+                                        <PremiumField label={t('p6.measPip')} value={fieldData.pip} unit="psi" icon={Gauge} onChange={(v: any) => updateField('pip', v)} color="primary" />
+                                    </div>
+                                    <div className={`col-span-2 rounded-xl p-4 flex flex-col justify-between group transition-all duration-500 shadow-2xl relative overflow-hidden ${sensScenario.active ? 'bg-primary/20 border-2 border-primary/40 ring-1 ring-primary/20' : 'bg-surface/50 border border-white/10'}`}>
+                                        <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+                                        <div className="flex justify-between items-center mb-3 relative z-10">
+                                            <div className="flex flex-col">
+                                                <label className="text-[9px] font-black text-txt-muted uppercase tracking-widest opacity-60">
+                                                    {sensScenario.active ? "IP SIMULADO" : t('p6.calcIp')}
+                                                </label>
+                                                <span className="text-[8px] font-black text-primary/60 uppercase tracking-tighter">Calibrado: {calculatedIP?.toFixed(2)}</span>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                title="Use esta suite para analizar el comportamiento del sistema (caudal, PIP, Pwf) ante cambios hipoteticos en el IP del reservorio o la presion de cabezal (THP)."
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    setSensScenario({
+                                                        active: !sensScenario.active,
+                                                        ip: sensScenario.active ? sensScenario.ip : (calculatedIP > 0 ? calculatedIP : (fieldData.ip || 0)),
+                                                        thp: sensScenario.active ? sensScenario.thp : (fieldData.thp || 0)
+                                                    });
+                                                }}
+                                                className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all flex items-center gap-2.5 shadow-xl ${sensScenario.active ? 'bg-primary text-white shadow-glow-primary/50 animate-pulse-subtle scale-105' : 'bg-white/5 text-txt-muted hover:bg-white/10 hover:text-white border border-white/5'}`}
+                                            >
+                                                <TrendingUp className={`w-3.5 h-3.5 ${sensScenario.active ? 'animate-bounce' : ''}`} />
+                                                {sensScenario.active ? "En Sesion" : "Sensibilizar"}
+                                            </button>
+                                        </div>
+
+                                        {sensScenario.active ? (
+                                            <div className="flex flex-col gap-4 relative z-10 animate-fadeIn mt-2">
+                                                <div className="flex flex-col gap-1.5">
+                                                    <label className="text-[8px] font-black text-primary uppercase ml-1 opacity-70">Nuevo IP (BFPD/PSI)</label>
+                                                    <div className="flex items-center bg-black/40 rounded-xl border border-white/30 overflow-hidden focus-within:border-primary/50 transition-all shadow-inner">
+                                                        <input
+                                                            type="number"
+                                                            value={sensScenario.ip}
+                                                            onChange={(e) => {
+                                                                const val = parseFloat(e.target.value);
+                                                                setSensScenario({ ...sensScenario, ip: isNaN(val) ? 0 : val });
+                                                            }}
+                                                            autoFocus
+                                                            className="w-full bg-transparent px-3 py-2.5 text-lg font-black text-txt-main outline-none font-mono placeholder:text-txt-muted/20"
+                                                            placeholder="0.00"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div className="flex flex-col gap-1.5">
+                                                    <label className="text-[8px] font-black text-secondary uppercase ml-1 opacity-70">Nueva THP (PSI)</label>
+                                                    <div className="flex items-center bg-black/40 rounded-xl border border-white/30 overflow-hidden focus-within:border-secondary/50 transition-all shadow-inner">
+                                                        <input
+                                                            type="number"
+                                                            value={sensScenario.thp}
+                                                            onChange={(e) => {
+                                                                const raw = e.target.value;
+                                                                const val = parseFloat(raw);
+                                                                setSensScenario({ ...sensScenario, thp: isNaN(val) ? 0 : val });
+                                                            }}
+                                                            className="w-full bg-transparent px-3 py-2.5 text-lg font-black text-txt-main outline-none font-mono placeholder:text-txt-muted/20"
+                                                            placeholder="0"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div className="mt-1 p-2 bg-primary/20 rounded-xl border border-primary/30 shadow-glow-primary/10">
+                                                    <p className="text-[7px] font-black text-primary uppercase leading-tight text-center tracking-widest animate-pulse">
+                                                        PROYECCIÓN NODAL ACTIVA
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-baseline gap-2 relative z-10 py-2">
+                                                <span className="text-3xl font-black text-primary font-mono tracking-tighter">{calculatedIP?.toFixed(2) ?? '0.00'}</span>
+                                                <span className="text-[9px] font-black text-txt-muted uppercase opacity-40 italic"> BFPD/PSI</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="relative z-10 mt-4 pt-6 border-t border-white/10">
+                                <div className="flex flex-col gap-4">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <div className={`p-2 rounded-xl border transition-all ${isMaxCapActive ? 'bg-success/20 text-success border-success/40 shadow-glow-success/20' : 'bg-white/5 text-txt-muted border-white/10'}`}>
+                                                <Zap className={`w-4 h-4 ${isMaxCapActive ? 'animate-pulse' : ''}`} />
+                                            </div>
+                                            <h3 className="text-[10px] font-black text-txt-main uppercase tracking-[0.2em]">{language === 'es' ? 'CALCULO CAPACIDAD MAXIMA' : 'MAXIMUM CAPACITY CALCULATION'}</h3>
                                         </div>
                                         <button
-                                            type="button"
-                                            title="Use esta suite para analizar el comportamiento del sistema (caudal, PIP, Pwf) ante cambios hipoteticos en el IP del reservorio o la presion de cabezal (THP)."
-                                            onClick={(e) => {
-                                                e.preventDefault();
-                                                // When opening sensitivity, preload with current calibrated values
-                                                setSensScenario({
-                                                    active: !sensScenario.active,
-                                                    ip: sensScenario.active ? sensScenario.ip : (calculatedIP > 0 ? calculatedIP : (fieldData.ip || 0)),
-                                                    thp: sensScenario.active ? sensScenario.thp : (fieldData.thp || 0)
-                                                });
-                                            }}
-                                            className={`px-4 py-2 rounded-none text-[10px] font-black uppercase transition-all flex items-center gap-2.5 shadow-xl ${sensScenario.active ? 'bg-primary text-white shadow-glow-primary/50 animate-pulse-subtle scale-105' : 'bg-white/5 text-txt-muted hover:bg-white/10 hover:text-white border border-white/5'}`}
+                                            onClick={() => setIsMaxCapActive(!isMaxCapActive)}
+                                            className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all border ${isMaxCapActive ? 'bg-success text-white border-success shadow-glow-success' : 'bg-white/5 text-txt-muted border-white/10 hover:bg-white/10'}`}
                                         >
-                                            <TrendingUp className={`w-3.5 h-3.5 ${sensScenario.active ? 'animate-bounce' : ''}`} />
-                                            {sensScenario.active ? "En Sesion" : "Sensibilizar"}
+                                            {isMaxCapActive ? 'ACTIVADO' : 'ACTIVAR'}
                                         </button>
                                     </div>
 
-                                    {sensScenario.active ? (
-                                        <div className="flex flex-col gap-4 relative z-10 animate-fadeIn mt-2">
-                                            <div className="flex flex-col gap-1.5">
-                                                <label className="text-[8px] font-black text-primary uppercase ml-1 opacity-70">Nuevo IP (BFPD/PSI)</label>
-                                                <div className="flex items-center bg-black/40 rounded-none border border-white/30 overflow-hidden focus-within:border-primary/50 transition-all shadow-inner">
-                                                    <input
-                                                        type="number"
-                                                        value={sensScenario.ip}
-                                                        onChange={(e) => {
-                                                            const val = parseFloat(e.target.value);
-                                                            setSensScenario({ ...sensScenario, ip: isNaN(val) ? 0 : val });
-                                                        }}
-                                                        autoFocus
-                                                        className="w-full bg-transparent px-3 py-2.5 text-lg font-black text-txt-main outline-none font-mono placeholder:text-txt-muted/20"
-                                                        placeholder="0.00"
-                                                    />
-                                                </div>
-                                            </div>
-                                            <div className="flex flex-col gap-1.5">
-                                                <label className="text-[8px] font-black text-secondary uppercase ml-1 opacity-70">Nueva THP (PSI)</label>
-                                                <div className="flex items-center bg-black/40 rounded-none border border-white/30 overflow-hidden focus-within:border-secondary/50 transition-all shadow-inner">
-                                                    <input
-                                                        type="number"
-                                                        value={sensScenario.thp}
-                                                        onChange={(e) => {
-                                                            const raw = e.target.value;
-                                                            const val = parseFloat(raw);
-                                                            setSensScenario({ ...sensScenario, thp: isNaN(val) ? 0 : val });
-                                                        }}
-                                                        className="w-full bg-transparent px-3 py-2.5 text-lg font-black text-txt-main outline-none font-mono placeholder:text-txt-muted/20"
-                                                        placeholder="0"
-                                                    />
-                                                </div>
-                                            </div>
-                                            <div className="mt-1 p-2 bg-primary/20 rounded-none border border-primary/30 shadow-glow-primary/10">
-                                                <p className="text-[7px] font-black text-primary uppercase leading-tight text-center tracking-widest animate-pulse">
-                                                    PROYECCI\u00d3N NODAL ACTIVA
-                                                </p>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div className="flex items-baseline gap-2 relative z-10 py-2">
-                                            <span className="text-3xl font-black text-primary font-mono tracking-tighter">{calculatedIP?.toFixed(2) ?? '0.00'}</span>
-                                            <span className="text-[9px] font-black text-txt-muted uppercase opacity-40 italic"> BFPD/PSI</span>
+                                    {isMaxCapActive && (
+                                        <div className="bg-success/5 rounded-xl p-4 border border-success/20 animate-fadeIn">
+                                            <p className="text-[9px] font-medium text-success/80 leading-relaxed uppercase tracking-wider">
+                                                Modo Simulacion Activo. Ajuste la frecuencia para predecir el comportamiento del pozo y la bomba basandose en el IP y sistema calibrados.
+                                            </p>
                                         </div>
                                     )}
                                 </div>
                             </div>
                         </div>
 
-                        <div className="relative z-10 mt-4 pt-6 border-t border-white/10">
-                            <div className="flex flex-col gap-4">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                        <div className={`p-2 rounded-none border transition-all ${isMaxCapActive ? 'bg-success/20 text-success border-success/40 shadow-glow-success/20' : 'bg-white/5 text-txt-muted border-white/10'}`}>
-                                            <Zap className={`w-4 h-4 ${isMaxCapActive ? 'animate-pulse' : ''}`} />
-                                        </div>
-                                        <h3 className="text-[10px] font-black text-txt-main uppercase tracking-[0.2em]">{language === 'es' ? 'CALCULO CAPACIDAD MAXIMA' : 'MAXIMUM CAPACITY CALCULATION'}</h3>
+                        <div className="card-solid border border-white/10 rounded-2xl p-6 relative overflow-hidden group shrink-0 shadow-2xl transition-all duration-500 hover:border-secondary/40 bg-surface/50 backdrop-blur-md">
+                            <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-100 transition-opacity">
+                                <Activity className="w-24 h-24 text-primary" />
+                            </div>
+                            <div className="flex justify-between items-center mb-0 relative z-10 bg-primary/10 -mx-6 -mt-6 p-4 border-b border-primary/20 cursor-pointer hover:bg-primary/20 transition-colors rounded-t-2xl"
+                                onClick={() => setIsDesignCollapsed(!isDesignCollapsed)}
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className={`p-2 rounded-xl transition-all ${isDesignCollapsed ? 'bg-white/5' : 'bg-primary/20 text-primary'}`}>
+                                        {isDesignCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
                                     </div>
-                                    <button
-                                        onClick={() => setIsMaxCapActive(!isMaxCapActive)}
-                                        className={`px-4 py-2 rounded-none text-[9px] font-black uppercase transition-all border ${isMaxCapActive ? 'bg-success text-white border-success shadow-glow-success' : 'bg-white/5 text-txt-muted border-white/10 hover:bg-white/10'}`}
-                                    >
-                                        {isMaxCapActive ? 'ACTIVADO' : 'ACTIVAR'}
-                                    </button>
+                                    <div>
+                                        <h3 className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">{t('p6.designRef')}</h3>
+                                        <div className="text-[10px] font-black text-primary mt-0.5 uppercase tracking-tighter opacity-80">{compareScenario.toUpperCase()} - {t('p5.preview')}</div>
+                                    </div>
                                 </div>
+                                <div className="flex items-center gap-2">
+                                    {params.isMechVerified && (
+                                        <span className="bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 px-2.5 py-1 rounded-xl text-[8px] font-black uppercase tracking-widest">VERIFICADO</span>
+                                    )}
+                                    <span className="bg-primary text-white px-3 py-1 rounded-xl text-[10px] font-black">TARGET</span>
+                                </div>
+                            </div>
 
-                                {isMaxCapActive && (
-                                    <div className="bg-success/5 rounded-none p-4 border border-success/20 animate-fadeIn">
-                                        <p className="text-[9px] font-medium text-success/80 leading-relaxed uppercase tracking-wider">
-                                            Modo Simulacion Activo. Ajuste la frecuencia para predecir el comportamiento del pozo y la bomba basandose en el IP y sistema calibrados.
-                                        </p>
-                                    </div>
-                                )}
+                            {!isDesignCollapsed && (
+                                <div className="grid grid-cols-2 gap-3 relative z-10 mt-6 animate-slideDown">
+                                    <DesignMetric label={t('tele.flow')} value={`${designParams.pressures.totalRate} BPD`} />
+                                    <DesignMetric label={t('p5.freq')} value={`${params.targets[compareScenario].frequency} Hz`} />
+                                    <DesignMetric label="TDH" value={`${designRes.tdh?.toFixed(0)} ft`} />
+                                    <DesignMetric label={t('p3.pip')} value={`${designRes.pip?.toFixed(0)} psi`} />
+                                    <DesignMetric label="INTAKE MD" value={`${designParams.pressures.pumpDepthMD?.toFixed(0)} ft`} />
+                                    <DesignMetric label="INTAKE TVD" value={`${interpolateTVD(designParams.pressures.pumpDepthMD, designParams.survey).toFixed(0)} ft`} />
+                                    <DesignMetric label="PMP (MD)" value={`${designParams.wellbore.midPerfsMD?.toFixed(0)} ft`} />
+                                    <DesignMetric label="PMP (TVD)" value={`${interpolateTVD(designParams.wellbore.midPerfsMD, designParams.survey).toFixed(0)} ft`} />
+                                </div>
+                            )}
+
+                            <div className="mt-4 pt-4 border-t border-white/5 flex items-center gap-2 opacity-50 group-hover:opacity-100 transition-opacity">
+                                <Info className="w-3 h-3 text-txt-muted" />
+                                <span className="text-[7px] font-black uppercase tracking-[0.2em] text-txt-muted">
+                                    Fuente: {params.isMechVerified ? 'ESTADOS MECANICOS (VERIFICADO)' : 'DISENO ORIGINAL (AUTO)'}
+                                </span>
                             </div>
                         </div>
                     </div>
+                )}
 
-                    <div className="card-solid border border-white/10 rounded-none p-6 relative overflow-hidden group shrink-0 shadow-2xl transition-all duration-500 hover:border-secondary/40">
-                        <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-100 transition-opacity">
-                            <Activity className="w-24 h-24 text-primary" />
-                        </div>
-                        <div className="flex justify-between items-center mb-0 relative z-10 bg-primary/10 -mx-6 -mt-6 p-4 border-b border-primary/20 cursor-pointer hover:bg-primary/20 transition-colors"
-                            onClick={() => setIsDesignCollapsed(!isDesignCollapsed)}
-                        >
-                            <div className="flex items-center gap-3">
-                                <div className={`p-2 rounded-none transition-all ${isDesignCollapsed ? 'bg-white/5' : 'bg-primary/20 text-primary'}`}>
-                                    {isDesignCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
-                                </div>
-                                <div>
-                                    <h3 className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">{t('p6.designRef')}</h3>
-                                    <div className="text-[10px] font-black text-primary mt-0.5 uppercase tracking-tighter opacity-80">{compareScenario.toUpperCase()} - {t('p5.preview')}</div>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                {params.isMechVerified && (
-                                    <span className="bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 px-2.5 py-1 rounded-none text-[8px] font-black uppercase tracking-widest">VERIFICADO</span>
-                                )}
-                                <span className="bg-primary text-white px-3 py-1 rounded-none text-[10px] font-black">TARGET</span>
-                            </div>
-                        </div>
-
-                        {!isDesignCollapsed && (
-                            <div className="grid grid-cols-2 gap-3 relative z-10 mt-6 animate-slideDown">
-                                <DesignMetric label={t('tele.flow')} value={`${designParams.pressures.totalRate} BPD`} />
-                                <DesignMetric label={t('p5.freq')} value={`${params.targets[compareScenario].frequency} Hz`} />
-                                <DesignMetric label="TDH" value={`${designRes.tdh?.toFixed(0)} ft`} />
-                                <DesignMetric label={t('p3.pip')} value={`${designRes.pip?.toFixed(0)} psi`} />
-                                <DesignMetric label="INTAKE MD" value={`${designParams.pressures.pumpDepthMD?.toFixed(0)} ft`} />
-                                <DesignMetric label="INTAKE TVD" value={`${interpolateTVD(designParams.pressures.pumpDepthMD, designParams.survey).toFixed(0)} ft`} />
-                                <DesignMetric label="PMP (MD)" value={`${designParams.wellbore.midPerfsMD?.toFixed(0)} ft`} />
-                                <DesignMetric label="PMP (TVD)" value={`${interpolateTVD(designParams.wellbore.midPerfsMD, designParams.survey).toFixed(0)} ft`} />
-                            </div>
-                        )}
-
-                        <div className="mt-4 pt-4 border-t border-white/5 flex items-center gap-2 opacity-50 group-hover:opacity-100 transition-opacity">
-                            <Info className="w-3 h-3 text-txt-muted" />
-                            <span className="text-[7px] font-black uppercase tracking-[0.2em] text-txt-muted">
-                                Fuente: {params.isMechVerified ? 'ESTADOS MECANICOS (VERIFICADO)' : 'DISENO ORIGINAL (AUTO)'}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="col-span-12 lg:col-span-8 flex flex-col gap-3 overflow-y-auto custom-scrollbar pr-2 min-h-0 bg-success/[0.005] rounded-none p-0">
+                {(!isMobileView || mobileSubTab === 'chart' || mobileSubTab === 'results') && (
+                    <div className="col-span-12 lg:col-span-8 flex flex-col gap-3 overflow-y-auto custom-scrollbar pr-2 min-h-0 bg-success/[0.005] rounded-none p-0">
+                    {(!isMobileView || mobileSubTab === 'chart') && (
                     <div className={`card-solid rounded-none border shadow-2xl overflow-hidden p-3 relative flex flex-col shrink-0 group transition-all duration-700 min-h-[450px] lg:h-[480px] ${isMaxCapActive ? 'border-success/40 ring-1 ring-success/20 bg-success/10' : 'border-primary/30 bg-primary/10 shadow-[inset_0_0_50px_rgba(var(--color-primary-rgb),0.05)]'}`}>
                         <div className={`absolute inset-0 ${isMaxCapActive ? 'bg-success/10' : 'bg-primary/10'} opacity-0 group-hover:opacity-100 transition-opacity`}></div>
                         <div className="absolute top-6 right-8 flex gap-3 z-20">
@@ -2453,6 +2496,7 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
                             </div>
                         )}
                     </div>
+                    )}
 
                     {/* MODAL / PANEL DE SENSIBILIDAD - Rendered via Portal to avoid clipping */}
                     {showSensModal && createPortal(
@@ -2537,6 +2581,8 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
                         document.body
                     )}
 
+                    {(!isMobileView || mobileSubTab === 'results') && (
+                    <>
                     {/* CONSOLIDATED CENTRAL OPERATION BAR */}
                     <div className="flex items-center justify-center w-full px-1 relative z-50 my-2">
                         <div className="flex bg-surface/80 backdrop-blur-xl p-0.5 rounded-none border border-white/10 w-full pointer-events-auto items-stretch">
@@ -2731,6 +2777,8 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
                             </div>
                         </div>
                     )}
+                    </>
+                    )}
 
                     {showReport && (
                         <HistoryMatchReport
@@ -2755,6 +2803,7 @@ const Phase6Component: React.FC<Props> = ({ params, setParams, syncParams = true
                         />
                     )}
                 </div>
+                )}
             </div>
         </>
     );
