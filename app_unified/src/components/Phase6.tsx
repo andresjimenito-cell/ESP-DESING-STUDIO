@@ -2081,8 +2081,8 @@ const Phase6Component: React.FC<Props & { isMobile?: boolean }> = ({ params, set
 
                     {/* Lower row: controls split logically */}
                     <div className="grid grid-cols-12 gap-1.5 items-center">
-                        {/* Selector Monitoreo / Comparativa (cols-5) */}
-                        <div className="col-span-5 flex bg-canvas/60 p-0.5 rounded-xl border border-white/10 shadow-inner h-9 items-center">
+                        {/* Selector Monitoreo / Comparativa (cols-8) */}
+                        <div className="col-span-8 flex bg-canvas/60 p-0.5 rounded-xl border border-white/10 shadow-inner h-9 items-center">
                             <button
                                 onClick={() => {
                                     setChartMode('telemetry');
@@ -2109,23 +2109,10 @@ const Phase6Component: React.FC<Props & { isMobile?: boolean }> = ({ params, set
                             </button>
                         </div>
 
-                        {/* Selector Min / Target / Max (cols-4) */}
-                        <div className="col-span-4 flex bg-canvas/60 p-0.5 rounded-xl border border-white/10 shadow-inner h-9 items-center">
-                            {['min', 'target', 'max'].map(s => (
-                                <button
-                                    key={s}
-                                    onClick={() => setCompareScenario(s as any)}
-                                    className={`flex-1 h-full rounded-lg text-[8px] font-black uppercase transition-all duration-300 ${compareScenario === s ? 'bg-secondary/20 text-secondary border border-secondary/30 shadow-sm font-black' : 'text-txt-muted hover:text-txt-main'}`}
-                                >
-                                    {s === 'min' ? 'Mín' : s === 'target' ? 'Obj' : 'Máx'}
-                                </button>
-                            ))}
-                        </div>
-
-                        {/* Botón Imprimir (cols-3) */}
+                        {/* Botón Imprimir (cols-4) */}
                         <button 
                             onClick={() => setShowReport(true)} 
-                            className="col-span-3 h-9 bg-primary hover:bg-primary/80 text-white rounded-xl border border-primary/20 text-[8px] font-black uppercase transition-all flex items-center justify-center gap-1 shadow-md shadow-primary/10 active:scale-95"
+                            className="col-span-4 h-9 bg-primary hover:bg-primary/80 text-white rounded-xl border border-primary/20 text-[8px] font-black uppercase transition-all flex items-center justify-center gap-1 shadow-md shadow-primary/10 active:scale-95"
                         >
                             <Printer className="w-3.5 h-3.5" />
                             <span>PDF</span>
@@ -2200,17 +2187,7 @@ const Phase6Component: React.FC<Props & { isMobile?: boolean }> = ({ params, set
                                 {language === 'es' ? 'Comparativa' : 'Comparative'}
                             </button>
                         </div>
-                        <div className="flex bg-canvas/40 p-1 rounded-none border border-white/10 shadow-inner shrink-0 relative overflow-hidden h-10 md:h-11 items-center px-1.5">
-                            {['min', 'target', 'max'].map(s => (
-                                <button
-                                    key={s}
-                                    onClick={() => setCompareScenario(s as any)}
-                                    className={`px-3 md:px-5 py-1.5 md:py-2 text-[9px] md:text-[10px] font-black uppercase rounded-none transition-all duration-500 relative z-10 ${compareScenario === s ? 'bg-secondary/20 text-secondary shadow-glow-secondary/20 border border-secondary/20' : 'text-txt-muted hover:text-txt-main'}`}
-                                >
-                                    {s === 'min' ? t('p5.min') : s === 'target' ? t('p5.target') : t('p5.max')}
-                                </button>
-                            ))}
-                        </div>
+
                         <button onClick={() => setShowReport(true)} className="bg-primary hover:bg-primary/80 text-white px-4 md:px-6 py-2 md:py-2.5 rounded-none border border-primary/40 text-[9px] md:text-[10px] font-black uppercase transition-all flex items-center gap-2 shadow-xl shadow-primary/20 hover:shadow-primary/40 active:scale-95 h-10 md:h-11">
                             <Printer className="w-3.5 h-3.5" /> {t('p6.print')}
                         </button>
