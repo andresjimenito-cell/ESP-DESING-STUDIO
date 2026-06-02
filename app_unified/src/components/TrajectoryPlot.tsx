@@ -173,7 +173,7 @@ const SpoolerPolarChart: React.FC<{ processedData: ProcessedPoint[]; limitMD: nu
     const degreeLabels = useMemo(() => { const l: number[] = []; for (let d = 0; d < 360; d += 4) if (d !== 0 && d !== 90 && d !== 180 && d !== 270) l.push(d); return l; }, []);
 
     return (
-        <svg viewBox={`0 0 ${size} ${size}`} className="w-full max-w-[320px] h-[320px] select-none overflow-visible">
+        <svg viewBox={`0 0 ${size} ${size}`} className="w-full max-w-[130px] h-[130px] select-none overflow-visible">
             {sector.draw && (
                 <path
                     d={`M ${cx} ${cy} L ${cx + Math.cos(toRad(sector.start)) * R} ${cy + Math.sin(toRad(sector.start)) * R} A ${R} ${R} 0 ${(sector.end - sector.start + 360) % 360 > 180 ? 1 : 0} 1 ${cx + Math.cos(toRad(sector.end)) * R} ${cy + Math.sin(toRad(sector.end)) * R} Z`}
@@ -1173,22 +1173,37 @@ export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params, 
                 </div>
 
                 {/* ── RIGHT: Charts & Analytics ── */}
-                <div className={`flex flex-col bg-canvas/40 overflow-y-auto p-5 gap-5 justify-center ${isSidebar ? 'border-t border-surface-light/30' : 'border-l border-surface-light/30'}`}>
+                <div className={`flex flex-col bg-canvas/40 p-5 gap-5 h-full min-h-0 ${isSidebar ? 'border-t border-surface-light/30' : 'border-l border-surface-light/30'}`}>
 
-                    {/* Polar Chart */}
-                    <div className="flex flex-col items-center justify-center border border-surface-light/30 rounded-xl p-4 bg-surface/40 backdrop-blur-md">
-                        <h2 className="text-[11px] font-bold text-txt-muted tracking-wide text-center mb-3 uppercase">
-                            Optimización de Azimut - Spooler ALS
-                        </h2>
-                        <SpoolerPolarChart processedData={processedData} limitMD={limitMD} isDark={isDark} />
+                    {/* Polar Chart - Compact Horizontal Banner */}
+                    <div className="flex flex-row items-center justify-around border border-surface-light/30 rounded-xl p-4 bg-surface/40 backdrop-blur-md h-[160px] shrink-0">
+                        <div className="flex flex-col justify-center">
+                            <h2 className="text-[10px] font-black text-primary tracking-widest uppercase mb-1">
+                                Optimización de Azimut
+                            </h2>
+                            <p className="text-[14px] font-black text-txt-main tracking-tighter uppercase">
+                                Spooler ALS
+                            </p>
+                            <div className="mt-2 space-y-1">
+                                <div className="text-[9px] font-bold text-txt-muted uppercase">
+                                    Promedio: <span className="text-txt-main font-mono font-black">{spoolerAzimuth}°</span>
+                                </div>
+                                <div className="text-[9px] font-bold text-txt-muted uppercase">
+                                    Límite MD: <span className="text-txt-main font-mono font-black">{Math.round(limitMD)} ft</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="h-full flex items-center justify-center">
+                            <SpoolerPolarChart processedData={processedData} limitMD={limitMD} isDark={isDark} />
+                        </div>
                     </div>
 
                     {/* Recharts Trajectory Curves */}
-                    <div className="flex flex-col border border-surface-light/30 rounded-xl p-4 bg-surface/40 backdrop-blur-md">
+                    <div className="flex-1 min-h-0 flex flex-col border border-surface-light/30 rounded-xl p-4 bg-surface/40 backdrop-blur-md">
                         <h2 className="text-[9px] font-bold text-txt-muted uppercase tracking-widest mb-3 text-center">
                             Perfil Hidráulico de Trayectoria vs TVD
                         </h2>
-                        <div className="h-[240px] w-full flex items-center justify-center">
+                        <div className="flex-1 w-full min-h-0 flex items-center justify-center">
                             {chartData.length > 0 ? (
                                 <ResponsiveContainer width="100%" height="100%">
                                     <ComposedChart layout="vertical" data={chartData} margin={{ top: 10, right: 5, left: -20, bottom: 5 }}>
