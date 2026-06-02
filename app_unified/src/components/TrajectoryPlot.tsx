@@ -1128,7 +1128,7 @@ export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params, 
                 <div className={`relative flex flex-col min-w-0 bg-canvas/40 transition-all duration-300 ${expandedCanvas ? 'fixed inset-0 z-50 bg-surface' : (isSidebar ? 'h-[380px] border-b border-surface-light/30' : 'border-r border-surface-light/30')}`}>
 
                     {/* Botones de Control Flotantes Estilizados */}
-                    <div className="absolute bottom-4 left-4 flex items-center gap-1.5 bg-surface/80 backdrop-blur-md p-1 rounded-xl border border-surface-light/30 z-20">
+                    <div className="absolute bottom-4 right-4 flex items-center gap-1.5 bg-surface/80 backdrop-blur-md p-1 rounded-xl border border-surface-light/30 z-20">
                         <button onClick={toggleAutoRotate} className="text-[8px] font-bold uppercase tracking-wider px-2 py-1 rounded-lg text-slate-400 hover:text-white transition-all flex items-center gap-1 bg-white/5">
                             {isAutoRotating ? <Pause className="w-2.5 h-2.5" /> : <Play className="w-2.5 h-2.5" />}
                         </button>
@@ -1141,7 +1141,7 @@ export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params, 
                     </div>
 
                     {/* Selector de Modo de Visualización */}
-                    <div className="absolute top-4 left-[90px] flex items-center gap-1 bg-surface/80 backdrop-blur-md p-1 rounded-xl border border-surface-light/30 z-20">
+                    <div className="absolute top-4 right-4 flex items-center gap-1 bg-surface/80 backdrop-blur-md p-1 rounded-xl border border-surface-light/30 z-20">
                         {[
                             { mode: 'depth' as const, label: 'Estructura' },
                             { mode: 'inc' as const, label: 'Inc (°)' },
@@ -1162,7 +1162,7 @@ export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params, 
                     </div>
 
                     {/* Overlay del Gráfico de Perfil Hidráulico de Trayectoria vs TVD */}
-                    <div className="absolute right-4 top-16 bottom-16 w-[200px] bg-surface/80 backdrop-blur-md border border-surface-light/30 rounded-[1.5rem] p-3 z-20 flex flex-col pointer-events-auto shadow-2xl">
+                    <div className="absolute left-4 top-20 bottom-20 w-[185px] bg-surface/80 backdrop-blur-md border border-surface-light/30 rounded-[1.5rem] p-3 z-20 flex flex-col pointer-events-auto shadow-2xl">
                         <h2 className="text-[8px] font-bold text-txt-muted uppercase tracking-widest mb-3 text-center">
                             Perfil Hidráulico
                         </h2>
