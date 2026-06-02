@@ -90,6 +90,14 @@ export const MobileMonitoreo: React.FC<Props> = ({
 }) => {
     const [activeTab, setActiveTab] = useState<'fleet' | 'analysis' | 'bha' | 'copilot'>('fleet');
     const [showInstallPrompt, setShowInstallPrompt] = useState(false);
+    const [showKeyModal, setShowKeyModal] = useState(false);
+    const [apiKeyInput, setApiKeyInput] = useState('');
+
+    useEffect(() => {
+        if (showKeyModal) {
+            setApiKeyInput(localStorage.getItem('openrouter_api_key') || '');
+        }
+    }, [showKeyModal]);
 
     useEffect(() => {
         const dismissed = sessionStorage.getItem('pwa-prompt-dismissed');
@@ -207,9 +215,17 @@ export const MobileMonitoreo: React.FC<Props> = ({
                 contextData = `Flota de ${fleet.length} pozos.`;
             }
 
+            const userKey = localStorage.getItem('openrouter_api_key') || '';
+            const headers: Record<string, string> = {
+                "Content-Type": "application/json"
+            };
+            if (userKey && userKey !== 'null' && userKey !== 'undefined') {
+                headers["Authorization"] = `Bearer ${userKey}`;
+            }
+
             const res = await fetch("/api/copilot/stream", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers,
                 body: JSON.stringify({
                     systemInstruction: `Responde en español de forma extremadamente concisa y directa. Eres un ingeniero experto en Levantamiento Artificial (ESP). Limítate a 2 párrafos máximos por respuesta para lectura rápida en celulares. Contexto actual: ${contextData}`,
                     messages: [
@@ -684,20 +700,46 @@ export const MobileMonitoreo: React.FC<Props> = ({
                 {activeTab === 'copilot' && (
                     <div className="flex flex-col animate-fadeIn" style={{ height: 'calc(100vh - 64px - 56px - 2px - 3px)' }}>
 
+                        {/* IA Chat Header */}
+                        <div className="shrink-0 px-4 py-3 border-b border-white/5 bg-surface/50 backdrop-blur-md flex items-center justify-between">
+                            <div className="flex items-center gap-2.5">
+                                <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20 shadow-sm relative">
+                                    <Sparkles className="w-4 h-4 text-primary animate-pulse" />
+                                    <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-surface animate-[pulse_2s_infinite]" />
+                                </div>
+                                <div className="flex flex-col leading-none">
+                                    <span className="text-[11px] font-black uppercase tracking-wider text-txt-main">
+                                        {language === 'es' ? 'Monitoreo IA' : 'AI Monitoring'}
+                                    </span>
+                                    <span className="text-[8px] font-bold text-txt-muted uppercase tracking-widest mt-0.5">
+                                        {language === 'es' ? 'Asistente Virtual ESP' : 'ESP Virtual Assistant'}
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <button
+                                onClick={() => setShowKeyModal(true)}
+                                className="h-8 px-3 rounded-lg bg-white/5 hover:bg-white/10 border border-white/8 text-[9px] font-black uppercase text-txt-muted hover:text-primary transition-all flex items-center gap-1.5 active:scale-95"
+                            >
+                                <Settings className="w-3.5 h-3.5" />
+                                <span>API Key</span>
+                            </button>
+                        </div>
+
                         {/* Messages area */}
-                        <div className="flex-1 overflow-y-auto custom-scrollbar px-3 py-3 space-y-3 min-h-0">
+                        <div className="flex-1 overflow-y-auto custom-scrollbar px-3 py-4 space-y-3.5 min-h-0 bg-canvas/20">
                             {msgs.map((m, idx) => {
                                 const isUser = m.role === 'user';
                                 return (
                                     <div key={idx} className={`flex gap-2.5 ${isUser ? 'justify-end' : 'justify-start'}`}>
                                         {!isUser && (
-                                            <div className="w-7 h-7 rounded-xl bg-primary/15 flex items-center justify-center border border-primary/25 shrink-0 mt-0.5">
-                                                <Sparkles className="w-3.5 h-3.5 text-primary" />
+                                            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-primary/20 to-secondary/15 flex items-center justify-center border border-primary/20 shrink-0 mt-0.5 shadow-sm shadow-primary/10">
+                                                <Sparkles className="w-4 h-4 text-primary" />
                                             </div>
                                         )}
-                                        <div className={`max-w-[85%] px-3.5 py-2.5 text-xs leading-relaxed ${isUser
-                                                ? 'bg-primary text-white rounded-2xl rounded-tr-sm'
-                                                : 'bg-surface border border-white/8 rounded-2xl rounded-tl-sm text-txt-main'
+                                        <div className={`max-w-[82%] px-4 py-3 text-xs leading-relaxed shadow-lg ${isUser
+                                                ? 'bg-gradient-to-r from-primary to-secondary text-white rounded-2xl rounded-tr-sm shadow-primary/5'
+                                                : 'bg-surface/75 border border-primary/10 rounded-2xl rounded-tl-sm text-txt-main shadow-black/20'
                                             }`}>
                                             {isUser ? (
                                                 <div className="whitespace-pre-wrap">{m.text}</div>
@@ -712,7 +754,7 @@ export const MobileMonitoreo: React.FC<Props> = ({
                             })}
 
                             {chatLoading && (
-                                <div className="flex items-center gap-2 pl-9">
+                                <div className="flex items-center gap-2.5 pl-10.5">
                                     <div className="flex gap-1">
                                         {[0, 1, 2].map(i => (
                                             <span
@@ -722,7 +764,9 @@ export const MobileMonitoreo: React.FC<Props> = ({
                                             />
                                         ))}
                                     </div>
-                                    <span className="text-[9px] font-black uppercase tracking-widest text-primary/60">IA Pensando</span>
+                                    <span className="text-[8px] font-black uppercase tracking-widest text-primary/60">
+                                        {language === 'es' ? 'Monitoreo IA pensando' : 'AI Monitoring thinking'}
+                                    </span>
                                 </div>
                             )}
                             <div ref={chatEndRef} />
@@ -730,7 +774,7 @@ export const MobileMonitoreo: React.FC<Props> = ({
 
                         {/* Suggestion chips */}
                         {suggestions.length > 0 && msgs.length === 1 && (
-                            <div className="px-3 pb-2 flex gap-2 overflow-x-auto whitespace-nowrap scrollbar-none shrink-0">
+                            <div className="px-3 pb-2.5 pt-1.5 flex gap-2 overflow-x-auto whitespace-nowrap scrollbar-none shrink-0 bg-canvas/20">
                                 {suggestions.map((s, idx) => (
                                     <button
                                         key={idx}
@@ -738,9 +782,9 @@ export const MobileMonitoreo: React.FC<Props> = ({
                                             setChatInput(s.prompt);
                                             sendChatMessage();
                                         }}
-                                        className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/8 border border-primary/20 text-primary hover:bg-primary/15 active:scale-95 transition-all text-[9px] font-bold"
+                                        className="shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-primary/8 border border-primary/20 text-primary hover:bg-primary/15 active:scale-95 transition-all text-[9.5px] font-black uppercase tracking-wider"
                                     >
-                                        <Sparkles className="w-2.5 h-2.5" />
+                                        <Sparkles className="w-2.5 h-2.5 animate-[pulse_1.5s_infinite]" />
                                         {language === 'es' ? s.es : s.en}
                                     </button>
                                 ))}
@@ -748,13 +792,13 @@ export const MobileMonitoreo: React.FC<Props> = ({
                         )}
 
                         {/* Input bar */}
-                        <div className="shrink-0 px-3 pb-3 pt-2 border-t border-white/5 bg-surface/80 backdrop-blur-sm flex gap-2 items-center">
+                        <div className="shrink-0 px-3 pb-3 pt-2.5 border-t border-white/5 bg-surface/90 backdrop-blur-md flex gap-2 items-center">
                             <input
                                 type="text"
                                 value={chatInput}
                                 onChange={(e) => setChatInput(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && sendChatMessage()}
-                                placeholder="Pregunta algo sobre el pozo..."
+                                placeholder={language === 'es' ? "Pregunta algo sobre el pozo..." : "Ask something about the well..."}
                                 className="flex-1 bg-canvas border border-white/8 px-4 py-2.5 rounded-xl text-[11px] font-medium text-txt-main outline-none focus:border-primary/50 placeholder:text-txt-muted/40 transition-colors"
                             />
                             <button
@@ -885,6 +929,78 @@ export const MobileMonitoreo: React.FC<Props> = ({
                         >
                             {language === 'es' ? 'Cómo Instalar' : 'How to Install'}
                         </button>
+                    </div>
+                </div>
+            )}
+
+            {/* ══════════════════════════════════════════════════════
+                API KEY CONFIGURATION MODAL (MOBILE)
+            ══════════════════════════════════════════════════════ */}
+            {showKeyModal && (
+                <div className="fixed inset-0 z-[100000] bg-black/75 backdrop-blur-md flex items-center justify-center p-4">
+                    <div className="w-full max-w-[320px] bg-surface border border-white/10 rounded-3xl p-6 shadow-2xl animate-fadeIn flex flex-col gap-4 relative overflow-hidden">
+                        {/* Glow effect */}
+                        <div className="absolute -right-8 -top-8 w-24 h-24 bg-primary/10 blur-2xl rounded-full" />
+                        
+                        <div className="flex items-center gap-3 border-b border-white/5 pb-4">
+                            <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center border border-primary/25 shrink-0 text-primary">
+                                <Shield className="w-5 h-5" />
+                            </div>
+                            <div>
+                                <h3 className="text-xs font-black text-white uppercase tracking-wider">
+                                    {language === 'es' ? 'Configurar API Key' : 'Configure API Key'}
+                                </h3>
+                                <p className="text-[8px] font-bold text-txt-muted uppercase tracking-widest mt-0.5">
+                                    OpenRouter Credentials
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="space-y-1.5">
+                            <label className="text-[8px] font-black text-txt-muted uppercase tracking-wider block">
+                                {language === 'es' ? 'OpenRouter API Key' : 'OpenRouter API Key'}
+                            </label>
+                            <input
+                                type="password"
+                                value={apiKeyInput}
+                                onChange={(e) => setApiKeyInput(e.target.value)}
+                                placeholder="sk-or-v1-..."
+                                className="w-full bg-canvas border border-white/10 px-3.5 py-2.5 rounded-xl text-xs font-medium text-white outline-none focus:border-primary/50 placeholder:text-txt-muted/20"
+                            />
+                            <p className="text-[7.5px] text-txt-muted font-medium mt-1.5 leading-normal uppercase">
+                                {language === 'es' 
+                                    ? 'La API Key se guarda localmente en el navegador de tu celular.' 
+                                    : 'Your API Key is securely stored locally in your browser.'}
+                            </p>
+                        </div>
+
+                        <div className="flex gap-2 justify-end mt-2">
+                            <button
+                                onClick={() => {
+                                    localStorage.removeItem('openrouter_api_key');
+                                    setApiKeyInput('');
+                                    setShowKeyModal(false);
+                                }}
+                                className="flex-1 py-2 px-3 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 text-[9px] font-black uppercase transition-colors"
+                            >
+                                {language === 'es' ? 'Limpiar' : 'Clear'}
+                            </button>
+                            <button
+                                onClick={() => setShowKeyModal(false)}
+                                className="py-2 px-3.5 rounded-xl bg-white/5 hover:bg-white/10 text-txt-muted hover:text-white text-[9px] font-black uppercase transition-colors"
+                            >
+                                {language === 'es' ? 'Cerrar' : 'Close'}
+                            </button>
+                            <button
+                                onClick={() => {
+                                    localStorage.setItem('openrouter_api_key', apiKeyInput.trim());
+                                    setShowKeyModal(false);
+                                }}
+                                className="py-2 px-4 rounded-xl bg-primary text-white text-[9px] font-black uppercase transition-all shadow-md shadow-primary/20 hover:scale-102 active:scale-98"
+                            >
+                                {language === 'es' ? 'Guardar' : 'Save'}
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
