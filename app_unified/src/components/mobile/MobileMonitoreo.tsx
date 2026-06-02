@@ -261,9 +261,9 @@ export const MobileMonitoreo: React.FC<Props> = ({
     // ─── Tab definitions ──────────────────────────────────────────────────────
     const tabs = [
         { id: 'fleet', icon: Menu, label: 'Flota' },
+        { id: 'copilot', icon: MessageSquare, label: language === 'es' ? 'Monitoreo IA' : 'AI Monitoring' },
         { id: 'analysis', icon: TrendingUp, label: 'Cotejo' },
         { id: 'bha', icon: Layers, label: 'BHA/3D' },
-        { id: 'copilot', icon: MessageSquare, label: 'Copilot' },
     ] as const;
 
     return (
@@ -449,7 +449,7 @@ export const MobileMonitoreo: React.FC<Props> = ({
                                     return (
                                         <div
                                             key={w.id}
-                                            onClick={() => { setSelectedWell(w.id); setActiveTab('analysis'); }}
+                                            onClick={() => { setSelectedWell(w.id); setActiveTab('copilot'); }}
                                             className={`relative flex items-center gap-2.5 p-2.5 rounded-xl border transition-all cursor-pointer active:scale-[0.98] overflow-hidden ${isSelected
                                                     ? 'bg-primary/8 border-primary/30'
                                                     : 'bg-surface/70 border-white/5 hover:border-white/10 hover:bg-surface'
