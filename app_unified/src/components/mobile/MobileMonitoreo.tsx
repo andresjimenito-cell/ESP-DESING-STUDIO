@@ -557,17 +557,6 @@ export const MobileMonitoreo: React.FC<Props> = ({
                                     </div>
                                 </div>
 
-                                {/* Predictive widget */}
-                                <div className="p-3">
-                                    <PredictiveWidget
-                                        selectedWell={selectedWell}
-                                        wellMatchParams={wellMatchParams}
-                                        pump={pump}
-                                        computeWellCapacity={computeWellCapacity}
-                                        getOptimizationPath={getOptimizationPath}
-                                    />
-                                </div>
-
                                 {/* Main chart area */}
                                 <div className="px-3 pb-4 w-full overflow-x-auto min-w-0">
                                     {wellViewMode === 'history' ? (
@@ -591,6 +580,17 @@ export const MobileMonitoreo: React.FC<Props> = ({
                                         />
                                     )}
                                 </div>
+
+                                {/* Predictive widget */}
+                                <div className="p-3">
+                                    <PredictiveWidget
+                                        selectedWell={selectedWell}
+                                        wellMatchParams={wellMatchParams}
+                                        pump={pump}
+                                        computeWellCapacity={computeWellCapacity}
+                                        getOptimizationPath={getOptimizationPath}
+                                    />
+                                </div>
                             </>
                         )}
                     </div>
@@ -610,50 +610,6 @@ export const MobileMonitoreo: React.FC<Props> = ({
                             </div>
                         ) : (
                             <div className="space-y-2.5 p-2.5">
-                                {/* Grid of BHA / Trajectory KPI Cards ("cuadritos") */}
-                                <div className="grid grid-cols-2 gap-2 mb-1.5">
-                                    <div className="bg-surface/50 border border-white/8 rounded-xl p-2.5 flex flex-col justify-between h-16 shadow-sm backdrop-blur-md">
-                                        <span className="text-[8px] font-black text-txt-muted uppercase tracking-widest opacity-60">BOMBA MD</span>
-                                        <span className="text-xs font-mono font-black text-txt-main mt-0.5">
-                                            {wellMatchParams?.pressures?.pumpDepthMD ? `${Math.round(wellMatchParams.pressures.pumpDepthMD)} ft` : '-'}
-                                        </span>
-                                    </div>
-                                    <div className="bg-surface/50 border border-white/8 rounded-xl p-2.5 flex flex-col justify-between h-16 shadow-sm backdrop-blur-md">
-                                        <span className="text-[8px] font-black text-txt-muted uppercase tracking-widest opacity-60">BOMBA TVD</span>
-                                        <span className="text-xs font-mono font-black text-primary mt-0.5">
-                                            {wellMatchParams?.pressures?.pumpDepthMD && wellMatchParams.survey?.length > 0 
-                                                ? `${Math.round(interpolateTVD(wellMatchParams.pressures.pumpDepthMD, wellMatchParams.survey))} ft`
-                                                : wellMatchParams?.pressures?.pumpDepthMD ? `${Math.round(wellMatchParams.pressures.pumpDepthMD)} ft` : '-'}
-                                        </span>
-                                    </div>
-                                    <div className="bg-surface/50 border border-white/8 rounded-xl p-2.5 flex flex-col justify-between h-16 shadow-sm backdrop-blur-md">
-                                        <span className="text-[8px] font-black text-txt-muted uppercase tracking-widest opacity-60">PERFORACIONES MD</span>
-                                        <span className="text-xs font-mono font-black text-txt-main mt-0.5">
-                                            {wellMatchParams?.wellbore?.midPerfsMD ? `${Math.round(wellMatchParams.wellbore.midPerfsMD)} ft` : '-'}
-                                        </span>
-                                    </div>
-                                    <div className="bg-surface/50 border border-white/8 rounded-xl p-2.5 flex flex-col justify-between h-16 shadow-sm backdrop-blur-md">
-                                        <span className="text-[8px] font-black text-txt-muted uppercase tracking-widest opacity-60">PERFORACIONES TVD</span>
-                                        <span className="text-xs font-mono font-black text-primary mt-0.5">
-                                            {wellMatchParams?.wellbore?.midPerfsMD && wellMatchParams.survey?.length > 0 
-                                                ? `${Math.round(interpolateTVD(wellMatchParams.wellbore.midPerfsMD, wellMatchParams.survey))} ft`
-                                                : wellMatchParams?.wellbore?.midPerfsMD ? `${Math.round(wellMatchParams.wellbore.midPerfsMD)} ft` : '-'}
-                                        </span>
-                                    </div>
-                                    <div className="bg-surface/50 border border-white/8 rounded-xl p-2.5 flex flex-col justify-between h-16 shadow-sm backdrop-blur-md">
-                                        <span className="text-[8px] font-black text-txt-muted uppercase tracking-widest opacity-60">SUMERGENCIA</span>
-                                        <span className="text-xs font-mono font-black text-success mt-0.5">
-                                            {safeBhaResults.submergenceFt ? `${Math.round(safeBhaResults.submergenceFt)} ft` : '0 ft'}
-                                        </span>
-                                    </div>
-                                    <div className="bg-surface/50 border border-white/8 rounded-xl p-2.5 flex flex-col justify-between h-16 shadow-sm backdrop-blur-md">
-                                        <span className="text-[8px] font-black text-txt-muted uppercase tracking-widest opacity-60">NIVEL FLUIDO MD</span>
-                                        <span className="text-xs font-mono font-black text-secondary mt-0.5">
-                                            {safeBhaResults.fluidLevelMD ? `${Math.round(safeBhaResults.fluidLevelMD)} ft` : '0 ft'}
-                                        </span>
-                                    </div>
-                                </div>
-
                                 {/* ESP BHA Stack */}
                                 <section className="bg-surface/50 border border-white/8 rounded-xl overflow-hidden shadow-md">
                                     <div className="flex items-center gap-2 px-3.5 py-2.5 border-b border-white/5 bg-surface/60">

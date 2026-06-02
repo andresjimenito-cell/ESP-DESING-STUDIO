@@ -2060,89 +2060,163 @@ const Phase6Component: React.FC<Props & { isMobile?: boolean }> = ({ params, set
 
 
             {/* HEADER */}
-            <div className={`flex flex-row justify-between items-center px-4 md:px-6 shrink-0 h-16 card-solid rounded-none border shadow-2xl relative overflow-x-auto md:overflow-x-visible overflow-y-hidden gap-4 flex-nowrap custom-scrollbar-h group transition-all duration-700 mb-4 ${isMaxCapActive ? 'border-success/60 ring-1 ring-success/20' : 'border-white/20'}`}>
-                <div className={`absolute left-0 top-0 w-2 md:w-2 h-full transition-colors duration-700 ${isMaxCapActive ? 'bg-success shadow-glow-success' : 'bg-secondary shadow-glow-secondary'}`}></div>
-                <div className="flex items-center gap-3 md:gap-5 relative z-10 pl-2 shrink-0">
-                    <div className={`p-2.5 md:p-3 rounded-none border transition-all duration-700 ${isMaxCapActive ? 'bg-success/20 border-success/30 shadow-glow-success/20' : 'bg-secondary/20 border-white/10 shadow-glow-secondary'}`}>
-                        {isMaxCapActive ? <Zap className="w-5 h-5 md:w-6 md:h-6 text-success animate-pulse" /> : <ClipboardCheck className="w-5 h-5 md:w-6 md:h-6 text-secondary" />}
-                    </div>
-                    <div>
-                        <h2 className="text-xl md:text-2xl font-black text-txt-main uppercase tracking-[0.2em] leading-none drop-shadow-[0_2px_8px_rgba(var(--color-primary-rgb),0.4)]">
-                            {isMaxCapActive ? "CAPACITY " : (sensScenario.active ? "SENSITIVITY " : "MATCH")}
-                        </h2>
-                        <div className="flex flex-nowrap items-center gap-2 mt-1.5">
-                            <div className={`hidden sm:block h-[1px] w-8 ${isMaxCapActive ? 'bg-success' : (sensScenario.active ? 'bg-primary' : 'bg-secondary')}`}></div>
-                            <p className="text-[9px] md:text-[10px] text-txt-muted font-black uppercase tracking-[0.2em] md:tracking-[0.3em] opacity-40 whitespace-nowrap">
-                                {isMaxCapActive ? "PREDICCION BASADA EN MUESTRA CALIBRADA" : (sensScenario.active ? "ANALISIS DE SENSIBILIDAD PRODUCTIVA" : t('p6.fieldSync'))}
-                            </p>
-                            <div className="w-1 h-1 rounded-none bg-txt-muted opacity-30 mx-1"></div>
-                            <span className={`px-2 py-0.5 rounded-none text-[8px] font-black uppercase tracking-widest flex items-center gap-1.5 whitespace-nowrap ${params.isMechVerified ? 'bg-cyan-500/10 text-cyan-500 border border-cyan-500/30' : 'bg-white/5 text-txt-muted border border-white/10'}`}>
-                                <Database className="w-2.5 h-2.5" />
-                                {params.isMechVerified ? "ESTADOS MECANICOS" : "DISENO ORIGINAL"}
-                            </span>
+            {isMobileView ? (
+                <div className="flex flex-col gap-2.5 bg-surface/85 backdrop-blur-xl border border-white/10 p-3 rounded-2xl shadow-xl mb-4 mx-1 select-none">
+                    {/* Upper row: title/status and factors */}
+                    <div className="flex justify-between items-center gap-2">
+                        <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-glow-primary" />
+                            <h2 className="text-[10px] font-black text-txt-main uppercase tracking-wider">
+                                {isMaxCapActive ? "CAPACIDAD" : (sensScenario.active ? "SENSIBILIDAD" : "COTEJO")}
+                            </h2>
                         </div>
-                    </div>
-                </div>
-                <div className="flex items-center gap-3 md:gap-4 relative z-10 pr-2 shrink-0 flex-nowrap">
-                    {/* NEW COEFFICIENTS LOCATION (HEADER) */}
-                    <div className="flex items-center gap-4 bg-surface px-4 py-1.5 rounded-none border border-surface-light shadow-lg">
-                        <div className="flex flex-col items-end">
-                            <span className="text-[7.5px] md:text-[8px] font-black text-primary/60 uppercase tracking-widest">{chartMode === 'comparative' ? (language === 'es' ? 'Kh (Proyectado)' : 'Kh (Projected)') : (language === 'es' ? 'Kh (Actual)' : 'Kh (Current)')}</span>
-                            <span className="text-xs md:text-sm font-mono text-primary font-black leading-tight drop-shadow-sm">
-                                {chartMode === 'comparative' ? khComparative.toFixed(3) : khFactor.toFixed(3)}
-                            </span>
-                        </div>
-                        <div className="w-px h-6 bg-surface-light"></div>
-                        <div className="flex flex-col items-end">
-                            <span className="text-[7.5px] md:text-[8px] font-black text-secondary/60 uppercase tracking-widest">{language === 'es' ? 'Kf (Friccion)' : 'Kf (Friction)'}</span>
-                            <span className="text-xs md:text-sm font-mono text-secondary font-black leading-tight drop-shadow-sm">
-                                {chartMode === 'comparative' ? '1.000 (IP Fijo)' : actualResSummary.sysCurveFrictionMultiplier.toFixed(3)}
-                            </span>
+
+                        {/* Factors */}
+                        <div className="flex items-center gap-2 text-[8.5px] bg-canvas/30 px-2 py-0.5 rounded-lg border border-white/5 font-mono">
+                            <span className="text-txt-muted font-bold">Kh: <strong className="text-primary font-black">{chartMode === 'comparative' ? khComparative.toFixed(2) : khFactor.toFixed(2)}</strong></span>
+                            <span className="text-white/10">|</span>
+                            <span className="text-txt-muted font-bold">Kf: <strong className="text-secondary font-black">{chartMode === 'comparative' ? '1.0' : actualResSummary.sysCurveFrictionMultiplier.toFixed(2)}</strong></span>
                         </div>
                     </div>
 
-                    <div className="flex bg-canvas/40 p-1 rounded-none border border-white/10 shadow-inner shrink-0 relative overflow-hidden h-10 md:h-11 items-center px-1.5">
-                        <button
-                            onClick={() => {
-                                setChartMode('telemetry');
-                                setIsMaxCapActive(false);
-                            }}
-                            className={`px-4 md:px-6 py-1.5 md:py-2 rounded-none text-[9px] md:text-[10px] font-black uppercase transition-all duration-500 relative z-10 ${chartMode === 'telemetry' && !isMaxCapActive
-                                ? 'bg-primary/20 text-primary shadow-glow-primary/20 border border-primary/20'
-                                : 'text-txt-muted hover:text-txt-main'
-                                }`}
-                        >
-                            {language === 'es' ? 'Monitoreo' : 'Monitoring'}
-                        </button>
-                        <button
-                            onClick={() => {
-                                setChartMode('comparative');
-                                setIsMaxCapActive(false);
-                            }}
-                            className={`px-4 md:px-6 py-1.5 md:py-2 rounded-none text-[9px] md:text-[10px] font-black uppercase transition-all duration-500 relative z-10 ${chartMode === 'comparative'
-                                ? 'bg-secondary/20 text-secondary shadow-glow-secondary/20 border border-secondary/20'
-                                : 'text-txt-muted hover:text-txt-main'
-                                }`}
-                        >
-                            {language === 'es' ? 'Comparativa' : 'Comparative'}
-                        </button>
-                    </div>
-                    <div className="flex bg-canvas/40 p-1 rounded-none border border-white/10 shadow-inner shrink-0 relative overflow-hidden h-10 md:h-11 items-center px-1.5">
-                        {['min', 'target', 'max'].map(s => (
+                    {/* Lower row: controls split logically */}
+                    <div className="grid grid-cols-12 gap-1.5 items-center">
+                        {/* Selector Monitoreo / Comparativa (cols-5) */}
+                        <div className="col-span-5 flex bg-canvas/60 p-0.5 rounded-xl border border-white/10 shadow-inner h-9 items-center">
                             <button
-                                key={s}
-                                onClick={() => setCompareScenario(s as any)}
-                                className={`px-3 md:px-5 py-1.5 md:py-2 text-[9px] md:text-[10px] font-black uppercase rounded-none transition-all duration-500 relative z-10 ${compareScenario === s ? 'bg-secondary/20 text-secondary shadow-glow-secondary/20 border border-secondary/20' : 'text-txt-muted hover:text-txt-main'}`}
+                                onClick={() => {
+                                    setChartMode('telemetry');
+                                    setIsMaxCapActive(false);
+                                }}
+                                className={`flex-1 h-full rounded-lg text-[8px] font-black uppercase transition-all duration-300 ${chartMode === 'telemetry' && !isMaxCapActive
+                                    ? 'bg-primary/20 text-primary border border-primary/30 shadow-sm font-black'
+                                    : 'text-txt-muted hover:text-txt-main'
+                                    }`}
                             >
-                                {s === 'min' ? t('p5.min') : s === 'target' ? t('p5.target') : t('p5.max')}
+                                Monit.
                             </button>
-                        ))}
+                            <button
+                                onClick={() => {
+                                    setChartMode('comparative');
+                                    setIsMaxCapActive(false);
+                                }}
+                                className={`flex-1 h-full rounded-lg text-[8px] font-black uppercase transition-all duration-300 ${chartMode === 'comparative'
+                                    ? 'bg-secondary/20 text-secondary border border-secondary/30 shadow-sm font-black'
+                                    : 'text-txt-muted hover:text-txt-main'
+                                    }`}
+                            >
+                                Comp.
+                            </button>
+                        </div>
+
+                        {/* Selector Min / Target / Max (cols-4) */}
+                        <div className="col-span-4 flex bg-canvas/60 p-0.5 rounded-xl border border-white/10 shadow-inner h-9 items-center">
+                            {['min', 'target', 'max'].map(s => (
+                                <button
+                                    key={s}
+                                    onClick={() => setCompareScenario(s as any)}
+                                    className={`flex-1 h-full rounded-lg text-[8px] font-black uppercase transition-all duration-300 ${compareScenario === s ? 'bg-secondary/20 text-secondary border border-secondary/30 shadow-sm font-black' : 'text-txt-muted hover:text-txt-main'}`}
+                                >
+                                    {s === 'min' ? 'Mín' : s === 'target' ? 'Obj' : 'Máx'}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Botón Imprimir (cols-3) */}
+                        <button 
+                            onClick={() => setShowReport(true)} 
+                            className="col-span-3 h-9 bg-primary hover:bg-primary/80 text-white rounded-xl border border-primary/20 text-[8px] font-black uppercase transition-all flex items-center justify-center gap-1 shadow-md shadow-primary/10 active:scale-95"
+                        >
+                            <Printer className="w-3.5 h-3.5" />
+                            <span>PDF</span>
+                        </button>
                     </div>
-                    <button onClick={() => setShowReport(true)} className="bg-primary hover:bg-primary/80 text-white px-4 md:px-6 py-2 md:py-2.5 rounded-none border border-primary/40 text-[9px] md:text-[10px] font-black uppercase transition-all flex items-center gap-2 shadow-xl shadow-primary/20 hover:shadow-primary/40 active:scale-95 h-10 md:h-11">
-                        <Printer className="w-3.5 h-3.5" /> {t('p6.print')}
-                    </button>
                 </div>
-            </div>
+            ) : (
+                <div className={`flex flex-row justify-between items-center px-4 md:px-6 shrink-0 h-16 card-solid rounded-none border shadow-2xl relative overflow-x-auto md:overflow-x-visible overflow-y-hidden gap-4 flex-nowrap custom-scrollbar-h group transition-all duration-700 mb-4 ${isMaxCapActive ? 'border-success/60 ring-1 ring-success/20' : 'border-white/20'}`}>
+                    <div className={`absolute left-0 top-0 w-2 md:w-2 h-full transition-colors duration-700 ${isMaxCapActive ? 'bg-success shadow-glow-success' : 'bg-secondary shadow-glow-secondary'}`}></div>
+                    <div className="flex items-center gap-3 md:gap-5 relative z-10 pl-2 shrink-0">
+                        <div className={`p-2.5 md:p-3 rounded-none border transition-all duration-700 ${isMaxCapActive ? 'bg-success/20 border-success/30 shadow-glow-success/20' : 'bg-secondary/20 border-white/10 shadow-glow-secondary'}`}>
+                            {isMaxCapActive ? <Zap className="w-5 h-5 md:w-6 md:h-6 text-success animate-pulse" /> : <ClipboardCheck className="w-5 h-5 md:w-6 md:h-6 text-secondary" />}
+                        </div>
+                        <div>
+                            <h2 className="text-xl md:text-2xl font-black text-txt-main uppercase tracking-[0.2em] leading-none drop-shadow-[0_2px_8px_rgba(var(--color-primary-rgb),0.4)]">
+                                {isMaxCapActive ? "CAPACITY " : (sensScenario.active ? "SENSITIVITY " : "MATCH")}
+                            </h2>
+                            <div className="flex flex-nowrap items-center gap-2 mt-1.5">
+                                <div className={`hidden sm:block h-[1px] w-8 ${isMaxCapActive ? 'bg-success' : (sensScenario.active ? 'bg-primary' : 'bg-secondary')}`}></div>
+                                <p className="text-[9px] md:text-[10px] text-txt-muted font-black uppercase tracking-[0.2em] md:tracking-[0.3em] opacity-40 whitespace-nowrap">
+                                    {isMaxCapActive ? "PREDICCION BASADA EN MUESTRA CALIBRADA" : (sensScenario.active ? "ANALISIS DE SENSIBILIDAD PRODUCTIVA" : t('p6.fieldSync'))}
+                                </p>
+                                <div className="w-1 h-1 rounded-none bg-txt-muted opacity-30 mx-1"></div>
+                                <span className={`px-2 py-0.5 rounded-none text-[8px] font-black uppercase tracking-widest flex items-center gap-1.5 whitespace-nowrap ${params.isMechVerified ? 'bg-cyan-500/10 text-cyan-500 border border-cyan-500/30' : 'bg-white/5 text-txt-muted border border-white/10'}`}>
+                                    <Database className="w-2.5 h-2.5" />
+                                    {params.isMechVerified ? "ESTADOS MECANICOS" : "DISENO ORIGINAL"}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-3 md:gap-4 relative z-10 pr-2 shrink-0 flex-nowrap">
+                        {/* NEW COEFFICIENTS LOCATION (HEADER) */}
+                        <div className="flex items-center gap-4 bg-surface px-4 py-1.5 rounded-none border border-surface-light shadow-lg">
+                            <div className="flex flex-col items-end">
+                                <span className="text-[7.5px] md:text-[8px] font-black text-primary/60 uppercase tracking-widest">{chartMode === 'comparative' ? (language === 'es' ? 'Kh (Proyectado)' : 'Kh (Projected)') : (language === 'es' ? 'Kh (Actual)' : 'Kh (Current)')}</span>
+                                <span className="text-xs md:text-sm font-mono text-primary font-black leading-tight drop-shadow-sm">
+                                    {chartMode === 'comparative' ? khComparative.toFixed(3) : khFactor.toFixed(3)}
+                                </span>
+                            </div>
+                            <div className="w-px h-6 bg-surface-light"></div>
+                            <div className="flex flex-col items-end">
+                                <span className="text-[7.5px] md:text-[8px] font-black text-secondary/60 uppercase tracking-widest">{language === 'es' ? 'Kf (Friccion)' : 'Kf (Friction)'}</span>
+                                <span className="text-xs md:text-sm font-mono text-secondary font-black leading-tight drop-shadow-sm">
+                                    {chartMode === 'comparative' ? '1.000 (IP Fijo)' : actualResSummary.sysCurveFrictionMultiplier.toFixed(3)}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div className="flex bg-canvas/40 p-1 rounded-none border border-white/10 shadow-inner shrink-0 relative overflow-hidden h-10 md:h-11 items-center px-1.5">
+                            <button
+                                onClick={() => {
+                                    setChartMode('telemetry');
+                                    setIsMaxCapActive(false);
+                                }}
+                                className={`px-4 md:px-6 py-1.5 md:py-2 rounded-none text-[9px] md:text-[10px] font-black uppercase transition-all duration-500 relative z-10 ${chartMode === 'telemetry' && !isMaxCapActive
+                                    ? 'bg-primary/20 text-primary shadow-glow-primary/20 border border-primary/20'
+                                    : 'text-txt-muted hover:text-txt-main'
+                                    }`}
+                            >
+                                {language === 'es' ? 'Monitoreo' : 'Monitoring'}
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setChartMode('comparative');
+                                    setIsMaxCapActive(false);
+                                }}
+                                className={`px-4 md:px-6 py-1.5 md:py-2 rounded-none text-[9px] md:text-[10px] font-black uppercase transition-all duration-500 relative z-10 ${chartMode === 'comparative'
+                                    ? 'bg-secondary/20 text-secondary shadow-glow-secondary/20 border border-secondary/20'
+                                    : 'text-txt-muted hover:text-txt-main'
+                                    }`}
+                            >
+                                {language === 'es' ? 'Comparativa' : 'Comparative'}
+                            </button>
+                        </div>
+                        <div className="flex bg-canvas/40 p-1 rounded-none border border-white/10 shadow-inner shrink-0 relative overflow-hidden h-10 md:h-11 items-center px-1.5">
+                            {['min', 'target', 'max'].map(s => (
+                                <button
+                                    key={s}
+                                    onClick={() => setCompareScenario(s as any)}
+                                    className={`px-3 md:px-5 py-1.5 md:py-2 text-[9px] md:text-[10px] font-black uppercase rounded-none transition-all duration-500 relative z-10 ${compareScenario === s ? 'bg-secondary/20 text-secondary shadow-glow-secondary/20 border border-secondary/20' : 'text-txt-muted hover:text-txt-main'}`}
+                                >
+                                    {s === 'min' ? t('p5.min') : s === 'target' ? t('p5.target') : t('p5.max')}
+                                </button>
+                            ))}
+                        </div>
+                        <button onClick={() => setShowReport(true)} className="bg-primary hover:bg-primary/80 text-white px-4 md:px-6 py-2 md:py-2.5 rounded-none border border-primary/40 text-[9px] md:text-[10px] font-black uppercase transition-all flex items-center gap-2 shadow-xl shadow-primary/20 hover:shadow-primary/40 active:scale-95 h-10 md:h-11">
+                            <Printer className="w-3.5 h-3.5" /> {t('p6.print')}
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {isMobileView && (
                 <div className="flex bg-surface/80 backdrop-blur-xl p-1 rounded-xl border border-white/10 shadow-lg mb-3 mx-1 shrink-0">
