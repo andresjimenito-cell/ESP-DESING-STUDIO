@@ -336,6 +336,11 @@ export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params, 
         return Math.max(5, Math.ceil(Math.max(...dlsVals)));
     }, [chartData]);
 
+    const safeMaxTVD = useMemo(() => {
+        const limitVal = Number.isFinite(maxTVD) ? maxTVD : 1000;
+        return Math.max(limitVal, 100);
+    }, [maxTVD]);
+
     // ── Single RAF-based Canvas Loop ───────────────────────────────────────────
 
     useEffect(() => {
@@ -1190,7 +1195,7 @@ export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params, 
                                         <CartesianGrid stroke={colorSurfaceLight} strokeDasharray="3 3" opacity={0.06} horizontal={false} />
                                         <XAxis xAxisId="inc" type="number" domain={[0, 90]} orientation="top" tick={{ fill: 'rgb(var(--color-primary))', fontSize: 8 }} tickLine={false} />
                                         <XAxis xAxisId="dls" type="number" domain={[0, maxDLS]} orientation="bottom" tick={{ fill: 'rgb(var(--color-warning))', fontSize: 8 }} tickLine={false} />
-                                        <YAxis yAxisId="tvd" dataKey="tvd" type="number" reversed={true} tick={{ fill: 'rgb(var(--color-text-muted))', fontSize: 8 }} tickLine={false} />
+                                        <YAxis yAxisId="tvd" dataKey="tvd" type="number" reversed={true} domain={[0, safeMaxTVD]} tick={{ fill: 'rgb(var(--color-text-muted))', fontSize: 8 }} tickLine={false} />
                                         <Line xAxisId="inc" yAxisId="tvd" type="monotone" dataKey="inc" stroke="rgb(var(--color-primary))" strokeWidth={2.0} dot={false} />
                                         <Line xAxisId="dls" yAxisId="tvd" type="stepAfter" dataKey="dogleg" stroke="rgb(var(--color-warning))" strokeWidth={1.5} dot={false} strokeOpacity={0.8} />
                                         {Number.isFinite(pumpDepthTVD) && (
