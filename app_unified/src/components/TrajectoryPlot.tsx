@@ -1162,18 +1162,18 @@ export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params, 
                     </div>
 
                     {/* Overlay del Gráfico de Perfil Hidráulico de Trayectoria vs TVD */}
-                    <div className="absolute right-4 top-16 bottom-16 w-[320px] bg-surface/80 backdrop-blur-md border border-surface-light/30 rounded-[1.5rem] p-4 z-20 flex flex-col pointer-events-auto shadow-2xl">
-                        <h2 className="text-[9px] font-bold text-txt-muted uppercase tracking-widest mb-3 text-center">
-                            Perfil Hidráulico: TVD vs Inc/DLS
+                    <div className="absolute right-4 top-16 bottom-16 w-[200px] bg-surface/80 backdrop-blur-md border border-surface-light/30 rounded-[1.5rem] p-3 z-20 flex flex-col pointer-events-auto shadow-2xl">
+                        <h2 className="text-[8px] font-bold text-txt-muted uppercase tracking-widest mb-3 text-center">
+                            Perfil Hidráulico
                         </h2>
                         <div className="flex-1 min-h-0 flex items-center justify-center">
                             {chartData.length > 0 ? (
                                 <ResponsiveContainer width="100%" height="100%">
-                                    <ComposedChart layout="vertical" data={chartData} margin={{ top: 10, right: 5, left: -25, bottom: 10 }}>
+                                    <ComposedChart layout="vertical" data={chartData} margin={{ top: 10, right: 2, left: -32, bottom: 10 }}>
                                         <CartesianGrid stroke={colorSurfaceLight} strokeDasharray="3 3" opacity={0.06} horizontal={false} />
-                                        <XAxis type="number" domain={[0, 90]} orientation="top" tick={{ fill: 'rgb(var(--color-primary))', fontSize: 8 }} tickLine={false} />
-                                        <XAxis xAxisId="dls" type="number" domain={[0, maxDLS]} orientation="bottom" tick={{ fill: 'rgb(var(--color-warning))', fontSize: 8 }} tickLine={false} />
-                                        <YAxis dataKey="tvd" type="number" reversed={true} domain={[0, safeMaxTVD]} tick={{ fill: 'rgb(var(--color-text-muted))', fontSize: 8 }} tickLine={false} />
+                                        <XAxis type="number" domain={[0, 90]} orientation="top" tick={{ fill: 'rgb(var(--color-primary))', fontSize: 7 }} tickLine={false} />
+                                        <XAxis xAxisId="dls" type="number" domain={[0, maxDLS]} orientation="bottom" tick={{ fill: 'rgb(var(--color-warning))', fontSize: 7 }} tickLine={false} />
+                                        <YAxis dataKey="tvd" type="number" domain={[safeMaxTVD, 0]} tick={{ fill: 'rgb(var(--color-text-muted))', fontSize: 7 }} tickLine={false} />
                                         <Line type="monotone" dataKey="inc" stroke="rgb(var(--color-primary))" strokeWidth={2.0} dot={false} />
                                         <Line xAxisId="dls" type="stepAfter" dataKey="dogleg" stroke="rgb(var(--color-warning))" strokeWidth={1.5} dot={false} strokeOpacity={0.8} />
                                         {Number.isFinite(pumpDepthTVD) && (
