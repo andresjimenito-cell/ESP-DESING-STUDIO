@@ -72,6 +72,7 @@ export const MatchHistorico: React.FC<Props> = ({ wellName, pump, designParams, 
             // Nodal Synthesis: Ensure calculateTDH sees these exact conditions
             const pStaticForPoint = pwf + Math.max(200, rate / 1.5);
             const ipForPoint = rate / Math.max(1, pStaticForPoint - pwf);
+            const actualIPVal = rate / Math.max(1, (designParams.inflow?.pStatic || 3000) - pwf);
 
             // Construct specific test params to ensure consistent results
             const testParams = {
@@ -105,7 +106,7 @@ export const MatchHistorico: React.FC<Props> = ({ wellName, pump, designParams, 
                 healthScore,
                 degradation,
                 efficiency: res.effEstimated || 0,
-                calculatedIP: ipForPoint,
+                calculatedIP: actualIPVal,
                 actualHead: actualHeadValue,
                 frequency, // Add this for compatibility with Phase6
                 pd: t.pdp || 0,
@@ -462,74 +463,49 @@ export const MatchHistorico: React.FC<Props> = ({ wellName, pump, designParams, 
                 </div>
             </div>
 
-            {/* HISTORICAL FLOW RATE & PRODUCTIVITY INDEX CHARTS */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
-                {/* Flow Rate Chart */}
-                <div className="glass-surface-light rounded-[1.75rem] border border-white/5 p-5 shadow-2xl relative bg-gradient-to-b from-canvas to-surface/20 flex flex-col gap-2">
-                    <div className="flex justify-between items-center">
-                        <h3 className="text-xs font-black text-txt-main tracking-widest uppercase flex items-center gap-2">
-                            <Droplets className="w-4 h-4 text-secondary" /> Historial de Caudal
-                        </h3>
-                        <span className="text-[10px] font-mono text-secondary font-bold bg-secondary/10 px-2 py-0.5 rounded-full border border-secondary/20">
-                            {currentRecord.rate.toFixed(0)} BFPD
+            {/* HISTORICAL FLOW RATE & PRODUCTIVITY INDEX DUAL-AXIS CHART */}
+            <div className="glass-surface-light rounded-[1.75rem] border border-white/5 p-5 shadow-2xl relative bg-gradient-to-b from-canvas to-surface/20 flex flex-col gap-2 relative z-10">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                    <h3 className="text-xs font-black text-txt-main tracking-widest uppercase flex items-center gap-2">
+                        <TrendingUp className="w-4 h-4 text-primary" /> Tendencia Histórica: Caudal e IP
+                    </h3>
+                    <div className="flex gap-3">
+                        <span className="text-[10px] font-mono text-secondary font-bold bg-secondary/10 px-2.5 py-1 rounded-xl border border-secondary/20">
+                            Caudal: {currentRecord.rate.toFixed(0)} BFPD
                         </span>
-                    </div>
-                    <div className="h-[180px] w-full mt-2">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={history} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
-                                <defs>
-                                    <linearGradient id="colorRate" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
-                                    </linearGradient>
-                                </defs>
-                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                                <XAxis dataKey="date" tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 8 }} stroke="rgba(255,255,255,0.1)" />
-                                <YAxis tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 8 }} stroke="rgba(255,255,255,0.1)" />
-                                <Tooltip 
-                                    contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '12px' }}
-                                    labelStyle={{ color: '#fff', fontSize: '10px', fontWeight: 'bold' }}
-                                    itemStyle={{ color: '#3b82f6', fontSize: '10px' }}
-                                />
-                                <Area type="monotone" dataKey="rate" name="Caudal" stroke="#3b82f6" strokeWidth={2} fillOpacity={1} fill="url(#colorRate)" />
-                                <ReferenceLine x={currentRecord.date} stroke="#3b82f6" strokeDasharray="3 3" />
-                            </AreaChart>
-                        </ResponsiveContainer>
+                        <span className="text-[10px] font-mono text-primary font-bold bg-primary/10 px-2.5 py-1 rounded-xl border border-primary/20">
+                            IP: {currentRecord.calculatedIP.toFixed(2)} STB/d/psi
+                        </span>
                     </div>
                 </div>
-
-                {/* Productivity Index Chart */}
-                <div className="glass-surface-light rounded-[1.75rem] border border-white/5 p-5 shadow-2xl relative bg-gradient-to-b from-canvas to-surface/20 flex flex-col gap-2">
-                    <div className="flex justify-between items-center">
-                        <h3 className="text-xs font-black text-txt-main tracking-widest uppercase flex items-center gap-2">
-                            <Gauge className="w-4 h-4 text-primary" /> Historial de IP
-                        </h3>
-                        <span className="text-[10px] font-mono text-primary font-bold bg-primary/10 px-2 py-0.5 rounded-full border border-primary/20">
-                            {currentRecord.calculatedIP.toFixed(2)} STB/d/psi
-                        </span>
-                    </div>
-                    <div className="h-[180px] w-full mt-2">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={history} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
-                                <defs>
-                                    <linearGradient id="colorIP" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
-                                        <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                                    </linearGradient>
-                                </defs>
-                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                                <XAxis dataKey="date" tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 8 }} stroke="rgba(255,255,255,0.1)" />
-                                <YAxis tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 8 }} stroke="rgba(255,255,255,0.1)" />
-                                <Tooltip 
-                                    contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '12px' }}
-                                    labelStyle={{ color: '#fff', fontSize: '10px', fontWeight: 'bold' }}
-                                    itemStyle={{ color: '#10b981', fontSize: '10px' }}
-                                />
-                                <Area type="monotone" dataKey="calculatedIP" name="IP" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorIP)" />
-                                <ReferenceLine x={currentRecord.date} stroke="#10b981" strokeDasharray="3 3" />
-                            </AreaChart>
-                        </ResponsiveContainer>
-                    </div>
+                <div className="h-[220px] w-full mt-2">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <ComposedChart data={history} margin={{ top: 10, right: -10, left: -25, bottom: 0 }}>
+                            <defs>
+                                <linearGradient id="colorRate" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.25}/>
+                                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                                </linearGradient>
+                                <linearGradient id="colorIP" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.25}/>
+                                    <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                                </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                            <XAxis dataKey="date" tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 8 }} stroke="rgba(255,255,255,0.1)" />
+                            <YAxis yAxisId="left" orientation="left" tick={{ fill: '#3b82f6', fontSize: 8 }} stroke="rgba(59, 130, 246, 0.2)" />
+                            <YAxis yAxisId="right" orientation="right" tick={{ fill: '#10b981', fontSize: 8 }} stroke="rgba(16, 185, 129, 0.2)" />
+                            <Tooltip 
+                                contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '12px' }}
+                                labelStyle={{ color: '#fff', fontSize: '10px', fontWeight: 'bold' }}
+                                itemStyle={{ fontSize: '10px' }}
+                            />
+                            <Legend verticalAlign="top" height={36} wrapperStyle={{ fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 'bold' }} />
+                            <Area yAxisId="left" type="monotone" dataKey="rate" name="Caudal (BFPD)" stroke="#3b82f6" strokeWidth={2} fillOpacity={1} fill="url(#colorRate)" />
+                            <Area yAxisId="right" type="monotone" dataKey="calculatedIP" name="IP (STB/d/psi)" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorIP)" />
+                            <ReferenceLine x={currentRecord.date} stroke="rgba(255, 255, 255, 0.35)" strokeDasharray="3 3" />
+                        </ComposedChart>
+                    </ResponsiveContainer>
                 </div>
             </div>
 
