@@ -213,10 +213,54 @@ export const MobileMonitoreo: React.FC<Props> = ({
                 contextData = `POZO: ${selectedWell.name} (Health: ${wellHealth.toFixed(0)}%, Freq Campo: ${selectedWell.productionTest?.freq} Hz)`;
                 const rawHistory = wellsHistoricalData[selectedWell.name] || wellsHistoricalData[selectedWell.name.toUpperCase()] || [];
                 if (rawHistory && rawHistory.length > 0) {
-                    const historySummary = rawHistory.map((h: any) => 
-                        `- Fecha: ${h.date}, Freq: ${h.freq || 60}Hz, Caudal: ${h.rate} BPD, PIP: ${h.pip} psi, BSW: ${h.waterCut || 0}%, PDP: ${h.pdp || 0} psi`
+                    const totalPoints = rawHistory.length;
+                    const rates = rawHistory.map((h: any) => h.rate || 0);
+                    const ips = rawHistory.map((h: any) => h.calculatedIP || 0).filter((v: number) => v > 0);
+                    const pips = rawHistory.map((h: any) => h.pip || 0);
+                    
+                    const minRate = Math.min(...rates);
+                    const maxRate = Math.max(...rates);
+                    const avgRate = rates.reduce((a: number, b: number) => a + b, 0) / totalPoints;
+                    
+                    const minIP = ips.length > 0 ? Math.min(...ips) : 0;
+                    const maxIP = ips.length > 0 ? Math.max(...ips) : 0;
+                    const avgIP = ips.length > 0 ? ips.reduce((a: number, b: number) => a + b, 0) / ips.length : 0;
+                    
+                    const minPIP = Math.min(...pips);
+                    const maxPIP = Math.max(...pips);
+                    const avgPIP = pips.reduce((a: number, b: number) => a + b, 0) / totalPoints;
+                    
+                    const newest = rawHistory[rawHistory.length - 1];
+                    const oldest = rawHistory[0];
+
+                    let sampledPoints = rawHistory;
+                    if (totalPoints > 15) {
+                        sampledPoints = [];
+                        const step = (totalPoints - 1) / 14;
+                        for (let i = 0; i < 15; i++) {
+                            const index = Math.round(i * step);
+                            if (rawHistory[index]) {
+                                sampledPoints.push(rawHistory[index]);
+                            }
+                        }
+                    }
+                    
+                    const historySummary = sampledPoints.map((h: any) => 
+                        `- Fecha: ${h.date}, Freq: ${h.freq || 60}Hz, Caudal: ${h.rate} BPD, PIP: ${h.pip} psi, BSW: ${h.waterCut || 0}%, PDP: ${h.pdp || 0} psi, IP: ${(h.calculatedIP || 0).toFixed(2)}`
                     ).join('\n');
-                    contextData += `\n\n=== HISTORIAL DE PRUEBAS DE PRODUCCIÓN (HISTÓRICO) ===\n${historySummary}`;
+                    
+                    const statsText = `=== RESUMEN ESTADÍSTICO DE PRUEBAS HISTÓRICAS ===
+- Total de Pruebas: ${totalPoints} registros.
+- Rango de Fechas: Desde ${oldest.date} hasta ${newest.date}.
+- Caudal de Producción (BFPD): Min = ${minRate.toFixed(0)}, Max = ${maxRate.toFixed(0)}, Promedio = ${avgRate.toFixed(0)}. Último = ${newest.rate.toFixed(0)}.
+- Índice de Productividad (IP): Min = ${minIP.toFixed(2)}, Max = ${maxIP.toFixed(2)}, Promedio = ${avgIP.toFixed(2)}. Último = ${(newest.calculatedIP || 0).toFixed(2)}.
+- Presión de Entrada (PIP): Min = ${minPIP.toFixed(0)} psi, Max = ${maxPIP.toFixed(0)} psi, Promedio = ${avgPIP.toFixed(0)} psi. Último = ${newest.pip.toFixed(0)} psi.
+- Frecuencia (Hz): Desde ${oldest.freq || 60} Hz iniciales hasta ${newest.freq || 60} Hz finales.
+
+=== HISTORIAL DE PRUEBAS DE PRODUCCIÓN (HISTÓRICO MUESTREADO A 15 PUNTOS CLAVE) ===
+${historySummary}`;
+
+                    contextData += `\n\n${statsText}`;
                 }
             } else {
                 contextData = `Flota de ${fleet.length} pozos.`;

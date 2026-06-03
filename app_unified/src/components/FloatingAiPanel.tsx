@@ -498,10 +498,54 @@ export const FloatingAiPanel = ({
                   * Vent Box Status: ${selectedWell.predictive?.ventBoxStatus || 'optimal'} (${selectedWell.predictive?.ventBoxAnalysis || 'N/A'})`;
 
                 if (productionHistory && productionHistory.length > 0) {
-                    const historySummary = productionHistory.map(h => 
-                        `- Fecha: ${h.date}, Freq: ${h.freq || 60}Hz, Caudal: ${h.rate} BPD, PIP: ${h.pip} psi, BSW: ${h.waterCut || 0}%, PDP: ${h.pdp || 0} psi`
+                    const totalPoints = productionHistory.length;
+                    const rates = productionHistory.map(h => h.rate || 0);
+                    const ips = productionHistory.map(h => h.calculatedIP || 0).filter(v => v > 0);
+                    const pips = productionHistory.map(h => h.pip || 0);
+                    
+                    const minRate = Math.min(...rates);
+                    const maxRate = Math.max(...rates);
+                    const avgRate = rates.reduce((a, b) => a + b, 0) / totalPoints;
+                    
+                    const minIP = ips.length > 0 ? Math.min(...ips) : 0;
+                    const maxIP = ips.length > 0 ? Math.max(...ips) : 0;
+                    const avgIP = ips.length > 0 ? ips.reduce((a, b) => a + b, 0) / ips.length : 0;
+                    
+                    const minPIP = Math.min(...pips);
+                    const maxPIP = Math.max(...pips);
+                    const avgPIP = pips.reduce((a, b) => a + b, 0) / totalPoints;
+                    
+                    const newest = productionHistory[productionHistory.length - 1];
+                    const oldest = productionHistory[0];
+
+                    let sampledPoints = productionHistory;
+                    if (totalPoints > 15) {
+                        sampledPoints = [];
+                        const step = (totalPoints - 1) / 14;
+                        for (let i = 0; i < 15; i++) {
+                            const index = Math.round(i * step);
+                            if (productionHistory[index]) {
+                                sampledPoints.push(productionHistory[index]);
+                            }
+                        }
+                    }
+                    
+                    const historySummary = sampledPoints.map(h => 
+                        `- Fecha: ${h.date}, Freq: ${h.freq || 60}Hz, Caudal: ${h.rate} BPD, PIP: ${h.pip} psi, BSW: ${h.waterCut || 0}%, PDP: ${h.pdp || 0} psi, IP: ${(h.calculatedIP || 0).toFixed(2)}`
                     ).join('\n');
-                    contextData += `\n\n=== HISTORIAL DE PRUEBAS DE PRODUCCIÓN (HISTÓRICO) ===\n${historySummary}`;
+                    
+                    const statsText = `=== RESUMEN ESTADÍSTICO DE PRUEBAS HISTÓRICAS ===
+- Total de Pruebas: ${totalPoints} registros.
+- Rango de Fechas: Desde ${oldest.date} hasta ${newest.date}.
+- Caudal de Producción (BFPD): Min = ${minRate.toFixed(0)}, Max = ${maxRate.toFixed(0)}, Promedio = ${avgRate.toFixed(0)}. Último = ${newest.rate.toFixed(0)}.
+- Índice de Productividad (IP): Min = ${minIP.toFixed(2)}, Max = ${maxIP.toFixed(2)}, Promedio = ${avgIP.toFixed(2)}. Último = ${(newest.calculatedIP || 0).toFixed(2)}.
+- Presión de Entrada (PIP): Min = ${minPIP.toFixed(0)} psi, Max = ${maxPIP.toFixed(0)} psi, Promedio = ${avgPIP.toFixed(0)} psi. Último = ${newest.pip.toFixed(0)} psi.
+- Frecuencia (Hz): Desde ${oldest.freq || 60} Hz iniciales hasta ${newest.freq || 60} Hz finales.
+
+=== HISTORIAL DE PRUEBAS DE PRODUCCIÓN (HISTÓRICO MUESTREADO A 15 PUNTOS CLAVE) ===
+${historySummary}`;
+
+                    contextData += `\n\n${statsText}`;
                 }
 
                 if (vsdTableMarkdown) {

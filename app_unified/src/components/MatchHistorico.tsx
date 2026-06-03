@@ -338,11 +338,11 @@ export const MatchHistorico: React.FC<Props> = ({ wellName, pump, designParams, 
     if (!currentRecord) return null;
 
     return (
-        <div className="flex flex-col gap-8 animate-fadeIn pb-20">
+        <div className="flex flex-col gap-4 animate-fadeIn pb-20">
             {/* PLAYBACK HEADER */}
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 shrink-0">
-                <div className="glass-surface-light rounded-[1.75rem] border border-white/5 p-4 shadow-2xl relative overflow-hidden bg-gradient-to-r from-canvas to-surface/40 flex flex-col justify-between">
-                    <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none"><History className="w-20 h-20 text-primary" /></div>
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 shrink-0">
+                <div className="bg-surface border border-white/10 rounded-2xl p-3 shadow-xl relative overflow-hidden flex flex-col justify-between">
+                    <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none"><History className="w-16 h-16 text-primary" /></div>
 
                     {onClose && (
                         <button
@@ -378,16 +378,16 @@ export const MatchHistorico: React.FC<Props> = ({ wellName, pump, designParams, 
                     </div>
 
                     {/* CENTRED PLAYBACK CONTROLS */}
-                    <div className="flex justify-center items-center mt-2 relative z-10">
-                        <div className={`flex items-center gap-4 bg-canvas/40 p-2 rounded-2xl border backdrop-blur-xl shadow-inner transition-all ${isPlaying ? 'border-success/30 ring-4 ring-success/10 bg-success/5' : 'border-white/10 ring-0 bg-canvas/40'}`}>
+                    <div className="flex justify-center items-center mt-1 relative z-10">
+                        <div className={`flex items-center gap-2 bg-canvas/40 p-1 rounded-xl border backdrop-blur-xl shadow-inner transition-all ${isPlaying ? 'border-success/30 ring-4 ring-success/10 bg-success/5' : 'border-white/10 ring-0 bg-canvas/40'}`}>
                             <button
                                 onClick={() => {
                                     if (currentIndex > 0) setCurrentIndex(currentIndex - 1);
                                     setIsPlaying(false);
                                 }}
-                                className="p-3 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 transition-all active:scale-90 text-txt-main hover:text-[rgb(var(--color-secondary))]"
+                                className="p-1.5 bg-white/5 hover:bg-white/10 rounded-lg border border-white/10 transition-all active:scale-90 text-txt-main hover:text-[rgb(var(--color-secondary))]"
                             >
-                                <ChevronLeft className="w-5 h-5" />
+                                <ChevronLeft className="w-4 h-4" />
                             </button>
                             <button
                                 onClick={() => {
@@ -396,26 +396,26 @@ export const MatchHistorico: React.FC<Props> = ({ wellName, pump, designParams, 
                                     }
                                     setIsPlaying(!isPlaying);
                                 }}
-                                className={`p-4.5 rounded-xl shadow-lg transform transition-all hover:scale-105 active:scale-95 text-white ${isPlaying ? 'bg-gradient-to-r from-danger to-danger-light shadow-glow-danger/20' : 'shadow-glow-secondary/20 ring-4 ring-secondary/10'}`}
+                                className={`p-2.5 rounded-lg shadow-lg transform transition-all hover:scale-105 active:scale-95 text-white ${isPlaying ? 'bg-gradient-to-r from-danger to-danger-light shadow-glow-danger/20' : 'shadow-glow-secondary/20 ring-4 ring-secondary/10'}`}
                                 style={!isPlaying ? { background: 'linear-gradient(135deg, rgb(var(--color-secondary)), rgb(var(--color-secondary) / 0.75))' } : {}}
                             >
-                                {isPlaying ? <Pause className="w-6 h-6 fill-current animate-pulse" /> : <Play className="w-6 h-6 fill-current ml-0.5 animate-pulse" />}
+                                {isPlaying ? <Pause className="w-4 h-4 fill-current animate-pulse" /> : <Play className="w-4 h-4 fill-current ml-0.5 animate-pulse" />}
                             </button>
                             <button
                                 onClick={() => {
                                     if (currentIndex < history.length - 1) setCurrentIndex(currentIndex + 1);
                                     setIsPlaying(false);
                                 }}
-                                className="p-3 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 transition-all active:scale-90 text-txt-main hover:text-[rgb(var(--color-secondary))]"
+                                className="p-1.5 bg-white/5 hover:bg-white/10 rounded-lg border border-white/10 transition-all active:scale-90 text-txt-main hover:text-[rgb(var(--color-secondary))]"
                             >
-                                <ChevronRight className="w-5 h-5" />
+                                <ChevronRight className="w-4 h-4" />
                             </button>
                         </div>
                     </div>
 
                     {/* TIMELINE */}
-                    <div className="mt-3 relative">
-                        <div className="h-3 w-full bg-canvas/80 rounded-full border border-white/10 shadow-inner overflow-hidden cursor-pointer group relative">
+                    <div className="mt-2 relative">
+                        <div className="h-1.5 w-full bg-canvas/80 rounded-full border border-white/10 shadow-inner overflow-hidden cursor-pointer group relative">
                             <input
                                 type="range"
                                 min="0"
@@ -434,10 +434,10 @@ export const MatchHistorico: React.FC<Props> = ({ wellName, pump, designParams, 
                                     background: 'linear-gradient(90deg, rgb(var(--color-secondary)) 0%, rgb(var(--color-secondary) / 0.5) 100%)'
                                 }}
                             >
-                                <div className="absolute right-0 top-0 w-2 h-full bg-white shadow-[0_0_10px_2px_#ffffff] animate-pulse"></div>
+                                <div className="absolute right-0 top-0 w-1 h-full bg-white shadow-[0_0_10px_2px_#ffffff] animate-pulse"></div>
                             </div>
                         </div>
-                        <div className="flex justify-between mt-1">
+                        <div className="flex justify-between mt-0.5">
                             <span className="text-[7px] font-bold text-txt-muted opacity-40 uppercase tracking-widest">{history[0]?.date}</span>
                             <span className="text-[7px] font-bold text-txt-muted opacity-40 uppercase tracking-widest">{history[history.length - 1]?.date}</span>
                         </div>
@@ -445,18 +445,18 @@ export const MatchHistorico: React.FC<Props> = ({ wellName, pump, designParams, 
                 </div>
 
                 {/* AI ANALYSIS CARD */}
-                <div className="glass-surface-light rounded-[1.75rem] border border-primary/20 p-4 shadow-2xl relative overflow-hidden bg-gradient-to-br from-primary/5 to-transparent flex flex-col gap-2 justify-between">
-                    <div className="absolute top-0 right-0 p-6 opacity-10 pointer-events-none"><Cpu className="w-14 h-14 text-primary animate-pulse" /></div>
-                    <div className="flex items-center gap-3 relative z-10">
-                        <div className="p-1.5 bg-primary/20 rounded-xl text-primary border border-primary/30"><Cpu className="w-4 h-4" /></div>
+                <div className="bg-surface border border-white/10 rounded-2xl p-3 shadow-xl relative overflow-hidden flex flex-col gap-2 justify-between">
+                    <div className="absolute top-0 right-0 p-6 opacity-5 pointer-events-none"><Cpu className="w-12 h-12 text-primary" /></div>
+                    <div className="flex items-center gap-2 relative z-10">
+                        <div className="p-1 bg-primary/20 rounded-lg text-primary border border-primary/30"><Cpu className="w-3.5 h-3.5" /></div>
                         <h3 className="text-xs font-black text-txt-main tracking-widest uppercase leading-tight">Diagnostic Engine AI</h3>
                     </div>
-                    <div className="flex-1 bg-canvas/30 rounded-xl p-3 border border-white/5 shadow-inner relative z-10 h-[70px] overflow-y-auto custom-scrollbar">
+                    <div className="flex-1 bg-canvas/30 rounded-xl p-2 border border-white/5 shadow-inner relative z-10 h-[50px] overflow-y-auto custom-scrollbar">
                         <div className="text-[10px] font-bold text-txt-main leading-normal space-y-1 whitespace-pre-wrap opacity-90 italic">
                             {aiAnalysis}
                         </div>
                     </div>
-                    <div className="flex items-center gap-2 relative z-10 mt-1">
+                    <div className="flex items-center gap-1.5 relative z-10">
                         <div className="w-1.5 h-1.5 rounded-full bg-success animate-pulse shadow-glow-success"></div>
                         <span className="text-[8px] font-black text-txt-muted uppercase tracking-widest opacity-50">Análisis basado en tendencia de {currentIndex + 1} puntos</span>
                     </div>
@@ -464,7 +464,7 @@ export const MatchHistorico: React.FC<Props> = ({ wellName, pump, designParams, 
             </div>
 
             {/* HISTORICAL FLOW RATE & PRODUCTIVITY INDEX DUAL-AXIS CHART */}
-            <div className="glass-surface-light rounded-[1.75rem] border border-white/5 p-5 shadow-2xl relative bg-gradient-to-b from-canvas to-surface/20 flex flex-col gap-2 relative z-10">
+            <div className="bg-surface border border-white/10 rounded-2xl p-4 shadow-xl relative flex flex-col gap-2 relative z-10">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                     <h3 className="text-xs font-black text-txt-main tracking-widest uppercase flex items-center gap-2">
                         <TrendingUp className="w-4 h-4 text-primary" /> Tendencia Histórica: Caudal e IP
