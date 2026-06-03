@@ -234,7 +234,7 @@ export const MobileMonitoreo: React.FC<Props> = ({
                 method: "POST",
                 headers,
                 body: JSON.stringify({
-                    systemInstruction: `Responde en español de forma extremadamente concisa y directa. Eres un ingeniero experto en Levantamiento Artificial (ESP). Limítate a 2 párrafos máximos por respuesta para lectura rápida en celulares. Contexto actual: ${contextData}`,
+                    systemInstruction: `Responde en español de forma extremadamente concisa y directa. Eres un ingeniero experto en Levantamiento Artificial (ESP). Limítate a 2 párrafos máximos por respuesta para lectura rápida en celulares. Si el contexto incluye el bloque 'HISTORIAL DE PRUEBAS DE PRODUCCIÓN (HISTÓRICO)', contiene los registros históricos reales de campo del pozo. Úsalos para responder sobre tendencias e historial de caudal, IP, presiones y BSW. Contexto actual: ${contextData}`,
                     messages: [
                         ...msgs.map(m => ({ role: m.role === 'model' ? 'assistant' : m.role, content: m.text })),
                         { role: 'user', content: text }

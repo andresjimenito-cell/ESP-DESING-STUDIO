@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import {
     ResponsiveContainer, AreaChart, Area, XAxis, YAxis,
-    CartesianGrid, Tooltip, Legend, LineChart, Line, ComposedChart, Bar
+    CartesianGrid, Tooltip, Legend, LineChart, Line, ComposedChart, Bar, ReferenceLine
 } from 'recharts';
 import { SystemParams, EspPump, ProductionTest } from '../types';
 import {
@@ -155,7 +155,7 @@ export const MatchHistorico: React.FC<Props> = ({ wellName, pump, designParams, 
 
         processed.sort((a, b) => parseToTimestamp(a.date) - parseToTimestamp(b.date));
         setHistory(processed);
-        setCurrentIndex(processed.length > 0 ? processed.length - 1 : 0);
+        setCurrentIndex(0);
     };
 
     useEffect(() => {
@@ -458,6 +458,77 @@ export const MatchHistorico: React.FC<Props> = ({ wellName, pump, designParams, 
                     <div className="flex items-center gap-2 relative z-10 mt-1">
                         <div className="w-1.5 h-1.5 rounded-full bg-success animate-pulse shadow-glow-success"></div>
                         <span className="text-[8px] font-black text-txt-muted uppercase tracking-widest opacity-50">Análisis basado en tendencia de {currentIndex + 1} puntos</span>
+                    </div>
+                </div>
+            </div>
+
+            {/* HISTORICAL FLOW RATE & PRODUCTIVITY INDEX CHARTS */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
+                {/* Flow Rate Chart */}
+                <div className="glass-surface-light rounded-[1.75rem] border border-white/5 p-5 shadow-2xl relative bg-gradient-to-b from-canvas to-surface/20 flex flex-col gap-2">
+                    <div className="flex justify-between items-center">
+                        <h3 className="text-xs font-black text-txt-main tracking-widest uppercase flex items-center gap-2">
+                            <Droplets className="w-4 h-4 text-secondary" /> Historial de Caudal
+                        </h3>
+                        <span className="text-[10px] font-mono text-secondary font-bold bg-secondary/10 px-2 py-0.5 rounded-full border border-secondary/20">
+                            {currentRecord.rate.toFixed(0)} BFPD
+                        </span>
+                    </div>
+                    <div className="h-[180px] w-full mt-2">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={history} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+                                <defs>
+                                    <linearGradient id="colorRate" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                                <XAxis dataKey="date" tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 8 }} stroke="rgba(255,255,255,0.1)" />
+                                <YAxis tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 8 }} stroke="rgba(255,255,255,0.1)" />
+                                <Tooltip 
+                                    contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '12px' }}
+                                    labelStyle={{ color: '#fff', fontSize: '10px', fontWeight: 'bold' }}
+                                    itemStyle={{ color: '#3b82f6', fontSize: '10px' }}
+                                />
+                                <Area type="monotone" dataKey="rate" name="Caudal" stroke="#3b82f6" strokeWidth={2} fillOpacity={1} fill="url(#colorRate)" />
+                                <ReferenceLine x={currentRecord.date} stroke="#3b82f6" strokeDasharray="3 3" />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+
+                {/* Productivity Index Chart */}
+                <div className="glass-surface-light rounded-[1.75rem] border border-white/5 p-5 shadow-2xl relative bg-gradient-to-b from-canvas to-surface/20 flex flex-col gap-2">
+                    <div className="flex justify-between items-center">
+                        <h3 className="text-xs font-black text-txt-main tracking-widest uppercase flex items-center gap-2">
+                            <Gauge className="w-4 h-4 text-primary" /> Historial de IP
+                        </h3>
+                        <span className="text-[10px] font-mono text-primary font-bold bg-primary/10 px-2 py-0.5 rounded-full border border-primary/20">
+                            {currentRecord.calculatedIP.toFixed(2)} STB/d/psi
+                        </span>
+                    </div>
+                    <div className="h-[180px] w-full mt-2">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={history} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+                                <defs>
+                                    <linearGradient id="colorIP" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                                        <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                                <XAxis dataKey="date" tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 8 }} stroke="rgba(255,255,255,0.1)" />
+                                <YAxis tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 8 }} stroke="rgba(255,255,255,0.1)" />
+                                <Tooltip 
+                                    contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '12px' }}
+                                    labelStyle={{ color: '#fff', fontSize: '10px', fontWeight: 'bold' }}
+                                    itemStyle={{ color: '#10b981', fontSize: '10px' }}
+                                />
+                                <Area type="monotone" dataKey="calculatedIP" name="IP" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorIP)" />
+                                <ReferenceLine x={currentRecord.date} stroke="#10b981" strokeDasharray="3 3" />
+                            </AreaChart>
+                        </ResponsiveContainer>
                     </div>
                 </div>
             </div>

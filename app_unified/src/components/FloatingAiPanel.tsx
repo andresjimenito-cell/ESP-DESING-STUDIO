@@ -641,6 +641,13 @@ RULE 10 — RESPONSE FORMAT & QUALITY STANDARDS
 • Use Markdown: bold for key variables, tables for comparisons, numbered lists for recommendations.
 • Calibrate explanation depth to the query: a quick telemetry alarm question gets a focused 3-paragraph answer; a full optimization request gets the complete structured format above.
 • Avoid generic AI disclaimers. Respond as a field engineer who has seen these failures personally.
+
+══════════════════════════════════════════════════
+RULE 11 — HISTORIAL DE PRUEBAS Y AJUSTE HISTÓRICO
+══════════════════════════════════════════════════
+• Si el contexto incluye el bloque "=== HISTORIAL DE PRUEBAS DE PRODUCCIÓN (HISTÓRICO) ===", este contiene la serie temporal de registros reales de campo del pozo (cotejo histórico / match histórico / histórico).
+• Si el usuario hace referencia a "histórico", "cotejo", "gráfica de histórico", "tendencia" o "puntos del histórico", analiza este bloque cronológico para responder detalladamente sobre evoluciones de caudal (BFPD), presiones (PIP, PDP), frecuencia (Hz), corte de agua (BSW) e IP.
+• Brinda respuestas basadas directamente en esta serie de tiempo en lugar de indicar que no tienes acceso a la información histórica.
             
             CONTEXT:\n${contextWithHistory}`.trim();
 
