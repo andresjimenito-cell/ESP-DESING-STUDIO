@@ -10,7 +10,7 @@ import React, {
 // ─────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────
-type Theme = 'fusion' | 'cyber' | 'executive' | 'heritage';
+type Theme = 'fusion' | 'cyber' | 'executive' | 'heritage' | 'parex';
 
 interface ThemeContextType {
   theme: Theme;
@@ -70,6 +70,15 @@ export const THEME_META: Record<
     badge: 'Light',
     icon: '🔥',
   },
+  parex: {
+    label: 'Parex',
+    description: 'Corporate — Emerald Green & Gold',
+    accent: '#137659',
+    surface: '#FFFFFF',
+    text: '#191C1A',
+    badge: 'Light',
+    icon: '🌿',
+  },
 };
 
 export const THEME_ORDER: Theme[] = [
@@ -77,6 +86,7 @@ export const THEME_ORDER: Theme[] = [
   'cyber',
   'executive',
   'heritage',
+  'parex',
 ];
 
 // ─────────────────────────────────────────────
@@ -101,7 +111,7 @@ export const ThemeProvider = ({ children }: { children?: ReactNode }) => {
 
   const toggleLightMode = () => {
     setTheme((prev) => {
-      if (prev === 'executive' || prev === 'heritage') return 'fusion';
+      if (prev === 'executive' || prev === 'heritage' || prev === 'parex') return 'fusion';
       return 'executive';
     });
   };
@@ -165,11 +175,11 @@ export const ThemeSwitcher = () => {
           style={{
             ...styles.panel,
             background:
-              theme === 'executive' || theme === 'heritage'
+              theme === 'executive' || theme === 'heritage' || theme === 'parex'
                 ? '#FAFAFA'
                 : '#111827',
             boxShadow:
-              theme === 'executive' || theme === 'heritage'
+              theme === 'executive' || theme === 'heritage' || theme === 'parex'
                 ? '0 24px 60px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.05)'
                 : '0 24px 60px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.07)',
           }}
@@ -179,7 +189,7 @@ export const ThemeSwitcher = () => {
             style={{
               ...styles.panelHeader,
               borderBottom:
-                theme === 'executive' || theme === 'heritage'
+                theme === 'executive' || theme === 'heritage' || theme === 'parex'
                   ? '1px solid rgba(0,0,0,0.05)'
                   : '1px solid rgba(255,255,255,0.07)',
             }}
@@ -193,11 +203,11 @@ export const ThemeSwitcher = () => {
               style={{
                 ...styles.cycleBtn,
                 background:
-                  theme === 'executive' || theme === 'heritage'
+                  theme === 'executive' || theme === 'heritage' || theme === 'parex'
                     ? 'rgba(0,0,0,0.04)'
                     : 'rgba(255,255,255,0.07)',
                 color:
-                  theme === 'executive' || theme === 'heritage'
+                  theme === 'executive' || theme === 'heritage' || theme === 'parex'
                     ? '#475569'
                     : '#94A3B8',
               }}
