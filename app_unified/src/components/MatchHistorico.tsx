@@ -503,7 +503,7 @@ export const MatchHistorico: React.FC<Props> = ({ wellName, pump, designParams, 
                             <Legend verticalAlign="top" height={36} wrapperStyle={{ fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 'bold' }} />
                             <Area yAxisId="left" type="monotone" dataKey="rate" name="Caudal (BFPD)" stroke="#3b82f6" strokeWidth={2} fillOpacity={1} fill="url(#colorRate)" />
                             <Area yAxisId="right" type="monotone" dataKey="calculatedIP" name="IP (STB/d/psi)" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorIP)" />
-                            <ReferenceLine x={currentRecord.date} stroke="rgba(255, 255, 255, 0.35)" strokeDasharray="3 3" />
+                            <ReferenceLine x={currentRecord.date} yAxisId="left" stroke="rgba(255, 255, 255, 0.35)" strokeDasharray="3 3" />
                         </ComposedChart>
                     </ResponsiveContainer>
                 </div>
