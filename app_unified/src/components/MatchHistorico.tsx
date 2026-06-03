@@ -7,7 +7,8 @@ import {
 } from 'lucide-react';
 import {
     ResponsiveContainer, AreaChart, Area, XAxis, YAxis,
-    CartesianGrid, Tooltip, Legend, LineChart, Line, ComposedChart, Bar, ReferenceLine
+    CartesianGrid, Tooltip, Legend, LineChart, Line, ComposedChart, Bar, ReferenceLine,
+    ScatterChart, Scatter
 } from 'recharts';
 import { SystemParams, EspPump, ProductionTest } from '../types';
 import {
@@ -341,53 +342,33 @@ export const MatchHistorico: React.FC<Props> = ({ wellName, pump, designParams, 
         <div className="flex flex-col gap-4 animate-fadeIn pb-20">
             {/* PLAYBACK HEADER */}
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 shrink-0">
-                <div className="bg-surface border border-white/10 rounded-2xl p-3 shadow-xl relative overflow-hidden flex flex-col justify-between">
-                    <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none"><History className="w-16 h-16 text-primary" /></div>
+                <div className="bg-surface border border-white/10 rounded-2xl p-2 px-3 shadow-xl relative overflow-hidden flex flex-col justify-center min-h-[64px]">
+                    <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none"><History className="w-10 h-10 text-primary" /></div>
 
-                    {onClose && (
-                        <button
-                            onClick={onClose}
-                            className="absolute top-4 right-4 p-2 glass-surface border border-white/10 rounded-xl text-txt-muted hover:text-danger hover:scale-105 transition-all z-30 shadow-2xl"
-                        >
-                            <X className="w-4 h-4" />
-                        </button>
-                    )}
-                    <div className="flex flex-col md:flex-row justify-between items-center gap-4 relative z-10">
-                        <div className="flex items-center gap-3">
-                            <div className={`p-2.5 rounded-2xl bg-gradient-to-br shadow-glow-sm ${currentRecord.healthScore > 85 ? 'from-success/20 shadow-success/10' : 'from-danger/20 shadow-danger/10'}`}>
-                                <Activity className={`w-5 h-5 ${currentRecord.healthScore > 85 ? 'text-success' : 'text-danger'}`} />
+                    <div className="flex flex-row justify-between items-center gap-2 relative z-10 w-full">
+                        <div className="flex items-center gap-2">
+                            <div className={`p-1.5 rounded-xl bg-gradient-to-br shadow-glow-sm ${currentRecord.healthScore > 85 ? 'from-success/20 shadow-success/10' : 'from-danger/20 shadow-danger/10'}`}>
+                                <Activity className={`w-3.5 h-3.5 ${currentRecord.healthScore > 85 ? 'text-success' : 'text-danger'}`} />
                             </div>
                             <div>
-                                <h2 className="text-lg font-black text-txt-main tracking-tighter uppercase leading-tight">{wellName}</h2>
-                                <div className="flex items-center gap-2 mt-0.5">
-                                    <span className="text-[8px] font-black text-primary uppercase tracking-widest bg-primary/10 px-2 py-0.5 rounded-full border border-primary/20">{currentRecord.date}</span>
-                                    <span className="text-[8px] font-black text-txt-muted uppercase tracking-widest opacity-60">REGISTRO {currentIndex + 1} / {history.length}</span>
+                                <h2 className="text-sm font-black text-txt-main tracking-tighter uppercase leading-none">{wellName}</h2>
+                                <div className="flex items-center gap-1.5 mt-0.5">
+                                    <span className="text-[7px] font-black text-primary uppercase tracking-widest bg-primary/10 px-1.5 py-0.5 rounded-full border border-primary/20">{currentRecord.date}</span>
+                                    <span className="text-[7px] font-black text-txt-muted uppercase tracking-widest opacity-60">REGISTRO {currentIndex + 1} / {history.length}</span>
                                 </div>
                             </div>
                         </div>
 
-                        {onImport && (
-                            <button
-                                onClick={onImport}
-                                className="flex items-center gap-2 px-3 py-2 bg-secondary/10 hover:bg-secondary text-secondary hover:text-white border border-secondary/20 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all hover:shadow-glow-secondary/20 active:scale-95 group"
-                            >
-                                <Download className="w-3.5 h-3.5 group-hover:-translate-y-0.5 transition-transform" />
-                                Cargar Datos
-                            </button>
-                        )}
-                    </div>
-
-                    {/* CENTRED PLAYBACK CONTROLS */}
-                    <div className="flex justify-center items-center mt-1 relative z-10">
-                        <div className={`flex items-center gap-2 bg-canvas/40 p-1 rounded-xl border backdrop-blur-xl shadow-inner transition-all ${isPlaying ? 'border-success/30 ring-4 ring-success/10 bg-success/5' : 'border-white/10 ring-0 bg-canvas/40'}`}>
+                        {/* PLAYBACK CONTROLS IN THE SAME ROW */}
+                        <div className="flex items-center gap-1.5 bg-canvas/40 p-0.5 rounded-lg border backdrop-blur-xl shadow-inner transition-all border-white/10">
                             <button
                                 onClick={() => {
                                     if (currentIndex > 0) setCurrentIndex(currentIndex - 1);
                                     setIsPlaying(false);
                                 }}
-                                className="p-1.5 bg-white/5 hover:bg-white/10 rounded-lg border border-white/10 transition-all active:scale-90 text-txt-main hover:text-[rgb(var(--color-secondary))]"
+                                className="p-1 bg-white/5 hover:bg-white/10 rounded-md border border-white/10 transition-all active:scale-90 text-txt-main hover:text-[rgb(var(--color-secondary))]"
                             >
-                                <ChevronLeft className="w-4 h-4" />
+                                <ChevronLeft className="w-3.5 h-3.5" />
                             </button>
                             <button
                                 onClick={() => {
@@ -396,26 +377,47 @@ export const MatchHistorico: React.FC<Props> = ({ wellName, pump, designParams, 
                                     }
                                     setIsPlaying(!isPlaying);
                                 }}
-                                className={`p-2.5 rounded-lg shadow-lg transform transition-all hover:scale-105 active:scale-95 text-white ${isPlaying ? 'bg-gradient-to-r from-danger to-danger-light shadow-glow-danger/20' : 'shadow-glow-secondary/20 ring-4 ring-secondary/10'}`}
-                                style={!isPlaying ? { background: 'linear-gradient(135deg, rgb(var(--color-secondary)), rgb(var(--color-secondary) / 0.75))' } : {}}
+                                className="p-1.5 rounded-md shadow-md transform transition-all hover:scale-105 active:scale-95 text-white"
+                                style={{ background: isPlaying ? 'rgb(var(--color-danger))' : 'linear-gradient(135deg, rgb(var(--color-secondary)), rgb(var(--color-secondary) / 0.75))' }}
                             >
-                                {isPlaying ? <Pause className="w-4 h-4 fill-current animate-pulse" /> : <Play className="w-4 h-4 fill-current ml-0.5 animate-pulse" />}
+                                {isPlaying ? <Pause className="w-3.5 h-3.5 fill-current animate-pulse" /> : <Play className="w-3.5 h-3.5 fill-current ml-0.5 animate-pulse" />}
                             </button>
                             <button
                                 onClick={() => {
                                     if (currentIndex < history.length - 1) setCurrentIndex(currentIndex + 1);
                                     setIsPlaying(false);
                                 }}
-                                className="p-1.5 bg-white/5 hover:bg-white/10 rounded-lg border border-white/10 transition-all active:scale-90 text-txt-main hover:text-[rgb(var(--color-secondary))]"
+                                className="p-1 bg-white/5 hover:bg-white/10 rounded-md border border-white/10 transition-all active:scale-90 text-txt-main hover:text-[rgb(var(--color-secondary))]"
                             >
-                                <ChevronRight className="w-4 h-4" />
+                                <ChevronRight className="w-3.5 h-3.5" />
                             </button>
+                        </div>
+
+                        {/* IMPORT/CLOSE BUTTONS IN THE SAME ROW */}
+                        <div className="flex items-center gap-2">
+                            {onImport && (
+                                <button
+                                    onClick={onImport}
+                                    className="flex items-center gap-1.5 px-2 py-1 bg-secondary/10 hover:bg-secondary text-secondary hover:text-white border border-secondary/20 rounded-lg font-black text-[8px] uppercase tracking-widest transition-all"
+                                >
+                                    <Download className="w-3 h-3" />
+                                    Cargar
+                                </button>
+                            )}
+                            {onClose && (
+                                <button
+                                    onClick={onClose}
+                                    className="p-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-txt-muted hover:text-danger transition-all shadow-2xl"
+                                >
+                                    <X className="w-3.5 h-3.5" />
+                                </button>
+                            )}
                         </div>
                     </div>
 
                     {/* TIMELINE */}
-                    <div className="mt-2 relative">
-                        <div className="h-1.5 w-full bg-canvas/80 rounded-full border border-white/10 shadow-inner overflow-hidden cursor-pointer group relative">
+                    <div className="mt-1.5 relative">
+                        <div className="h-1 w-full bg-canvas/80 rounded-full border border-white/10 shadow-inner overflow-hidden cursor-pointer group relative">
                             <input
                                 type="range"
                                 min="0"
@@ -437,75 +439,131 @@ export const MatchHistorico: React.FC<Props> = ({ wellName, pump, designParams, 
                                 <div className="absolute right-0 top-0 w-1 h-full bg-white shadow-[0_0_10px_2px_#ffffff] animate-pulse"></div>
                             </div>
                         </div>
-                        <div className="flex justify-between mt-0.5">
-                            <span className="text-[7px] font-bold text-txt-muted opacity-40 uppercase tracking-widest">{history[0]?.date}</span>
-                            <span className="text-[7px] font-bold text-txt-muted opacity-40 uppercase tracking-widest">{history[history.length - 1]?.date}</span>
-                        </div>
                     </div>
                 </div>
 
                 {/* AI ANALYSIS CARD */}
-                <div className="bg-surface border border-white/10 rounded-2xl p-3 shadow-xl relative overflow-hidden flex flex-col gap-2 justify-between">
-                    <div className="absolute top-0 right-0 p-6 opacity-5 pointer-events-none"><Cpu className="w-12 h-12 text-primary" /></div>
-                    <div className="flex items-center gap-2 relative z-10">
-                        <div className="p-1 bg-primary/20 rounded-lg text-primary border border-primary/30"><Cpu className="w-3.5 h-3.5" /></div>
-                        <h3 className="text-xs font-black text-txt-main tracking-widest uppercase leading-tight">Diagnostic Engine AI</h3>
-                    </div>
-                    <div className="flex-1 bg-canvas/30 rounded-xl p-2 border border-white/5 shadow-inner relative z-10 h-[50px] overflow-y-auto custom-scrollbar">
-                        <div className="text-[10px] font-bold text-txt-main leading-normal space-y-1 whitespace-pre-wrap opacity-90 italic">
-                            {aiAnalysis}
+                <div className="bg-surface border border-white/10 rounded-2xl p-2 px-3 shadow-xl relative overflow-hidden flex flex-col justify-center min-h-[64px]">
+                    <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none"><Cpu className="w-10 h-10 text-primary" /></div>
+                    <div className="flex flex-row justify-between items-center gap-2 relative z-10">
+                        <div className="flex items-center gap-1.5">
+                            <div className="p-0.5 bg-primary/20 rounded-md text-primary border border-primary/30"><Cpu className="w-3 h-3" /></div>
+                            <h3 className="text-[10px] font-black text-txt-main tracking-widest uppercase leading-none">Diagnostic Engine AI</h3>
+                        </div>
+                        <div className="flex items-center gap-1 relative z-10">
+                            <div className="w-1 h-1 rounded-full bg-success animate-pulse shadow-glow-success"></div>
+                            <span className="text-[7px] font-black text-txt-muted uppercase tracking-widest opacity-50">Trend analysis ({currentIndex + 1} pts)</span>
                         </div>
                     </div>
-                    <div className="flex items-center gap-1.5 relative z-10">
-                        <div className="w-1.5 h-1.5 rounded-full bg-success animate-pulse shadow-glow-success"></div>
-                        <span className="text-[8px] font-black text-txt-muted uppercase tracking-widest opacity-50">Análisis basado en tendencia de {currentIndex + 1} puntos</span>
+                    <div className="bg-canvas/30 rounded-lg p-1 border border-white/5 shadow-inner relative z-10 h-[36px] overflow-y-auto custom-scrollbar mt-1">
+                        <div className="text-[9px] font-bold text-txt-main leading-tight space-y-0.5 whitespace-pre-wrap opacity-90 italic">
+                            {aiAnalysis}
+                        </div>
                     </div>
                 </div>
             </div>
 
-            {/* HISTORICAL FLOW RATE & PRODUCTIVITY INDEX DUAL-AXIS CHART */}
-            <div className="bg-surface border border-white/10 rounded-2xl p-4 shadow-xl relative flex flex-col gap-2 relative z-10">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                    <h3 className="text-xs font-black text-txt-main tracking-widest uppercase flex items-center gap-2">
-                        <TrendingUp className="w-4 h-4 text-primary" /> Tendencia Histórica: Caudal e IP
-                    </h3>
-                    <div className="flex gap-3">
-                        <span className="text-[10px] font-mono text-secondary font-bold bg-secondary/10 px-2.5 py-1 rounded-xl border border-secondary/20">
-                            Caudal: {currentRecord.rate.toFixed(0)} BFPD
-                        </span>
-                        <span className="text-[10px] font-mono text-primary font-bold bg-primary/10 px-2.5 py-1 rounded-xl border border-primary/20">
-                            IP: {currentRecord.calculatedIP.toFixed(2)} STB/d/psi
-                        </span>
+            {/* DUAL CHARTS CONTAINER */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {/* HISTORICAL FLOW RATE & PRODUCTIVITY INDEX DUAL-AXIS CHART */}
+                <div className="bg-surface border border-white/10 rounded-2xl p-4 shadow-xl relative flex flex-col gap-2 relative z-10">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                        <h3 className="text-xs font-black text-txt-main tracking-widest uppercase flex items-center gap-2">
+                            <TrendingUp className="w-4 h-4 text-primary" /> Tendencia Histórica: Caudal, IP y BSW
+                        </h3>
+                        <div className="flex flex-wrap gap-2">
+                            <span className="text-[9px] font-mono text-secondary font-bold bg-secondary/10 px-2 py-0.5 rounded-lg border border-secondary/20">
+                                Caudal: {currentRecord.rate.toFixed(0)} BFPD
+                            </span>
+                            <span className="text-[9px] font-mono text-primary font-bold bg-primary/10 px-2 py-0.5 rounded-lg border border-primary/20">
+                                IP: {currentRecord.calculatedIP.toFixed(2)} STB/d/psi
+                            </span>
+                            <span className="text-[9px] font-mono text-warning font-bold bg-warning/10 px-2 py-0.5 rounded-lg border border-warning/20">
+                                BSW: {(currentRecord.waterCut || 0).toFixed(1)}%
+                            </span>
+                        </div>
+                    </div>
+                    <div className="h-[220px] w-full mt-2">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <ComposedChart data={history} margin={{ top: 10, right: -10, left: -25, bottom: 0 }}>
+                                <defs>
+                                    <linearGradient id="colorRate" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.25}/>
+                                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                                    </linearGradient>
+                                    <linearGradient id="colorIP" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.25}/>
+                                        <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" stroke="rgb(var(--color-text-muted))" strokeOpacity={0.1} />
+                                <XAxis dataKey="date" tick={{ fill: 'rgb(var(--color-text-muted))', fontSize: 8 }} stroke="rgb(var(--color-text-muted))" strokeOpacity={0.2} />
+                                <YAxis yAxisId="left" orientation="left" tick={{ fill: 'rgb(var(--color-text-muted))', fontSize: 8 }} stroke="rgb(var(--color-text-muted))" strokeOpacity={0.2} />
+                                <YAxis yAxisId="right" orientation="right" tick={{ fill: 'rgb(var(--color-text-muted))', fontSize: 8 }} stroke="rgb(var(--color-text-muted))" strokeOpacity={0.2} />
+                                <YAxis yAxisId="right-bsw" orientation="right" hide={true} domain={[0, 100]} />
+                                <Tooltip 
+                                    contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '12px' }}
+                                    labelStyle={{ color: '#fff', fontSize: '10px', fontWeight: 'bold' }}
+                                    itemStyle={{ fontSize: '10px' }}
+                                />
+                                <Legend verticalAlign="top" height={36} wrapperStyle={{ fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 'bold' }} />
+                                <Area yAxisId="left" type="monotone" dataKey="rate" name="Caudal (BFPD)" stroke="#3b82f6" strokeWidth={2} fillOpacity={1} fill="url(#colorRate)" />
+                                <Area yAxisId="right" type="monotone" dataKey="calculatedIP" name="IP (STB/d/psi)" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorIP)" />
+                                <Line yAxisId="right-bsw" type="monotone" dataKey="waterCut" name="BSW (%)" stroke="#f59e0b" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
+                                <ReferenceLine x={currentRecord.date} yAxisId="left" stroke="rgb(var(--color-text-muted))" strokeOpacity={0.4} strokeDasharray="3 3" />
+                            </ComposedChart>
+                        </ResponsiveContainer>
                     </div>
                 </div>
-                <div className="h-[220px] w-full mt-2">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <ComposedChart data={history} margin={{ top: 10, right: -10, left: -25, bottom: 0 }}>
-                            <defs>
-                                <linearGradient id="colorRate" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.25}/>
-                                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
-                                </linearGradient>
-                                <linearGradient id="colorIP" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.25}/>
-                                    <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                                </linearGradient>
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                            <XAxis dataKey="date" tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 8 }} stroke="rgba(255,255,255,0.1)" />
-                            <YAxis yAxisId="left" orientation="left" tick={{ fill: '#3b82f6', fontSize: 8 }} stroke="rgba(59, 130, 246, 0.2)" />
-                            <YAxis yAxisId="right" orientation="right" tick={{ fill: '#10b981', fontSize: 8 }} stroke="rgba(16, 185, 129, 0.2)" />
-                            <Tooltip 
-                                contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '12px' }}
-                                labelStyle={{ color: '#fff', fontSize: '10px', fontWeight: 'bold' }}
-                                itemStyle={{ fontSize: '10px' }}
-                            />
-                            <Legend verticalAlign="top" height={36} wrapperStyle={{ fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 'bold' }} />
-                            <Area yAxisId="left" type="monotone" dataKey="rate" name="Caudal (BFPD)" stroke="#3b82f6" strokeWidth={2} fillOpacity={1} fill="url(#colorRate)" />
-                            <Area yAxisId="right" type="monotone" dataKey="calculatedIP" name="IP (STB/d/psi)" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorIP)" />
-                            <ReferenceLine x={currentRecord.date} yAxisId="left" stroke="rgba(255, 255, 255, 0.35)" strokeDasharray="3 3" />
-                        </ComposedChart>
-                    </ResponsiveContainer>
+
+                {/* SCATTER CHART: Caudal vs IP */}
+                <div className="bg-surface border border-white/10 rounded-2xl p-4 shadow-xl relative flex flex-col gap-2 relative z-10">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                        <h3 className="text-xs font-black text-txt-main tracking-widest uppercase flex items-center gap-2">
+                            <Target className="w-4 h-4 text-primary" /> Relación Caudal vs IP (Histórico)
+                        </h3>
+                        <div className="flex gap-2">
+                            <span className="text-[9px] font-mono text-secondary font-bold bg-secondary/10 px-2 py-0.5 rounded-lg border border-secondary/20">
+                                IP Act: {currentRecord.calculatedIP.toFixed(2)}
+                            </span>
+                            <span className="text-[9px] font-mono text-primary font-bold bg-primary/10 px-2 py-0.5 rounded-lg border border-primary/20">
+                                Q Act: {currentRecord.rate.toFixed(0)}
+                            </span>
+                        </div>
+                    </div>
+                    <div className="h-[220px] w-full mt-2">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <ScatterChart margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="rgb(var(--color-text-muted))" strokeOpacity={0.1} />
+                                <XAxis 
+                                    type="number" 
+                                    dataKey="calculatedIP" 
+                                    name="IP" 
+                                    unit=" STB/d/psi" 
+                                    stroke="rgb(var(--color-text-muted))" 
+                                    strokeOpacity={0.2} 
+                                    tick={{ fill: 'rgb(var(--color-text-muted))', fontSize: 8 }}
+                                />
+                                <YAxis 
+                                    type="number" 
+                                    dataKey="rate" 
+                                    name="Caudal" 
+                                    unit=" BFPD" 
+                                    stroke="rgb(var(--color-text-muted))" 
+                                    strokeOpacity={0.2} 
+                                    tick={{ fill: 'rgb(var(--color-text-muted))', fontSize: 8 }}
+                                />
+                                <Tooltip 
+                                    cursor={{ strokeDasharray: '3 3' }}
+                                    contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '12px' }}
+                                    labelStyle={{ color: '#fff', fontSize: '10px', fontWeight: 'bold' }}
+                                    itemStyle={{ fontSize: '10px' }}
+                                />
+                                <Scatter name="Historial" data={history} fill="rgb(var(--color-primary))" fillOpacity={0.4} />
+                                <Scatter name="Punto Actual" data={[currentRecord]} fill="rgb(var(--color-secondary))" shape="circle" r={8} />
+                            </ScatterChart>
+                        </ResponsiveContainer>
+                    </div>
                 </div>
             </div>
 
