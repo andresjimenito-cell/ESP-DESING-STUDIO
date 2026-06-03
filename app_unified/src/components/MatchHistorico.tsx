@@ -168,11 +168,11 @@ export const MatchHistorico: React.FC<Props> = ({ wellName, pump, designParams, 
         if (isPlaying) {
             playTimerRef.current = setInterval(() => {
                 setCurrentIndex(prev => {
-                    if (prev <= 0) {
+                    if (prev >= history.length - 1) {
                         setIsPlaying(false);
                         return prev;
                     }
-                    return prev - 1;
+                    return prev + 1;
                 });
             }, 800); // Improved playback speed
         } else if (playTimerRef.current) {
@@ -187,7 +187,7 @@ export const MatchHistorico: React.FC<Props> = ({ wellName, pump, designParams, 
         if (!currentRecord) return [];
         const baseFreq = pump?.nameplateFrequency || 60;
 
-        return history.slice(currentIndex, history.length).map(h => {
+        return history.slice(0, currentIndex + 1).map(h => {
             const hFreq = h.frequency || 60;
             const ratio = hFreq / baseFreq;
 
@@ -390,8 +390,8 @@ export const MatchHistorico: React.FC<Props> = ({ wellName, pump, designParams, 
                             </button>
                             <button
                                 onClick={() => {
-                                    if (currentIndex <= 0) {
-                                        setCurrentIndex(history.length - 1);
+                                    if (currentIndex >= history.length - 1) {
+                                        setCurrentIndex(0);
                                     }
                                     setIsPlaying(!isPlaying);
                                 }}

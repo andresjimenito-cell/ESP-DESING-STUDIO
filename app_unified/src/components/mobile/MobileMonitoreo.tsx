@@ -211,6 +211,13 @@ export const MobileMonitoreo: React.FC<Props> = ({
             let contextData = "";
             if (selectedWell) {
                 contextData = `POZO: ${selectedWell.name} (Health: ${wellHealth.toFixed(0)}%, Freq Campo: ${selectedWell.productionTest?.freq} Hz)`;
+                const rawHistory = wellsHistoricalData[selectedWell.name] || wellsHistoricalData[selectedWell.name.toUpperCase()] || [];
+                if (rawHistory && rawHistory.length > 0) {
+                    const historySummary = rawHistory.map((h: any) => 
+                        `- Fecha: ${h.date}, Freq: ${h.freq || 60}Hz, Caudal: ${h.rate} BPD, PIP: ${h.pip} psi, BSW: ${h.waterCut || 0}%, PDP: ${h.pdp || 0} psi`
+                    ).join('\n');
+                    contextData += `\n\n=== HISTORIAL DE PRUEBAS DE PRODUCCIÓN (HISTÓRICO) ===\n${historySummary}`;
+                }
             } else {
                 contextData = `Flota de ${fleet.length} pozos.`;
             }

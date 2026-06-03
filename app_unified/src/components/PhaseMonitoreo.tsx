@@ -1595,6 +1595,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                 wellParams={wellMatchParams}
                 pump={pump}
                 operationalResults={operationalResults}
+                productionHistory={wellsHistoricalData[fuzzyWellName(selectedWell.name)]}
             />
 
             {/* FULL-SCREEN IMPORT PROGRESS OVERLAY - Simplified & Minimal */}

@@ -134,7 +134,8 @@ export const FloatingAiPanel = ({
     t,
     wellParams,
     pump,
-    operationalResults
+    operationalResults,
+    productionHistory
 }: {
     fleet: WellFleetItem[],
     selectedWell?: WellFleetItem,
@@ -142,7 +143,8 @@ export const FloatingAiPanel = ({
     t: any,
     wellParams?: SystemParams,
     pump?: EspPump | null,
-    operationalResults?: any
+    operationalResults?: any,
+    productionHistory?: any[]
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [viewMode, setViewMode] = useState<'chat' | 'memory'>('chat');
@@ -494,6 +496,13 @@ export const FloatingAiPanel = ({
                   * VSD Status: ${selectedWell.predictive?.vsdStatus || 'optimal'} (${selectedWell.predictive?.vsdAnalysis || 'N/A'})
                   * Transformer Status: ${selectedWell.predictive?.transformerStatus || 'optimal'} (${selectedWell.predictive?.transformerAnalysis || 'N/A'})
                   * Vent Box Status: ${selectedWell.predictive?.ventBoxStatus || 'optimal'} (${selectedWell.predictive?.ventBoxAnalysis || 'N/A'})`;
+
+                if (productionHistory && productionHistory.length > 0) {
+                    const historySummary = productionHistory.map(h => 
+                        `- Fecha: ${h.date}, Freq: ${h.freq || 60}Hz, Caudal: ${h.rate} BPD, PIP: ${h.pip} psi, BSW: ${h.waterCut || 0}%, PDP: ${h.pdp || 0} psi`
+                    ).join('\n');
+                    contextData += `\n\n=== HISTORIAL DE PRUEBAS DE PRODUCCIÓN (HISTÓRICO) ===\n${historySummary}`;
+                }
 
                 if (vsdTableMarkdown) {
                     contextData += `\n\n=== VSD SIMULATION RESULTS (30-80 Hz) ===\n${vsdTableMarkdown}`;
