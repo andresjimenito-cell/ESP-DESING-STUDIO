@@ -164,30 +164,30 @@
    PAREX — Emerald Green & Corporate Gold [LIGHT]
    ============================================================ */
 [data-theme='parex'] {
-  --color-primary: 0 168 110;
-  /* Vivid Emerald Green #00a86e */
-  --color-secondary: 224 168 25;
-  /* Rich Vibrant Gold #e0a819 */
-  --color-accent: 0 100 65;
-  /* Intense Dark Green #006441 */
-  --color-tertiary: 245 158 11;
-  /* Vivid Amber Gold #f59e0b */
-  --color-glow: 0 168 110;
+  --color-primary: 17 150 105;
+  /* Vivid Emerald Green #119669 */
+  --color-secondary: 207 162 26;
+  /* Rich Corporate Gold #cfa21a */
+  --color-accent: 9 81 57;
+  /* Deep Forest Green #095139 */
+  --color-tertiary: 22 118 88;
+  /* Medium Emerald Green #167658 */
+  --color-glow: 17 150 105;
   /* Emerald Glow */
   --color-canvas: 255 255 255;
   --color-surface: 255 255 255;
-  --color-surface-light: 240 250 244;
-  /* Very clean Light Mint #f0faf4 */
-  --color-surface-raised: 220 242 229;
-  /* Soft Emerald tint #dcf2e5 */
-  --color-text-main: 10 24 18;
-  /* Premium Dark Forest Slate */
+  --color-surface-light: 234 244 239;
+  /* Official Soft Sage Background #eaf4ef */
+  --color-surface-raised: 215 228 220;
+  /* Raised Sage #d7e4dc */
+  --color-text-main: 9 81 57;
+  /* High Intensity Deep Forest Green for Headings #095139 */
   --color-text-muted: 70 95 82;
-  /* Slate Emerald Muted */
-  --color-text-faint: 140 165 152;
-  --color-success: 16 185 129;
-  --color-warning: 245 158 11;
-  --color-danger: 239 68 68;
+  /* Muted Slate Green */
+  --color-text-faint: 140 160 150;
+  --color-success: 22 163 74;
+  --color-warning: 217 119 6;
+  --color-danger: 200 30 30;
   --font-display: 'Inter', sans-serif;
 }
 

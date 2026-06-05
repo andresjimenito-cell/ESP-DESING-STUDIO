@@ -73,9 +73,9 @@ export const THEME_META: Record<
   parex: {
     label: 'Parex',
     description: 'Corporate — Emerald Green & Gold',
-    accent: '#00a86e',
+    accent: '#119669',
     surface: '#FFFFFF',
-    text: '#0a1812',
+    text: '#095139',
     badge: 'Light',
     icon: '🌿',
   },
