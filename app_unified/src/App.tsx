@@ -565,7 +565,12 @@ const App: React.FC = () => {
     }), [batchView, batchDesigns, batchSurveys, batchFile]);
 
     if (!isLoggedIn) {
-        return <Login onLoginSuccess={handleLoginSuccess} />;
+        return (
+            <div className="relative min-h-screen">
+                <Login onLoginSuccess={handleLoginSuccess} />
+                {installBanner}
+            </div>
+        );
     }
 
     let mainContent;
