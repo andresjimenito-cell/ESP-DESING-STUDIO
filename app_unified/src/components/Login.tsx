@@ -552,37 +552,40 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                     LEFT PANEL — Brand & Credits
                 ══════════════════════════════════════ */}
                 <div
-                    className="login-left-panel login-scroll flex-1 flex flex-col overflow-y-auto"
-                    style={{ padding: '48px 40px', minWidth: 0 }}
+                    className="login-left-panel flex-1 flex flex-col items-center justify-between text-center"
+                    style={{ padding: '60px 40px', minWidth: 0 }}
                 >
-                    {/* ── LOGO ── */}
-                    <div className="login-fade-up login-fade-up-1 flex flex-col items-start mb-8">
-                        {/* Logo circle with halo */}
-                        <div style={{ position: 'relative', marginBottom: '24px' }}>
+                    {/* Spacer to balance vertical centering */}
+                    <div />
+
+                    {/* Centered Logo & App Name */}
+                    <div className="login-fade-up login-fade-up-1 flex flex-col items-center">
+                        {/* Logo wrapper */}
+                        <div style={{ position: 'relative', marginBottom: '32px' }}>
                             {/* Outer halo ring */}
                             <div
                                 className="login-logo-halo"
                                 style={{
                                     position: 'absolute',
-                                    inset: '-14px',
+                                    inset: '-20px',
                                     borderRadius: '50%',
                                     border: '1.5px solid rgba(var(--color-primary), 0.2)',
                                     pointerEvents: 'none',
                                 }}
                             />
-                            {/* Middle glow ring */}
+                            {/* Glow */}
                             <div style={{
                                 position: 'absolute',
-                                inset: '-6px',
+                                inset: '-10px',
                                 borderRadius: '50%',
-                                background: 'radial-gradient(circle, rgba(var(--color-primary),0.12) 0%, transparent 70%)',
+                                background: 'radial-gradient(circle, rgba(var(--color-primary),0.15) 0%, transparent 70%)',
                                 pointerEvents: 'none',
                             }} />
-                            {/* Logo image */}
+                            {/* Logo */}
                             <div
                                 className="login-logo-wrapper"
                                 style={{
-                                    width: '84px', height: '84px',
+                                    width: '140px', height: '140px',
                                     borderRadius: '50%',
                                     overflow: 'hidden',
                                     border: '2px solid rgba(var(--color-primary),0.25)',
@@ -590,7 +593,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                                         ? 'rgba(255,255,255,0.04)'
                                         : 'rgba(var(--color-primary),0.04)',
                                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    padding: '12px',
+                                    padding: '20px',
                                 }}
                             >
                                 <img
@@ -601,165 +604,72 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                             </div>
                         </div>
 
-                        {/* App name */}
-                        <div>
-                            <h1 style={{
-                                fontSize: '26px',
-                                fontWeight: 800,
-                                letterSpacing: '-0.02em',
-                                lineHeight: 1.1,
-                                color: textMain,
-                                margin: 0,
-                            }}>
-                                ESP Design{' '}
-                                <span style={{ color: 'rgb(var(--color-primary))' }}>Studio</span>
-                            </h1>
-                            <p
-                                className="login-mono"
-                                style={{
-                                    fontSize: '9px',
-                                    fontWeight: 500,
-                                    letterSpacing: '0.28em',
-                                    textTransform: 'uppercase',
-                                    color: 'rgba(var(--color-primary), 0.6)',
-                                    marginTop: '6px',
-                                }}
-                            >
-                                Engineering Suite · v2026
-                            </p>
-                        </div>
-                    </div>
-
-                    {/* ── DIVIDER ── */}
-                    <div className="login-fade-up login-fade-up-2" style={{ height: '1px', background: dividerColor, marginBottom: '28px' }} />
-
-                    {/* ── DESCRIPTION ── */}
-                    <div className="login-fade-up login-fade-up-2" style={{ marginBottom: '28px' }}>
-                        <p style={{
-                            fontSize: '12.5px',
-                            fontWeight: 400,
-                            lineHeight: 1.75,
-                            color: textSub,
-                            maxWidth: '340px',
+                        {/* App Title */}
+                        <h1 style={{
+                            fontSize: '28px',
+                            fontWeight: 800,
+                            letterSpacing: '-0.02em',
+                            lineHeight: 1.1,
+                            color: textMain,
+                            margin: 0,
                         }}>
-                            Plataforma privada avanzada para el modelado, simulación y diagnóstico de sistemas de{' '}
-                            <span style={{ fontWeight: 700, color: 'rgb(var(--color-primary))' }}>
-                                Bombeo Electrosumergible (ESP)
-                            </span>
-                            . Herramientas de precisión para ingeniería de ALS.
+                            ESP Design{' '}
+                            <span style={{ color: 'rgb(var(--color-primary))' }}>Studio</span>
+                        </h1>
+                        <p
+                            className="login-mono"
+                            style={{
+                                fontSize: '10px',
+                                fontWeight: 500,
+                                letterSpacing: '0.28em',
+                                textTransform: 'uppercase',
+                                color: 'rgba(var(--color-primary), 0.6)',
+                                marginTop: '8px',
+                            }}
+                        >
+                            Engineering Suite · v2026
                         </p>
                     </div>
 
-                    {/* ── FEATURE PILLS ── */}
-                    <div className="login-fade-up login-fade-up-3" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '36px' }}>
-                        {['Modelado ESP', 'Simulación', 'Diagnóstico', 'ALS Tools'].map(feat => (
-                            <div key={feat} className="login-feature-pill">
-                                <span className="pill-dot" />
-                                {feat}
-                            </div>
-                        ))}
-                    </div>
-
-                    {/* ── DIVIDER ── */}
-                    <div style={{ height: '1px', background: dividerColor, marginBottom: '24px' }} />
-
-                    {/* ── CREDITS ── */}
-                    <div className="login-fade-up login-fade-up-4">
+                    {/* Small Creators Footer */}
+                    <div className="login-fade-up login-fade-up-2" style={{ width: '100%', maxWidth: '380px' }}>
+                        <div style={{ height: '1px', background: dividerColor, marginBottom: '20px' }} />
                         <div style={{
-                            display: 'flex', alignItems: 'center', gap: '8px',
-                            marginBottom: '16px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '4px',
+                            fontSize: '9px',
+                            color: textMuted,
+                            lineHeight: 1.6,
+                            fontWeight: 500,
                         }}>
-                            <Users style={{ width: 14, height: 14, color: 'rgb(var(--color-primary))' }} />
-                            <span style={{
-                                fontSize: '9px',
-                                fontWeight: 800,
-                                letterSpacing: '0.22em',
-                                textTransform: 'uppercase',
-                                color: textMuted,
-                            }}>
-                                Créditos de creación
+                            <p style={{ margin: 0 }}>
+                                <strong>Creador y Programador:</strong> Andrés Jiménez (Ing. Jr)
+                            </p>
+                            <p style={{ margin: 0 }}>
+                                <strong>Mente Maestra:</strong> Lenin Peña (Especialista ALS)
+                            </p>
+                            <p style={{ margin: 0, opacity: 0.8, fontSize: '8.5px' }}>
+                                <strong>Apoyo:</strong> Wirmer Arcos, Jaime Ochoa, Luna Muñoz, Paola Mejía (Frontera Energy)
+                            </p>
+                        </div>
+                        
+                        <div style={{
+                            marginTop: '16px',
+                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                            fontSize: '8px',
+                            color: textMuted,
+                            opacity: 0.8,
+                        }}>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <Zap style={{ width: 10, height: 10, color: 'rgb(var(--color-primary))' }} />
+                                AJM © 2026
+                            </span>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <Heart style={{ width: 9, height: 9, color: '#f87171' }} />
+                                Confeccionado con Pasión
                             </span>
                         </div>
-
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                            {/* Andrés Jiménez */}
-                            <div className="login-credit-card">
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4px' }}>
-                                    <span style={{ fontSize: '12px', fontWeight: 700, color: textMain }}>Andrés Jiménez</span>
-                                    <span className="login-credit-badge" style={{
-                                        background: 'rgba(var(--color-primary),0.1)',
-                                        color: 'rgb(var(--color-primary))',
-                                        border: '1px solid rgba(var(--color-primary),0.2)',
-                                    }}>
-                                        Programador
-                                    </span>
-                                </div>
-                                <p style={{ fontSize: '10px', color: textSub, margin: 0 }}>
-                                    Ing. Jr — Software, algoritmos & diseño UI
-                                </p>
-                            </div>
-
-                            {/* Lenin Peña */}
-                            <div className="login-credit-card">
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4px' }}>
-                                    <span style={{ fontSize: '12px', fontWeight: 700, color: textMain }}>Lenin Peña</span>
-                                    <span className="login-credit-badge" style={{
-                                        background: 'rgba(var(--color-secondary),0.12)',
-                                        color: 'rgb(var(--color-secondary))',
-                                        border: '1px solid rgba(var(--color-secondary),0.22)',
-                                    }}>
-                                        Especialista ALS
-                                    </span>
-                                </div>
-                                <p style={{ fontSize: '10px', color: textSub, margin: 0 }}>
-                                    Ing. Especialista — Modelos matemáticos & física de reservorio
-                                </p>
-                            </div>
-
-                            {/* Apoyo Frontera */}
-                            <div className="login-credit-card" style={{ paddingBottom: '12px' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
-                                    <Cpu style={{ width: 11, height: 11, color: 'rgba(var(--color-primary),0.6)' }} />
-                                    <span style={{ fontSize: '9px', fontWeight: 800, letterSpacing: '0.16em', textTransform: 'uppercase', color: textMuted }}>
-                                        Apoyo — Área ALS Frontera Energy
-                                    </span>
-                                </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
-                                    {['Wirmer Arcos', 'Jaime Ochoa', 'Luna Muñoz', 'Paola Mejía'].map(name => (
-                                        <div key={name} style={{
-                                            display: 'flex', alignItems: 'center', gap: '6px',
-                                            padding: '5px 8px',
-                                            borderRadius: '8px',
-                                            background: 'rgba(var(--color-primary),0.04)',
-                                            border: '1px solid rgba(var(--color-primary),0.07)',
-                                        }}>
-                                            <span style={{
-                                                width: 5, height: 5,
-                                                borderRadius: '50%',
-                                                background: 'rgba(var(--color-primary),0.5)',
-                                                flexShrink: 0,
-                                            }} />
-                                            <span style={{ fontSize: '9.5px', fontWeight: 600, color: textSub }}>{name}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* ── FOOTER ── */}
-                    <div className="login-fade-up login-fade-up-5" style={{
-                        marginTop: '28px',
-                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '9px', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: textMuted }}>
-                            <Zap style={{ width: 11, height: 11, color: 'rgb(var(--color-primary))' }} />
-                            AJM © 2026
-                        </span>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '9px', fontWeight: 600, color: textMuted }}>
-                            <Heart style={{ width: 10, height: 10, color: '#f87171' }} />
-                            Confeccionado con Pasión
-                        </span>
                     </div>
                 </div>
 
