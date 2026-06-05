@@ -54,14 +54,11 @@ export const isSessionValid = (): boolean => {
 
     try {
         const payload = JSON.parse(atob(parts[0]));
-
         const expiredOrMissing = !payload.exp || payload.exp < Date.now();
-
         if (expiredOrMissing) {
             clearSession();
             return false;
         }
-
         return true;
     } catch {
         clearSession();
@@ -123,49 +120,24 @@ const ParticleField: React.FC<{ particles: Particle[] }> = ({ particles }) => (
     </>
 );
 
-const AuroraBg: React.FC = () => (
-    <>
-        <div
-            className="absolute top-[-10%] left-[-10%] w-[550px] h-[550px] rounded-full opacity-40 pointer-events-none"
-            style={{
-                background: 'radial-gradient(circle, rgba(var(--color-primary), 0.3) 0%, transparent 70%)',
-                filter: 'blur(100px)',
-                animation: 'login-aurora-glow-1 15s ease-in-out infinite',
-            }}
-        />
-        <div
-            className="absolute bottom-[-10%] right-[-10%] w-[550px] h-[550px] rounded-full opacity-30 pointer-events-none"
-            style={{
-                background: 'radial-gradient(circle, rgba(var(--color-secondary), 0.25) 0%, transparent 70%)',
-                filter: 'blur(100px)',
-                animation: 'login-aurora-glow-2 18s ease-in-out infinite',
-            }}
-        />
-    </>
-);
-
-// ─── Inline styles (extracted to avoid JSX noise) ─────────────────────────────
+// ─── Inline styles ────────────────────────────────────────────────────────────
 
 const ANIMATIONS = `
+  @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
+
   @keyframes login-particle-rise {
     0%   { transform: translateY(0) translateX(0) scale(1); opacity: 0; }
     5%   { opacity: var(--op); }
     95%  { opacity: calc(var(--op) * 0.5); }
     100% { transform: translateY(-90vh) translateX(var(--drift)) scale(0.3); opacity: 0; }
   }
-  @keyframes login-glow-pulse {
-    0%, 100% { box-shadow: 0 30px 70px rgba(0,0,0,.65), 0 0 50px rgba(var(--color-primary),.06), inset 0 1px 0 rgba(255,255,255,.05); }
-    50%       { box-shadow: 0 40px 90px rgba(0,0,0,.75), 0 0 80px rgba(var(--color-primary),.18), inset 0 1px 0 rgba(255,255,255,.08); }
+  @keyframes login-float-logo {
+    0%, 100% { transform: translateY(0px) scale(1); }
+    50%       { transform: translateY(-6px) scale(1.02); }
   }
-  @keyframes login-logo-illuminate {
-    0%, 100% { filter: brightness(1) drop-shadow(0 0 15px rgba(var(--color-primary),.3)); }
-    50%       { filter: brightness(1.25) drop-shadow(0 0 30px rgba(var(--color-primary),.7)); }
-  }
-  @keyframes login-sweep {
-    0%   { top: -4px; opacity: 0; }
-    5%   { opacity: 1; }
-    92%  { opacity: .5; }
-    100% { top: 100%; opacity: 0; }
+  @keyframes login-halo {
+    0%, 100% { opacity: 0.35; transform: scale(1); }
+    50%       { opacity: 0.6; transform: scale(1.08); }
   }
   @keyframes login-shake {
     0%, 100%              { transform: translateX(0); }
@@ -174,74 +146,270 @@ const ANIMATIONS = `
   }
   @keyframes login-scanline {
     0%   { transform: translateY(-100%); opacity: 0; }
-    10%  { opacity: .03; }
+    10%  { opacity: .02; }
     90%  { opacity: .01; }
     100% { transform: translateY(100%); opacity: 0; }
   }
-  @keyframes login-aurora-glow-1 {
-    0%, 100% { transform: translate(0,0) scale(1); }
-    50%       { transform: translate(50px,-30px) scale(1.15); }
+  @keyframes login-fade-up {
+    from { opacity: 0; transform: translateY(18px); }
+    to   { opacity: 1; transform: translateY(0); }
   }
-  @keyframes login-aurora-glow-2 {
-    0%, 100% { transform: translate(0,0) scale(1.15); }
-    50%       { transform: translate(-30px,50px) scale(.9); }
+  @keyframes login-shimmer {
+    0%   { background-position: -200% center; }
+    100% { background-position: 200% center; }
   }
-  @keyframes login-sheen {
-    0%   { transform: translateX(-150%) skewX(-15deg); }
-    100% { transform: translateX(250%) skewX(-15deg); }
+  @keyframes login-ring-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(var(--color-primary), 0.18); }
+    50%       { box-shadow: 0 0 0 10px rgba(var(--color-primary), 0); }
   }
-
-  .login-card-container {
-    background:       rgb(var(--color-surface) / 0.96) !important;
-    backdrop-filter:  blur(40px) saturate(220%) !important;
-    border:           1px solid rgb(var(--color-primary) / 0.25) !important;
-    transition:       border-color .4s ease, box-shadow .4s ease !important;
+  @keyframes login-dot-blink {
+    0%, 100% { opacity: 1; } 50% { opacity: 0.3; }
   }
-
-  .input-premium {
-    border: 1px solid rgb(var(--color-primary) / 0.22) !important;
-    background: rgb(var(--color-surface-light) / 0.4) !important;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-  }
-  .input-premium:focus-within {
-    border-color: rgb(var(--color-primary)) !important;
-    box-shadow:   0 0 25px rgba(var(--color-primary), 0.25), inset 0 0 10px rgba(var(--color-primary), 0.1) !important;
-    background:   rgb(var(--color-surface-light) / 0.8) !important;
-  }
-  .input-premium input {
-    background: transparent !important;
-    border: none !important;
-    color: rgb(var(--color-text-main)) !important;
-    outline: none !important;
-  }
-  .input-premium input::placeholder {
-    color: rgb(var(--color-text-muted) / 0.6) !important;
+  @keyframes login-sweep {
+    0% { transform: translateX(-100%) skewX(-20deg); }
+    100% { transform: translateX(300%) skewX(-20deg); }
   }
 
-  .btn-premium::after {
-    content:        '';
-    position:       absolute;
-    top:0; left:0;
-    width:60%; height:100%;
-    background:     linear-gradient(90deg, transparent, rgba(255,255,255,.2), transparent);
-    transform:      translateX(-150%) skewX(-15deg);
+  .login-root * { font-family: 'Sora', sans-serif; }
+  .login-mono  { font-family: 'DM Mono', monospace; }
+
+  /* ── LEFT PANEL ── */
+  .login-left-panel {
+    background: rgb(var(--color-canvas));
+    position: relative;
+  }
+
+  /* Subtle grid texture on left panel */
+  .login-left-panel::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(var(--color-primary), 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(var(--color-primary), 0.04) 1px, transparent 1px);
+    background-size: 32px 32px;
+    mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 40%, transparent 100%);
     pointer-events: none;
   }
-  .btn-premium:hover::after { animation: login-sheen 1.8s infinite; }
-  
-  .custom-scrollbar::-webkit-scrollbar {
-    width: 6px;
+
+  /* ── LOGO ── */
+  .login-logo-wrapper {
+    animation: login-float-logo 5s ease-in-out infinite;
   }
-  .custom-scrollbar::-webkit-scrollbar-track {
+  .login-logo-halo {
+    animation: login-halo 4s ease-in-out infinite;
+  }
+
+  /* ── FEATURE PILLS ── */
+  .login-feature-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    border: 1px solid rgba(var(--color-primary), 0.15);
+    background: rgba(var(--color-primary), 0.05);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: rgb(var(--color-primary));
+    transition: all 0.2s ease;
+  }
+  .login-feature-pill:hover {
+    background: rgba(var(--color-primary), 0.12);
+    border-color: rgba(var(--color-primary), 0.35);
+    transform: translateY(-1px);
+  }
+  .login-feature-pill .pill-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: currentColor;
+    animation: login-dot-blink 2s ease-in-out infinite;
+  }
+
+  /* ── CREDIT CARDS ── */
+  .login-credit-card {
+    border-radius: 14px;
+    padding: 14px 16px;
+    border: 1px solid rgba(var(--color-primary), 0.1);
+    background: rgba(var(--color-surface-light), 0.4);
+    transition: all 0.25s ease;
+    backdrop-filter: blur(8px);
+  }
+  .login-credit-card:hover {
+    border-color: rgba(var(--color-primary), 0.28);
+    background: rgba(var(--color-primary), 0.04);
+    transform: translateX(3px);
+  }
+  .login-credit-badge {
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 999px;
+  }
+
+  /* ── RIGHT PANEL / FORM ── */
+  .login-right-panel {
+    background: rgb(var(--color-surface));
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Diagonal accent stripe */
+  .login-right-panel::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 260px; height: 260px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(var(--color-primary), 0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .login-right-panel::after {
+    content: '';
+    position: absolute;
+    bottom: -80px; left: -80px;
+    width: 300px; height: 300px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(var(--color-secondary), 0.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  /* ── FORM INPUTS ── */
+  .login-input-wrap {
+    position: relative;
+    border-radius: 12px;
+    border: 1.5px solid rgba(var(--color-primary), 0.15);
+    background: rgb(var(--color-canvas));
+    transition: all 0.22s cubic-bezier(0.4,0,0.2,1);
+    overflow: hidden;
+  }
+  .login-input-wrap:focus-within {
+    border-color: rgb(var(--color-primary));
+    box-shadow: 0 0 0 3px rgba(var(--color-primary), 0.12);
+    background: rgb(var(--color-surface-light));
+  }
+  .login-input-wrap input {
+    width: 100%;
+    padding: 13px 16px 13px 42px;
     background: transparent;
+    border: none;
+    outline: none;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: 'Sora', sans-serif;
+    color: rgb(var(--color-text-main));
   }
-  .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 3px;
+  .login-input-wrap input::placeholder {
+    color: rgba(var(--color-text-muted), 0.5);
+    font-weight: 400;
   }
-  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(var(--color-primary), 0.3);
+  .login-input-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: rgba(var(--color-primary), 0.5);
+    transition: color 0.2s;
+    pointer-events: none;
   }
+  .login-input-wrap:focus-within .login-input-icon {
+    color: rgb(var(--color-primary));
+  }
+
+  /* ── SUBMIT BUTTON ── */
+  .login-btn-submit {
+    width: 100%;
+    padding: 14px 24px;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    font-family: 'Sora', sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #fff;
+    background: linear-gradient(135deg,
+      rgb(var(--color-primary)) 0%,
+      rgb(var(--color-secondary)) 100%
+    );
+    box-shadow:
+      0 4px 20px rgba(var(--color-primary), 0.35),
+      inset 0 1px 0 rgba(255,255,255,0.15);
+    transition: all 0.22s ease;
+    animation: login-ring-pulse 3s ease-in-out infinite;
+  }
+  .login-btn-submit:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow:
+      0 8px 28px rgba(var(--color-primary), 0.45),
+      inset 0 1px 0 rgba(255,255,255,0.2);
+  }
+  .login-btn-submit:active:not(:disabled) {
+    transform: translateY(0);
+  }
+  .login-btn-submit:disabled {
+    opacity: 0.38;
+    cursor: not-allowed;
+    animation: none;
+  }
+  /* Shimmer sweep on hover */
+  .login-btn-submit::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 40%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.22), transparent);
+    transform: translateX(-150%) skewX(-20deg);
+    pointer-events: none;
+  }
+  .login-btn-submit:hover:not(:disabled)::after {
+    animation: login-sweep 1.6s ease-in-out infinite;
+  }
+
+  /* ── DIVIDER ── */
+  .login-divider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: rgba(var(--color-text-muted), 0.4);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+  .login-divider::before,
+  .login-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(var(--color-primary), 0.1);
+  }
+
+  /* ── SCROLLBAR ── */
+  .login-scroll::-webkit-scrollbar { width: 4px; }
+  .login-scroll::-webkit-scrollbar-track { background: transparent; }
+  .login-scroll::-webkit-scrollbar-thumb {
+    background: rgba(var(--color-primary), 0.15);
+    border-radius: 99px;
+  }
+
+  /* ── FADE UP ANIMATION ── */
+  .login-fade-up {
+    animation: login-fade-up 0.7s cubic-bezier(0.16,1,0.3,1) both;
+  }
+  .login-fade-up-1 { animation-delay: 0.05s; }
+  .login-fade-up-2 { animation-delay: 0.12s; }
+  .login-fade-up-3 { animation-delay: 0.19s; }
+  .login-fade-up-4 { animation-delay: 0.26s; }
+  .login-fade-up-5 { animation-delay: 0.33s; }
 `;
 
 // ─── Main component ───────────────────────────────────────────────────────────
@@ -249,63 +417,22 @@ const ANIMATIONS = `
 export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     const { theme } = useTheme();
     const isDarkTheme = theme === 'fusion' || theme === 'cyber';
+
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
     const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
     const [loading, setLoading] = useState(false);
-    const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
     const [mounted, setMounted] = useState(false);
-
-    // Color theme variables based on dark/light
-    const titleTextColor = isDarkTheme ? 'text-white' : 'text-txt-main';
-    const descTextColor = isDarkTheme ? 'text-slate-300' : 'text-slate-800';
-    const labelTextColor = isDarkTheme ? 'text-slate-400' : 'text-slate-700';
-    const borderClass = isDarkTheme ? 'border-white/5' : 'border-slate-200';
-    const leftColumnBg = isDarkTheme
-        ? 'bg-gradient-to-b from-surface/90 to-canvas/95 border-b md:border-b-0 md:border-r border-white/5'
-        : 'bg-gradient-to-b from-surface/95 to-canvas/98 border-b md:border-b-0 md:border-r border-slate-200';
-    const rightColumnBg = isDarkTheme
-        ? 'bg-surface/50'
-        : 'bg-slate-50/70';
-    const creditItemBg = isDarkTheme
-        ? 'bg-white/3 border-white/5 hover:border-primary/20'
-        : 'bg-slate-100/50 border-slate-200/80 hover:border-primary/40';
-    const mastermindItemBg = isDarkTheme
-        ? 'bg-white/3 border-white/5 hover:border-secondary/20'
-        : 'bg-slate-100/50 border-slate-200/80 hover:border-secondary/40';
-    const supportItemBg = isDarkTheme
-        ? 'bg-white/2 border-white/5'
-        : 'bg-slate-50 border-slate-200/60';
-    const nameBadgeBg = isDarkTheme ? 'bg-white/2' : 'bg-slate-100/60';
 
     const lastMouseTime = useRef(0);
 
-    // Mount animation
     useEffect(() => {
         const id = requestAnimationFrame(() => setMounted(true));
         return () => cancelAnimationFrame(id);
     }, []);
 
-    // Throttled mouse-tilt effect
-    useEffect(() => {
-        const handleMouseMove = (e: MouseEvent) => {
-            const now = Date.now();
-            if (now - lastMouseTime.current < MOUSE_THROTTLE_MS) return;
-            lastMouseTime.current = now;
-
-            setMousePos({
-                x: (e.clientX / window.innerWidth - 0.5) * 12,
-                y: (e.clientY / window.innerHeight - 0.5) * 12,
-            });
-        };
-
-        window.addEventListener('mousemove', handleMouseMove, { passive: true });
-        return () => window.removeEventListener('mousemove', handleMouseMove);
-    }, []);
-
-    // Stable particle data — never recreated
     const fieldParticles = useMemo<Particle[]>(() =>
         Array.from({ length: PARTICLE_COUNT }).map((_, i) => ({
             id: i,
@@ -315,23 +442,19 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
             speed: 20 + Math.random() * 45,
             drift: (Math.random() - 0.5) * 40,
             delay: Math.random() * -20,
-            opacity: 0.2 + Math.random() * 0.5,
+            opacity: 0.15 + Math.random() * 0.3,
             color: PARTICLE_COLORS[i % 3],
         })),
         []);
 
-    // Field-level validation (client-side)
     const validateFields = useCallback((): boolean => {
         const errs: FieldErrors = {};
-
         if (!EMAIL_REGEX.test(email.trim())) {
             errs.email = 'Ingresa un correo corporativo válido.';
         }
-
         if (password.length < 1) {
             errs.password = 'Por favor, ingresa tu contraseña.';
         }
-
         setFieldErrors(errs);
         return Object.keys(errs).length === 0;
     }, [email, password]);
@@ -344,26 +467,20 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     const handleSubmit = useCallback(async (e: React.FormEvent) => {
         e.preventDefault();
         clearErrors();
-
         if (!validateFields()) return;
-
         setLoading(true);
-
         try {
             const res = await fetch('/api/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email: email.trim(), password }),
             });
-
             if (!res.ok) {
                 const data = await res.json().catch(() => ({}));
                 setError(data.error ?? 'No tienes acceso a archivos privados de la organización.');
                 return;
             }
-
             const data = await res.json();
-
             if (data.token) {
                 sessionStorage.setItem(SESSION_KEY, data.token);
                 sessionStorage.setItem(SESSION_EMAIL_KEY, email.trim().toLowerCase());
@@ -380,182 +497,336 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
 
     const toggleShowPassword = useCallback(() => setShowPassword(v => !v), []);
 
-    const cardTransform = mounted
-        ? `perspective(1200px) rotateY(${mousePos.x * MOUSE_TILT_FACTOR}deg) rotateX(${-mousePos.y * MOUSE_TILT_FACTOR}deg)`
-        : 'translateY(30px) scale(0.97)';
+    // Theme-aware colors
+    const textMain = isDarkTheme ? 'rgba(255,255,255,0.92)' : 'rgb(var(--color-text-main))';
+    const textMuted = isDarkTheme ? 'rgba(255,255,255,0.45)' : 'rgba(var(--color-text-muted),0.7)';
+    const textSub = isDarkTheme ? 'rgba(255,255,255,0.6)' : 'rgba(var(--color-text-muted),0.85)';
+    const dividerColor = isDarkTheme ? 'rgba(255,255,255,0.06)' : 'rgba(var(--color-primary),0.08)';
 
     return (
         <div
-            className="fixed inset-0 z-[9999] flex items-center justify-center overflow-hidden font-sans p-4"
+            className="login-root fixed inset-0 z-[9999] flex items-center justify-center overflow-hidden"
             style={{
                 backgroundColor: 'rgb(var(--color-canvas))',
                 backgroundImage: isDarkTheme
-                    ? 'linear-gradient(to bottom, rgb(var(--color-canvas) / 0.85), rgb(var(--color-canvas) / 0.9)), url(/main_bg.png)'
-                    : 'linear-gradient(135deg, rgb(var(--color-surface-light)), rgb(var(--color-canvas)))',
+                    ? 'url(/main_bg.png)'
+                    : undefined,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
             }}
         >
             <style>{ANIMATIONS}</style>
 
-            {/* ── BACKGROUND EFFECTS ── */}
+            {/* Ambient particle layer */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <div
-                    className="absolute inset-0 opacity-10"
-                    style={{
-                        backgroundImage: 'radial-gradient(circle, rgba(var(--color-primary), 0.15) 1.2px, transparent 1.2px)',
-                        backgroundSize: '24px 24px',
-                        maskImage: 'radial-gradient(circle at center, black 40%, transparent 95%)',
-                    }}
-                />
-                <AuroraBg />
                 <ParticleField particles={fieldParticles} />
                 <div style={{
-                    position: 'absolute',
-                    left: 0, right: 0,
-                    height: '25%',
-                    background: 'linear-gradient(to bottom, transparent, rgba(var(--color-primary), 0.015), transparent)',
-                    animation: 'login-scanline 10s linear infinite',
+                    position: 'absolute', left: 0, right: 0,
+                    height: '30%',
+                    background: 'linear-gradient(to bottom, transparent, rgba(var(--color-primary),0.01), transparent)',
+                    animation: 'login-scanline 12s linear infinite',
                 }} />
             </div>
 
-            {/* ── SPLIT CONTAINER CARD ── */}
+            {/* ── MAIN CARD ── */}
             <div
                 role="main"
                 aria-label="Inicio de sesión ESP Design Studio"
                 style={{
                     opacity: mounted ? 1 : 0,
-                    transform: cardTransform,
-                    transition: 'opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s ease-out',
-                    animation: mounted ? 'login-glow-pulse 8s ease-in-out infinite' : 'none',
+                    transform: mounted ? 'translateY(0) scale(1)' : 'translateY(24px) scale(0.97)',
+                    transition: 'opacity 0.7s cubic-bezier(0.16,1,0.3,1), transform 0.7s cubic-bezier(0.16,1,0.3,1)',
+                    width: '100%',
+                    maxWidth: '900px',
+                    maxHeight: '94vh',
+                    display: 'flex',
+                    borderRadius: '20px',
+                    overflow: 'hidden',
+                    boxShadow: isDarkTheme
+                        ? '0 32px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(var(--color-primary),0.12)'
+                        : '0 20px 60px rgba(0,0,0,0.12), 0 0 0 1px rgba(var(--color-primary),0.1)',
                 }}
-                className="relative z-10 w-full max-w-[880px] rounded-2xl overflow-hidden flex flex-col md:flex-row shadow-[0_30px_90px_rgba(0,0,0,0.8)] login-card-container max-h-[94vh]"
+                className="relative z-10 flex-col md:flex-row mx-4"
             >
-                {/* ── LEFT COLUMN: CREATIVE BLUEPRINT & CREDITS ── */}
-                <div className={`flex-1 p-8 flex flex-col justify-between overflow-y-auto custom-scrollbar min-h-[300px] md:min-h-0 ${leftColumnBg}`}>
-                    
-                    {/* Header/Title details */}
-                    <div>
-                        <div className="flex items-center gap-3 mb-6">
-                            <div className="w-12 h-12 flex items-center justify-center p-1 border border-primary/20 bg-primary/10 rounded-xl relative group">
+                {/* ══════════════════════════════════════
+                    LEFT PANEL — Brand & Credits
+                ══════════════════════════════════════ */}
+                <div
+                    className="login-left-panel login-scroll flex-1 flex flex-col overflow-y-auto"
+                    style={{ padding: '48px 40px', minWidth: 0 }}
+                >
+                    {/* ── LOGO ── */}
+                    <div className="login-fade-up login-fade-up-1 flex flex-col items-start mb-8">
+                        {/* Logo circle with halo */}
+                        <div style={{ position: 'relative', marginBottom: '24px' }}>
+                            {/* Outer halo ring */}
+                            <div
+                                className="login-logo-halo"
+                                style={{
+                                    position: 'absolute',
+                                    inset: '-14px',
+                                    borderRadius: '50%',
+                                    border: '1.5px solid rgba(var(--color-primary), 0.2)',
+                                    pointerEvents: 'none',
+                                }}
+                            />
+                            {/* Middle glow ring */}
+                            <div style={{
+                                position: 'absolute',
+                                inset: '-6px',
+                                borderRadius: '50%',
+                                background: 'radial-gradient(circle, rgba(var(--color-primary),0.12) 0%, transparent 70%)',
+                                pointerEvents: 'none',
+                            }} />
+                            {/* Logo image */}
+                            <div
+                                className="login-logo-wrapper"
+                                style={{
+                                    width: '84px', height: '84px',
+                                    borderRadius: '50%',
+                                    overflow: 'hidden',
+                                    border: '2px solid rgba(var(--color-primary),0.25)',
+                                    background: isDarkTheme
+                                        ? 'rgba(255,255,255,0.04)'
+                                        : 'rgba(var(--color-primary),0.04)',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    padding: '12px',
+                                }}
+                            >
                                 <img
                                     src="/LOGO.png"
-                                    alt="Logo"
-                                    className="w-full h-full object-contain filter drop-shadow-md brightness-110"
+                                    alt="ESP Design Studio Logo"
+                                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                                 />
-                                <div className="absolute inset-0 bg-primary/15 scale-0 group-hover:scale-100 transition-all rounded-xl" />
-                            </div>
-                            <div>
-                                <h1 className={`text-xl font-black tracking-tight leading-none uppercase ${titleTextColor}`}>
-                                    ESP DESIGN <span className="text-primary font-bold">STUDIO</span>
-                                </h1>
-                                <p className="text-[7.5px] font-black uppercase tracking-[0.3em] text-primary/60 mt-1">
-                                    Engineering Suite
-                                </p>
                             </div>
                         </div>
 
-                        <div className="space-y-4 pr-2">
-                            <div className="h-[1px] bg-gradient-to-r from-primary/30 to-transparent w-full" />
-                            <p className={`text-[10px] uppercase font-bold leading-relaxed tracking-wider ${descTextColor}`}>
-                                Plataforma privada avanzada para el modelado, simulación y diagnóstico de sistemas de Bombeo Electrosumergible (ESP).
+                        {/* App name */}
+                        <div>
+                            <h1 style={{
+                                fontSize: '26px',
+                                fontWeight: 800,
+                                letterSpacing: '-0.02em',
+                                lineHeight: 1.1,
+                                color: textMain,
+                                margin: 0,
+                            }}>
+                                ESP Design{' '}
+                                <span style={{ color: 'rgb(var(--color-primary))' }}>Studio</span>
+                            </h1>
+                            <p
+                                className="login-mono"
+                                style={{
+                                    fontSize: '9px',
+                                    fontWeight: 500,
+                                    letterSpacing: '0.28em',
+                                    textTransform: 'uppercase',
+                                    color: 'rgba(var(--color-primary), 0.6)',
+                                    marginTop: '6px',
+                                }}
+                            >
+                                Engineering Suite · v2026
                             </p>
                         </div>
                     </div>
 
-                    {/* CREDITS SYSTEM SECTION */}
-                    <div className="mt-8 space-y-4">
-                        <div className="flex items-center gap-2 mb-1">
-                            <Users className="w-4 h-4 text-primary" />
-                            <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${titleTextColor}`}>Créditos de Creación</span>
+                    {/* ── DIVIDER ── */}
+                    <div className="login-fade-up login-fade-up-2" style={{ height: '1px', background: dividerColor, marginBottom: '28px' }} />
+
+                    {/* ── DESCRIPTION ── */}
+                    <div className="login-fade-up login-fade-up-2" style={{ marginBottom: '28px' }}>
+                        <p style={{
+                            fontSize: '12.5px',
+                            fontWeight: 400,
+                            lineHeight: 1.75,
+                            color: textSub,
+                            maxWidth: '340px',
+                        }}>
+                            Plataforma privada avanzada para el modelado, simulación y diagnóstico de sistemas de{' '}
+                            <span style={{ fontWeight: 700, color: 'rgb(var(--color-primary))' }}>
+                                Bombeo Electrosumergible (ESP)
+                            </span>
+                            . Herramientas de precisión para ingeniería de ALS.
+                        </p>
+                    </div>
+
+                    {/* ── FEATURE PILLS ── */}
+                    <div className="login-fade-up login-fade-up-3" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '36px' }}>
+                        {['Modelado ESP', 'Simulación', 'Diagnóstico', 'ALS Tools'].map(feat => (
+                            <div key={feat} className="login-feature-pill">
+                                <span className="pill-dot" />
+                                {feat}
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* ── DIVIDER ── */}
+                    <div style={{ height: '1px', background: dividerColor, marginBottom: '24px' }} />
+
+                    {/* ── CREDITS ── */}
+                    <div className="login-fade-up login-fade-up-4">
+                        <div style={{
+                            display: 'flex', alignItems: 'center', gap: '8px',
+                            marginBottom: '16px',
+                        }}>
+                            <Users style={{ width: 14, height: 14, color: 'rgb(var(--color-primary))' }} />
+                            <span style={{
+                                fontSize: '9px',
+                                fontWeight: 800,
+                                letterSpacing: '0.22em',
+                                textTransform: 'uppercase',
+                                color: textMuted,
+                            }}>
+                                Créditos de creación
+                            </span>
                         </div>
 
-                        <div className="space-y-3">
-                            {/* Andres Jimenez */}
-                            <div className={`p-3 border transition-all rounded-xl ${creditItemBg}`}>
-                                <div className="flex justify-between items-baseline">
-                                    <h4 className={`text-xs font-black uppercase tracking-tight ${titleTextColor}`}>Andrés Jiménez</h4>
-                                    <span className="text-[7px] font-black px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">PROGRAMADOR Y CREADOR</span>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            {/* Andrés Jiménez */}
+                            <div className="login-credit-card">
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4px' }}>
+                                    <span style={{ fontSize: '12px', fontWeight: 700, color: textMain }}>Andrés Jiménez</span>
+                                    <span className="login-credit-badge" style={{
+                                        background: 'rgba(var(--color-primary),0.1)',
+                                        color: 'rgb(var(--color-primary))',
+                                        border: '1px solid rgba(var(--color-primary),0.2)',
+                                    }}>
+                                        Programador
+                                    </span>
                                 </div>
-                                <p className={`text-[9px] font-semibold mt-1 ${descTextColor}`}>Ingeniero Jr — Desarrollo de software, algoritmos y diseño de interfaz.</p>
+                                <p style={{ fontSize: '10px', color: textSub, margin: 0 }}>
+                                    Ing. Jr — Software, algoritmos & diseño UI
+                                </p>
                             </div>
 
                             {/* Lenin Peña */}
-                            <div className={`p-3 border transition-all rounded-xl ${mastermindItemBg}`}>
-                                <div className="flex justify-between items-baseline">
-                                    <h4 className={`text-xs font-black uppercase tracking-tight ${titleTextColor}`}>Lenin Peña</h4>
-                                    <span className="text-[7px] font-black px-1.5 py-0.5 rounded bg-secondary/15 text-secondary border border-secondary/25">MENTE MAESTRA & ESPECIALISTA ALS</span>
+                            <div className="login-credit-card">
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4px' }}>
+                                    <span style={{ fontSize: '12px', fontWeight: 700, color: textMain }}>Lenin Peña</span>
+                                    <span className="login-credit-badge" style={{
+                                        background: 'rgba(var(--color-secondary),0.12)',
+                                        color: 'rgb(var(--color-secondary))',
+                                        border: '1px solid rgba(var(--color-secondary),0.22)',
+                                    }}>
+                                        Especialista ALS
+                                    </span>
                                 </div>
-                                <p className={`text-[9px] font-semibold mt-1 ${descTextColor}`}>Ingeniero Especialista ALS — Modelos matemáticos, arquitectura de procesos y física del reservorio.</p>
+                                <p style={{ fontSize: '10px', color: textSub, margin: 0 }}>
+                                    Ing. Especialista — Modelos matemáticos & física de reservorio
+                                </p>
                             </div>
 
-                            {/* Frontera Energy Support */}
-                            <div className={`p-3 border rounded-xl ${supportItemBg}`}>
-                                <h4 className={`text-[9.5px] font-black uppercase tracking-wider mb-2 flex items-center gap-1.5 ${titleTextColor}`}>
-                                    <Cpu className="w-3.5 h-3.5 text-primary/70" />
-                                    Apoyo — Área ALS Frontera Energy
-                                </h4>
-                                <div className={`grid grid-cols-2 gap-2 text-[9px] font-bold uppercase tracking-wide ${descTextColor}`}>
-                                    <div className={`flex items-center gap-1.5 p-1 rounded ${nameBadgeBg}`}>
-                                        <span className="w-1.5 h-1.5 rounded-full bg-[rgb(var(--color-primary))]" /> Wirmer Arcos
-                                    </div>
-                                    <div className={`flex items-center gap-1.5 p-1 rounded ${nameBadgeBg}`}>
-                                        <span className="w-1.5 h-1.5 rounded-full bg-[rgb(var(--color-primary))]" /> Jaime Ochoa
-                                    </div>
-                                    <div className={`flex items-center gap-1.5 p-1 rounded ${nameBadgeBg}`}>
-                                        <span className="w-1.5 h-1.5 rounded-full bg-[rgb(var(--color-primary))]" /> Luna Muñoz
-                                    </div>
-                                    <div className={`flex items-center gap-1.5 p-1 rounded ${nameBadgeBg}`}>
-                                        <span className="w-1.5 h-1.5 rounded-full bg-[rgb(var(--color-primary))]" /> Paola Mejía
-                                    </div>
+                            {/* Apoyo Frontera */}
+                            <div className="login-credit-card" style={{ paddingBottom: '12px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
+                                    <Cpu style={{ width: 11, height: 11, color: 'rgba(var(--color-primary),0.6)' }} />
+                                    <span style={{ fontSize: '9px', fontWeight: 800, letterSpacing: '0.16em', textTransform: 'uppercase', color: textMuted }}>
+                                        Apoyo — Área ALS Frontera Energy
+                                    </span>
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+                                    {['Wirmer Arcos', 'Jaime Ochoa', 'Luna Muñoz', 'Paola Mejía'].map(name => (
+                                        <div key={name} style={{
+                                            display: 'flex', alignItems: 'center', gap: '6px',
+                                            padding: '5px 8px',
+                                            borderRadius: '8px',
+                                            background: 'rgba(var(--color-primary),0.04)',
+                                            border: '1px solid rgba(var(--color-primary),0.07)',
+                                        }}>
+                                            <span style={{
+                                                width: 5, height: 5,
+                                                borderRadius: '50%',
+                                                background: 'rgba(var(--color-primary),0.5)',
+                                                flexShrink: 0,
+                                            }} />
+                                            <span style={{ fontSize: '9.5px', fontWeight: 600, color: textSub }}>{name}</span>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
                         </div>
+                    </div>
+
+                    {/* ── FOOTER ── */}
+                    <div className="login-fade-up login-fade-up-5" style={{
+                        marginTop: '28px',
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '9px', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: textMuted }}>
+                            <Zap style={{ width: 11, height: 11, color: 'rgb(var(--color-primary))' }} />
+                            AJM © 2026
+                        </span>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '9px', fontWeight: 600, color: textMuted }}>
+                            <Heart style={{ width: 10, height: 10, color: '#f87171' }} />
+                            Confeccionado con Pasión
+                        </span>
                     </div>
                 </div>
 
-                {/* ── RIGHT COLUMN: FORM PANEL ── */}
-                <div className={`w-full md:w-[410px] p-8 md:p-9 flex flex-col justify-between overflow-y-auto custom-scrollbar ${rightColumnBg}`}>
-                    
-                    {/* Access Shield Warning */}
-                    <div className="mb-6">
-                        <div className="flex items-center justify-center gap-2">
-                            <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/15">
-                                <Shield className="w-3 h-3 text-primary" />
-                                <span className="text-[7.5px] font-black uppercase tracking-[0.25em] text-primary">
-                                    ACCESO ENCRIPTADO · SECURE GATEWAY
-                                </span>
-                            </div>
+                {/* ══════════════════════════════════════
+                    RIGHT PANEL — Login Form
+                ══════════════════════════════════════ */}
+                <div
+                    className="login-right-panel login-scroll"
+                    style={{
+                        width: '100%',
+                        maxWidth: '420px',
+                        flexShrink: 0,
+                        borderLeft: isDarkTheme
+                            ? '1px solid rgba(255,255,255,0.05)'
+                            : '1px solid rgba(var(--color-primary),0.08)',
+                        padding: '48px 40px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center',
+                        overflowY: 'auto',
+                    }}
+                >
+                    {/* Secure gateway badge */}
+                    <div className="login-fade-up login-fade-up-1" style={{ marginBottom: '36px' }}>
+                        <div style={{
+                            display: 'inline-flex', alignItems: 'center', gap: '7px',
+                            padding: '6px 14px',
+                            borderRadius: '999px',
+                            background: 'rgba(var(--color-primary),0.08)',
+                            border: '1px solid rgba(var(--color-primary),0.15)',
+                        }}>
+                            <Shield style={{ width: 11, height: 11, color: 'rgb(var(--color-primary))' }} />
+                            <span
+                                className="login-mono"
+                                style={{ fontSize: '8px', fontWeight: 600, letterSpacing: '0.24em', textTransform: 'uppercase', color: 'rgb(var(--color-primary))' }}
+                            >
+                                Acceso encriptado · Secure Gateway
+                            </span>
                         </div>
                     </div>
 
-                    {/* Actual Login Form */}
-                    <form onSubmit={handleSubmit} noValidate className="space-y-4 my-auto">
-                        <div className="text-center md:text-left mb-6">
-                            <h2 className={`text-lg font-black uppercase tracking-tight ${titleTextColor}`}>Iniciar Sesión</h2>
-                            <p className={`text-[10px] font-semibold mt-1 ${descTextColor}`}>Ingresa tus credenciales corporativas autorizadas.</p>
-                        </div>
+                    {/* Heading */}
+                    <div className="login-fade-up login-fade-up-2" style={{ marginBottom: '32px' }}>
+                        <h2 style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.02em', color: textMain, margin: '0 0 8px' }}>
+                            Bienvenido de vuelta
+                        </h2>
+                        <p style={{ fontSize: '12px', color: textSub, margin: 0, lineHeight: 1.6 }}>
+                            Ingresa tus credenciales corporativas para acceder.
+                        </p>
+                    </div>
 
-                        {/* Email field */}
-                        <div className="space-y-1.5">
+                    {/* Form */}
+                    <form onSubmit={handleSubmit} noValidate style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+
+                        {/* Email */}
+                        <div className="login-fade-up login-fade-up-3" style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
                             <label
                                 htmlFor="login-email"
-                                className={`text-[9px] font-black uppercase tracking-[0.2em] flex items-center justify-between ${labelTextColor}`}
+                                style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: textMuted, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
                             >
-                                <span className="flex items-center gap-2">
-                                    <Mail className="w-3 h-3 text-primary" />
-                                    Correo Electrónico
-                                </span>
-                                <span
-                                    className="w-1.5 h-1.5 rounded-full transition-all duration-300"
-                                    style={{
-                                        background: email ? 'rgb(var(--color-primary))' : 'rgba(128,128,128,.15)',
-                                        boxShadow: email ? '0 0 8px rgb(var(--color-primary))' : 'none',
-                                    }}
-                                />
+                                <span>Correo Electrónico</span>
+                                {email && (
+                                    <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'rgb(var(--color-primary))', boxShadow: '0 0 6px rgba(var(--color-primary),0.8)' }} />
+                                )}
                             </label>
-
-                            <div className={`relative input-premium rounded-xl ${fieldErrors.email ? 'ring-1 ring-red-500/50' : ''}`}>
+                            <div className={`login-input-wrap${fieldErrors.email ? ' error' : ''}`} style={fieldErrors.email ? { borderColor: 'rgba(239,68,68,0.5)' } : {}}>
+                                <Mail className="login-input-icon" style={{ width: 15, height: 15 }} />
                                 <input
                                     id="login-email"
                                     type="email"
@@ -564,78 +835,72 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                                     placeholder="correo@empresa.com"
                                     required
                                     autoComplete="email"
-                                    className="w-full px-4 py-3 rounded-xl text-sm font-semibold outline-none transition-all duration-300"
                                 />
                             </div>
-
                             {fieldErrors.email && (
-                                <p className="text-[10px] text-red-400 font-semibold pl-1">
-                                    {fieldErrors.email}
-                                </p>
+                                <p style={{ fontSize: '10px', color: '#f87171', fontWeight: 600, margin: 0 }}>{fieldErrors.email}</p>
                             )}
                         </div>
 
-                        {/* Password field */}
-                        <div className="space-y-1.5">
+                        {/* Password */}
+                        <div className="login-fade-up login-fade-up-4" style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
                             <label
                                 htmlFor="login-password"
-                                className={`text-[9px] font-black uppercase tracking-[0.2em] flex items-center justify-between ${labelTextColor}`}
+                                style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: textMuted, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
                             >
-                                <span className="flex items-center gap-2">
-                                    <Lock className="w-3 h-3 text-primary" />
-                                    Contraseña
-                                </span>
-                                <span
-                                    className="w-1.5 h-1.5 rounded-full transition-all duration-300"
-                                    style={{
-                                        background: password ? 'rgb(var(--color-primary))' : 'rgba(128,128,128,.15)',
-                                        boxShadow: password ? '0 0 8px rgb(var(--color-primary))' : 'none',
-                                    }}
-                                />
+                                <span>Contraseña</span>
+                                {password && (
+                                    <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'rgb(var(--color-primary))', boxShadow: '0 0 6px rgba(var(--color-primary),0.8)' }} />
+                                )}
                             </label>
-
-                            <div className={`relative input-premium rounded-xl ${fieldErrors.password ? 'ring-1 ring-red-500/50' : ''}`}>
+                            <div className="login-input-wrap" style={fieldErrors.password ? { borderColor: 'rgba(239,68,68,0.5)' } : {}}>
+                                <Lock className="login-input-icon" style={{ width: 15, height: 15 }} />
                                 <input
                                     id="login-password"
                                     type={showPassword ? 'text' : 'password'}
                                     value={password}
                                     onChange={e => { setPassword(e.target.value); clearErrors(); }}
-                                    placeholder="••••••••"
+                                    placeholder="••••••••••"
                                     required
                                     autoComplete="current-password"
-                                    className="w-full px-4 py-3 pr-12 rounded-xl text-sm font-semibold outline-none transition-all duration-300"
+                                    style={{ paddingRight: '48px' }}
                                 />
                                 <button
                                     type="button"
                                     onClick={toggleShowPassword}
-                                    className={`absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg transition-all ${isDarkTheme ? 'hover:bg-white/5' : 'hover:bg-black/5'}`}
+                                    style={{
+                                        position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)',
+                                        background: 'none', border: 'none', cursor: 'pointer',
+                                        padding: '4px', borderRadius: '6px',
+                                        color: 'rgba(var(--color-text-muted),0.5)',
+                                        transition: 'color 0.2s',
+                                    }}
                                 >
                                     {showPassword
-                                        ? <EyeOff className={`w-4 h-4 hover:text-primary ${isDarkTheme ? 'text-slate-400' : 'text-slate-600'}`} />
-                                        : <Eye className={`w-4 h-4 hover:text-primary ${isDarkTheme ? 'text-slate-400' : 'text-slate-600'}`} />}
+                                        ? <EyeOff style={{ width: 15, height: 15 }} />
+                                        : <Eye style={{ width: 15, height: 15 }} />}
                                 </button>
                             </div>
-
                             {fieldErrors.password && (
-                                <p className="text-[10px] text-red-400 font-semibold pl-1">
-                                    {fieldErrors.password}
-                                </p>
+                                <p style={{ fontSize: '10px', color: '#f87171', fontWeight: 600, margin: 0 }}>{fieldErrors.password}</p>
                             )}
                         </div>
 
-                        {/* Global error */}
+                        {/* Error banner */}
                         {error && (
                             <div
                                 role="alert"
-                                className="flex items-center gap-3 px-4 py-3 rounded-xl"
                                 style={{
-                                    background: 'rgba(239,68,68,.08)',
-                                    border: '1px solid rgba(239,68,68,.25)',
-                                    animation: 'login-shake .5s ease-in-out',
+                                    display: 'flex', alignItems: 'flex-start', gap: '10px',
+                                    padding: '12px 14px',
+                                    borderRadius: '10px',
+                                    background: 'rgba(239,68,68,0.07)',
+                                    border: '1px solid rgba(239,68,68,0.2)',
+                                    animation: 'login-shake 0.5s ease-in-out',
                                 }}
                             >
-                                <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" />
-                                <span className="text-[11px] font-bold text-red-400/90">{error}</span>
+                                <AlertTriangle style={{ width: 14, height: 14, color: '#f87171', flexShrink: 0, marginTop: '1px' }} />
+                                <span style={{ fontSize: '11px', fontWeight: 600, color: 'rgba(248,113,113,0.9)', lineHeight: 1.5 }}>{error}</span>
                             </div>
                         )}
 
@@ -644,43 +909,38 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                             id="login-submit"
                             type="submit"
                             disabled={loading || !email || !password}
-                            className="w-full py-4 rounded-xl font-black text-xs uppercase tracking-[0.22em] transition-all duration-300 relative overflow-hidden group disabled:opacity-30 disabled:cursor-not-allowed hover:scale-[1.02] active:scale-[0.98] btn-premium mt-4"
-                            style={{
-                                background: loading
-                                    ? 'rgba(var(--color-primary), .25)'
-                                    : 'linear-gradient(135deg, rgb(var(--color-primary)), rgb(var(--color-secondary)))',
-                                color: '#ffffff',
-                                boxShadow: '0 8px 32px rgba(var(--color-primary), 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
-                                border: '1px solid rgb(var(--color-primary))',
-                                cursor: 'pointer',
-                            }}
+                            className="login-fade-up login-fade-up-5 login-btn-submit"
+                            style={{ marginTop: '4px' }}
                         >
-                            <span className="relative z-10 flex items-center justify-center gap-3">
+                            <span style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
                                 {loading ? (
                                     <>
-                                        <Loader2 className="w-4 h-4 animate-spin" />
-                                        Verificando…
+                                        <Loader2 style={{ width: 15, height: 15, animation: 'spin 1s linear infinite' }} />
+                                        Verificando credenciales…
                                     </>
                                 ) : (
                                     <>
-                                        <Shield className="w-4 h-4 transition-transform group-hover:scale-110" />
+                                        <Shield style={{ width: 15, height: 15 }} />
                                         Entrar al Sistema
                                     </>
-                                ) }
+                                )}
                             </span>
                         </button>
                     </form>
 
-                    {/* Bottom Status bar */}
-                    <div className={`mt-8 pt-4 border-t flex items-center justify-between text-[7px] font-black uppercase tracking-[0.2em] ${borderClass} ${labelTextColor}`}>
-                        <span className="flex items-center gap-1">
-                            <Zap className="w-3.5 h-3.5 text-primary animate-pulse" />
-                            AJM © 2026
-                        </span>
-                        <span className="flex items-center gap-1">
-                            <Heart className="w-3 h-3 text-red-500 animate-[bounce_1.5s_infinite]" />
-                            Confeccionado con Pasión
-                        </span>
+                    {/* Bottom note */}
+                    <div style={{
+                        marginTop: '28px',
+                        padding: '14px',
+                        borderRadius: '10px',
+                        background: 'rgba(var(--color-primary),0.04)',
+                        border: '1px solid rgba(var(--color-primary),0.08)',
+                        display: 'flex', alignItems: 'flex-start', gap: '8px',
+                    }}>
+                        <Shield style={{ width: 12, height: 12, color: 'rgba(var(--color-primary),0.5)', flexShrink: 0, marginTop: '1px' }} />
+                        <p style={{ fontSize: '10px', color: textMuted, margin: 0, lineHeight: 1.6, fontWeight: 500 }}>
+                            Acceso restringido a usuarios autorizados. Todas las sesiones son auditadas y encriptadas.
+                        </p>
                     </div>
                 </div>
             </div>
