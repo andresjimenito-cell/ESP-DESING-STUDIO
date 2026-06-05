@@ -28,7 +28,7 @@ export default defineConfig(({ mode }) => {
       react(),
       VitePWA({
         registerType: 'autoUpdate',
-        includeAssets: ['favicon.ico', 'icono.png', 'app-logo.png', 'robots.txt', 'apple-touch-icon.png'],
+        includeAssets: ['favicon.ico', 'icono.png', 'icono192.png', 'icono512.png', 'app-logo.png', 'robots.txt', 'apple-touch-icon.png'],
         workbox: {
           maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
         },
@@ -47,13 +47,13 @@ export default defineConfig(({ mode }) => {
               purpose: 'any'
             },
             {
-              src: 'icono.png',
+              src: 'icono192.png',
               sizes: '192x192',
               type: 'image/png',
               purpose: 'any'
             },
             {
-              src: 'icono.png',
+              src: 'icono512.png',
               sizes: '512x512',
               type: 'image/png',
               purpose: 'any'
