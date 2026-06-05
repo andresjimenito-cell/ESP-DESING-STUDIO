@@ -384,23 +384,34 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                 },
             };
         }));
-        if (selectedNorm) {
+        if (selectedNorm && selected) {
             setCustomDesigns(prev => {
                 const next = { ...prev };
-                const key = Object.keys(next).find(k => fuzzyWellName(k) === selectedNorm);
-                if (!key) return prev;
+                const key = Object.keys(next).find(k => fuzzyWellName(k) === selectedNorm) || selected.name;
+                const baseDesign = next[key] || { ...params };
                 next[key] = {
-                    ...next[key],
+                    ...baseDesign,
                     historyMatch: {
-                        ...(next[key].historyMatch || {}),
-                        startDate: hm.startDate || next[key].historyMatch?.startDate || '',
-                        matchDate: hm.matchDate || next[key].historyMatch?.matchDate || '',
+                        ...(baseDesign.historyMatch || {}),
+                        startDate: hm.startDate || baseDesign.historyMatch?.startDate || '',
+                        matchDate: hm.matchDate || baseDesign.historyMatch?.matchDate || '',
+                        pStatic: Number(hm.pStatic) || 0,
+                        rate: Number(hm.rate) || 0,
+                        frequency: Number(hm.frequency) || 0,
+                        pip: Number(hm.pip) || 0,
+                        thp: Number(hm.thp) || 0,
+                        tht: Number(hm.tht) || 0,
+                        waterCut: Number(hm.waterCut) || 0,
+                        pd: Number(hm.pd) || Number(hm.pdp) || 0,
+                        pdp: Number(hm.pd) || Number(hm.pdp) || 0,
+                        gor: hm.gor ?? baseDesign.historyMatch?.gor,
+                        ip: Number(hm.ip) || 0,
                     } as HistoryMatchData
                 };
                 return next;
             });
         }
-    }, [selectedWellId, fleet]);
+    }, [selectedWellId, fleet, params]);
 
     const pump = useMemo(() => {
         if (!selectedWell || selectedWell.estadoActual === 'pendiente') return null;
@@ -457,7 +468,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
         const base = designBase || params;
 
         const test = selectedWell.productionTest;
-        const pStaticBase = base.inflow?.pStatic || params.inflow?.pStatic || 0;
+        const pStaticBase = base.historyMatch?.pStatic || base.inflow?.pStatic || params.inflow?.pStatic || 0;
 
         // HIGH-FIDELITY DEEP MERGE - CATEGORY BY CATEGORY
         // We ensure that each well has a UNIQUE SystemParams object
@@ -667,7 +678,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                         pd: 0,
                         fluidLevel: 0,
                         submergence: 0,
-                        pStatic: wParams.inflow?.pStatic || 0,
+                        pStatic: wParams.historyMatch?.pStatic || wParams.inflow?.pStatic || 0,
                         startDate: wParams.historyMatch?.startDate || '',
                         matchDate: well.productionTest.date,
                         gor: well.productionTest.gor
@@ -742,9 +753,11 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
         const estGrad = 0.35; // Default assumption
 
         // Use the actual design pStatic if available, otherwise estimate it but floor it safely
-        const estPStatic = (customDesign && customDesign.inflow && customDesign.inflow.pStatic > 0)
-            ? customDesign.inflow.pStatic
-            : Math.max(50, (mMD * estGrad) - 1000);
+        const estPStatic = (customDesign && customDesign.historyMatch && customDesign.historyMatch.pStatic > 0)
+            ? customDesign.historyMatch.pStatic
+            : (customDesign && customDesign.inflow && customDesign.inflow.pStatic > 0)
+                ? customDesign.inflow.pStatic
+                : Math.max(50, (mMD * estGrad) - 1000);
 
         const designStartDate =
             customDesign?.historyMatch?.startDate ||
