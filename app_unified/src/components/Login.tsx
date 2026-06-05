@@ -508,9 +508,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
             className="login-root fixed inset-0 z-[9999] flex items-center justify-center overflow-hidden"
             style={{
                 backgroundColor: 'rgb(var(--color-canvas))',
-                backgroundImage: isDarkTheme
-                    ? 'url(/main_bg.png)'
-                    : undefined,
+                backgroundImage: 'linear-gradient(rgb(var(--color-canvas) / 0.75), rgb(var(--color-canvas) / 0.75)), url(/main_bg.png)',
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
             }}
@@ -567,7 +565,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                                 className="login-logo-halo"
                                 style={{
                                     position: 'absolute',
-                                    inset: '-20px',
+                                    inset: '-26px',
                                     borderRadius: '50%',
                                     border: '1.5px solid rgba(var(--color-primary), 0.2)',
                                     pointerEvents: 'none',
@@ -576,7 +574,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                             {/* Glow */}
                             <div style={{
                                 position: 'absolute',
-                                inset: '-10px',
+                                inset: '-12px',
                                 borderRadius: '50%',
                                 background: 'radial-gradient(circle, rgba(var(--color-primary),0.15) 0%, transparent 70%)',
                                 pointerEvents: 'none',
@@ -585,7 +583,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                             <div
                                 className="login-logo-wrapper"
                                 style={{
-                                    width: '140px', height: '140px',
+                                    width: '180px', height: '180px',
                                     borderRadius: '50%',
                                     overflow: 'hidden',
                                     border: '2px solid rgba(var(--color-primary),0.25)',
