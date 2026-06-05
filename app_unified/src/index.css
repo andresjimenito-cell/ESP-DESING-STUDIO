@@ -164,27 +164,27 @@
    PAREX — Emerald Green & Corporate Gold [LIGHT]
    ============================================================ */
 [data-theme='parex'] {
-  --color-primary: 9 81 57;
-  /* Deep Forest Green #095139 */
+  --color-primary: 19 118 89;
+  /* Intense Emerald Green #137659 */
   --color-secondary: 178 156 62;
   /* Official Corporate Gold #b29c3e */
   --color-accent: 17 150 105;
-  /* Emerald Green #119669 */
-  --color-tertiary: 22 118 88;
-  /* Medium Emerald Green #167658 */
-  --color-glow: 9 81 57;
-  /* Deep Green Glow */
+  /* Vibrant Emerald Green #119669 */
+  --color-tertiary: 9 81 57;
+  /* Deep Forest Green #095139 */
+  --color-glow: 19 118 89;
+  /* Intense Green Glow */
   --color-canvas: 255 255 255;
   --color-surface: 255 255 255;
-  --color-surface-light: 240 245 242;
-  /* Clean Light Sage Background #f0f5f2 */
-  --color-surface-raised: 222 232 226;
-  /* Raised Sage #dee8e2 */
+  --color-surface-light: 232 245 238;
+  /* Intense Soft Sage Background */
+  --color-surface-raised: 205 228 217;
+  /* Raised Sage */
   --color-text-main: 17 17 17;
-  /* Crisp Near-Black for maximum readability #111111 */
-  --color-text-muted: 75 85 80;
-  /* Muted Slate Green */
-  --color-text-faint: 140 150 145;
+  /* Crisp Near-Black for maximum readability */
+  --color-text-muted: 40 70 58;
+  /* Intense Muted Green-Gray */
+  --color-text-faint: 100 130 115;
   --color-success: 22 163 74;
   --color-warning: 217 119 6;
   --color-danger: 200 30 30;

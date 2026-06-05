@@ -5,6 +5,7 @@ import React, {
     useCallback,
     useRef,
 } from 'react';
+import { useTheme } from '../theme';
 import {
     Shield,
     Lock,
@@ -191,30 +192,30 @@ const ANIMATIONS = `
   }
 
   .login-card-container {
-    background:       rgba(8, 12, 24, 0.65) !important;
+    background:       rgb(var(--color-surface) / 0.96) !important;
     backdrop-filter:  blur(40px) saturate(220%) !important;
-    border:           1px solid rgba(var(--color-primary), 0.22) !important;
+    border:           1px solid rgb(var(--color-primary) / 0.25) !important;
     transition:       border-color .4s ease, box-shadow .4s ease !important;
   }
 
   .input-premium {
-    border: 1px solid rgba(var(--color-primary), 0.18) !important;
-    background: rgba(8, 10, 18, 0.4) !important;
+    border: 1px solid rgb(var(--color-primary) / 0.22) !important;
+    background: rgb(var(--color-surface-light) / 0.4) !important;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
   }
   .input-premium:focus-within {
     border-color: rgb(var(--color-primary)) !important;
     box-shadow:   0 0 25px rgba(var(--color-primary), 0.25), inset 0 0 10px rgba(var(--color-primary), 0.1) !important;
-    background:   rgba(8, 10, 18, 0.75) !important;
+    background:   rgb(var(--color-surface-light) / 0.8) !important;
   }
   .input-premium input {
     background: transparent !important;
     border: none !important;
-    color: #ffffff !important;
+    color: rgb(var(--color-text-main)) !important;
     outline: none !important;
   }
   .input-premium input::placeholder {
-    color: rgba(255, 255, 255, 0.3) !important;
+    color: rgb(var(--color-text-muted) / 0.6) !important;
   }
 
   .btn-premium::after {
@@ -246,6 +247,8 @@ const ANIMATIONS = `
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
+    const { theme } = useTheme();
+    const isDarkTheme = theme === 'fusion' || theme === 'cyber';
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -254,6 +257,28 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     const [loading, setLoading] = useState(false);
     const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
     const [mounted, setMounted] = useState(false);
+
+    // Color theme variables based on dark/light
+    const titleTextColor = isDarkTheme ? 'text-white' : 'text-txt-main';
+    const descTextColor = isDarkTheme ? 'text-slate-300' : 'text-slate-800';
+    const labelTextColor = isDarkTheme ? 'text-slate-400' : 'text-slate-700';
+    const borderClass = isDarkTheme ? 'border-white/5' : 'border-slate-200';
+    const leftColumnBg = isDarkTheme
+        ? 'bg-gradient-to-b from-surface/90 to-canvas/95 border-b md:border-b-0 md:border-r border-white/5'
+        : 'bg-gradient-to-b from-surface/95 to-canvas/98 border-b md:border-b-0 md:border-r border-slate-200';
+    const rightColumnBg = isDarkTheme
+        ? 'bg-surface/50'
+        : 'bg-slate-50/70';
+    const creditItemBg = isDarkTheme
+        ? 'bg-white/3 border-white/5 hover:border-primary/20'
+        : 'bg-slate-100/50 border-slate-200/80 hover:border-primary/40';
+    const mastermindItemBg = isDarkTheme
+        ? 'bg-white/3 border-white/5 hover:border-secondary/20'
+        : 'bg-slate-100/50 border-slate-200/80 hover:border-secondary/40';
+    const supportItemBg = isDarkTheme
+        ? 'bg-white/2 border-white/5'
+        : 'bg-slate-50 border-slate-200/60';
+    const nameBadgeBg = isDarkTheme ? 'bg-white/2' : 'bg-slate-100/60';
 
     const lastMouseTime = useRef(0);
 
@@ -364,7 +389,9 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
             className="fixed inset-0 z-[9999] flex items-center justify-center overflow-hidden font-sans p-4"
             style={{
                 backgroundColor: 'rgb(var(--color-canvas))',
-                backgroundImage: 'linear-gradient(to bottom, rgb(var(--color-canvas) / 0.85), rgb(var(--color-canvas) / 0.9)), url(/main_bg.png)',
+                backgroundImage: isDarkTheme
+                    ? 'linear-gradient(to bottom, rgb(var(--color-canvas) / 0.85), rgb(var(--color-canvas) / 0.9)), url(/main_bg.png)'
+                    : 'linear-gradient(135deg, rgb(var(--color-surface-light)), rgb(var(--color-canvas)))',
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
             }}
@@ -405,7 +432,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                 className="relative z-10 w-full max-w-[880px] rounded-2xl overflow-hidden flex flex-col md:flex-row shadow-[0_30px_90px_rgba(0,0,0,0.8)] login-card-container max-h-[94vh]"
             >
                 {/* ── LEFT COLUMN: CREATIVE BLUEPRINT & CREDITS ── */}
-                <div className="flex-1 bg-gradient-to-b from-surface/90 to-canvas/95 border-b md:border-b-0 md:border-r border-white/5 p-8 flex flex-col justify-between overflow-y-auto custom-scrollbar min-h-[300px] md:min-h-0">
+                <div className={`flex-1 p-8 flex flex-col justify-between overflow-y-auto custom-scrollbar min-h-[300px] md:min-h-0 ${leftColumnBg}`}>
                     
                     {/* Header/Title details */}
                     <div>
@@ -419,7 +446,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                                 <div className="absolute inset-0 bg-primary/15 scale-0 group-hover:scale-100 transition-all rounded-xl" />
                             </div>
                             <div>
-                                <h1 className="text-xl font-black tracking-tight text-white leading-none uppercase">
+                                <h1 className={`text-xl font-black tracking-tight leading-none uppercase ${titleTextColor}`}>
                                     ESP DESIGN <span className="text-primary font-bold">STUDIO</span>
                                 </h1>
                                 <p className="text-[7.5px] font-black uppercase tracking-[0.3em] text-primary/60 mt-1">
@@ -430,7 +457,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
 
                         <div className="space-y-4 pr-2">
                             <div className="h-[1px] bg-gradient-to-r from-primary/30 to-transparent w-full" />
-                            <p className="text-[10px] text-txt-muted uppercase font-bold leading-relaxed tracking-wider">
+                            <p className={`text-[10px] uppercase font-bold leading-relaxed tracking-wider ${descTextColor}`}>
                                 Plataforma privada avanzada para el modelado, simulación y diagnóstico de sistemas de Bombeo Electrosumergible (ESP).
                             </p>
                         </div>
@@ -440,46 +467,46 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                     <div className="mt-8 space-y-4">
                         <div className="flex items-center gap-2 mb-1">
                             <Users className="w-4 h-4 text-primary" />
-                            <span className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Créditos de Creación</span>
+                            <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${titleTextColor}`}>Créditos de Creación</span>
                         </div>
 
                         <div className="space-y-3">
                             {/* Andres Jimenez */}
-                            <div className="p-3 bg-white/3 border border-white/5 hover:border-primary/20 transition-all rounded-xl">
+                            <div className={`p-3 border transition-all rounded-xl ${creditItemBg}`}>
                                 <div className="flex justify-between items-baseline">
-                                    <h4 className="text-xs font-black text-white uppercase tracking-tight">Andrés Jiménez</h4>
+                                    <h4 className={`text-xs font-black uppercase tracking-tight ${titleTextColor}`}>Andrés Jiménez</h4>
                                     <span className="text-[7px] font-black px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">PROGRAMADOR Y CREADOR</span>
                                 </div>
-                                <p className="text-[9px] text-txt-muted font-semibold mt-1">Ingeniero Jr — Desarrollo de software, algoritmos y diseño de interfaz.</p>
+                                <p className={`text-[9px] font-semibold mt-1 ${descTextColor}`}>Ingeniero Jr — Desarrollo de software, algoritmos y diseño de interfaz.</p>
                             </div>
 
                             {/* Lenin Peña */}
-                            <div className="p-3 bg-white/3 border border-white/5 hover:border-secondary/20 transition-all rounded-xl">
+                            <div className={`p-3 border transition-all rounded-xl ${mastermindItemBg}`}>
                                 <div className="flex justify-between items-baseline">
-                                    <h4 className="text-xs font-black text-white uppercase tracking-tight">Lenin Peña</h4>
+                                    <h4 className={`text-xs font-black uppercase tracking-tight ${titleTextColor}`}>Lenin Peña</h4>
                                     <span className="text-[7px] font-black px-1.5 py-0.5 rounded bg-secondary/15 text-secondary border border-secondary/25">MENTE MAESTRA & ESPECIALISTA ALS</span>
                                 </div>
-                                <p className="text-[9px] text-txt-muted font-semibold mt-1">Ingeniero Especialista ALS — Modelos matemáticos, arquitectura de procesos y física del reservorio.</p>
+                                <p className={`text-[9px] font-semibold mt-1 ${descTextColor}`}>Ingeniero Especialista ALS — Modelos matemáticos, arquitectura de procesos y física del reservorio.</p>
                             </div>
 
                             {/* Frontera Energy Support */}
-                            <div className="p-3 bg-white/2 border border-white/5 rounded-xl">
-                                <h4 className="text-[9.5px] font-black text-white uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                            <div className={`p-3 border rounded-xl ${supportItemBg}`}>
+                                <h4 className={`text-[9.5px] font-black uppercase tracking-wider mb-2 flex items-center gap-1.5 ${titleTextColor}`}>
                                     <Cpu className="w-3.5 h-3.5 text-primary/70" />
                                     Apoyo — Área ALS Frontera Energy
                                 </h4>
-                                <div className="grid grid-cols-2 gap-2 text-[9px] text-txt-muted font-bold uppercase tracking-wide">
-                                    <div className="flex items-center gap-1.5 p-1 bg-white/2 rounded">
-                                        <span className="w-1 h-1 rounded-full bg-primary" /> Wirmer Arcos
+                                <div className={`grid grid-cols-2 gap-2 text-[9px] font-bold uppercase tracking-wide ${descTextColor}`}>
+                                    <div className={`flex items-center gap-1.5 p-1 rounded ${nameBadgeBg}`}>
+                                        <span className="w-1.5 h-1.5 rounded-full bg-[rgb(var(--color-primary))]" /> Wirmer Arcos
                                     </div>
-                                    <div className="flex items-center gap-1.5 p-1 bg-white/2 rounded">
-                                        <span className="w-1 h-1 rounded-full bg-primary" /> Jaime Ochoa
+                                    <div className={`flex items-center gap-1.5 p-1 rounded ${nameBadgeBg}`}>
+                                        <span className="w-1.5 h-1.5 rounded-full bg-[rgb(var(--color-primary))]" /> Jaime Ochoa
                                     </div>
-                                    <div className="flex items-center gap-1.5 p-1 bg-white/2 rounded">
-                                        <span className="w-1 h-1 rounded-full bg-primary" /> Luna Muñoz
+                                    <div className={`flex items-center gap-1.5 p-1 rounded ${nameBadgeBg}`}>
+                                        <span className="w-1.5 h-1.5 rounded-full bg-[rgb(var(--color-primary))]" /> Luna Muñoz
                                     </div>
-                                    <div className="flex items-center gap-1.5 p-1 bg-white/2 rounded">
-                                        <span className="w-1 h-1 rounded-full bg-primary" /> Paola Mejía
+                                    <div className={`flex items-center gap-1.5 p-1 rounded ${nameBadgeBg}`}>
+                                        <span className="w-1.5 h-1.5 rounded-full bg-[rgb(var(--color-primary))]" /> Paola Mejía
                                     </div>
                                 </div>
                             </div>
@@ -488,7 +515,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                 </div>
 
                 {/* ── RIGHT COLUMN: FORM PANEL ── */}
-                <div className="w-full md:w-[410px] bg-surface/50 p-8 md:p-9 flex flex-col justify-between overflow-y-auto custom-scrollbar">
+                <div className={`w-full md:w-[410px] p-8 md:p-9 flex flex-col justify-between overflow-y-auto custom-scrollbar ${rightColumnBg}`}>
                     
                     {/* Access Shield Warning */}
                     <div className="mb-6">
@@ -505,15 +532,15 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                     {/* Actual Login Form */}
                     <form onSubmit={handleSubmit} noValidate className="space-y-4 my-auto">
                         <div className="text-center md:text-left mb-6">
-                            <h2 className="text-lg font-black text-white uppercase tracking-tight">Iniciar Sesión</h2>
-                            <p className="text-[10px] text-txt-muted font-semibold mt-1">Ingresa tus credenciales corporativas autorizadas.</p>
+                            <h2 className={`text-lg font-black uppercase tracking-tight ${titleTextColor}`}>Iniciar Sesión</h2>
+                            <p className={`text-[10px] font-semibold mt-1 ${descTextColor}`}>Ingresa tus credenciales corporativas autorizadas.</p>
                         </div>
 
                         {/* Email field */}
                         <div className="space-y-1.5">
                             <label
                                 htmlFor="login-email"
-                                className="text-[9px] font-black uppercase tracking-[0.2em] text-txt-muted flex items-center justify-between"
+                                className={`text-[9px] font-black uppercase tracking-[0.2em] flex items-center justify-between ${labelTextColor}`}
                             >
                                 <span className="flex items-center gap-2">
                                     <Mail className="w-3 h-3 text-primary" />
@@ -522,7 +549,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                                 <span
                                     className="w-1.5 h-1.5 rounded-full transition-all duration-300"
                                     style={{
-                                        background: email ? 'rgb(var(--color-primary))' : 'rgba(255,255,255,.15)',
+                                        background: email ? 'rgb(var(--color-primary))' : 'rgba(128,128,128,.15)',
                                         boxShadow: email ? '0 0 8px rgb(var(--color-primary))' : 'none',
                                     }}
                                 />
@@ -552,7 +579,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                         <div className="space-y-1.5">
                             <label
                                 htmlFor="login-password"
-                                className="text-[9px] font-black uppercase tracking-[0.2em] text-txt-muted flex items-center justify-between"
+                                className={`text-[9px] font-black uppercase tracking-[0.2em] flex items-center justify-between ${labelTextColor}`}
                             >
                                 <span className="flex items-center gap-2">
                                     <Lock className="w-3 h-3 text-primary" />
@@ -561,7 +588,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                                 <span
                                     className="w-1.5 h-1.5 rounded-full transition-all duration-300"
                                     style={{
-                                        background: password ? 'rgb(var(--color-primary))' : 'rgba(255,255,255,.15)',
+                                        background: password ? 'rgb(var(--color-primary))' : 'rgba(128,128,128,.15)',
                                         boxShadow: password ? '0 0 8px rgb(var(--color-primary))' : 'none',
                                     }}
                                 />
@@ -581,11 +608,11 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                                 <button
                                     type="button"
                                     onClick={toggleShowPassword}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg transition-all hover:bg-white/5"
+                                    className={`absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg transition-all ${isDarkTheme ? 'hover:bg-white/5' : 'hover:bg-black/5'}`}
                                 >
                                     {showPassword
-                                        ? <EyeOff className="w-4 h-4 text-txt-muted hover:text-white" />
-                                        : <Eye className="w-4 h-4 text-txt-muted hover:text-white" />}
+                                        ? <EyeOff className={`w-4 h-4 hover:text-primary ${isDarkTheme ? 'text-slate-400' : 'text-slate-600'}`} />
+                                        : <Eye className={`w-4 h-4 hover:text-primary ${isDarkTheme ? 'text-slate-400' : 'text-slate-600'}`} />}
                                 </button>
                             </div>
 
@@ -639,13 +666,13 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                                         <Shield className="w-4 h-4 transition-transform group-hover:scale-110" />
                                         Entrar al Sistema
                                     </>
-                                )}
+                                ) }
                             </span>
                         </button>
                     </form>
 
                     {/* Bottom Status bar */}
-                    <div className="mt-8 pt-4 border-t border-white/5 flex items-center justify-between text-[7px] font-black uppercase tracking-[0.2em] text-txt-muted/50">
+                    <div className={`mt-8 pt-4 border-t flex items-center justify-between text-[7px] font-black uppercase tracking-[0.2em] ${borderClass} ${labelTextColor}`}>
                         <span className="flex items-center gap-1">
                             <Zap className="w-3.5 h-3.5 text-primary animate-pulse" />
                             AJM © 2026
