@@ -14,6 +14,10 @@ import {
     AlertTriangle,
     Loader2,
     CheckCircle2,
+    Users,
+    Cpu,
+    Zap,
+    Heart
 } from 'lucide-react';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -21,9 +25,9 @@ import {
 const SESSION_KEY = 'esp_session_token';
 const SESSION_EMAIL_KEY = 'esp_session_email';
 
-const PARTICLE_COUNT = 25;
-const MOUSE_TILT_FACTOR = 0.2;
-const MOUSE_THROTTLE_MS = 30;
+const PARTICLE_COUNT = 30;
+const MOUSE_TILT_FACTOR = 0.15;
+const MOUSE_THROTTLE_MS = 25;
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -100,14 +104,14 @@ const ParticleField: React.FC<{ particles: Particle[] }> = ({ particles }) => (
         {particles.map(p => (
             <div
                 key={p.id}
-                className="absolute rounded-full"
+                className="absolute rounded-full pointer-events-none"
                 style={{
                     left: `${p.x}%`,
                     bottom: '-8px',
                     width: p.size,
                     height: p.size,
                     background: `rgb(${p.color})`,
-                    boxShadow: `0 0 4px rgb(${p.color})`,
+                    boxShadow: `0 0 6px rgb(${p.color})`,
                     '--op': p.opacity,
                     '--drift': `${p.drift}px`,
                     animation: `login-particle-rise ${p.speed}s linear ${p.delay}s infinite`,
@@ -121,74 +125,21 @@ const ParticleField: React.FC<{ particles: Particle[] }> = ({ particles }) => (
 const AuroraBg: React.FC = () => (
     <>
         <div
-            className="absolute top-[-15%] left-[-15%] w-[450px] h-[450px] rounded-full opacity-35"
+            className="absolute top-[-10%] left-[-10%] w-[550px] h-[550px] rounded-full opacity-40 pointer-events-none"
             style={{
-                background: 'radial-gradient(circle, rgba(var(--color-primary), 0.25) 0%, transparent 70%)',
-                filter: 'blur(90px)',
-                animation: 'login-aurora-glow-1 12s ease-in-out infinite',
+                background: 'radial-gradient(circle, rgba(var(--color-primary), 0.3) 0%, transparent 70%)',
+                filter: 'blur(100px)',
+                animation: 'login-aurora-glow-1 15s ease-in-out infinite',
             }}
         />
         <div
-            className="absolute bottom-[-15%] right-[-15%] w-[450px] h-[450px] rounded-full opacity-25"
+            className="absolute bottom-[-10%] right-[-10%] w-[550px] h-[550px] rounded-full opacity-30 pointer-events-none"
             style={{
-                background: 'radial-gradient(circle, rgba(var(--color-secondary), 0.2) 0%, transparent 70%)',
-                filter: 'blur(90px)',
-                animation: 'login-aurora-glow-2 15s ease-in-out infinite',
+                background: 'radial-gradient(circle, rgba(var(--color-secondary), 0.25) 0%, transparent 70%)',
+                filter: 'blur(100px)',
+                animation: 'login-aurora-glow-2 18s ease-in-out infinite',
             }}
         />
-    </>
-);
-
-const OrbitalRings: React.FC = () => (
-    <>
-        {/* Outer halo */}
-        <div style={{
-            position: 'absolute',
-            inset: -25,
-            borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(var(--color-primary), 0.12) 0%, transparent 65%)',
-            animation: 'login-halo-pulse 5s ease-in-out infinite',
-        }} />
-        {/* Ring 1 — clockwise */}
-        <div style={{
-            position: 'absolute',
-            inset: -8,
-            border: '1px solid rgba(var(--color-primary), 0.15)',
-            borderRadius: '50%',
-            animation: 'login-ring-cw 18s linear infinite',
-        }}>
-            <div style={{
-                position: 'absolute',
-                top: -2.5,
-                left: '50%',
-                width: 5,
-                height: 5,
-                borderRadius: '50%',
-                background: 'rgb(var(--color-primary))',
-                boxShadow: '0 0 10px rgb(var(--color-primary)), 0 0 20px rgb(var(--color-primary))',
-                transform: 'translateX(-50%)',
-            }} />
-        </div>
-        {/* Ring 2 — counter-clockwise / tilted */}
-        <div style={{
-            position: 'absolute',
-            inset: -18,
-            border: '0.5px solid rgba(var(--color-secondary), 0.1)',
-            borderRadius: '50%',
-            animation: 'login-ring-ccw 30s linear infinite',
-            transform: 'rotate3d(1, 0.5, 0, 50deg)',
-        }}>
-            <div style={{
-                position: 'absolute',
-                bottom: -2,
-                right: '30%',
-                width: 4,
-                height: 4,
-                borderRadius: '50%',
-                background: 'rgb(var(--color-secondary))',
-                boxShadow: '0 0 8px rgb(var(--color-secondary))',
-            }} />
-        </div>
     </>
 );
 
@@ -199,17 +150,15 @@ const ANIMATIONS = `
     0%   { transform: translateY(0) translateX(0) scale(1); opacity: 0; }
     5%   { opacity: var(--op); }
     95%  { opacity: calc(var(--op) * 0.5); }
-    100% { transform: translateY(-80vh) translateX(var(--drift)) scale(0.4); opacity: 0; }
+    100% { transform: translateY(-90vh) translateX(var(--drift)) scale(0.3); opacity: 0; }
   }
   @keyframes login-glow-pulse {
-    0%, 100% { box-shadow: 0 20px 50px rgba(0,0,0,.45), 0 0 50px rgba(var(--color-primary),.05), inset 0 1px 0 rgba(255,255,255,.04); }
-    50%       { box-shadow: 0 30px 60px rgba(0,0,0,.55), 0 0 80px rgba(var(--color-primary),.16), inset 0 1px 0 rgba(255,255,255,.06); }
+    0%, 100% { box-shadow: 0 30px 70px rgba(0,0,0,.65), 0 0 50px rgba(var(--color-primary),.06), inset 0 1px 0 rgba(255,255,255,.05); }
+    50%       { box-shadow: 0 40px 90px rgba(0,0,0,.75), 0 0 80px rgba(var(--color-primary),.18), inset 0 1px 0 rgba(255,255,255,.08); }
   }
-  @keyframes login-ring-cw  { to { transform: rotate(360deg); } }
-  @keyframes login-ring-ccw { to { transform: rotate(-360deg); } }
   @keyframes login-logo-illuminate {
-    0%, 100% { filter: brightness(1) drop-shadow(0 0 12px rgba(var(--color-primary),.3)); }
-    50%       { filter: brightness(1.2) drop-shadow(0 0 28px rgba(var(--color-primary),.6)); }
+    0%, 100% { filter: brightness(1) drop-shadow(0 0 15px rgba(var(--color-primary),.3)); }
+    50%       { filter: brightness(1.25) drop-shadow(0 0 30px rgba(var(--color-primary),.7)); }
   }
   @keyframes login-sweep {
     0%   { top: -4px; opacity: 0; }
@@ -222,54 +171,41 @@ const ANIMATIONS = `
     10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
     20%, 40%, 60%, 80%    { transform: translateX(4px); }
   }
-  @keyframes login-halo-pulse {
-    0%, 100% { transform: scale(1);    opacity: .15; }
-    50%       { transform: scale(1.15); opacity: .35; }
-  }
   @keyframes login-scanline {
     0%   { transform: translateY(-100%); opacity: 0; }
-    10%  { opacity: .04; }
-    90%  { opacity: .02; }
+    10%  { opacity: .03; }
+    90%  { opacity: .01; }
     100% { transform: translateY(100%); opacity: 0; }
   }
   @keyframes login-aurora-glow-1 {
     0%, 100% { transform: translate(0,0) scale(1); }
-    50%       { transform: translate(30px,-20px) scale(1.1); }
+    50%       { transform: translate(50px,-30px) scale(1.15); }
   }
   @keyframes login-aurora-glow-2 {
-    0%, 100% { transform: translate(0,0) scale(1.1); }
-    50%       { transform: translate(-20px,30px) scale(.95); }
+    0%, 100% { transform: translate(0,0) scale(1.15); }
+    50%       { transform: translate(-30px,50px) scale(.9); }
   }
   @keyframes login-sheen {
     0%   { transform: translateX(-150%) skewX(-15deg); }
     100% { transform: translateX(250%) skewX(-15deg); }
   }
-  @keyframes login-pulse-green {
-    0%, 100% { opacity: .4; }
-    50%       { opacity: 1; transform: scale(1.2); }
-  }
 
-  .login-card {
-    background:       rgba(10, 15, 30, 0.7) !important;
-    backdrop-filter:  blur(35px) saturate(210%) !important;
-    border:           1px solid rgba(var(--color-primary), 0.25) !important;
+  .login-card-container {
+    background:       rgba(8, 12, 24, 0.65) !important;
+    backdrop-filter:  blur(40px) saturate(220%) !important;
+    border:           1px solid rgba(var(--color-primary), 0.22) !important;
     transition:       border-color .4s ease, box-shadow .4s ease !important;
-    box-shadow:       0 20px 50px rgba(0, 0, 0, 0.65), 0 0 40px rgba(var(--color-primary), 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
-  }
-  .login-card:hover { 
-    border-color: rgba(var(--color-primary), 0.45) !important; 
-    box-shadow:   0 25px 60px rgba(0, 0, 0, 0.75), 0 0 60px rgba(var(--color-primary), 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
   }
 
   .input-premium {
     border: 1px solid rgba(var(--color-primary), 0.18) !important;
-    background: rgba(var(--color-canvas), 0.4) !important;
+    background: rgba(8, 10, 18, 0.4) !important;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
   }
   .input-premium:focus-within {
     border-color: rgb(var(--color-primary)) !important;
     box-shadow:   0 0 25px rgba(var(--color-primary), 0.25), inset 0 0 10px rgba(var(--color-primary), 0.1) !important;
-    background:   rgba(var(--color-canvas), 0.8) !important;
+    background:   rgba(8, 10, 18, 0.75) !important;
   }
   .input-premium input {
     background: transparent !important;
@@ -278,7 +214,7 @@ const ANIMATIONS = `
     outline: none !important;
   }
   .input-premium input::placeholder {
-    color: rgba(255, 255, 255, 0.35) !important;
+    color: rgba(255, 255, 255, 0.3) !important;
   }
 
   .btn-premium::after {
@@ -286,17 +222,25 @@ const ANIMATIONS = `
     position:       absolute;
     top:0; left:0;
     width:60%; height:100%;
-    background:     linear-gradient(90deg, transparent, rgba(255,255,255,.24), transparent);
+    background:     linear-gradient(90deg, transparent, rgba(255,255,255,.2), transparent);
     transform:      translateX(-150%) skewX(-15deg);
     pointer-events: none;
   }
   .btn-premium:hover::after { animation: login-sheen 1.8s infinite; }
-  .btn-premium:disabled {
-    opacity: 0.35 !important;
-    cursor: not-allowed !important;
-    box-shadow: none !important;
+  
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
   }
-
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(var(--color-primary), 0.3);
+  }
 `;
 
 // ─── Main component ───────────────────────────────────────────────────────────
@@ -327,8 +271,8 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
             lastMouseTime.current = now;
 
             setMousePos({
-                x: (e.clientX / window.innerWidth - 0.5) * 15,
-                y: (e.clientY / window.innerHeight - 0.5) * 15,
+                x: (e.clientX / window.innerWidth - 0.5) * 12,
+                y: (e.clientY / window.innerHeight - 0.5) * 12,
             });
         };
 
@@ -342,11 +286,11 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
             id: i,
             x: Math.random() * 100,
             y: Math.random() * 100,
-            size: 1 + Math.random() * 3,
-            speed: 25 + Math.random() * 50,
-            drift: (Math.random() - 0.5) * 30,
-            delay: Math.random() * -25,
-            opacity: 0.15 + Math.random() * 0.45,
+            size: 1.2 + Math.random() * 3,
+            speed: 20 + Math.random() * 45,
+            drift: (Math.random() - 0.5) * 40,
+            delay: Math.random() * -20,
+            opacity: 0.2 + Math.random() * 0.5,
             color: PARTICLE_COLORS[i % 3],
         })),
         []);
@@ -417,115 +361,153 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
 
     return (
         <div
-            className="fixed inset-0 z-[9999] flex items-center justify-center overflow-hidden font-sans"
+            className="fixed inset-0 z-[9999] flex items-center justify-center overflow-hidden font-sans p-4"
             style={{
                 backgroundColor: 'rgb(var(--color-canvas))',
-                backgroundImage: 'linear-gradient(rgb(var(--color-canvas) / 0.82), rgb(var(--color-canvas) / 0.88)), url(/main_bg.png)',
+                backgroundImage: 'linear-gradient(to bottom, rgb(var(--color-canvas) / 0.85), rgb(var(--color-canvas) / 0.9)), url(/main_bg.png)',
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
             }}
         >
             <style>{ANIMATIONS}</style>
 
-            {/* ── BACKGROUND ── */}
+            {/* ── BACKGROUND EFFECTS ── */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                {/* Dot grid */}
                 <div
-                    className="absolute inset-0 opacity-15"
+                    className="absolute inset-0 opacity-10"
                     style={{
                         backgroundImage: 'radial-gradient(circle, rgba(var(--color-primary), 0.15) 1.2px, transparent 1.2px)',
                         backgroundSize: '24px 24px',
                         maskImage: 'radial-gradient(circle at center, black 40%, transparent 95%)',
                     }}
                 />
-
                 <AuroraBg />
                 <ParticleField particles={fieldParticles} />
-
-                {/* Scanline sweep */}
                 <div style={{
                     position: 'absolute',
                     left: 0, right: 0,
-                    height: '30%',
-                    background: 'linear-gradient(to bottom, transparent, rgba(var(--color-primary), 0.02), transparent)',
-                    animation: 'login-scanline 9s linear infinite',
+                    height: '25%',
+                    background: 'linear-gradient(to bottom, transparent, rgba(var(--color-primary), 0.015), transparent)',
+                    animation: 'login-scanline 10s linear infinite',
                 }} />
             </div>
 
-            {/* ── CARD ── */}
+            {/* ── SPLIT CONTAINER CARD ── */}
             <div
                 role="main"
                 aria-label="Inicio de sesión ESP Design Studio"
                 style={{
                     opacity: mounted ? 1 : 0,
                     transform: cardTransform,
-                    transition: 'opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1), transform 0.18s ease-out',
-                    animation: mounted ? 'login-glow-pulse 6s ease-in-out infinite' : 'none',
+                    transition: 'opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s ease-out',
+                    animation: mounted ? 'login-glow-pulse 8s ease-in-out infinite' : 'none',
                 }}
-                className="relative z-10 w-full max-w-[420px] mx-4 max-h-[92vh] overflow-y-auto custom-scrollbar login-card"
+                className="relative z-10 w-full max-w-[880px] rounded-2xl overflow-hidden flex flex-col md:flex-row shadow-[0_30px_90px_rgba(0,0,0,0.8)] login-card-container max-h-[94vh]"
             >
-                {/* Accent bar */}
-                <div className="h-1.5 w-full shrink-0" style={{
-                    background: 'linear-gradient(90deg, rgba(var(--color-primary),.9), rgba(var(--color-secondary),.7), rgba(var(--color-primary),.9))',
-                }} />
-
-                <div className="px-9 pt-9 pb-9 flex flex-col">
-
-                    {/* ── LOGO ── */}
-                    <div className="flex flex-col items-center mb-8 shrink-0">
-                        <div style={{ position: 'relative', width: 110, height: 110 }}>
-                            <OrbitalRings />
-
-                            <div style={{
-                                position: 'relative',
-                                width: '100%',
-                                height: '100%',
-                                animation: 'login-logo-illuminate 4s ease-in-out infinite',
-                            }}>
+                {/* ── LEFT COLUMN: CREATIVE BLUEPRINT & CREDITS ── */}
+                <div className="flex-1 bg-gradient-to-b from-surface/90 to-canvas/95 border-b md:border-b-0 md:border-r border-white/5 p-8 flex flex-col justify-between overflow-y-auto custom-scrollbar min-h-[300px] md:min-h-0">
+                    
+                    {/* Header/Title details */}
+                    <div>
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="w-12 h-12 flex items-center justify-center p-1 border border-primary/20 bg-primary/10 rounded-xl relative group">
                                 <img
                                     src="/LOGO.png"
-                                    alt="ESP Design Studio"
-                                    style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
+                                    alt="Logo"
+                                    className="w-full h-full object-contain filter drop-shadow-md brightness-110"
                                 />
-                                {/* Logo sweep line */}
-                                <div style={{
-                                    position: 'absolute',
-                                    top: 0, left: -6, right: -6,
-                                    height: '2px',
-                                    background: 'linear-gradient(90deg, transparent, rgba(var(--color-secondary),.9), transparent)',
-                                    boxShadow: '0 0 12px rgba(var(--color-secondary),.8)',
-                                    animation: 'login-sweep 3.5s ease-in-out infinite',
-                                }} />
+                                <div className="absolute inset-0 bg-primary/15 scale-0 group-hover:scale-100 transition-all rounded-xl" />
+                            </div>
+                            <div>
+                                <h1 className="text-xl font-black tracking-tight text-white leading-none uppercase">
+                                    ESP DESIGN <span className="text-primary font-bold">STUDIO</span>
+                                </h1>
+                                <p className="text-[7.5px] font-black uppercase tracking-[0.3em] text-primary/60 mt-1">
+                                    Engineering Suite
+                                </p>
                             </div>
                         </div>
 
-                        <div className="mt-5 text-center">
-                            <h1 className="text-2xl font-black tracking-tight text-txt-main leading-none uppercase">
-                                ESP DESIGN <span style={{ color: 'rgb(var(--color-primary))' }}>STUDIO</span>
-                            </h1>
-                            <p className="mt-1.5 text-[9px] font-black uppercase tracking-[0.35em]"
-                                style={{ color: 'rgba(var(--color-primary), 0.65)' }}>
-                                ACCESO PRIVADO — SISTEMA DE INGENIERÍA Y DISEÑO
+                        <div className="space-y-4 pr-2">
+                            <div className="h-[1px] bg-gradient-to-r from-primary/30 to-transparent w-full" />
+                            <p className="text-[10px] text-txt-muted uppercase font-bold leading-relaxed tracking-wider">
+                                Plataforma privada avanzada para el modelado, simulación y diagnóstico de sistemas de Bombeo Electrosumergible (ESP).
                             </p>
                         </div>
                     </div>
 
-                    {/* ── SECURITY BADGE ── */}
-                    <div className="flex items-center justify-center gap-2 mb-6 shrink-0">
-                        <div className="flex items-center gap-2 px-4 py-2 rounded-full" style={{
-                            background: 'rgba(var(--color-primary), 0.08)',
-                            border: '1px solid rgba(var(--color-primary), 0.16)',
-                        }}>
-                            <Shield className="w-3.5 h-3.5" style={{ color: 'rgb(var(--color-primary))' }} />
-                            <span className="text-[8px] font-black uppercase tracking-[0.25em]"
-                                style={{ color: 'rgba(var(--color-primary), 0.8)' }}>
-                                ACCESO CIFRADO · HMAC-SHA256
-                            </span>
+                    {/* CREDITS SYSTEM SECTION */}
+                    <div className="mt-8 space-y-4">
+                        <div className="flex items-center gap-2 mb-1">
+                            <Users className="w-4 h-4 text-primary" />
+                            <span className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Créditos de Creación</span>
+                        </div>
+
+                        <div className="space-y-3">
+                            {/* Andres Jimenez */}
+                            <div className="p-3 bg-white/3 border border-white/5 hover:border-primary/20 transition-all rounded-xl">
+                                <div className="flex justify-between items-baseline">
+                                    <h4 className="text-xs font-black text-white uppercase tracking-tight">Andrés Jiménez</h4>
+                                    <span className="text-[7px] font-black px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">PROGRAMADOR Y CREADOR</span>
+                                </div>
+                                <p className="text-[9px] text-txt-muted font-semibold mt-1">Ingeniero Jr — Desarrollo de software, algoritmos y diseño de interfaz.</p>
+                            </div>
+
+                            {/* Lenin Peña */}
+                            <div className="p-3 bg-white/3 border border-white/5 hover:border-secondary/20 transition-all rounded-xl">
+                                <div className="flex justify-between items-baseline">
+                                    <h4 className="text-xs font-black text-white uppercase tracking-tight">Lenin Peña</h4>
+                                    <span className="text-[7px] font-black px-1.5 py-0.5 rounded bg-secondary/15 text-secondary border border-secondary/25">MENTE MAESTRA & ESPECIALISTA ALS</span>
+                                </div>
+                                <p className="text-[9px] text-txt-muted font-semibold mt-1">Ingeniero Especialista ALS — Modelos matemáticos, arquitectura de procesos y física del reservorio.</p>
+                            </div>
+
+                            {/* Frontera Energy Support */}
+                            <div className="p-3 bg-white/2 border border-white/5 rounded-xl">
+                                <h4 className="text-[9.5px] font-black text-white uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                    <Cpu className="w-3.5 h-3.5 text-primary/70" />
+                                    Apoyo — Área ALS Frontera Energy
+                                </h4>
+                                <div className="grid grid-cols-2 gap-2 text-[9px] text-txt-muted font-bold uppercase tracking-wide">
+                                    <div className="flex items-center gap-1.5 p-1 bg-white/2 rounded">
+                                        <span className="w-1 h-1 rounded-full bg-primary" /> Wirmer Arcos
+                                    </div>
+                                    <div className="flex items-center gap-1.5 p-1 bg-white/2 rounded">
+                                        <span className="w-1 h-1 rounded-full bg-primary" /> Jaime Ochoa
+                                    </div>
+                                    <div className="flex items-center gap-1.5 p-1 bg-white/2 rounded">
+                                        <span className="w-1 h-1 rounded-full bg-primary" /> Luna Muñoz
+                                    </div>
+                                    <div className="flex items-center gap-1.5 p-1 bg-white/2 rounded">
+                                        <span className="w-1 h-1 rounded-full bg-primary" /> Paola Mejía
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* ── RIGHT COLUMN: FORM PANEL ── */}
+                <div className="w-full md:w-[410px] bg-surface/50 p-8 md:p-9 flex flex-col justify-between overflow-y-auto custom-scrollbar">
+                    
+                    {/* Access Shield Warning */}
+                    <div className="mb-6">
+                        <div className="flex items-center justify-center gap-2">
+                            <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/15">
+                                <Shield className="w-3 h-3 text-primary" />
+                                <span className="text-[7.5px] font-black uppercase tracking-[0.25em] text-primary">
+                                    ACCESO ENCRIPTADO · SECURE GATEWAY
+                                </span>
+                            </div>
                         </div>
                     </div>
 
-                    {/* ── FORM ── */}
-                    <form onSubmit={handleSubmit} noValidate className="space-y-4">
+                    {/* Actual Login Form */}
+                    <form onSubmit={handleSubmit} noValidate className="space-y-4 my-auto">
+                        <div className="text-center md:text-left mb-6">
+                            <h2 className="text-lg font-black text-white uppercase tracking-tight">Iniciar Sesión</h2>
+                            <p className="text-[10px] text-txt-muted font-semibold mt-1">Ingresa tus credenciales corporativas autorizadas.</p>
+                        </div>
 
                         {/* Email field */}
                         <div className="space-y-1.5">
@@ -534,7 +516,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                                 className="text-[9px] font-black uppercase tracking-[0.2em] text-txt-muted flex items-center justify-between"
                             >
                                 <span className="flex items-center gap-2">
-                                    <Mail className="w-3 h-3 text-primary" aria-hidden />
+                                    <Mail className="w-3 h-3 text-primary" />
                                     Correo Electrónico
                                 </span>
                                 <span
@@ -552,17 +534,15 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                                     type="email"
                                     value={email}
                                     onChange={e => { setEmail(e.target.value); clearErrors(); }}
-                                    placeholder="Ingresa tu correo electrónico"
+                                    placeholder="correo@empresa.com"
                                     required
                                     autoComplete="email"
-                                    aria-describedby={fieldErrors.email ? 'email-error' : undefined}
-                                    aria-invalid={!!fieldErrors.email}
                                     className="w-full px-4 py-3 rounded-xl text-sm font-semibold outline-none transition-all duration-300"
                                 />
                             </div>
 
                             {fieldErrors.email && (
-                                <p id="email-error" className="text-[10px] text-red-400 font-semibold pl-1">
+                                <p className="text-[10px] text-red-400 font-semibold pl-1">
                                     {fieldErrors.email}
                                 </p>
                             )}
@@ -575,7 +555,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                                 className="text-[9px] font-black uppercase tracking-[0.2em] text-txt-muted flex items-center justify-between"
                             >
                                 <span className="flex items-center gap-2">
-                                    <Lock className="w-3 h-3 text-primary" aria-hidden />
+                                    <Lock className="w-3 h-3 text-primary" />
                                     Contraseña
                                 </span>
                                 <span
@@ -593,27 +573,24 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                                     type={showPassword ? 'text' : 'password'}
                                     value={password}
                                     onChange={e => { setPassword(e.target.value); clearErrors(); }}
-                                    placeholder="Ingresa tu contraseña"
+                                    placeholder="••••••••"
                                     required
                                     autoComplete="current-password"
-                                    aria-describedby={fieldErrors.password ? 'password-error' : undefined}
-                                    aria-invalid={!!fieldErrors.password}
                                     className="w-full px-4 py-3 pr-12 rounded-xl text-sm font-semibold outline-none transition-all duration-300"
                                 />
                                 <button
                                     type="button"
                                     onClick={toggleShowPassword}
-                                    aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                                     className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg transition-all hover:bg-white/5"
                                 >
                                     {showPassword
-                                        ? <EyeOff className="w-4 h-4 text-txt-muted hover:text-white" aria-hidden />
-                                        : <Eye className="w-4 h-4 text-txt-muted hover:text-white" aria-hidden />}
+                                        ? <EyeOff className="w-4 h-4 text-txt-muted hover:text-white" />
+                                        : <Eye className="w-4 h-4 text-txt-muted hover:text-white" />}
                                 </button>
                             </div>
 
                             {fieldErrors.password && (
-                                <p id="password-error" className="text-[10px] text-red-400 font-semibold pl-1">
+                                <p className="text-[10px] text-red-400 font-semibold pl-1">
                                     {fieldErrors.password}
                                 </p>
                             )}
@@ -630,7 +607,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                                     animation: 'login-shake .5s ease-in-out',
                                 }}
                             >
-                                <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" aria-hidden />
+                                <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" />
                                 <span className="text-[11px] font-bold text-red-400/90">{error}</span>
                             </div>
                         )}
@@ -640,14 +617,13 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                             id="login-submit"
                             type="submit"
                             disabled={loading || !email || !password}
-                            aria-busy={loading}
                             className="w-full py-4 rounded-xl font-black text-xs uppercase tracking-[0.22em] transition-all duration-300 relative overflow-hidden group disabled:opacity-30 disabled:cursor-not-allowed hover:scale-[1.02] active:scale-[0.98] btn-premium mt-4"
                             style={{
                                 background: loading
                                     ? 'rgba(var(--color-primary), .25)'
                                     : 'linear-gradient(135deg, rgb(var(--color-primary)), rgb(var(--color-secondary)))',
                                 color: '#ffffff',
-                                boxShadow: '0 8px 32px rgba(var(--color-primary), 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
+                                boxShadow: '0 8px 32px rgba(var(--color-primary), 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
                                 border: '1px solid rgb(var(--color-primary))',
                                 cursor: 'pointer',
                             }}
@@ -655,45 +631,30 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                             <span className="relative z-10 flex items-center justify-center gap-3">
                                 {loading ? (
                                     <>
-                                        <Loader2 className="w-4 h-4 animate-spin" aria-hidden />
+                                        <Loader2 className="w-4 h-4 animate-spin" />
                                         Verificando…
                                     </>
-                               ) : (
+                                ) : (
                                     <>
-                                        <Shield className="w-4 h-4 transition-transform group-hover:scale-110" aria-hidden />
-                                        Iniciar Sesión
+                                        <Shield className="w-4 h-4 transition-transform group-hover:scale-110" />
+                                        Entrar al Sistema
                                     </>
                                 )}
                             </span>
                         </button>
                     </form>
-                </div>
 
-                {/* ── FOOTER ── */}
-                <div
-                    className="px-9 py-4 flex items-center justify-between shrink-0"
-                    style={{
-                        borderTop: '1px solid rgba(var(--color-primary), .08)',
-                        background: 'rgba(var(--color-canvas), .4)',
-                    }}
-                >
-                    <span className="text-[7px] font-black uppercase tracking-[0.25em] flex items-center gap-1.5"
-                        style={{ color: 'rgba(var(--color-primary), .3)' }}>
-                        <span
-                            className="w-1 h-1 rounded-full bg-green-400"
-                            style={{ animation: 'login-pulse-green 1s infinite' }}
-                            aria-hidden
-                        />
-                        SSL SECURE
-                    </span>
-                    <span className="text-[7px] font-black uppercase tracking-[0.25em]"
-                        style={{ color: 'rgba(var(--color-primary), .3)' }}>
-                        ENCRYPTED SESSION
-                    </span>
-                    <span className="text-[7px] font-black uppercase tracking-[0.25em]"
-                        style={{ color: 'rgba(var(--color-primary), .3)' }}>
-                        AJM © 2026
-                    </span>
+                    {/* Bottom Status bar */}
+                    <div className="mt-8 pt-4 border-t border-white/5 flex items-center justify-between text-[7px] font-black uppercase tracking-[0.2em] text-txt-muted/50">
+                        <span className="flex items-center gap-1">
+                            <Zap className="w-3.5 h-3.5 text-primary animate-pulse" />
+                            AJM © 2026
+                        </span>
+                        <span className="flex items-center gap-1">
+                            <Heart className="w-3 h-3 text-red-500 animate-[bounce_1.5s_infinite]" />
+                            Confeccionado con Pasión
+                        </span>
+                    </div>
                 </div>
             </div>
         </div>
