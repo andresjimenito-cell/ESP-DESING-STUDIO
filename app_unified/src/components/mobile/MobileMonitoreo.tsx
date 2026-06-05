@@ -93,6 +93,16 @@ export const MobileMonitoreo: React.FC<Props> = ({
     const [showKeyModal, setShowKeyModal] = useState(false);
     const [apiKeyInput, setApiKeyInput] = useState('');
 
+    const handleProtectedLink = (e: React.MouseEvent<HTMLAnchorElement>, url: string) => {
+        e.preventDefault();
+        const clave = prompt(language === 'es' ? 'Ingrese la clave de acceso:' : 'Enter access key:');
+        if (clave?.trim().toUpperCase() === 'AJM') {
+            window.open(url, '_blank', 'noopener,noreferrer');
+        } else if (clave !== null) {
+            alert(language === 'es' ? 'Clave incorrecta.' : 'Incorrect key.');
+        }
+    };
+
     useEffect(() => {
         if (showKeyModal) {
             setApiKeyInput(localStorage.getItem('openrouter_api_key') || '');
@@ -592,6 +602,7 @@ ${historySummary}`;
 
                                     <a
                                         href="https://1drv.ms/x/c/06cc4035ad46ff97/IQClWg69qziUQZ4pcxlcyoF5AdzaFbqGWhkSVp1rxJKvfwQ?e=Zuk6P7"
+                                        onClick={(e) => handleProtectedLink(e, "https://1drv.ms/x/c/06cc4035ad46ff97/IQClWg69qziUQZ4pcxlcyoF5AdzaFbqGWhkSVp1rxJKvfwQ?e=Zuk6P7")}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="shrink-0 flex items-center gap-1.5 h-8 px-3 rounded-lg bg-primary/10 text-primary border border-primary/25 hover:bg-primary/20 active:scale-95 transition-all text-[8px] font-black uppercase tracking-wider"

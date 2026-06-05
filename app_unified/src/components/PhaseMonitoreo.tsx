@@ -176,6 +176,16 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
         }
     };
 
+    const handleProtectedLink = (e: React.MouseEvent<HTMLAnchorElement>, url: string) => {
+        e.preventDefault();
+        const clave = prompt(language === 'es' ? 'Ingrese la clave de acceso:' : 'Enter access key:');
+        if (clave?.trim().toUpperCase() === 'AJM') {
+            window.open(url, '_blank', 'noopener,noreferrer');
+        } else if (clave !== null) {
+            alert(language === 'es' ? 'Clave incorrecta.' : 'Incorrect key.');
+        }
+    };
+
     // Reset visible count when filters or dropdown state change
     useEffect(() => {
         setVisibleCount(50);
@@ -1121,6 +1131,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                 <div className="flex items-center gap-1 md:gap-1.5 bg-white/5 p-0.5 md:p-1 border border-white/10 shrink-0 ml-auto">
                                     <a
                                         href="https://1drv.ms/x/c/06cc4035ad46ff97/IQClWg69qziUQZ4pcxlcyoF5AdzaFbqGWhkSVp1rxJKvfwQ?e=Zuk6P7"
+                                        onClick={(e) => handleProtectedLink(e, "https://1drv.ms/x/c/06cc4035ad46ff97/IQClWg69qziUQZ4pcxlcyoF5AdzaFbqGWhkSVp1rxJKvfwQ?e=Zuk6P7")}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="h-8 px-2.5 bg-primary/10 hover:bg-primary text-primary hover:text-white border border-primary/25 rounded-none text-[8px] font-black uppercase tracking-widest transition-all flex items-center gap-1.5 shrink-0"
@@ -1132,6 +1143,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
  
                                     <a
                                         href="https://1drv.ms/x/c/06cc4035ad46ff97/IQCX60W0l5YeQbDd8jHpZlMJAa0JHU31uqYaXJU1Tawo8I8?e=SD43E4"
+                                        onClick={(e) => handleProtectedLink(e, "https://1drv.ms/x/c/06cc4035ad46ff97/IQCX60W0l5YeQbDd8jHpZlMJAa0JHU31uqYaXJU1Tawo8I8?e=SD43E4")}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="h-8 px-2.5 bg-secondary/10 hover:bg-secondary text-secondary hover:text-white border border-secondary/25 rounded-none text-[8px] font-black uppercase tracking-widest transition-all flex items-center gap-1.5 shrink-0"
