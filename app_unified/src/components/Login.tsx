@@ -651,7 +651,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                                 <strong>Apoyo:</strong> Wirmer Arcos, Jaime Ochoa, Luna Muñoz, Paola Mejía (Frontera Energy)
                             </p>
                         </div>
-                        
+
                         <div style={{
                             marginTop: '16px',
                             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -740,7 +740,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                                     type="email"
                                     value={email}
                                     onChange={e => { setEmail(e.target.value); clearErrors(); }}
-                                    placeholder="correo@empresa.com"
+                                    placeholder="@"
                                     required
                                     autoComplete="email"
                                 />
