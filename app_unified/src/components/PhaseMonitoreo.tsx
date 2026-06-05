@@ -1214,7 +1214,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                         setIsBhaMinimized(!isBhaMinimized);
                                         if (isBhaMinimized) setIsTrajectoryMinimized(true); // Exclusión mutua
                                     }}
-                                    className={`w-full md:w-12 h-12 md:h-[350px] rounded-none flex flex-row md:flex-col items-center justify-center gap-2 md:gap-3 transition-all duration-300 border ${!isBhaMinimized
+                                    className={`flex-1 md:w-12 h-12 md:h-[350px] rounded-none flex flex-row md:flex-col items-center justify-center gap-2 md:gap-3 transition-all duration-300 border ${!isBhaMinimized
                                         ? 'bg-primary border-primary shadow-glow-primary text-canvas'
                                         : 'bg-primary/5 text-txt-muted border-primary/10 hover:bg-primary/15 hover:text-primary hover:border-primary/25'
                                         }`}
@@ -1238,7 +1238,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                         setIsTrajectoryMinimized(!isTrajectoryMinimized);
                                         if (isTrajectoryMinimized) setIsBhaMinimized(true); // Exclusión mutua
                                     }}
-                                    className={`w-full md:w-12 h-12 md:h-[350px] rounded-none flex flex-row md:flex-col items-center justify-center gap-2 md:gap-3 transition-all duration-300 border ${!isTrajectoryMinimized
+                                    className={`flex-1 md:w-12 h-12 md:h-[350px] rounded-none flex flex-row md:flex-col items-center justify-center gap-2 md:gap-3 transition-all duration-300 border ${!isTrajectoryMinimized
                                         ? 'bg-primary border-primary shadow-glow-primary text-canvas'
                                         : 'bg-primary/5 text-txt-muted border-primary/10 hover:bg-primary/15 hover:text-primary hover:border-primary/25'
                                         }`}
