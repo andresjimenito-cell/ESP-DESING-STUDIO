@@ -99,13 +99,6 @@ export const MobileMonitoreo: React.FC<Props> = ({
         }
     }, [showKeyModal]);
 
-    useEffect(() => {
-        const dismissed = sessionStorage.getItem('pwa-prompt-dismissed');
-        if (!dismissed) {
-            const timer = setTimeout(() => setShowInstallPrompt(true), 2500);
-            return () => clearTimeout(timer);
-        }
-    }, []);
 
     const suggestions = useMemo(() => {
         return selectedWell ? [
