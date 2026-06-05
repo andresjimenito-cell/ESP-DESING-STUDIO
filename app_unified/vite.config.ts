@@ -41,12 +41,6 @@ export default defineConfig(({ mode }) => {
           display: 'standalone',
           icons: [
             {
-              src: 'icono.png',
-              sizes: '46x46',
-              type: 'image/png',
-              purpose: 'any'
-            },
-            {
               src: 'icono192.png',
               sizes: '192x192',
               type: 'image/png',
