@@ -34,12 +34,18 @@ export default defineConfig(({ mode }) => {
         },
         manifest: {
           name: 'ESP DESIGN PRO',
-          short_name: 'ESP PRO',
+          short_name: 'ESP DESIGN PRO',
           description: 'Advanced Engineering Suite for ESP Design',
           theme_color: '#00d7d7',
           background_color: '#0a0c10',
           display: 'standalone',
           icons: [
+            {
+              src: 'app-logo.png',
+              sizes: '192x192',
+              type: 'image/png',
+              purpose: 'any maskable'
+            },
             {
               src: 'app-logo.png',
               sizes: '512x512',
