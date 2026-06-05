@@ -564,44 +564,47 @@ const App: React.FC = () => {
         file: batchFile, setFile: setBatchFile
     }), [batchView, batchDesigns, batchSurveys, batchFile]);
 
-    const installBanner = showInstallBanner && deferredPrompt && (
-        <div className="fixed bottom-6 left-6 z-[9999] max-w-sm w-full bg-surface-raised/95 backdrop-blur-xl border border-primary/20 p-5 shadow-2xl flex flex-col gap-3 animate-fadeIn text-txt-main">
-            <div className="flex items-start gap-3">
-                <div className="p-2 bg-primary/20 rounded-xl text-primary border border-primary/30 shrink-0">
-                    <Sparkles className="w-5 h-5 animate-pulse" />
+    const renderInstallBanner = () => {
+        if (!showInstallBanner || !deferredPrompt) return null;
+        return (
+            <div className="fixed bottom-6 left-6 z-[9999] max-w-sm w-full bg-surface-raised/95 backdrop-blur-xl border border-primary/20 p-5 shadow-2xl flex flex-col gap-3 animate-fadeIn text-txt-main">
+                <div className="flex items-start gap-3">
+                    <div className="p-2 bg-primary/20 rounded-xl text-primary border border-primary/30 shrink-0">
+                        <Sparkles className="w-5 h-5 animate-pulse" />
+                    </div>
+                    <div className="flex-1">
+                        <h4 className="text-xs font-black uppercase tracking-wider text-txt-main">Instalar ESP Design Studio</h4>
+                        <p className="text-[10px] font-bold text-txt-muted leading-relaxed uppercase mt-1 opacity-70">
+                            Acceso rápido y rendimiento óptimo desde tu pantalla de inicio.
+                        </p>
+                    </div>
+                    <button onClick={() => setShowInstallBanner(false)} className="text-txt-muted hover:text-txt-main">
+                        <X className="w-4 h-4" />
+                    </button>
                 </div>
-                <div className="flex-1">
-                    <h4 className="text-xs font-black uppercase tracking-wider text-txt-main">Instalar ESP Design Studio</h4>
-                    <p className="text-[10px] font-bold text-txt-muted leading-relaxed uppercase mt-1 opacity-70">
-                        Acceso rápido y rendimiento óptimo desde tu pantalla de inicio.
-                    </p>
+                <div className="flex gap-2">
+                    <button
+                        onClick={handleInstallClick}
+                        className="flex-1 bg-primary hover:bg-primary/80 text-white text-[10px] font-black uppercase py-2.5 rounded-none tracking-widest text-center shadow-lg transition-all"
+                    >
+                        Instalar App
+                    </button>
+                    <button
+                        onClick={() => setShowInstallBanner(false)}
+                        className="flex-1 bg-white/5 hover:bg-white/10 text-txt-muted text-[10px] font-black uppercase py-2.5 rounded-none border border-white/10 transition-all text-center"
+                    >
+                        Más Tarde
+                    </button>
                 </div>
-                <button onClick={() => setShowInstallBanner(false)} className="text-txt-muted hover:text-txt-main">
-                    <X className="w-4 h-4" />
-                </button>
             </div>
-            <div className="flex gap-2">
-                <button
-                    onClick={handleInstallClick}
-                    className="flex-1 bg-primary hover:bg-primary/80 text-white text-[10px] font-black uppercase py-2.5 rounded-none tracking-widest text-center shadow-lg transition-all"
-                >
-                    Instalar App
-                </button>
-                <button
-                    onClick={() => setShowInstallBanner(false)}
-                    className="flex-1 bg-white/5 hover:bg-white/10 text-txt-muted text-[10px] font-black uppercase py-2.5 rounded-none border border-white/10 transition-all text-center"
-                >
-                    Más Tarde
-                </button>
-            </div>
-        </div>
-    );
+        );
+    };
 
     if (!isLoggedIn) {
         return (
             <div className="relative min-h-screen">
                 <Login onLoginSuccess={handleLoginSuccess} />
-                {installBanner}
+                {renderInstallBanner()}
             </div>
         );
     }
@@ -682,14 +685,14 @@ const App: React.FC = () => {
         <div className="relative min-h-screen">
             {globalBackground}
             {mainContent}
-            {installBanner}
+            {renderInstallBanner()}
         </div>
     );
 
     return (
         <div className="flex h-screen font-sans overflow-hidden text-txt-main selection:bg-primary/30 transition-colors duration-500 relative">
             {globalBackground}
-            {installBanner}
+            {renderInstallBanner()}
 
             {toast.show && (
                 <div className="fixed top-20 right-8 z-[100] animate-fadeIn">
