@@ -6,12 +6,37 @@ import { getOptimizationPathLocalized, computeWellCapacity } from './PhaseMonito
 import { HealthTagLabels } from './PhaseMonitoreo.constants';
 
 export const WellListItem = React.memo(({ well, health, isActive, isMechVerified, onSelect }: any) => {
+    const { language } = useLanguage();
     const isPendiente = well.estadoActual === 'pendiente';
     const isESP = !well.als || well.als.toUpperCase() === 'ESP';
 
-    // Status mapping based on tiered health score
-    const statusColor = isPendiente ? 'bg-slate-500' : (health >= 90 ? 'bg-success shadow-glow-success' : health >= 60 ? 'bg-warning' : 'bg-danger shadow-glow-danger');
-    const statusLabel = isPendiente ? 'PENDIENTE' : (health >= 90 ? 'OPTIMAL' : health >= 60 ? 'CAUTION' : 'CRITICAL');
+    // Status color mapping based on operational state or health score
+    const statusColor = isPendiente 
+        ? 'bg-slate-500' 
+        : (well.estadoActual === 'fallado' 
+            ? 'bg-danger shadow-glow-danger animate-pulse' 
+            : (health >= 90 ? 'bg-success shadow-glow-success' : health >= 60 ? 'bg-warning' : 'bg-danger shadow-glow-danger'));
+
+    const getEstadoLabel = (estado: string) => {
+        if (estado === 'operativo') return language === 'es' ? 'OPERATIVO' : 'OPERATIONAL';
+        if (estado === 'fallado') return language === 'es' ? 'FALLADO' : 'FAILED';
+        if (estado === 'pull') return 'PULL';
+        if (estado === 'pendiente') return language === 'es' ? 'PENDIENTE' : 'PENDING';
+        return estado ? estado.toUpperCase() : '';
+    };
+
+    const getEstadoClass = (estado: string) => {
+        if (estado === 'operativo') return 'text-success border-success/25 bg-success/10';
+        if (estado === 'fallado') return 'text-danger border-danger/25 bg-danger/10 animate-pulse font-black';
+        if (estado === 'pull') return 'text-warning border-warning/25 bg-warning/10';
+        return 'text-txt-muted border-white/10 bg-white/5';
+    };
+
+    const getHealthLabel = (h: number) => {
+        if (h >= 90) return language === 'es' ? 'OPTIMO' : 'OPTIMAL';
+        if (h >= 60) return language === 'es' ? 'PRECAUCION' : 'CAUTION';
+        return language === 'es' ? 'CRITICO' : 'CRITICAL';
+    };
 
     return (
         <button
@@ -31,15 +56,26 @@ export const WellListItem = React.memo(({ well, health, isActive, isMechVerified
                     )}
                     {well.als && (
                         <span className={`${isESP ? 'bg-primary/10 text-primary border-primary/30' : 'bg-warning/10 text-warning border-warning/30'} border px-2 py-0.5 text-[7px] font-black uppercase tracking-widest shrink-0`}>
-                            {well.als} {!isESP && '- NO SOPORTADO'}
+                            {well.als} {!isESP && (language === 'es' ? '- NO SOPORTADO' : '- NOT SUPPORTED')}
                         </span>
                     )}
                 </div>
                 <span className="text-[10px] font-bold text-txt-muted uppercase tracking-widest mt-0.5 block">
-                    {isPendiente ? 'Pendiente por Instalacion' : `${Math.round(well.currentRate)} BPD · ${well.productionTest.freq || 0} Hz`}
+                    {isPendiente 
+                        ? (language === 'es' ? 'Pendiente por Instalación' : 'Pending Installation') 
+                        : `${Math.round(well.currentRate)} BPD · ${well.productionTest.freq || 0} Hz`}
                 </span>
             </div>
-            <span className={`text-[9px] font-black tracking-widest px-2.5 py-1 border shrink-0 ${isPendiente ? 'text-txt-muted border-white/10 bg-white/5' : (health >= 90 ? 'text-success border-success/25 bg-success/10' : health >= 60 ? 'text-warning border-warning/25 bg-warning/10' : 'text-danger border-danger/25 bg-danger/10')}`}>{statusLabel}</span>
+            <div className="flex flex-col items-end gap-1.5 shrink-0">
+                <span className={`text-[8px] font-black tracking-widest px-2 py-0.5 border ${getEstadoClass(well.estadoActual)}`}>
+                    {getEstadoLabel(well.estadoActual)}
+                </span>
+                {!isPendiente && (
+                    <span className={`text-[8px] font-black tracking-widest px-2 py-0.5 border ${health >= 90 ? 'text-success border-success/25 bg-success/10' : health >= 60 ? 'text-warning border-warning/25 bg-warning/10' : 'text-danger border-danger/25 bg-danger/10'}`}>
+                        {getHealthLabel(health)}
+                    </span>
+                )}
+            </div>
         </button>
     );
 });
