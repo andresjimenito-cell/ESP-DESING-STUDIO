@@ -194,10 +194,17 @@ const ANIMATIONS = `
 
   /* ── LOGO ── */
   .login-logo-wrapper {
-    animation: login-float-logo 5s ease-in-out infinite;
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .login-logo-wrapper:hover {
+    transform: scale(1.04);
   }
   .login-logo-halo {
-    animation: login-halo 4s ease-in-out infinite;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .login-logo-wrapper:hover ~ .login-logo-halo {
+    transform: scale(1.06);
+    opacity: 0.6;
   }
 
   /* ── FEATURE PILLS ── */
@@ -560,6 +567,28 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                     <div className="login-fade-up login-fade-up-1 flex flex-col items-center">
                         {/* Logo wrapper */}
                         <div style={{ position: 'relative', marginBottom: '32px' }}>
+                            {/* Logo */}
+                            <div
+                                className="login-logo-wrapper"
+                                style={{
+                                    width: '250px', height: '250px',
+                                    borderRadius: '50%',
+                                    overflow: 'hidden',
+                                    border: '2px solid rgba(var(--color-primary),0.25)',
+                                    background: isDarkTheme
+                                        ? 'rgba(255,255,255,0.04)'
+                                        : 'rgba(var(--color-primary),0.04)',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    padding: '12px',
+                                }}
+                            >
+                                <img
+                                    src="/LOGO.png"
+                                    alt="ESP Design Studio Logo"
+                                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                                />
+                            </div>
+
                             {/* Outer halo ring */}
                             <div
                                 className="login-logo-halo"
@@ -579,27 +608,6 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                                 background: 'radial-gradient(circle, rgba(var(--color-primary),0.15) 0%, transparent 70%)',
                                 pointerEvents: 'none',
                             }} />
-                            {/* Logo */}
-                            <div
-                                className="login-logo-wrapper"
-                                style={{
-                                    width: '180px', height: '180px',
-                                    borderRadius: '50%',
-                                    overflow: 'hidden',
-                                    border: '2px solid rgba(var(--color-primary),0.25)',
-                                    background: isDarkTheme
-                                        ? 'rgba(255,255,255,0.04)'
-                                        : 'rgba(var(--color-primary),0.04)',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    padding: '20px',
-                                }}
-                            >
-                                <img
-                                    src="/LOGO.png"
-                                    alt="ESP Design Studio Logo"
-                                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                                />
-                            </div>
                         </div>
 
                         {/* App Title */}
