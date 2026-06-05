@@ -197,14 +197,7 @@ const ANIMATIONS = `
     transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   }
   .login-logo-wrapper:hover {
-    transform: scale(1.04);
-  }
-  .login-logo-halo {
-    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-  .login-logo-wrapper:hover ~ .login-logo-halo {
-    transform: scale(1.06);
-    opacity: 0.6;
+    transform: scale(1.02);
   }
 
   /* ── FEATURE PILLS ── */
@@ -566,20 +559,13 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                     {/* Centered Logo & App Name */}
                     <div className="login-fade-up login-fade-up-1 flex flex-col items-center">
                         {/* Logo wrapper */}
-                        <div style={{ position: 'relative', marginBottom: '32px' }}>
+                        <div style={{ position: 'relative', marginBottom: '24px' }}>
                             {/* Logo */}
                             <div
                                 className="login-logo-wrapper"
                                 style={{
-                                    width: '250px', height: '250px',
-                                    borderRadius: '50%',
-                                    overflow: 'hidden',
-                                    border: '2px solid rgba(var(--color-primary),0.25)',
-                                    background: isDarkTheme
-                                        ? 'rgba(255,255,255,0.04)'
-                                        : 'rgba(var(--color-primary),0.04)',
+                                    width: '320px', height: '320px',
                                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    padding: '12px',
                                 }}
                             >
                                 <img
@@ -588,26 +574,6 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                                     style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                                 />
                             </div>
-
-                            {/* Outer halo ring */}
-                            <div
-                                className="login-logo-halo"
-                                style={{
-                                    position: 'absolute',
-                                    inset: '-26px',
-                                    borderRadius: '50%',
-                                    border: '1.5px solid rgba(var(--color-primary), 0.2)',
-                                    pointerEvents: 'none',
-                                }}
-                            />
-                            {/* Glow */}
-                            <div style={{
-                                position: 'absolute',
-                                inset: '-12px',
-                                borderRadius: '50%',
-                                background: 'radial-gradient(circle, rgba(var(--color-primary),0.15) 0%, transparent 70%)',
-                                pointerEvents: 'none',
-                            }} />
                         </div>
 
                         {/* App Title */}
