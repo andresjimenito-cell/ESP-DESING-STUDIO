@@ -36,7 +36,7 @@ export default defineConfig(({ mode }) => {
           name: 'ESP DESIGN PRO',
           short_name: 'ESP DESIGN PRO',
           description: 'Advanced Engineering Suite for ESP Design',
-          theme_color: '#00d7d7',
+          theme_color: '#1f2937',
           background_color: '#0a0c10',
           display: 'standalone',
           icons: [
