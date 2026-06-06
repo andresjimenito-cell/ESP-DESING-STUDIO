@@ -1162,7 +1162,7 @@ export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params, 
                     </div>
 
                     {/* Overlay del Gráfico de Perfil Hidráulico de Trayectoria vs TVD */}
-                    <div className="absolute left-4 top-12 bottom-12 w-[150px] bg-surface/80 backdrop-blur-md border border-surface-light/30 rounded-[1.5rem] p-3 z-20 flex flex-col pointer-events-auto shadow-2xl">
+                    <div className="absolute left-2 top-12 bottom-12 w-[130px] bg-surface/15 backdrop-blur-sm border border-surface-light/10 rounded-[1.5rem] p-2.5 z-20 flex flex-col pointer-events-auto shadow-none">
                         <h2 className="text-[8px] font-bold text-txt-muted uppercase tracking-widest mb-2 text-center">
                             Perfil Hidráulico
                         </h2>

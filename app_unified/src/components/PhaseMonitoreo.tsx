@@ -936,14 +936,14 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                     const currentHealth = wellHealthMap[selectedWell.id] || 0;
                     const healthLabel = currentHealth >= 90 ? 'OPTIMAL' : currentHealth >= 60 ? 'CAUTION' : 'CRITICAL';
                     const healthClass = currentHealth >= 90 ? 'text-success bg-success/10 border-success/25' : currentHealth >= 60 ? 'text-warning bg-warning/10 border-warning/25' : 'text-danger bg-danger/10 border-danger/25';
-                    const toolbarBtn = 'h-8 md:h-9 px-2.5 md:px-3.5 rounded-none text-[8px] font-black uppercase tracking-widest transition-all border flex items-center gap-1 md:gap-1.5 shrink-0';
+                    const toolbarBtn = 'h-8 md:h-9 px-2.5 md:px-3.5 rounded-xl text-[8px] font-black uppercase tracking-widest transition-all border flex items-center gap-1 md:gap-1.5 shrink-0';
                     return (
                         <>
-                            <div className="sticky top-0 z-[100] flex flex-row items-center justify-between gap-2 md:gap-3 bg-surface/95 backdrop-blur-xl py-2 px-2 md:py-3 md:px-3 border border-white/10 border-t-2 border-t-primary/40 shadow-lg w-full overflow-x-auto md:overflow-visible custom-scrollbar-h overflow-y-visible">
+                            <div className="sticky top-0 z-[100] flex flex-row items-center justify-between gap-2 md:gap-3 bg-gradient-to-r from-secondary/35 via-secondary/10 to-transparent backdrop-blur-xl bg-surface/85 py-2 px-2 md:py-3 md:px-3 border border-white/10 border-t-2 border-t-secondary/40 shadow-lg w-full overflow-x-auto md:overflow-visible custom-scrollbar-h overflow-y-visible rounded-2xl">
                                 {/* Left: back + well selector */}
                                 <div className="flex items-center gap-1.5 md:gap-3 shrink-0">
                                     <div className="flex items-center gap-1.5 md:gap-3">
-                                        <button onClick={onBack} className="h-8 w-8 md:h-11 md:w-11 flex items-center justify-center bg-white/5 hover:bg-primary/15 border border-white/10 text-txt-muted hover:text-primary transition-all shrink-0" title="Regresar al Inicio">
+                                        <button onClick={onBack} className="h-8 w-8 md:h-11 md:w-11 flex items-center justify-center bg-secondary/20 hover:bg-secondary/35 border border-secondary/30 text-secondary hover:text-white transition-all shrink-0 rounded-xl" title="Regresar al Inicio">
                                             <ChevronLeft className="w-4 h-4 md:w-5 md:h-5" />
                                         </button>
  
@@ -955,7 +955,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                                     }
                                                     setIsWellDropdownOpen(!isWellDropdownOpen);
                                                 }}
-                                                className={`h-8 md:h-11 flex items-center gap-1.5 md:gap-3 pl-2.5 pr-2 md:pl-4 md:pr-3 border transition-all max-w-[160px] md:max-w-[min(400px,65vw)] ${isWellDropdownOpen ? 'bg-primary/15 border-primary/40 text-primary' : 'bg-white/5 hover:bg-white/10 border-white/10'}`}
+                                                className={`h-8 md:h-11 flex items-center gap-1.5 md:gap-3 pl-2.5 pr-2 md:pl-4 md:pr-3 border transition-all max-w-[160px] md:max-w-[min(400px,65vw)] rounded-xl ${isWellDropdownOpen ? 'bg-primary/30 border-primary/50 text-primary shadow-glow-primary/25' : 'bg-primary/10 hover:bg-primary/20 border-primary/20 text-txt-main'}`}
                                             >
                                                 <Monitor className="w-3.5 h-3.5 md:w-4 md:h-4 text-primary shrink-0" />
                                                 <span className="text-xs md:text-xl font-black text-txt-main tracking-tighter uppercase truncate drop-shadow-sm">{selectedWell.name}</span>
@@ -976,7 +976,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                                         />
                                                         <div
                                                             ref={wellDropdownPanelRef}
-                                                            className="fixed md:absolute top-[8%] md:top-full left-4 right-4 md:left-0 md:right-auto mt-2 z-[9999] md:z-[500] flex flex-col bg-surface border border-white/15 border-t-2 border-t-primary/50 shadow-[0_28px_80px_rgba(0,0,0,0.55)] w-[calc(100vw-32px)] md:w-[580px] h-[80vh] md:h-auto max-h-[80vh] md:max-h-[82vh] overflow-hidden"
+                                                            className="fixed md:absolute top-[8%] md:top-full left-4 right-4 md:left-0 md:right-auto mt-2 z-[9999] md:z-[500] flex flex-col bg-surface border border-white/15 border-t-2 border-t-primary/70 shadow-[0_28px_80px_rgba(0,0,0,0.55)] w-[calc(100vw-32px)] md:w-[580px] h-[80vh] md:h-auto max-h-[80vh] md:max-h-[82vh] overflow-hidden rounded-2xl"
                                                         >
                                                             <div className="shrink-0 px-4 py-3 border-b border-white/10 bg-gradient-to-r from-primary/10 via-transparent to-secondary/5">
                                                                 <div className="flex items-center justify-between gap-3 mb-3">
@@ -1134,7 +1134,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                         onClick={(e) => handleProtectedLink(e, "https://1drv.ms/x/c/06cc4035ad46ff97/IQClWg69qziUQZ4pcxlcyoF5AdzaFbqGWhkSVp1rxJKvfwQ?e=Zuk6P7")}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="h-8 px-2.5 bg-primary/10 hover:bg-primary text-primary hover:text-white border border-primary/25 rounded-none text-[8px] font-black uppercase tracking-widest transition-all flex items-center gap-1.5 shrink-0"
+                                        className="h-8 px-2.5 bg-primary/25 hover:bg-primary/35 text-primary border border-primary/40 rounded-xl text-[8px] font-black uppercase tracking-widest transition-all flex items-center gap-1.5 shrink-0"
                                         title={language === 'es' ? 'Abrir Excel de Diseño' : 'Open Design Excel'}
                                     >
                                         <FileSpreadsheet className="w-3.5 h-3.5" />
@@ -1146,7 +1146,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                         onClick={(e) => handleProtectedLink(e, "https://1drv.ms/x/c/06cc4035ad46ff97/IQCX60W0l5YeQbDd8jHpZlMJAa0JHU31uqYaXJU1Tawo8I8?e=SD43E4")}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="h-8 px-2.5 bg-secondary/10 hover:bg-secondary text-secondary hover:text-white border border-secondary/25 rounded-none text-[8px] font-black uppercase tracking-widest transition-all flex items-center gap-1.5 shrink-0"
+                                        className="h-8 px-2.5 bg-secondary/25 hover:bg-secondary/35 text-secondary hover:text-white border border-secondary/40 rounded-xl text-[8px] font-black uppercase tracking-widest transition-all flex items-center gap-1.5 shrink-0"
                                         title={language === 'es' ? 'Abrir Excel de Pruebas' : 'Open Tests Excel'}
                                     >
                                         <FileSpreadsheet className="w-3.5 h-3.5" />
@@ -1207,16 +1207,16 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                         {/* COMPACT ANALYTICS SECTION: PHASE 6 + BHA SCHEME */}
                         <div className="flex flex-col md:flex-row gap-2 items-stretch w-full min-h-[900px] relative">
                             {/* NARROW SIDEBAR CONTROL AREA */}
-                            <div className="flex flex-row md:flex-col gap-3 shrink-0 w-full md:w-16 bg-surface/40 border border-white/5 backdrop-blur-md p-2 justify-center md:justify-start items-center relative z-50">
+                            <div className="flex flex-row md:flex-col gap-3 shrink-0 w-full md:w-16 bg-surface/40 border border-white/5 backdrop-blur-md p-2 justify-center md:justify-start items-center relative z-50 rounded-2xl">
                                 {/* TAB: BHA */}
                                 <button
                                     onClick={() => {
                                         setIsBhaMinimized(!isBhaMinimized);
                                         if (isBhaMinimized) setIsTrajectoryMinimized(true); // Exclusión mutua
                                     }}
-                                    className={`flex-1 md:w-12 h-12 md:h-[350px] rounded-none flex flex-row md:flex-col items-center justify-center gap-2 md:gap-3 transition-all duration-300 border ${!isBhaMinimized
+                                    className={`flex-1 md:w-12 h-12 md:h-[350px] rounded-xl flex flex-row md:flex-col items-center justify-center gap-2 md:gap-3 transition-all duration-300 border ${!isBhaMinimized
                                         ? 'bg-primary border-primary shadow-glow-primary text-canvas'
-                                        : 'bg-primary/5 text-txt-muted border-primary/10 hover:bg-primary/15 hover:text-primary hover:border-primary/25'
+                                        : 'bg-primary/10 text-txt-muted border-primary/20 hover:bg-primary/20 hover:text-primary hover:border-primary/30'
                                         }`}
                                     style={{
                                         color: !isBhaMinimized ? 'rgb(var(--color-canvas))' : undefined
@@ -1238,9 +1238,9 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                         setIsTrajectoryMinimized(!isTrajectoryMinimized);
                                         if (isTrajectoryMinimized) setIsBhaMinimized(true); // Exclusión mutua
                                     }}
-                                    className={`flex-1 md:w-12 h-12 md:h-[350px] rounded-none flex flex-row md:flex-col items-center justify-center gap-2 md:gap-3 transition-all duration-300 border ${!isTrajectoryMinimized
+                                    className={`flex-1 md:w-12 h-12 md:h-[350px] rounded-xl flex flex-row md:flex-col items-center justify-center gap-2 md:gap-3 transition-all duration-300 border ${!isTrajectoryMinimized
                                         ? 'bg-primary border-primary shadow-glow-primary text-canvas'
-                                        : 'bg-primary/5 text-txt-muted border-primary/10 hover:bg-primary/15 hover:text-primary hover:border-primary/25'
+                                        : 'bg-primary/10 text-txt-muted border-primary/20 hover:bg-primary/20 hover:text-primary hover:border-primary/30'
                                         }`}
                                     style={{
                                         color: !isTrajectoryMinimized ? 'rgb(var(--color-canvas))' : undefined
@@ -1307,7 +1307,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
 
                             {/* OVERLAY: TRAYECTORIA */}
                             {!isTrajectoryMinimized && (
-                                <div className="absolute md:left-[80px] left-0 top-0 h-[90vh] max-h-[950px] min-h-[600px] w-full md:w-[1200px] max-w-full md:max-w-[calc(100vw-120px)] z-40 glass-surface rounded-br-3xl rounded-tr-3xl overflow-hidden border border-white/10 shadow-[0_0_100px_rgba(0,0,0,0.6)] flex flex-col animate-slideRight animate-fadeIn">
+                                <div className="absolute md:left-[80px] left-0 top-0 h-[92vh] max-h-[1000px] min-h-[600px] w-full md:w-[1350px] max-w-full md:max-w-[calc(100vw-120px)] z-40 glass-surface rounded-br-3xl rounded-tr-3xl overflow-hidden border border-white/10 shadow-[0_0_100px_rgba(0,0,0,0.6)] flex flex-col animate-slideRight animate-fadeIn">
                                     <div className="p-4 border-b border-white/5 flex justify-between items-center bg-surface-raised backdrop-blur-md">
                                         <button
                                             onClick={() => setIsTrajectoryMinimized(true)}

@@ -28,7 +28,7 @@ const StatusBar = ({ well, language }: { well: WellFleetItem; language: string }
     const statusText = well.estadoActual ? well.estadoActual.toUpperCase() : (isRunning ? 'OPERANDO' : 'DETENIDO');
 
     return (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 px-5 py-3.5 bg-canvas/65 border-b border-surface-light/85 backdrop-blur-md shrink-0">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 px-5 py-3.5 bg-canvas/45 border-b border-surface-light/35 backdrop-blur-md shrink-0">
             <div className="flex flex-col min-w-0">
                 <span className="text-[9px] font-black text-txt-muted uppercase tracking-wider">
                     {language === 'es' ? 'Estado' : 'Status'}
@@ -88,14 +88,14 @@ const MessageBubble = ({
     return (
         <div className={`flex w-full gap-3 ${isUser ? 'justify-end' : 'justify-start'}`}>
             {!isUser && (
-                <div className="flex-shrink-0 w-8 h-8 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shadow-inner mt-1">
-                    <Sparkles className="w-4 h-4 text-primary animate-pulse" />
+                <div className="flex-shrink-0 w-8 h-8 rounded-xl bg-primary/10 border border-primary/25 flex items-center justify-center overflow-hidden shadow-inner mt-1">
+                    <img src="/icono.png" alt="IA" className="w-5 h-5 object-contain" />
                 </div>
             )}
             <div
                 className={`max-w-[85%] px-5 py-4 rounded-2xl text-[13.5px] leading-relaxed font-medium shadow-lg transition-all duration-300 ${isUser
                     ? 'bg-gradient-to-br from-primary via-primary/95 to-primary/90 text-white rounded-tr-none border-0 shadow-primary/15'
-                    : 'bg-surface/40 border border-surface-light/80 text-txt-main rounded-tl-none backdrop-blur-md'
+                    : 'bg-surface/20 border border-surface-light/35 text-txt-main rounded-tl-none backdrop-blur-md shadow-sm'
                     }`}
             >
                 {isUser ? (
@@ -796,8 +796,8 @@ RULE 11 — HISTORIAL DE PRUEBAS Y AJUSTE HISTÓRICO
                         flexDirection: 'row',
                         overflow: 'hidden',
                         borderRadius: isMobile ? 0 : 28,
-                        background: 'rgb(var(--color-surface) / 92%)',
-                        border: isMobile ? 'none' : '1px solid rgb(var(--color-primary) / 15%)',
+                        background: 'rgb(var(--color-surface) / 80%)',
+                        border: isMobile ? 'none' : '1px solid rgb(var(--color-surface-light) / 40%)',
                         boxShadow: '0 32px 64px rgba(0,0,0,0.45), 0 0 0 1px rgb(var(--color-primary) / 5%), inset 0 1px 0 rgb(var(--color-text-main) / 10%)',
                         backdropFilter: 'blur(32px) saturate(150%)',
                         position: isMobile ? 'fixed' : 'relative',
@@ -809,7 +809,7 @@ RULE 11 — HISTORIAL DE PRUEBAS Y AJUSTE HISTÓRICO
                         className={`flex flex-col h-full border-r border-surface-light/40 transition-all duration-300 overflow-hidden shrink-0`}
                         style={{
                             width: isSidebarOpen ? (isMobile ? '100%' : 280) : (isMobile ? 0 : 68),
-                            background: 'rgb(var(--color-canvas) / 95%)',
+                            background: 'rgb(var(--color-canvas) / 75%)',
                             backdropFilter: 'blur(16px)',
                             position: isMobile && isSidebarOpen ? 'absolute' : 'relative',
                             zIndex: 40,
@@ -821,7 +821,7 @@ RULE 11 — HISTORIAL DE PRUEBAS Y AJUSTE HISTÓRICO
                                 {/* Sidebar Header */}
                                 <div className="flex items-center justify-between mb-4">
                                     <div className="flex items-center gap-2">
-                                        <Sparkles className="w-5 h-5 text-primary animate-pulse" />
+                                        <img src="/icono.png" alt="IA" className="w-5 h-5 object-contain" />
                                         <span className="text-[12px] font-black uppercase tracking-widest text-txt-main font-mono">
                                             IA Monitoreo
                                         </span>
@@ -935,7 +935,7 @@ RULE 11 — HISTORIAL DE PRUEBAS Y AJUSTE HISTÓRICO
                     {/* CENTRAL CHAT AREA */}
                     <div className="flex-1 h-full flex flex-col overflow-hidden bg-transparent">
                         {/* HEADER */}
-                        <div className="p-4 border-b border-surface-light flex items-center justify-between bg-gradient-to-r from-primary/5 via-transparent to-transparent backdrop-blur-md shrink-0">
+                        <div className="p-4 border-b border-surface-light/30 flex items-center justify-between bg-gradient-to-r from-primary/10 via-canvas/10 to-transparent backdrop-blur-md shrink-0">
                             <div className="flex items-center gap-3">
                                 {!isSidebarOpen && (
                                     <button
@@ -1045,12 +1045,12 @@ RULE 11 — HISTORIAL DE PRUEBAS Y AJUSTE HISTÓRICO
                         )}
 
                         {/* FEED AND CHAT CONTENT */}
-                        <div className="flex-1 overflow-y-auto p-5 custom-scrollbar bg-canvas/10 flex flex-col">
+                        <div className="flex-1 overflow-y-auto p-5 custom-scrollbar bg-transparent flex flex-col">
                             {msgs.length <= 1 ? (
                                 // GEMINI STYLE WELCOME SCREEN
                                 <div className="flex-1 flex flex-col justify-center items-center max-w-3xl mx-auto w-full py-8 text-center select-none animate-fadeIn">
                                     <div className="mb-6 bg-gradient-to-br from-primary/10 to-primary/5 p-4 rounded-3xl border border-primary/20">
-                                        <Sparkles className="w-12 h-12 text-primary animate-pulse" />
+                                        <img src="/icono.png" alt="IA Monitoreo" className="w-12 h-12 object-contain animate-pulse" />
                                     </div>
                                     <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-2" style={{ color: 'rgb(var(--color-primary))' }}>
                                         {language === 'es' ? 'Bienvenido, Ingeniero' : 'Welcome, Engineer'}
@@ -1067,7 +1067,7 @@ RULE 11 — HISTORIAL DE PRUEBAS Y AJUSTE HISTÓRICO
                                             <div
                                                 key={idx}
                                                 onClick={() => handleSuggestionClick(s.prompt)}
-                                                className="p-4 rounded-2xl bg-surface-light/20 border border-surface-light/35 hover:border-primary/30 hover:bg-primary/5 cursor-pointer text-left transition-all duration-300 group hover:-translate-y-0.5"
+                                                className="p-4 rounded-2xl bg-surface-light/10 border border-surface-light/25 hover:border-primary/35 hover:bg-primary/10 hover:shadow-lg hover:shadow-primary/5 cursor-pointer text-left transition-all duration-300 group hover:-translate-y-0.5"
                                             >
                                                 <div className="flex items-start gap-3">
                                                     <div className="p-2 bg-primary/10 text-primary rounded-xl shrink-0 group-hover:scale-110 transition-transform">
@@ -1103,7 +1103,7 @@ RULE 11 — HISTORIAL DE PRUEBAS Y AJUSTE HISTÓRICO
                                             <div className="flex-shrink-0 w-8 h-8 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shadow-inner mt-1">
                                                 <RefreshCw className="w-4 h-4 text-primary animate-spin" />
                                             </div>
-                                            <div className="bg-surface/40 border border-surface-light/80 rounded-2xl rounded-tl-none px-5 py-4 backdrop-blur-md shadow-lg">
+                                            <div className="bg-surface/20 border border-surface-light/35 rounded-2xl rounded-tl-none px-5 py-4 backdrop-blur-md shadow-md">
                                                 <ThinkingDots />
                                             </div>
                                         </div>
@@ -1114,7 +1114,7 @@ RULE 11 — HISTORIAL DE PRUEBAS Y AJUSTE HISTÓRICO
                         </div>
 
                         {/* INPUT AREA */}
-                        <div className="p-4 shrink-0 bg-surface/30 border-t border-surface-light/40 flex flex-col items-center">
+                        <div className="p-4 shrink-0 bg-surface/10 backdrop-blur-md border-t border-surface-light/25 flex flex-col items-center">
                             <div className="w-full max-w-3xl relative flex items-center">
                                 {/* Plus / Clear context button on Left */}
                                 <button
@@ -1131,7 +1131,7 @@ RULE 11 — HISTORIAL DE PRUEBAS Y AJUSTE HISTÓRICO
                                     onChange={e => setInput(e.target.value)}
                                     onKeyDown={e => e.key === 'Enter' && send()}
                                     placeholder={language === 'es' ? 'Pregunta a Gemini...' : 'Ask about fleet/wells...'}
-                                    className="w-full bg-canvas/70 border border-surface-light rounded-[24px] pl-14 pr-24 py-4 text-sm text-txt-main outline-none focus:border-primary focus:ring-2 focus:ring-primary/25 transition-all font-semibold placeholder:text-txt-muted/40 backdrop-blur-xl shadow-inner"
+                                    className="w-full bg-canvas/45 border border-surface-light/30 rounded-[24px] pl-14 pr-24 py-4 text-sm text-txt-main outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 transition-all font-semibold placeholder:text-txt-muted/40 backdrop-blur-xl shadow-inner"
                                 />
 
                                 {/* Model Badge & Send button on Right */}
@@ -1190,13 +1190,13 @@ RULE 11 — HISTORIAL DE PRUEBAS Y AJUSTE HISTÓRICO
 
             <button onClick={() => setIsOpen(!isOpen)} className={`pointer-events-auto relative flex items-center justify-center w-[72px] h-[72px] shadow-[0_15px_40px_rgba(0,0,0,0.6)] transition-all duration-500 group border-[1.5px] overflow-hidden ${isOpen ? 'bg-surface-raised text-primary rotate-90 scale-95 rounded-full border-surface-light/40' : 'rounded-[24px] border-white/20 hover:scale-110 hover:-translate-y-1'}`}
                 style={!isOpen ? {
-                    background: 'rgb(var(--color-primary))',
-                    boxShadow: '0 15px 40px rgba(0,0,0,0.6), 0 0 20px rgb(var(--color-primary) / 0.4)',
+                    background: 'linear-gradient(135deg, rgb(var(--color-primary)) 0%, rgb(var(--color-primary) / 0.8) 100%)',
+                    boxShadow: '0 15px 40px rgba(var(--color-primary) / 0.25), 0 0 20px rgb(var(--color-primary) / 0.4)',
                 } : undefined}
             >
                 {isOpen ? <X className="w-7 h-7" /> : (
                     <div className="relative flex items-center justify-center w-full h-full">
-                        <Brain className="w-8 h-8 absolute text-white group-hover:scale-110 transition-transform duration-500 group-hover:rotate-[5deg]" />
+                        <img src="/icono.png" alt="IA Monitoreo" className="w-8 h-8 absolute object-contain group-hover:scale-110 transition-transform duration-500 group-hover:rotate-[5deg]" />
                         <Sparkles className="w-4 h-4 absolute top-3 right-3 text-white/70 animate-pulse drop-shadow-md" />
                         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-white/30 via-transparent to-transparent opacity-60 pointer-events-none"></div>
                     </div>

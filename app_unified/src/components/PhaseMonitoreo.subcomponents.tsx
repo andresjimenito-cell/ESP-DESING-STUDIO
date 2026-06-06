@@ -52,7 +52,7 @@ export const WellListItem = React.memo(({ well, health, isActive, isMechVerified
                 <div className="flex items-center gap-2 flex-wrap">
                     <span className={`text-[13px] font-black uppercase tracking-tight truncate ${isActive ? 'text-primary' : 'text-txt-main'}`}>{well.name}</span>
                     {isMechVerified && (
-                        <span className="bg-cyan-500/10 text-cyan-500 border border-cyan-500/30 px-2 py-0.5 text-[7px] font-black uppercase tracking-widest shrink-0">MECH</span>
+                        <span className="bg-primary/20 text-primary border border-primary/35 px-2 py-0.5 text-[7px] font-black uppercase tracking-widest shrink-0 shadow-glow-primary/10">MECH</span>
                     )}
                     {well.als && (
                         <span className={`${isESP ? 'bg-primary/10 text-primary border-primary/30' : 'bg-warning/10 text-warning border-warning/30'} border px-2 py-0.5 text-[7px] font-black uppercase tracking-widest shrink-0`}>

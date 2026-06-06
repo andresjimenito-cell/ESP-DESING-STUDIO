@@ -38,18 +38,18 @@ const getScenarioParams = (baseParams: SystemParams, scenario: ScenarioData): Sy
 };
 
 const DesignMetric = ({ label, value }: any) => (
-    <div className={`bg-surface/50 backdrop-blur-md border border-primary/20 rounded-xl p-3 flex flex-col justify-between transition-all hover:bg-white/5 shadow-sm`}>
-        <span className="text-[10px] text-txt-muted font-black uppercase tracking-[0.1em] mb-1">{label}</span>
-        <span className="text-sm font-mono font-black text-txt-main tracking-tighter">{value}</span>
+    <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-3.5 flex flex-col justify-between transition-all hover:bg-white/[0.05] hover:border-white/10 shadow-sm font-sans">
+        <span className="text-[9.5px] text-txt-muted font-extrabold uppercase tracking-wider mb-1">{label}</span>
+        <span className="text-[13px] font-black text-txt-main font-mono tracking-tight">{value}</span>
     </div>
 );
 
 const PremiumField = ({ label, value, unit, icon: Icon, onChange, color = 'primary' }: any) => {
     const colorClasses = {
-        primary: { border: 'border-primary/30 focus-within:border-primary/60 focus-within:ring-primary/20', line: 'bg-primary', icon: 'text-primary', unit: 'text-primary' },
-        secondary: { border: 'border-secondary/30 focus-within:border-secondary/60 focus-within:ring-secondary/20', line: 'bg-secondary', icon: 'text-secondary', unit: 'text-secondary' },
-        success: { border: 'border-success/30 focus-within:border-success/60 focus-within:ring-success/20', line: 'bg-success', icon: 'text-success', unit: 'text-success' },
-    }[color] || { border: 'border-primary/30 focus-within:border-primary/60 focus-within:ring-primary/20', line: 'bg-primary', icon: 'text-primary', unit: 'text-primary' };
+        primary: { border: 'border-white/10 focus-within:border-primary/50 focus-within:ring-primary/10', line: 'bg-primary', icon: 'text-primary', unit: 'text-primary/70' },
+        secondary: { border: 'border-white/10 focus-within:border-secondary/50 focus-within:ring-secondary/10', line: 'bg-secondary', icon: 'text-secondary', unit: 'text-secondary/70' },
+        success: { border: 'border-white/10 focus-within:border-success/50 focus-within:ring-success/10', line: 'bg-success', icon: 'text-success', unit: 'text-success/70' },
+    }[color] || { border: 'border-white/10 focus-within:border-primary/50 focus-within:ring-primary/10', line: 'bg-primary', icon: 'text-primary', unit: 'text-primary/70' };
 
     const [isFocused, setIsFocused] = useState(false);
     const [draft, setDraft] = useState('');
@@ -73,11 +73,11 @@ const PremiumField = ({ label, value, unit, icon: Icon, onChange, color = 'prima
     const displayValue = isFocused ? draft : formatForInput(value);
 
     return (
-        <div className={`bg-surface/50 backdrop-blur-md border ${colorClasses.border} rounded-xl p-3 flex flex-col justify-between group h-20 transition-all shadow-[0_4px_30px_rgba(0,0,0,0.15)] relative overflow-hidden focus-within:ring-1`}>
-            <div className={`absolute top-0 left-0 w-1 h-full ${colorClasses.line}`}></div>
+        <div className={`bg-surface/40 backdrop-blur-md border ${colorClasses.border} rounded-2xl p-4 flex flex-col justify-between group h-20 transition-all duration-300 shadow-md relative overflow-hidden focus-within:ring-2`}>
+            <div className={`absolute top-0 left-0 w-1 h-full ${colorClasses.line} opacity-70 group-focus-within:opacity-100 transition-opacity`}></div>
             <div className="flex justify-between items-center mb-0.5 relative z-10">
-                <label className="text-[10px] font-black text-txt-muted uppercase tracking-[0.1em]">{label}</label>
-                <Icon className={`w-3 h-3 ${colorClasses.icon} opacity-80`} />
+                <label className="text-[9.5px] font-extrabold text-txt-muted uppercase tracking-wider group-focus-within:text-txt-main transition-colors">{label}</label>
+                <Icon className={`w-3.5 h-3.5 ${colorClasses.icon} opacity-60 group-focus-within:opacity-100 transition-all`} />
             </div>
             <div className="flex items-baseline gap-2 relative z-10">
                 <input
@@ -96,9 +96,9 @@ const PremiumField = ({ label, value, unit, icon: Icon, onChange, color = 'prima
                     onKeyDown={(e) => {
                         if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
                     }}
-                    className="w-full bg-transparent text-lg font-black text-txt-main outline-none font-mono tracking-tighter select-all"
+                    className="w-full bg-transparent text-lg font-black text-txt-main outline-none font-mono tracking-tight select-all placeholder-txt-muted/20"
                 />
-                <span className={`text-[9px] font-black ${colorClasses.unit} uppercase mb-0.5`}>{unit}</span>
+                <span className={`text-[9.5px] font-black ${colorClasses.unit} uppercase mb-0.5 select-none`}>{unit}</span>
             </div>
         </div>
     );
@@ -127,31 +127,31 @@ const normalizeDateForInput = (value: any): string => {
 };
 
 const PremiumDate = ({ label, value, icon: Icon, onChange }: any) => (
-    <div className="bg-surface/50 backdrop-blur-md border border-primary/20 rounded-xl p-3 flex flex-col justify-between group h-20 transition-all shadow-[0_4px_30px_rgba(0,0,0,0.15)] relative overflow-hidden focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/20">
+    <div className="bg-surface/40 backdrop-blur-md border border-white/10 hover:border-white/20 rounded-2xl p-4 flex flex-col justify-between group h-20 transition-all duration-300 shadow-md relative overflow-hidden focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/10">
         <div className="flex justify-between items-center mb-0.5 relative z-10">
-            <label className="text-[10px] font-black text-txt-muted uppercase tracking-[0.1em]">{label}</label>
-            <Icon className="w-3 h-3 text-primary opacity-80" />
+            <label className="text-[9.5px] font-extrabold text-txt-muted uppercase tracking-wider group-focus-within:text-txt-main transition-colors">{label}</label>
+            <Icon className="w-3.5 h-3.5 text-primary opacity-60 group-focus-within:opacity-100 transition-opacity" />
         </div>
         <div className="flex items-baseline gap-2 relative z-10">
             <input
                 type="date"
                 value={normalizeDateForInput(value)}
                 onChange={(e) => onChange(e.target.value)}
-                className="w-full bg-transparent text-[11px] font-black text-txt-main outline-none font-mono tracking-tighter cursor-pointer"
+                className="w-full bg-transparent text-xs font-black text-txt-main outline-none font-mono tracking-tight cursor-pointer"
             />
         </div>
     </div>
 );
 
 const RunLifeCard = ({ label, value, sub }: { label: string; value: string; sub: string }) => (
-    <div className="bg-surface/50 backdrop-blur-md border border-primary/20 rounded-xl p-3 flex flex-col justify-between group h-20 transition-all shadow-[0_4px_30px_rgba(0,0,0,0.15)] relative overflow-hidden">
+    <div className="bg-surface/40 backdrop-blur-md border border-white/10 hover:border-white/20 rounded-2xl p-4 flex flex-col justify-between group h-20 transition-all duration-300 shadow-md relative overflow-hidden">
         <div className="flex justify-between items-center mb-0.5 relative z-10">
-            <label className="text-[10px] font-black text-txt-muted uppercase tracking-[0.1em]">{label}</label>
-            <Clock className="w-3 h-3 text-primary opacity-80" />
+            <label className="text-[9.5px] font-extrabold text-txt-muted uppercase tracking-wider">{label}</label>
+            <Clock className="w-3.5 h-3.5 text-primary opacity-60" />
         </div>
-        <div className="flex flex-col relative z-10">
-            <span className="text-[12px] font-black text-txt-main tracking-tight">{value}</span>
-            <span className="text-[9px] font-black text-primary/70 uppercase tracking-widest">{sub}</span>
+        <div className="flex flex-col relative z-10 mt-1">
+            <span className="text-[11px] font-black text-txt-main tracking-tight font-mono">{value}</span>
+            <span className="text-[8.5px] font-black text-primary/70 uppercase tracking-widest mt-0.5">{sub}</span>
         </div>
     </div>
 );
@@ -200,7 +200,6 @@ const CompPremium = ({ label, design, actual, unit, color }: any) => {
 
 // --- SHARED VSD SENSITIVITY ROW CALCULATOR ---
 // Physically correct approach - same method as the "Capacidad Maxima" button:
-// 1. Calibrate system curve with a vertical offset so it passes through the REAL measured point.
 // 2. For each target Hz, scan flow range to find where the scaled pump curve CROSSES the system curve.
 // 3. Feed that real intersection into calculateSystemResults for all derived values.
 // Physical consistency guaranteed: higher Hz - more flow - more drawdown - LOWER Pwf - LOWER PIP - LESS submergence.
@@ -468,8 +467,8 @@ const HistoryMatchReport = ({ onClose, designParams, actualParams, pump, designR
 
             const imgData = canvas.toDataURL('image/png');
             const pdf = new jsPDF('p', 'mm', 'a4');
-            const imgWidth = 210; 
-            const pageHeight = 297;  
+            const imgWidth = 210;
+            const pageHeight = 297;
             const imgHeight = (canvas.height * imgWidth) / canvas.width;
             let heightLeft = imgHeight;
 
@@ -580,8 +579,8 @@ const HistoryMatchReport = ({ onClose, designParams, actualParams, pump, designR
                     </div>
                 </div>
                 <div className="flex gap-4">
-                    <button 
-                        onClick={handleDownloadPDF} 
+                    <button
+                        onClick={handleDownloadPDF}
                         disabled={isDownloading}
                         className="flex items-center gap-2 bg-primary hover:bg-primary/80 disabled:bg-slate-400 text-white px-5 py-2 rounded-none font-bold text-xs uppercase shadow-lg active:scale-95 transition-all"
                     >
@@ -814,7 +813,7 @@ const HistoryMatchReport = ({ onClose, designParams, actualParams, pump, designR
                 </div>
             </div>
         </div>
-    , document.body);
+        , document.body);
 };
 
 // --- MAIN COMPONENT ---
@@ -981,17 +980,7 @@ const Phase6Component: React.FC<Props & { isMobile?: boolean }> = ({ params, set
         };
     }, [fieldData.startDate, params, language]);
 
-    // --- SIMULATION STATE (MAXIMA CAPACIDAD) ---
-    // --- SIMULATION STATE (MAXIMA CAPACIDAD) ---
-    const [isMaxCapActive, setIsMaxCapActive] = useState(false);
-    const [simFreq, setSimFreq] = useState(fieldData.frequency || designFreq || 60);
 
-    // Sync Simulation Frequency when activated or when external params change
-    useEffect(() => {
-        if (isMaxCapActive) {
-            setSimFreq(fieldData.frequency);
-        }
-    }, [isMaxCapActive, fieldData.frequency]);
 
     // Stable key: only re-sync local fields when external telemetry actually changes (well switch / playback)
     const externalHmKey = useMemo(() => {
@@ -1027,8 +1016,7 @@ const Phase6Component: React.FC<Props & { isMobile?: boolean }> = ({ params, set
             startDate: h.startDate ?? '',
             matchDate: h.matchDate ?? '',
         });
-        if (!isMaxCapActive) setSimFreq(h.frequency ?? designFreq ?? 60);
-    }, [syncParams, externalHmKey, params.historyMatch, params.inflow?.pStatic, isMaxCapActive, designFreq]);
+    }, [syncParams, externalHmKey, params.historyMatch, params.inflow?.pStatic, designFreq]);
 
     const setParamsRef = useRef(setParams);
     setParamsRef.current = setParams;
@@ -1252,102 +1240,6 @@ const Phase6Component: React.FC<Props & { isMobile?: boolean }> = ({ params, set
         return isNaN(pct) || !isFinite(pct) ? 0 : Math.max(0, pct);
     }, [pump, fieldData.rate, fieldData.frequency, actualResSummary.actualParams]);
 
-    // --- SIMULATION RESULTS (INTERSECTION AT SIM FREQ) ---
-    const simResult = useMemo(() => {
-        if (!isMaxCapActive || !pump) return null;
-
-        // CONSISTENCY GUARD: If simFreq is identical to field, return field results exactly
-        if (Math.abs(simFreq - fieldData.frequency) < 0.01) {
-            return {
-                ...actualRes,
-                head: actualRes.head,
-                rate: actualRes.rate,
-                compFlow: { pct: 0, dir: 'UP' },
-                compHead: { pct: 0, dir: 'UP' },
-                compPwf: { pct: 0, dir: 'UP' },
-                compPip: { pct: 0, dir: 'UP' }
-            };
-        }
-
-        // Ensure we are using ONLY the field conditions (Match)
-        const baseFreq = pump.nameplateFrequency || 60;
-        const ratio = simFreq / baseFreq;
-
-        // We increase granularity for accuracy
-        const maxExpectedFlow = (pump.maxGraphRate || 6000) * ratio;
-        const steps = 400;
-        const stepSize = maxExpectedFlow / steps;
-
-        let bestRate = 0;
-        let bestHead = 0;
-
-        const { sysCurveFrictionMultiplier, actualParams } = actualResSummary;
-
-        // Helper para escalar el TDH preservando la forma de la friccion intacta al % de error
-        const hStatSim = calculateTDH(0.1, actualParams);
-        const getAdjustedSystemHead = (flowRate: number) => {
-            const rawH = calculateTDH(flowRate, actualParams);
-            if (flowRate < 5) return rawH;
-            const fric = rawH - hStatSim;
-            return hStatSim + fric * sysCurveFrictionMultiplier;
-        };
-
-        // SYSTEM CURVE BASE: actualResSummary contains calculatedIP + sysCurveFrictionMultiplier (Match correction)
-        for (let i = 0; i < steps; i++) {
-            const q = i * stepSize;
-            if (q === 0) continue;
-
-            const qB = q / ratio;
-            const pHead = calculateBaseHead(qB, pump) * Math.pow(ratio, 2);
-            // SYSTEM REQUIREMENT = Theoretical System TDH * Friction Multiplier
-            const sHead = getAdjustedSystemHead(q);
-
-            if (pHead < sHead) {
-                // Approximate linear intersection
-                const prevQ = (i - 1) * stepSize;
-                const prevQB = prevQ / ratio;
-                const prevPHead = calculateBaseHead(prevQB, pump) * Math.pow(ratio, 2);
-                const prevSHead = getAdjustedSystemHead(prevQ);
-
-                const d1 = prevPHead - prevSHead;
-                const d2 = pHead - sHead;
-                const totalD = (Math.abs(d1) + Math.abs(d2));
-                const fraction = totalD > 0 ? Math.abs(d1) / totalD : 0.5;
-
-                bestRate = prevQ + (q - prevQ) * fraction;
-                bestHead = prevPHead + (pHead - prevPHead) * fraction;
-                break;
-            }
-        }
-
-        // Calculate all telemetry for this simulated point
-        const res = calculateSystemResults(bestRate, bestHead, actualParams, pump, simFreq);
-
-        // RIGOROUS SIM SUBMERGENCE & TEMP
-        const pumpMD = params.pressures.pumpDepthMD || 0;
-        const simFluidLevelMD = res?.fluidLevel || 0;
-        const simSubMD = Math.max(0, pumpMD - simFluidLevelMD);
-
-        // Add comparisons vs Design for the "UP/DN" percentages
-        const compareToDesign = (val: number, designVal: number) => {
-            if (!designVal) return { pct: 0, dir: 'UP' };
-            const diff = ((val - designVal) / designVal) * 100;
-            return { pct: Math.abs(diff), dir: diff >= 0 ? 'UP' : 'DN' };
-        };
-
-        return {
-            ...res,
-            rate: bestRate,
-            head: bestHead,
-            submergenceFt: simSubMD,
-            compFlow: compareToDesign(bestRate, designParams.pressures.totalRate),
-            compHead: compareToDesign(bestHead, designRes.tdh),
-            compPwf: compareToDesign(res?.pwf || 0, (actualRes as any)?.pwf || 0),
-            compPip: compareToDesign(res?.pip || 0, (actualRes as any)?.pip || 0),
-        };
-
-    }, [isMaxCapActive, simFreq, pump, actualResSummary, designParams, designRes, actualRes, fieldData.frequency, params]);
-
     // --- SENSITIVITY SCENARIO PREDICTED RESULT ---
     const scenarioResult = useMemo(() => {
         if (!sensScenario.active || !pump || sensScenario.ip <= 0) return null;
@@ -1403,8 +1295,8 @@ const Phase6Component: React.FC<Props & { isMobile?: boolean }> = ({ params, set
         return calculateSystemResults(bestQ, bestH, scenarioParams, pump, freq);
     }, [sensScenario, fieldData.frequency, pump, actualResSummary]);
 
-    const displayRes = (isMaxCapActive && simResult) ? simResult : ((sensScenario.active && scenarioResult) ? scenarioResult : actualRes);
-    const displayFreq = isMaxCapActive ? simFreq : fieldData.frequency;
+    const displayRes = (sensScenario.active && scenarioResult) ? scenarioResult : actualRes;
+    const displayFreq = fieldData.frequency;
     const motorMissing = ((params as any)?.motorExactFound === false) || !((params as any)?.selectedMotor);
     const effectiveParams = (sensScenario.active && scenarioResult) ?
         {
@@ -1425,48 +1317,6 @@ const Phase6Component: React.FC<Props & { isMobile?: boolean }> = ({ params, set
         const paramsWithMulti = { ...effectiveParams, multiplier: actualResSummary.sysCurveFrictionMultiplier };
         return buildVsdRows(pump, paramsWithMulti, displayFreq, fieldData, displayRes, sensScenario.active, motorMissing);
     }, [pump, effectiveParams, displayFreq, fieldData, displayRes, sensScenario.active, actualResSummary.sysCurveFrictionMultiplier, motorMissing]);
-
-
-    // --- SIMULATION ALERTS (LIMITS ENFORCEMENT) ---
-    const simAlerts = useMemo(() => {
-        if (!isMaxCapActive || !displayRes) return [];
-        const alerts: { type: 'warning' | 'danger'; message: string; value: string; field: string }[] = [];
-
-        // 1. Motor Load: Red >= 95, Yellow >= 80
-        const ml = displayRes.motorLoad || 0;
-        if (!motorMissing) {
-            if (ml >= 95) alerts.push({ type: 'danger', message: 'SOBRECARGA MOTOR', value: `${ml.toFixed(0)}%`, field: 'Motor' });
-            else if (ml >= 80) alerts.push({ type: 'warning', message: 'ALTA CARGA MOTOR', value: `${ml.toFixed(0)}%`, field: 'Motor' });
-        }
-
-        // 2. Shaft Load (Mechanical Stress): Red >= 95, Yellow >= 85
-        const sLimit = getShaftLimitHp(pump?.series);
-        const sl = (displayRes.hpTotal / sLimit) * 100;
-        if (sl >= 95) alerts.push({ type: 'danger', message: 'CARGA EJE CRITICA', value: `${sl.toFixed(0)}%`, field: 'Eje' });
-        else if (sl >= 85) alerts.push({ type: 'warning', message: 'ALTA CARGA EJE', value: `${sl.toFixed(0)}%`, field: 'Eje' });
-
-        // 3. VSD Limitation (Electrical Capacity)
-        const vsdKva = (params as any).selectedVSD?.kvaRating || 350;
-        const totalKva = displayRes.electrical?.systemKva || 0;
-        if (totalKva > vsdKva) alerts.push({ type: 'danger', message: 'LIMITE VSD EXCEDIDO', value: `${totalKva.toFixed(0)} kVA`, field: 'VSD' });
-
-        // 4. Cooling Velocity (Motor Integrity): Red < 0.5, Yellow < 1.0
-        const vel = displayRes.fluidVelocity || 0;
-        if (vel < 0.5) alerts.push({ type: 'danger', message: 'ENFRIAMIENTO CRITICO', value: `${vel.toFixed(2)} ft/s`, field: 'Cooling' });
-        else if (vel < 1.0) alerts.push({ type: 'warning', message: 'BAJO ENFRIAMIENTO', value: `${vel.toFixed(2)} ft/s`, field: 'Cooling' });
-
-        // 5. Submergence: Red < 250, Yellow < 500
-        const sub = displayRes.submergenceFt || 0;
-        if (sub < 250) alerts.push({ type: 'danger', message: 'SUMERGENCIA BAJA', value: `${sub.toFixed(0)} ft`, field: 'Sub' });
-        else if (sub < 500) alerts.push({ type: 'warning', message: 'AVISO SUMERGENCIA', value: `${sub.toFixed(0)} ft`, field: 'Sub' });
-
-        // 6. Efficiency: Red < 20, Yellow < 35
-        const eff = displayRes.efficiency || 0;
-        if (eff < 20) alerts.push({ type: 'danger', message: 'EFICIENCIA CRITICA', value: `${eff.toFixed(1)}%`, field: 'Eff' });
-        else if (eff < 35) alerts.push({ type: 'warning', message: 'BAJA EFICIENCIA', value: `${eff.toFixed(1)}%`, field: 'Eff' });
-
-        return alerts;
-    }, [isMaxCapActive, displayRes, pump?.series, params, motorMissing]);
 
     const { chartData, referencePoints, theoreticalMatch, khComparative, khFactor } = useMemo(() => {
         const data: any[] = [];
@@ -1850,9 +1700,7 @@ const Phase6Component: React.FC<Props & { isMobile?: boolean }> = ({ params, set
         }
 
         // SIMULATION POINT (If Active)
-        if (isMaxCapActive && simResult) {
-            refPoints.push({ flow: simResult.rate, head: simResult.head, label: 'CAPACIDAD MAX', color: '#22c55e' });
-        } else if (sensScenario.active && scenarioResult) {
+        if (sensScenario.active && scenarioResult) {
             refPoints.push({ flow: scenarioResult.rate, head: scenarioResult.head, label: 'OP PROYECTADO', color: '#3b82f6' });
         }
 
@@ -1862,7 +1710,7 @@ const Phase6Component: React.FC<Props & { isMobile?: boolean }> = ({ params, set
 
         return { chartData: data, referencePoints: refPoints, theoreticalMatch: designMatch, khComparative, khFactor };
 
-    }, [pump, params, actualResSummary, sensScenario, scenarioResult, fieldData.frequency, fieldData.rate, actualPumpTDH, isMaxCapActive, simResult, compareScenario, viewMode, chartMode, trail]);
+    }, [pump, params, actualResSummary, sensScenario, scenarioResult, fieldData.frequency, fieldData.rate, actualPumpTDH, compareScenario, viewMode, chartMode, trail]);
 
     // --- AI ANALYSIS GENERATION (ADVANCED) ---
     const aiAnalysisText = useMemo(() => {
@@ -1973,28 +1821,8 @@ const Phase6Component: React.FC<Props & { isMobile?: boolean }> = ({ params, set
             lines.push(`3. Punto de Corte: El riesgo critico de falla (DANGER) comienza a los ${firstDangerHz} Hz.`);
         }
 
-        // 7. Simulacion de Capacidad (Maximum Capacity Section)
-        if (isMaxCapActive && simResult) {
-            lines.push('\n""" AN\u00c1LISIS DE CAPACIDAD """');
-            const gain = simResult.rate - fieldData.rate;
-            if (gain > 5) {
-                lines.push(`\u26A1 POTENCIAL: Incrementar a ${simFreq} Hz genera +${gain.toFixed(0)} BPD adicionales.`);
-            } else if (gain < -5) {
-                lines.push(`\u25BC REDUCCI\u00d3N: Operar a ${simFreq} Hz bajar\u00eda la producci\u00f3n en ${Math.abs(gain).toFixed(0)} BPD.`);
-            }
-
-            if (simAlerts.length > 0) {
-                lines.push('\u26A0 RESTRICCIONES DE SIMULACI\u00d3N:');
-                simAlerts.forEach(a => lines.push(`  - ${a.message} (${a.value})`));
-                lines.push(`RECOMENDACI\u00d3N: El punto de 65 Hz NO es recomendable. Ajustar m\u00e1ximo a ${maxOptimalHz} Hz.`);
-            } else if (Math.abs(gain) > 5) {
-                lines.push('\u2714 FACTIBILIDAD: El cambio de frecuencia es seguro mec\u00e1nica y el\u00e9ctricamente.');
-                lines.push(`RECOMENDACI\u00d3N: Ajustar VSD a ${simFreq} Hz para capturar el potencial de ${simResult.rate.toFixed(0)} BPD.`);
-            }
-        }
-
         return lines.join('\n');
-    }, [degradationPct, displayRes, pump, fieldData, effectiveParams, designParams, calculatedIP, isMaxCapActive, simResult, simFreq, simAlerts, vsdRows]);
+    }, [degradationPct, displayRes, pump, fieldData, effectiveParams, designParams, calculatedIP, vsdRows]);
 
     const mechanics = useMemo(() => {
         const bhp = actualRes.hpTotal || 0;
@@ -2039,7 +1867,7 @@ const Phase6Component: React.FC<Props & { isMobile?: boolean }> = ({ params, set
 
 
     return (
-        <>
+        <div className="px-4 md:px-6 py-3 md:py-4 flex flex-col gap-3 md:gap-4 min-h-0 h-full w-full">
             {/* FULL SCREEN MODAL */}
             {isChartExpanded && createPortal(
                 <div className="fixed inset-0 z-[9999] bg-surface/95 backdrop-blur-xl p-2 md:p-4 flex flex-col animate-fadeIn">
@@ -2061,13 +1889,13 @@ const Phase6Component: React.FC<Props & { isMobile?: boolean }> = ({ params, set
 
             {/* HEADER */}
             {isMobileView ? (
-                <div className="flex flex-col gap-2.5 bg-surface/85 backdrop-blur-xl border border-white/10 p-3 rounded-2xl shadow-xl mb-4 mx-1 select-none">
+                <div className="flex flex-col gap-2.5 bg-gradient-to-r from-secondary/25 via-secondary/10 to-transparent bg-surface/85 backdrop-blur-xl border border-white/10 p-3 rounded-2xl shadow-xl mx-1 select-none">
                     {/* Upper row: title/status and factors */}
                     <div className="flex justify-between items-center gap-2">
                         <div className="flex items-center gap-2">
                             <span className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-glow-primary" />
                             <h2 className="text-[10px] font-black text-txt-main uppercase tracking-wider">
-                                {isMaxCapActive ? "CAPACIDAD" : (sensScenario.active ? "SENSIBILIDAD" : "COTEJO")}
+                                {sensScenario.active ? "SENSIBILIDAD" : "COTEJO"}
                             </h2>
                         </div>
 
@@ -2086,9 +1914,8 @@ const Phase6Component: React.FC<Props & { isMobile?: boolean }> = ({ params, set
                             <button
                                 onClick={() => {
                                     setChartMode('telemetry');
-                                    setIsMaxCapActive(false);
                                 }}
-                                className={`flex-1 h-full rounded-lg text-[8px] font-black uppercase transition-all duration-300 ${chartMode === 'telemetry' && !isMaxCapActive
+                                className={`flex-1 h-full rounded-lg text-[8px] font-black uppercase transition-all duration-300 relative z-10 ${chartMode === 'telemetry'
                                     ? 'bg-primary/20 text-primary border border-primary/30 shadow-sm font-black'
                                     : 'text-txt-muted hover:text-txt-main'
                                     }`}
@@ -2098,9 +1925,8 @@ const Phase6Component: React.FC<Props & { isMobile?: boolean }> = ({ params, set
                             <button
                                 onClick={() => {
                                     setChartMode('comparative');
-                                    setIsMaxCapActive(false);
                                 }}
-                                className={`flex-1 h-full rounded-lg text-[8px] font-black uppercase transition-all duration-300 ${chartMode === 'comparative'
+                                className={`flex-1 h-full rounded-lg text-[8px] font-black uppercase transition-all duration-300 relative z-10 ${chartMode === 'comparative'
                                     ? 'bg-secondary/20 text-secondary border border-secondary/30 shadow-sm font-black'
                                     : 'text-txt-muted hover:text-txt-main'
                                     }`}
@@ -2110,8 +1936,8 @@ const Phase6Component: React.FC<Props & { isMobile?: boolean }> = ({ params, set
                         </div>
 
                         {/* Botón Imprimir (cols-4) */}
-                        <button 
-                            onClick={() => setShowReport(true)} 
+                        <button
+                            onClick={() => setShowReport(true)}
                             className="col-span-4 h-9 bg-primary hover:bg-primary/80 text-white rounded-xl border border-primary/20 text-[8px] font-black uppercase transition-all flex items-center justify-center gap-1 shadow-md shadow-primary/10 active:scale-95"
                         >
                             <Printer className="w-3.5 h-3.5" />
@@ -2120,23 +1946,23 @@ const Phase6Component: React.FC<Props & { isMobile?: boolean }> = ({ params, set
                     </div>
                 </div>
             ) : (
-                <div className={`flex flex-row justify-between items-center px-4 md:px-6 shrink-0 h-16 card-solid rounded-none border shadow-2xl relative overflow-x-auto md:overflow-x-visible overflow-y-hidden gap-4 flex-nowrap custom-scrollbar-h group transition-all duration-700 mb-4 ${isMaxCapActive ? 'border-success/60 ring-1 ring-success/20' : 'border-white/20'}`}>
-                    <div className={`absolute left-0 top-0 w-2 md:w-2 h-full transition-colors duration-700 ${isMaxCapActive ? 'bg-success shadow-glow-success' : 'bg-secondary shadow-glow-secondary'}`}></div>
+                <div className="flex flex-row justify-between items-center px-5 md:px-7 shrink-0 h-16 bg-gradient-to-r from-secondary/25 via-secondary/10 to-transparent bg-surface/85 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl relative overflow-x-auto md:overflow-x-visible overflow-y-hidden gap-4 flex-nowrap custom-scrollbar-h group transition-all duration-700">
+                    <div className="absolute left-0 top-0 w-1.5 h-full rounded-l-2xl transition-colors duration-700 bg-secondary shadow-glow-secondary"></div>
                     <div className="flex items-center gap-3 md:gap-5 relative z-10 pl-2 shrink-0">
-                        <div className={`p-2.5 md:p-3 rounded-none border transition-all duration-700 ${isMaxCapActive ? 'bg-success/20 border-success/30 shadow-glow-success/20' : 'bg-secondary/20 border-white/10 shadow-glow-secondary'}`}>
-                            {isMaxCapActive ? <Zap className="w-5 h-5 md:w-6 md:h-6 text-success animate-pulse" /> : <ClipboardCheck className="w-5 h-5 md:w-6 md:h-6 text-secondary" />}
+                        <div className="p-2 md:p-2.5 rounded-xl border transition-all duration-700 bg-secondary/20 border-white/10 shadow-glow-secondary">
+                            <ClipboardCheck className="w-4 h-4 md:w-5 md:h-5 text-secondary" />
                         </div>
                         <div>
-                            <h2 className="text-xl md:text-2xl font-black text-txt-main uppercase tracking-[0.2em] leading-none drop-shadow-[0_2px_8px_rgba(var(--color-primary-rgb),0.4)]">
-                                {isMaxCapActive ? "CAPACITY " : (sensScenario.active ? "SENSITIVITY " : "MATCH")}
+                            <h2 className="text-lg md:text-xl font-black text-txt-main uppercase tracking-[0.2em] leading-none drop-shadow-[0_2px_8px_rgba(var(--color-primary-rgb),0.4)]">
+                                {sensScenario.active ? "SENSITIVITY " : "MATCH"}
                             </h2>
                             <div className="flex flex-nowrap items-center gap-2 mt-1.5">
-                                <div className={`hidden sm:block h-[1px] w-8 ${isMaxCapActive ? 'bg-success' : (sensScenario.active ? 'bg-primary' : 'bg-secondary')}`}></div>
-                                <p className="text-[9px] md:text-[10px] text-txt-muted font-black uppercase tracking-[0.2em] md:tracking-[0.3em] opacity-40 whitespace-nowrap">
-                                    {isMaxCapActive ? "PREDICCION BASADA EN MUESTRA CALIBRADA" : (sensScenario.active ? "ANALISIS DE SENSIBILIDAD PRODUCTIVA" : t('p6.fieldSync'))}
+                                <div className={`hidden sm:block h-[1px] w-6 ${sensScenario.active ? 'bg-primary' : 'bg-secondary'}`}></div>
+                                <p className="text-[9px] md:text-[9.5px] text-txt-muted font-black uppercase tracking-[0.2em] md:tracking-[0.25em] opacity-50 whitespace-nowrap">
+                                    {sensScenario.active ? "ANALISIS DE SENSIBILIDAD PRODUCTIVA" : t('p6.fieldSync')}
                                 </p>
-                                <div className="w-1 h-1 rounded-none bg-txt-muted opacity-30 mx-1"></div>
-                                <span className={`px-2 py-0.5 rounded-none text-[8px] font-black uppercase tracking-widest flex items-center gap-1.5 whitespace-nowrap ${params.isMechVerified ? 'bg-cyan-500/10 text-cyan-500 border border-cyan-500/30' : 'bg-white/5 text-txt-muted border border-white/10'}`}>
+                                <div className="w-1 h-1 rounded-full bg-txt-muted opacity-30 mx-1"></div>
+                                <span className={`px-2.5 py-0.5 rounded-xl text-[8px] font-black uppercase tracking-widest flex items-center gap-1.5 whitespace-nowrap ${params.isMechVerified ? 'bg-primary/20 text-primary border border-primary/35 shadow-glow-primary/10' : 'bg-white/5 text-txt-muted border border-white/10'}`}>
                                     <Database className="w-2.5 h-2.5" />
                                     {params.isMechVerified ? "ESTADOS MECANICOS" : "DISENO ORIGINAL"}
                                 </span>
@@ -2145,14 +1971,14 @@ const Phase6Component: React.FC<Props & { isMobile?: boolean }> = ({ params, set
                     </div>
                     <div className="flex items-center gap-3 md:gap-4 relative z-10 pr-2 shrink-0 flex-nowrap">
                         {/* NEW COEFFICIENTS LOCATION (HEADER) */}
-                        <div className="flex items-center gap-4 bg-surface px-4 py-1.5 rounded-none border border-surface-light shadow-lg">
+                        <div className="flex items-center gap-4 bg-surface/60 backdrop-blur-md px-4 py-1.5 rounded-xl border border-white/10 shadow-md">
                             <div className="flex flex-col items-end">
                                 <span className="text-[7.5px] md:text-[8px] font-black text-primary/60 uppercase tracking-widest">{chartMode === 'comparative' ? (language === 'es' ? 'Kh (Proyectado)' : 'Kh (Projected)') : (language === 'es' ? 'Kh (Actual)' : 'Kh (Current)')}</span>
                                 <span className="text-xs md:text-sm font-mono text-primary font-black leading-tight drop-shadow-sm">
                                     {chartMode === 'comparative' ? khComparative.toFixed(3) : khFactor.toFixed(3)}
                                 </span>
                             </div>
-                            <div className="w-px h-6 bg-surface-light"></div>
+                            <div className="w-px h-6 bg-white/10"></div>
                             <div className="flex flex-col items-end">
                                 <span className="text-[7.5px] md:text-[8px] font-black text-secondary/60 uppercase tracking-widest">{language === 'es' ? 'Kf (Friccion)' : 'Kf (Friction)'}</span>
                                 <span className="text-xs md:text-sm font-mono text-secondary font-black leading-tight drop-shadow-sm">
@@ -2161,14 +1987,13 @@ const Phase6Component: React.FC<Props & { isMobile?: boolean }> = ({ params, set
                             </div>
                         </div>
 
-                        <div className="flex bg-canvas/40 p-1 rounded-none border border-white/10 shadow-inner shrink-0 relative overflow-hidden h-10 md:h-11 items-center px-1.5">
+                        <div className="flex bg-canvas/60 p-0.5 rounded-xl border border-white/10 shadow-inner shrink-0 relative overflow-hidden h-9 md:h-10 items-center px-1">
                             <button
                                 onClick={() => {
                                     setChartMode('telemetry');
-                                    setIsMaxCapActive(false);
                                 }}
-                                className={`px-4 md:px-6 py-1.5 md:py-2 rounded-none text-[9px] md:text-[10px] font-black uppercase transition-all duration-500 relative z-10 ${chartMode === 'telemetry' && !isMaxCapActive
-                                    ? 'bg-primary/20 text-primary shadow-glow-primary/20 border border-primary/20'
+                                className={`px-4 md:px-5 py-1 md:py-1.5 rounded-lg text-[9px] md:text-[9.5px] font-black uppercase transition-all duration-300 relative z-10 ${chartMode === 'telemetry'
+                                    ? 'bg-primary/20 text-primary shadow-glow-primary/20 border border-primary/25'
                                     : 'text-txt-muted hover:text-txt-main'
                                     }`}
                             >
@@ -2177,10 +2002,9 @@ const Phase6Component: React.FC<Props & { isMobile?: boolean }> = ({ params, set
                             <button
                                 onClick={() => {
                                     setChartMode('comparative');
-                                    setIsMaxCapActive(false);
                                 }}
-                                className={`px-4 md:px-6 py-1.5 md:py-2 rounded-none text-[9px] md:text-[10px] font-black uppercase transition-all duration-500 relative z-10 ${chartMode === 'comparative'
-                                    ? 'bg-secondary/20 text-secondary shadow-glow-secondary/20 border border-secondary/20'
+                                className={`px-4 md:px-5 py-1 md:py-1.5 rounded-lg text-[9px] md:text-[9.5px] font-black uppercase transition-all duration-300 relative z-10 ${chartMode === 'comparative'
+                                    ? 'bg-secondary/20 text-secondary shadow-glow-secondary/20 border border-secondary/25'
                                     : 'text-txt-muted hover:text-txt-main'
                                     }`}
                             >
@@ -2188,7 +2012,7 @@ const Phase6Component: React.FC<Props & { isMobile?: boolean }> = ({ params, set
                             </button>
                         </div>
 
-                        <button onClick={() => setShowReport(true)} className="bg-primary hover:bg-primary/80 text-white px-4 md:px-6 py-2 md:py-2.5 rounded-none border border-primary/40 text-[9px] md:text-[10px] font-black uppercase transition-all flex items-center gap-2 shadow-xl shadow-primary/20 hover:shadow-primary/40 active:scale-95 h-10 md:h-11">
+                        <button onClick={() => setShowReport(true)} className="bg-primary hover:bg-primary/80 text-white px-4 md:px-5 py-1.5 md:py-2 rounded-xl border border-primary/40 text-[9px] md:text-[9.5px] font-black uppercase transition-all flex items-center gap-2 shadow-lg hover:shadow-primary/30 active:scale-95 h-9 md:h-10">
                             <Printer className="w-3.5 h-3.5" /> {t('p6.print')}
                         </button>
                     </div>
@@ -2196,222 +2020,228 @@ const Phase6Component: React.FC<Props & { isMobile?: boolean }> = ({ params, set
             )}
 
             {isMobileView && (
-                <div className="flex bg-surface/80 backdrop-blur-xl p-1 rounded-xl border border-white/10 shadow-lg mb-3 mx-1 shrink-0">
+                <div className="flex bg-surface/80 backdrop-blur-xl p-1 rounded-xl border border-white/10 shadow-lg mx-1 shrink-0">
                     <button
                         onClick={() => setMobileSubTab('chart')}
-                        className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-[10px] font-black uppercase transition-all duration-300 ${
-                            mobileSubTab === 'chart'
-                                ? 'bg-primary text-white shadow-glow-primary/20'
-                                : 'text-txt-muted hover:text-white'
-                        }`}
+                        className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-[10px] font-black uppercase transition-all duration-300 ${mobileSubTab === 'chart'
+                            ? 'bg-primary text-white shadow-glow-primary/20'
+                            : 'text-txt-muted hover:text-white'
+                            }`}
                     >
                         <TrendingUp className="w-3.5 h-3.5" />
                         <span>{language === 'es' ? 'Gráfica' : 'Chart'}</span>
                     </button>
                     <button
                         onClick={() => setMobileSubTab('params')}
-                        className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-[10px] font-black uppercase transition-all duration-300 ${
-                            mobileSubTab === 'params'
-                                ? 'bg-primary text-white shadow-glow-primary/20'
-                                : 'text-txt-muted hover:text-white'
-                        }`}
+                        className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-[10px] font-black uppercase transition-all duration-300 ${mobileSubTab === 'params'
+                            ? 'bg-primary text-white shadow-glow-primary/20'
+                            : 'text-txt-muted hover:text-white'
+                            }`}
                     >
                         <Settings className="w-3.5 h-3.5" />
                         <span>{language === 'es' ? 'Parámetros' : 'Params'}</span>
                     </button>
                     <button
                         onClick={() => setMobileSubTab('results')}
-                        className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-[10px] font-black uppercase transition-all duration-300 ${
-                            mobileSubTab === 'results'
-                                ? 'bg-primary text-white shadow-glow-primary/20'
-                                : 'text-txt-muted hover:text-white'
-                        }`}
+                        className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-[10px] font-black uppercase transition-all duration-300 ${mobileSubTab === 'results'
+                            ? 'bg-primary text-white shadow-glow-primary/20'
+                            : 'text-txt-muted hover:text-white'
+                            }`}
                     >
                         <Activity className="w-3.5 h-3.5" />
                         <span>{language === 'es' ? 'Resultados' : 'Results'}</span>
                     </button>
                 </div>
             )}
-
-            <div className="grid grid-cols-12 gap-4 md:gap-6 flex-1 min-h-0">
+            <div className="grid grid-cols-12 gap-4 md:gap-5 flex-1 min-h-0">
                 {(!isMobileView || mobileSubTab === 'params') && (
-                    <div className="col-span-12 lg:col-span-4 flex flex-col gap-6 overflow-y-auto custom-scrollbar pr-2 min-h-0">
+                    <div className="col-span-12 lg:col-span-4 flex flex-col gap-4 overflow-y-auto custom-scrollbar pr-2 min-h-0">
 
-                        <div className={`card-solid rounded-2xl border p-6 shadow-2xl relative overflow-hidden flex flex-col gap-6 min-h-0 transition-all duration-700 ${isMaxCapActive ? 'border-success/40 ring-1 ring-success/20 bg-success/[0.04]' : 'border-white/10 bg-surface/50 backdrop-blur-md'}`}>
-                            <div className={`absolute inset-0 bg-gradient-to-b transition-colors duration-700 ${isMaxCapActive ? 'from-success/10 to-transparent' : 'from-primary/5 to-transparent'}`}></div>
-                            <div className="relative z-10">
-                                <div className="flex items-center gap-3 mb-4 bg-primary/10 -mx-6 -mt-6 p-3 border-b border-primary/20 rounded-none">
-                                    <div className="p-1.5 bg-primary/20 rounded-none text-primary border border-primary/30"><Activity className="w-3.5 h-3.5" /></div>
-                                    <h3 className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">{t('p6.surfaceData')}</h3>
+                        {/* CARD 1: SURFACE & PRODUCTION DATA */}
+                        <div className="bg-surface/50 backdrop-blur-md border border-surface-light rounded-2xl p-5 shadow-xl relative overflow-hidden flex flex-col gap-4 transition-all hover:border-primary/20">
+                            <div className="absolute top-0 left-0 w-1.5 h-full bg-secondary"></div>
+                            <div className="flex items-center gap-3 bg-gradient-to-r from-secondary/35 via-secondary/10 to-transparent -mx-5 -mt-5 px-5 py-3.5 border-b border-surface-light rounded-t-2xl">
+                                <div className="p-1.5 bg-secondary/30 rounded-lg text-secondary border border-secondary/50">
+                                    <Monitor className="w-4 h-4" />
                                 </div>
-                                <div className="grid grid-cols-2 gap-2.5">
-                                    <PremiumField label={t('p6.testRate')} value={fieldData.rate} unit="BPD" icon={Droplets} onChange={(v: any) => updateField('rate', v)} color="secondary" />
-                                    <PremiumField
-                                        label={t('p5.freq')}
-                                        value={displayFreq}
-                                        unit="Hz"
-                                        icon={Activity}
-                                        onChange={(v: any) => isMaxCapActive ? setSimFreq(v) : updateField('frequency', v)}
-                                        color={isMaxCapActive ? 'success' : 'secondary'}
-                                    />
-                                    <PremiumField label={t('p6.measThp')} value={fieldData.thp} unit="psi" icon={Gauge} onChange={(v: any) => updateField('thp', v)} color="secondary" />
-                                    <PremiumField label={t('p6.measTht')} value={fieldData.tht} unit="°F" icon={Thermometer} onChange={(v: any) => updateField('tht', v)} color="secondary" />
-                                    <div className="col-span-2">
-                                        <PremiumField label={t('p2.waterCut')} value={fieldData.waterCut} unit="%" icon={Droplets} onChange={(v: any) => updateField('waterCut', v)} color="secondary" />
-                                    </div>
-                                    <div className="col-span-2 grid grid-cols-3 gap-3 mt-2 pt-5 border-t border-white/5">
-                                        <PremiumDate label={t('p6.startDate')} value={fieldData.startDate} icon={Calendar} onChange={(v: any) => updateField('startDate', v)} />
-                                        <PremiumDate label={t('p6.matchDate')} value={fieldData.matchDate} icon={Calendar} onChange={(v: any) => updateField('matchDate', v)} />
-                                        {runLifeInfo ? (
-                                            <RunLifeCard label={runLifeInfo.label} value={runLifeInfo.value} sub={runLifeInfo.sub} />
-                                        ) : (
-                                            <div className="bg-surface/30 border border-white/5 rounded-xl h-20" />
-                                        )}
-                                    </div>
-                                </div>
+                                <h3 className="text-[10px] font-black text-secondary uppercase tracking-[0.2em]">{t('p6.surfaceData')}</h3>
                             </div>
-
-                            <div className="relative z-10 mt-6">
-                                <div className="flex items-center gap-3 mb-4 bg-primary/10 -mx-6 p-3 border-y border-primary/20">
-                                    <div className="p-1.5 bg-primary/20 rounded-none text-primary border border-primary/30"><ArrowDown className="w-3.5 h-3.5" /></div>
-                                    <h3 className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">{t('p6.downholeData')}</h3>
+                            <div className="grid grid-cols-2 gap-3">
+                                <PremiumField label={t('p6.testRate')} value={fieldData.rate} unit="BPD" icon={Droplets} onChange={(v: any) => updateField('rate', v)} color="secondary" />
+                                <PremiumField
+                                    label={t('p5.freq')}
+                                    value={displayFreq}
+                                    unit="Hz"
+                                    icon={Activity}
+                                    onChange={(v: any) => updateField('frequency', v)}
+                                    color="secondary"
+                                />
+                                <PremiumField label={t('p6.measThp')} value={fieldData.thp} unit="psi" icon={Gauge} onChange={(v: any) => updateField('thp', v)} color="secondary" />
+                                <PremiumField label={t('p6.measTht')} value={fieldData.tht} unit="°F" icon={Thermometer} onChange={(v: any) => updateField('tht', v)} color="secondary" />
+                                <div className="col-span-2">
+                                    <PremiumField label={t('p2.waterCut')} value={fieldData.waterCut} unit="%" icon={Droplets} onChange={(v: any) => updateField('waterCut', v)} color="secondary" />
                                 </div>
-                                <div className="grid grid-cols-2 gap-3 mt-4">
-                                    <div className="col-span-2 grid grid-cols-2 gap-3">
-                                        <PremiumField label="P. Estatica" value={(fieldData.pStatic > 0) ? fieldData.pStatic : (params.inflow.pStatic || 0)} unit="psi" icon={Layers} onChange={(v: any) => updateField('pStatic', v)} color="primary" />
-                                        <PremiumField label={t('p6.measPip')} value={fieldData.pip} unit="psi" icon={Gauge} onChange={(v: any) => updateField('pip', v)} color="primary" />
-                                    </div>
-                                    <div className={`col-span-2 rounded-xl p-4 flex flex-col justify-between group transition-all duration-500 shadow-2xl relative overflow-hidden ${sensScenario.active ? 'bg-primary/20 border-2 border-primary/40 ring-1 ring-primary/20' : 'bg-surface/50 border border-white/10'}`}>
-                                        <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
-                                        <div className="flex justify-between items-center mb-3 relative z-10">
-                                            <div className="flex flex-col">
-                                                <label className="text-[9px] font-black text-txt-muted uppercase tracking-widest opacity-60">
-                                                    {sensScenario.active ? "IP SIMULADO" : t('p6.calcIp')}
-                                                </label>
-                                                <span className="text-[8px] font-black text-primary/60 uppercase tracking-tighter">Calibrado: {calculatedIP?.toFixed(2)}</span>
-                                            </div>
-                                            <button
-                                                type="button"
-                                                title="Use esta suite para analizar el comportamiento del sistema (caudal, PIP, Pwf) ante cambios hipoteticos en el IP del reservorio o la presion de cabezal (THP)."
-                                                onClick={(e) => {
-                                                    e.preventDefault();
-                                                    setSensScenario({
-                                                        active: !sensScenario.active,
-                                                        ip: sensScenario.active ? sensScenario.ip : (calculatedIP > 0 ? calculatedIP : (fieldData.ip || 0)),
-                                                        thp: sensScenario.active ? sensScenario.thp : (fieldData.thp || 0)
-                                                    });
-                                                }}
-                                                className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all flex items-center gap-2.5 shadow-xl ${sensScenario.active ? 'bg-primary text-white shadow-glow-primary/50 animate-pulse-subtle scale-105' : 'bg-white/5 text-txt-muted hover:bg-white/10 hover:text-white border border-white/5'}`}
-                                            >
-                                                <TrendingUp className={`w-3.5 h-3.5 ${sensScenario.active ? 'animate-bounce' : ''}`} />
-                                                {sensScenario.active ? "En Sesion" : "Sensibilizar"}
-                                            </button>
-                                        </div>
-
-                                        {sensScenario.active ? (
-                                            <div className="flex flex-col gap-4 relative z-10 animate-fadeIn mt-2">
-                                                <div className="flex flex-col gap-1.5">
-                                                    <label className="text-[8px] font-black text-primary uppercase ml-1 opacity-70">Nuevo IP (BFPD/PSI)</label>
-                                                    <div className="flex items-center bg-black/40 rounded-xl border border-white/30 overflow-hidden focus-within:border-primary/50 transition-all shadow-inner">
-                                                        <input
-                                                            type="number"
-                                                            value={sensScenario.ip}
-                                                            onChange={(e) => {
-                                                                const val = parseFloat(e.target.value);
-                                                                setSensScenario({ ...sensScenario, ip: isNaN(val) ? 0 : val });
-                                                            }}
-                                                            autoFocus
-                                                            className="w-full bg-transparent px-3 py-2.5 text-lg font-black text-txt-main outline-none font-mono placeholder:text-txt-muted/20"
-                                                            placeholder="0.00"
-                                                        />
-                                                    </div>
-                                                </div>
-                                                <div className="flex flex-col gap-1.5">
-                                                    <label className="text-[8px] font-black text-secondary uppercase ml-1 opacity-70">Nueva THP (PSI)</label>
-                                                    <div className="flex items-center bg-black/40 rounded-xl border border-white/30 overflow-hidden focus-within:border-secondary/50 transition-all shadow-inner">
-                                                        <input
-                                                            type="number"
-                                                            value={sensScenario.thp}
-                                                            onChange={(e) => {
-                                                                const raw = e.target.value;
-                                                                const val = parseFloat(raw);
-                                                                setSensScenario({ ...sensScenario, thp: isNaN(val) ? 0 : val });
-                                                            }}
-                                                            className="w-full bg-transparent px-3 py-2.5 text-lg font-black text-txt-main outline-none font-mono placeholder:text-txt-muted/20"
-                                                            placeholder="0"
-                                                        />
-                                                    </div>
-                                                </div>
-                                                <div className="mt-1 p-2 bg-primary/20 rounded-xl border border-primary/30 shadow-glow-primary/10">
-                                                    <p className="text-[7px] font-black text-primary uppercase leading-tight text-center tracking-widest animate-pulse">
-                                                        PROYECCIÓN NODAL ACTIVA
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <div className="flex items-baseline gap-2 relative z-10 py-2">
-                                                <span className="text-3xl font-black text-primary font-mono tracking-tighter">{calculatedIP?.toFixed(2) ?? '0.00'}</span>
-                                                <span className="text-[9px] font-black text-txt-muted uppercase opacity-40 italic"> BFPD/PSI</span>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="relative z-10 mt-4 pt-6 border-t border-white/10">
-                                <div className="flex flex-col gap-4">
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-3">
-                                            <div className={`p-2 rounded-xl border transition-all ${isMaxCapActive ? 'bg-success/20 text-success border-success/40 shadow-glow-success/20' : 'bg-white/5 text-txt-muted border-white/10'}`}>
-                                                <Zap className={`w-4 h-4 ${isMaxCapActive ? 'animate-pulse' : ''}`} />
-                                            </div>
-                                            <h3 className="text-[10px] font-black text-txt-main uppercase tracking-[0.2em]">{language === 'es' ? 'CALCULO CAPACIDAD MAXIMA' : 'MAXIMUM CAPACITY CALCULATION'}</h3>
-                                        </div>
-                                        <button
-                                            onClick={() => setIsMaxCapActive(!isMaxCapActive)}
-                                            className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all border ${isMaxCapActive ? 'bg-success text-white border-success shadow-glow-success' : 'bg-white/5 text-txt-muted border-white/10 hover:bg-white/10'}`}
-                                        >
-                                            {isMaxCapActive ? 'ACTIVADO' : 'ACTIVAR'}
-                                        </button>
-                                    </div>
-
-                                    {isMaxCapActive && (
-                                        <div className="bg-success/5 rounded-xl p-4 border border-success/20 animate-fadeIn">
-                                            <p className="text-[9px] font-medium text-success/80 leading-relaxed uppercase tracking-wider">
-                                                Modo Simulacion Activo. Ajuste la frecuencia para predecir el comportamiento del pozo y la bomba basandose en el IP y sistema calibrados.
-                                            </p>
-                                        </div>
+                                <div className="col-span-2 grid grid-cols-3 gap-2 mt-2 pt-4 border-t border-surface-light">
+                                    <PremiumDate label={t('p6.startDate')} value={fieldData.startDate} icon={Calendar} onChange={(v: any) => updateField('startDate', v)} />
+                                    <PremiumDate label={t('p6.matchDate')} value={fieldData.matchDate} icon={Calendar} onChange={(v: any) => updateField('matchDate', v)} />
+                                    {runLifeInfo ? (
+                                        <RunLifeCard label={runLifeInfo.label} value={runLifeInfo.value} sub={runLifeInfo.sub} />
+                                    ) : (
+                                        <div className="bg-surface-light/30 border border-surface-light rounded-2xl h-20" />
                                     )}
                                 </div>
                             </div>
                         </div>
 
-                        <div className="card-solid border border-white/10 rounded-2xl p-6 relative overflow-hidden group shrink-0 shadow-2xl transition-all duration-500 hover:border-secondary/40 bg-surface/50 backdrop-blur-md">
-                            <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-100 transition-opacity">
-                                <Activity className="w-24 h-24 text-primary" />
+                        {/* CARD 2: DOWNHOLE SENSORS & DIGITAL TWIN CALIBRATION */}
+                        <div className="bg-surface/50 backdrop-blur-md border border-surface-light rounded-2xl p-5 shadow-xl relative overflow-hidden flex flex-col gap-4 transition-all hover:border-primary/20">
+                            <div className="absolute top-0 left-0 w-1.5 h-full bg-primary"></div>
+                            <div className="flex items-center gap-3 bg-gradient-to-r from-primary/35 via-primary/10 to-transparent -mx-5 -mt-5 px-5 py-3.5 border-b border-surface-light rounded-t-2xl">
+                                <div className="p-1.5 bg-primary/30 rounded-lg text-primary border border-primary/50 shadow-glow-primary/20">
+                                    <ArrowDown className="w-4 h-4" />
+                                </div>
+                                <h3 className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">{t('p6.downholeData')}</h3>
                             </div>
-                            <div className="flex justify-between items-center mb-0 relative z-10 bg-primary/10 -mx-6 -mt-6 p-4 border-b border-primary/20 cursor-pointer hover:bg-primary/20 transition-colors rounded-t-2xl"
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <PremiumField label="P. Estatica" value={(fieldData.pStatic > 0) ? fieldData.pStatic : (params.inflow.pStatic || 0)} unit="psi" icon={Layers} onChange={(v: any) => updateField('pStatic', v)} color="primary" />
+                                <PremiumField label={t('p6.measPip')} value={fieldData.pip} unit="psi" icon={Gauge} onChange={(v: any) => updateField('pip', v)} color="primary" />
+                            </div>
+
+                            {/* HIGH-CONTRAST CALCULATED IP DISPLAY */}
+                            <div className={`rounded-2xl p-4 flex flex-col gap-3 relative overflow-hidden border transition-all duration-300 ${sensScenario.active ? 'bg-primary/10 border-primary/30 shadow-[0_0_15px_rgba(var(--color-primary),0.1)]' : 'bg-surface-light/40 border-surface-light'}`}>
+                                <div className="flex justify-between items-center">
+                                    <div className="flex flex-col">
+                                        <span className="text-[8.5px] font-black text-txt-muted uppercase tracking-widest opacity-60">
+                                            {sensScenario.active ? "IP SIMULADO" : "IP RETRO-CALCULADO"}
+                                        </span>
+                                        <span className="text-[8.5px] font-bold text-primary/70 uppercase tracking-tighter">DISEÑO REF: {(designParams?.inflow?.ip ?? 0).toFixed(2)}</span>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        title="Sensibilizar IP / THP"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            const defaultIp = calculatedIP > 0 ? calculatedIP : (fieldData.ip || 0);
+                                            const defaultThp = fieldData.thp || 0;
+                                            setSensScenario({
+                                                active: !sensScenario.active,
+                                                ip: sensScenario.active ? Number(sensScenario.ip.toFixed(2)) : Number(defaultIp.toFixed(2)),
+                                                thp: sensScenario.active ? Number(sensScenario.thp.toFixed(2)) : Number(defaultThp.toFixed(2))
+                                            });
+                                        }}
+                                        className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase transition-all flex items-center gap-1.5 shadow-md ${sensScenario.active ? 'bg-primary text-white hover:bg-primary/80 animate-pulse' : 'bg-surface-light/60 text-txt-muted hover:bg-surface-light hover:text-txt-main border border-surface-light'}`}
+                                    >
+                                        <TrendingUp className="w-3 h-3" />
+                                        {sensScenario.active ? "En Sesión" : "Sensibilizar"}
+                                    </button>
+                                </div>
+ 
+                                {sensScenario.active ? (
+                                    <div className="flex flex-col gap-3.5 mt-1 animate-fadeIn">
+                                        {/* IP SLIDER */}
+                                        <div className="flex flex-col gap-1.5">
+                                            <div className="flex justify-between items-center text-[8.5px] font-black uppercase text-primary/80">
+                                                <span>Nuevo IP: <strong className="font-mono text-xs text-txt-main">{sensScenario.ip.toFixed(2)}</strong></span>
+                                                <span>BFPD/PSI</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <input
+                                                    type="range"
+                                                    min="0.1"
+                                                    max={Math.max(5, (designParams?.inflow?.ip || 1) * 2).toFixed(1)}
+                                                    step="0.05"
+                                                    value={sensScenario.ip}
+                                                    onChange={(e) => setSensScenario({ ...sensScenario, ip: Number(parseFloat(e.target.value).toFixed(2)) || 0.1 })}
+                                                    className="flex-1 h-1.5 bg-primary/20 rounded-lg appearance-none cursor-pointer accent-primary"
+                                                />
+                                                <input
+                                                    type="number"
+                                                    value={sensScenario.ip}
+                                                    step="0.05"
+                                                    onChange={(e) => setSensScenario({ ...sensScenario, ip: parseFloat(e.target.value) || 0.1 })}
+                                                    className="w-16 bg-surface border border-surface-light rounded-lg p-1 text-xs font-mono text-center text-txt-main outline-none focus:border-primary"
+                                                />
+                                            </div>
+                                        </div>
+ 
+                                        {/* THP SLIDER */}
+                                        <div className="flex flex-col gap-1.5">
+                                            <div className="flex justify-between items-center text-[8.5px] font-black uppercase text-secondary/80">
+                                                <span>Nueva THP: <strong className="font-mono text-xs text-txt-main">{sensScenario.thp.toFixed(2)}</strong></span>
+                                                <span>PSI</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <input
+                                                    type="range"
+                                                    min="0"
+                                                    max="600"
+                                                    step="5"
+                                                    value={sensScenario.thp}
+                                                    onChange={(e) => setSensScenario({ ...sensScenario, thp: Number(parseFloat(e.target.value).toFixed(2)) || 0 })}
+                                                    className="flex-1 h-1.5 bg-secondary/20 rounded-lg appearance-none cursor-pointer accent-secondary"
+                                                />
+                                                <input
+                                                    type="number"
+                                                    value={sensScenario.thp}
+                                                    step="5"
+                                                    onChange={(e) => setSensScenario({ ...sensScenario, thp: parseFloat(e.target.value) || 0 })}
+                                                    className="w-16 bg-surface border border-surface-light rounded-lg p-1 text-xs font-mono text-center text-txt-main outline-none focus:border-secondary"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col gap-2">
+                                        {/* VALOR IP SUPER VISIBLE */}
+                                        <div className="bg-surface-light border border-surface-light rounded-xl py-3 px-4 flex items-center justify-between shadow-inner">
+                                            <div className="flex flex-col">
+                                                <span className="text-[7.5px] font-black text-txt-muted uppercase tracking-widest opacity-50">VALOR COMPUTADO</span>
+                                                <span className="text-3xl font-black font-mono text-primary tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.1)]">
+                                                    {calculatedIP?.toFixed(2) ?? '0.00'}
+                                                </span>
+                                            </div>
+                                            <div className="text-right">
+                                                <span className="text-[8px] font-black text-primary uppercase tracking-wider block bg-primary/10 border border-primary/20 px-2 py-0.5 rounded">
+                                                    BFPD / PSI
+                                                </span>
+                                                <span className="text-[7.5px] text-txt-muted block mt-1 font-bold">GEMELO DIGITAL</span>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* CARD 4: ORIGINAL DESIGN REFERENCE */}
+                        <div className="bg-surface/50 border border-surface-light rounded-2xl p-5 relative overflow-hidden group shrink-0 shadow-xl transition-all duration-300 hover:border-secondary/40">
+                            <div className="absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-20 transition-opacity pointer-events-none">
+                                <Activity className="w-20 h-20 text-secondary" />
+                            </div>
+                            <div
+                                className="flex justify-between items-center cursor-pointer -mx-5 -mt-5 px-5 py-3.5 border-b border-surface-light bg-gradient-to-r from-secondary/35 via-secondary/10 to-transparent hover:from-secondary/40 hover:via-secondary/15 transition-all rounded-t-2xl"
                                 onClick={() => setIsDesignCollapsed(!isDesignCollapsed)}
                             >
                                 <div className="flex items-center gap-3">
-                                    <div className={`p-2 rounded-xl transition-all ${isDesignCollapsed ? 'bg-white/5' : 'bg-primary/20 text-primary'}`}>
+                                    <div className={`p-1.5 rounded-lg transition-all ${isDesignCollapsed ? 'bg-surface-light text-txt-muted' : 'bg-secondary/30 text-secondary border border-secondary/50'}`}>
                                         {isDesignCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
                                     </div>
                                     <div>
-                                        <h3 className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">{t('p6.designRef')}</h3>
-                                        <div className="text-[10px] font-black text-primary mt-0.5 uppercase tracking-tighter opacity-80">{compareScenario.toUpperCase()} - {t('p5.preview')}</div>
+                                        <h3 className="text-[10px] font-black text-secondary uppercase tracking-[0.2em]">{t('p6.designRef')}</h3>
+                                        <div className="text-[8.5px] font-bold text-secondary mt-0.5 uppercase tracking-tighter opacity-80">{compareScenario.toUpperCase()} - {t('p5.preview')}</div>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-1.5">
                                     {params.isMechVerified && (
-                                        <span className="bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 px-2.5 py-1 rounded-xl text-[8px] font-black uppercase tracking-widest">VERIFICADO</span>
+                                        <span className="bg-primary/20 text-primary border border-primary/35 px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest">VERIFICADO</span>
                                     )}
-                                    <span className="bg-primary text-white px-3 py-1 rounded-xl text-[10px] font-black">TARGET</span>
+                                    <span className="bg-secondary/10 text-secondary border border-secondary/30 rounded-full px-2 py-0.5 text-[8px] font-black uppercase tracking-widest">TARGET</span>
                                 </div>
                             </div>
 
                             {!isDesignCollapsed && (
-                                <div className="grid grid-cols-2 gap-3 relative z-10 mt-6 animate-slideDown">
+                                <div className="grid grid-cols-2 gap-2.5 mt-4 animate-slideDown">
                                     <DesignMetric label={t('tele.flow')} value={`${designParams.pressures.totalRate} BPD`} />
                                     <DesignMetric label={t('p5.freq')} value={`${params.targets[compareScenario].frequency} Hz`} />
                                     <DesignMetric label="TDH" value={`${designRes.tdh?.toFixed(0)} ft`} />
@@ -2423,9 +2253,9 @@ const Phase6Component: React.FC<Props & { isMobile?: boolean }> = ({ params, set
                                 </div>
                             )}
 
-                            <div className="mt-4 pt-4 border-t border-white/5 flex items-center gap-2 opacity-50 group-hover:opacity-100 transition-opacity">
+                            <div className="mt-4 pt-3 border-t border-surface-light flex items-center gap-2 opacity-50 group-hover:opacity-100 transition-opacity">
                                 <Info className="w-3 h-3 text-txt-muted" />
-                                <span className="text-[7px] font-black uppercase tracking-[0.2em] text-txt-muted">
+                                <span className="text-[7.5px] font-black uppercase tracking-[0.15em] text-txt-muted">
                                     Fuente: {params.isMechVerified ? 'ESTADOS MECANICOS (VERIFICADO)' : 'DISENO ORIGINAL (AUTO)'}
                                 </span>
                             </div>
@@ -2434,427 +2264,401 @@ const Phase6Component: React.FC<Props & { isMobile?: boolean }> = ({ params, set
                 )}
 
                 {(!isMobileView || mobileSubTab === 'chart' || mobileSubTab === 'results') && (
-                    <div className="col-span-12 lg:col-span-8 flex flex-col gap-3 overflow-y-auto custom-scrollbar pr-2 min-h-0 bg-success/[0.005] rounded-none p-0">
-                    {(!isMobileView || mobileSubTab === 'chart') && (
-                    <div className={`card-solid rounded-none border shadow-2xl overflow-hidden p-3 relative flex flex-col shrink-0 group transition-all duration-700 min-h-[450px] lg:h-[480px] ${isMaxCapActive ? 'border-success/40 ring-1 ring-success/20 bg-success/10' : 'border-primary/30 bg-primary/10 shadow-[inset_0_0_50px_rgba(var(--color-primary-rgb),0.05)]'}`}>
-                        <div className={`absolute inset-0 ${isMaxCapActive ? 'bg-success/10' : 'bg-primary/10'} opacity-0 group-hover:opacity-100 transition-opacity`}></div>
-                        <div className="absolute top-6 right-8 flex gap-3 z-20">
-                            <div className={`w-2.5 h-2.5 rounded-none ${isMaxCapActive ? 'bg-success animate-pulse shadow-glow-success' : 'bg-secondary animate-pulse shadow-glow-secondary'}`}></div>
-                            <div className="w-2.5 h-2.5 rounded-none bg-primary/40"></div>
-                        </div>
-                        <button onClick={() => setIsChartExpanded(true)} className="absolute bottom-6 right-8 z-30 p-3.5 glass-surface border border-white/10 rounded-none text-txt-muted hover:text-secondary hover:scale-110 transition-all opacity-0 group-hover:opacity-100 shadow-2xl">
-                            <Maximize2 className="w-6 h-6" />
-                        </button>
-
-                        {chartData.length > 0 ? (
-                            <div className="w-full h-full relative">
-                                {(!fieldData.pip || fieldData.pip <= 0 || !fieldData.thp || fieldData.thp <= 0 || !fieldData.frequency || fieldData.frequency <= 0 || !fieldData.rate || fieldData.rate <= 5) && (
-                                    <div className="absolute inset-0 z-40 bg-surface/80 backdrop-blur-md flex flex-col items-center justify-center rounded-none p-10 text-center animate-fadeIn">
-                                        <div className="p-6 bg-warning/10 rounded-none border border-warning/30 animate-pulse shadow-glow-warning/20 mb-6">
-                                            <AlertTriangle className="w-12 h-12 text-warning" />
+                    <div className="col-span-12 lg:col-span-8 flex flex-col gap-2 overflow-y-auto custom-scrollbar pr-2 min-h-0 bg-success/[0.005] rounded-none p-0">
+                        {(!isMobileView || mobileSubTab === 'chart') && (
+                            <div className="bg-surface/50 backdrop-blur-md border border-surface-light rounded-2xl p-3.5 shadow-xl relative overflow-hidden flex flex-col gap-2 transition-all duration-300 hover:border-primary/20 min-h-[450px] lg:h-[480px] shrink-0 group">
+                                <div className="flex justify-between items-center gap-3 bg-gradient-to-r from-primary/35 via-primary/10 to-transparent -mx-3.5 -mt-3.5 px-3.5 py-3 border-b border-surface-light rounded-t-2xl">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-1.5 bg-primary/30 rounded-lg text-primary border border-primary/50 shadow-glow-primary/20">
+                                            <Activity className="w-4 h-4" />
                                         </div>
-                                        <h3 className="text-2xl font-black text-warning uppercase tracking-tighter mb-4">{language === 'es' ? 'Telemetria Incompleta' : 'Incomplete Telemetry'}</h3>
-                                        <p className="text-txt-main/80 text-sm font-medium max-w-md mb-6 leading-relaxed">
-                                            Faltan variables criticas para ejecutar el calculo de degradacion. Por favor, <strong>ingrese los valores manualmente</strong> en el panel izquierdo (Datos de Superficie/Fondo).
-                                        </p>
-                                        <div className="flex flex-wrap justify-center gap-3">
-                                            {(!fieldData.pip || fieldData.pip <= 0) && (
-                                                <div className="px-3 py-1.5 bg-danger/20 border border-danger/40 rounded-none text-danger font-black text-[10px] uppercase tracking-widest flex items-center gap-2 shadow-glow-danger/20">
-                                                    <div className="w-1.5 h-1.5 rounded-none bg-danger animate-ping"></div> FALTA PIP
+                                        <h3 className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">{language === 'es' ? 'Curva de Rendimiento' : 'Performance Curve'}</h3>
+                                    </div>
+                                    <div className="flex items-center gap-4 text-[8px] md:text-[9px] font-bold uppercase tracking-wider pr-1">
+                                        <div className="flex items-center gap-1.5">
+                                            <span className="w-2.5 h-2.5 rounded-full bg-secondary animate-pulse shadow-glow-secondary"></span>
+                                            <span className="text-txt-muted">{language === 'es' ? 'Operación' : 'Operation'}</span>
+                                        </div>
+                                        <div className="flex items-center gap-1.5">
+                                            <span className="w-2.5 h-2.5 rounded-full bg-primary/70"></span>
+                                            <span className="text-txt-muted">{language === 'es' ? 'Diseño' : 'Design'}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button onClick={() => setIsChartExpanded(true)} className="absolute bottom-4 right-4 z-30 p-2.5 bg-surface-light/80 hover:bg-surface border border-surface-light rounded-xl text-txt-muted hover:text-secondary hover:scale-110 transition-all opacity-0 group-hover:opacity-100 shadow-2xl backdrop-blur-md">
+                                    <Maximize2 className="w-4 h-4" />
+                                </button>
+
+                                {chartData.length > 0 ? (
+                                    <div className="w-full flex-1 min-h-0 relative">
+                                        {(!fieldData.pip || fieldData.pip <= 0 || !fieldData.thp || fieldData.thp <= 0 || !fieldData.frequency || fieldData.frequency <= 0 || !fieldData.rate || fieldData.rate <= 5) && (
+                                            <div className="absolute inset-0 z-40 bg-surface/80 backdrop-blur-md flex flex-col items-center justify-center rounded-none p-10 text-center animate-fadeIn">
+                                                <div className="p-6 bg-warning/10 rounded-none border border-warning/30 animate-pulse shadow-glow-warning/20 mb-6">
+                                                    <AlertTriangle className="w-12 h-12 text-warning" />
                                                 </div>
-                                            )}
-                                            {(!fieldData.thp || fieldData.thp <= 0) && (
-                                                <div className="px-3 py-1.5 bg-danger/20 border border-danger/40 rounded-none text-danger font-black text-[10px] uppercase tracking-widest flex items-center gap-2 shadow-glow-danger/20">
-                                                    <div className="w-1.5 h-1.5 rounded-none bg-danger animate-ping"></div> FALTA THP
-                                                </div>
-                                            )}
-                                            {(!fieldData.frequency || fieldData.frequency <= 0) && (
-                                                <div className="px-3 py-1.5 bg-danger/20 border border-danger/40 rounded-none text-danger font-black text-[10px] uppercase tracking-widest flex items-center gap-2 shadow-glow-danger/20">
-                                                    <div className="w-1.5 h-1.5 rounded-none bg-danger animate-ping"></div> FALTA FRECUENCIA
-                                                </div>
-                                            )}
-                                            {(!fieldData.rate || fieldData.rate <= 5) && (
-                                                <div className="px-3 py-1.5 bg-danger/20 border border-danger/40 rounded-none text-danger font-black text-[10px] uppercase tracking-widest flex items-center gap-2 shadow-glow-danger/20">
-                                                    <div className="w-1.5 h-1.5 rounded-none bg-danger animate-ping"></div> FALTA CAUDAL
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
-                                <PumpChart
-                                    data={chartData}
-                                    pump={pump}
-                                    currentFrequency={displayFreq}
-                                    isDiagnosticMode={chartMode === 'comparative'}
-                                    referencePoints={referencePoints}
-                                    targetFlow={displayRes.rate}
-                                    className="w-full h-full"
-                                />
-
-                            </div>
-                        ) : (
-                            <div className="flex-1 flex flex-col items-center justify-center text-txt-muted opacity-30 uppercase font-black tracking-[0.4em] gap-8">
-                                <div className="p-10 bg-surface rounded-none border border-white/10 animate-float">
-                                    <Activity className="w-20 h-20 text-secondary/40" />
-                                </div>
-                                <span className="text-sm">{pump ? "Syncing Field Telemetry..." : "Hardware Identification Required"}</span>
-                            </div>
-                        )}
-
-                        {isMaxCapActive && (
-                            <div className="absolute bottom-6 left-12 right-24 z-20 animate-slideUp flex flex-col gap-3">
-                                {simAlerts.length > 0 && (
-                                    <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar no-scrollbar">
-                                        {simAlerts.map((alert, idx) => (
-                                            <div key={idx} className={`shrink-0 px-4 py-2 rounded-none flex items-center gap-3 border shadow-2xl backdrop-blur-md animate-pulse-slow ${alert.type === 'danger' ? 'bg-danger/20 border-danger/40 text-danger' : 'bg-warning/20 border-warning/40 text-warning'}`}>
-                                                <div className={`w-1.5 h-1.5 rounded-none ${alert.type === 'danger' ? 'bg-danger shadow-glow-danger' : 'bg-warning shadow-glow-warning'}`}></div>
-                                                <div className="flex flex-col">
-                                                    <span className="text-[7px] font-black uppercase opacity-60 tracking-widest">{alert.field}</span>
-                                                    <span className="text-[10px] font-black uppercase tracking-tighter whitespace-nowrap">{alert.message} ({alert.value})</span>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                                <div className="bg-surface/90 border border-success/40 rounded-none p-4 shadow-glow-success/10 flex items-center justify-between gap-6 relative overflow-hidden">
-                                    <div className="absolute inset-0 bg-success/5 animate-pulse"></div>
-                                    <div className="flex flex-col relative z-10">
-                                        <span className="text-[8px] font-black text-success uppercase tracking-widest mb-1">Frecuencia Simulacion</span>
-                                        <span className="text-lg font-black text-txt-main font-mono">{simFreq} Hz</span>
-                                    </div>
-                                    <input
-                                        type="range"
-                                        min="30"
-                                        max="80"
-                                        step="0.5"
-                                        value={simFreq}
-                                        onChange={(e) => setSimFreq(parseFloat(e.target.value))}
-                                        className="flex-1 h-1.5 bg-success/20 rounded-none appearance-none cursor-pointer accent-success relative z-10"
-                                    />
-                                    <div className="flex items-center gap-4 border-l border-white/10 pl-6 relative z-10">
-                                        <div className="flex flex-col">
-                                            <span className="text-[8px] font-black text-txt-muted uppercase tracking-widest mb-0.5">Caudal Predicho</span>
-                                            <span className="text-sm font-black text-success font-mono">{displayRes?.rate?.toFixed(0)} BPD</span>
-                                        </div>
-                                        <div className="flex flex-col">
-                                            <span className="text-[8px] font-black text-txt-muted uppercase tracking-widest mb-0.5">Cabezal Predicho</span>
-                                            <span className="text-sm font-black text-success font-mono">{displayRes?.head?.toFixed(0)} FT</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                    )}
-
-                    {/* MODAL / PANEL DE SENSIBILIDAD - Rendered via Portal to avoid clipping */}
-                    {showSensModal && createPortal(
-                        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-                            <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => setShowSensModal(false)}></div>
-                            <div className="bg-canvas border border-white/10 rounded-none w-full max-w-lg shadow-[0_0_100px_rgba(0,0,0,0.5)] relative z-10 overflow-hidden animate-zoomIn border-t-2 border-t-primary/40">
-                                <div className="p-8 border-b border-white/5 flex justify-between items-center bg-surface-raised">
-                                    <div className="flex items-center gap-4">
-                                        <div className="p-3 bg-primary/20 rounded-none text-primary border border-primary/30">
-                                            <TrendingUp className="w-6 h-6" />
-                                        </div>
-                                        <div>
-                                            <h3 className="text-lg font-black text-white uppercase tracking-widest leading-none">{language === 'es' ? 'Analisis de Sensibilidad' : 'Sensitivity Analysis'}</h3>
-                                            <p className="text-[10px] text-txt-muted font-black uppercase mt-2 opacity-50 tracking-widest italic">Simulacion de Reservorio y Superficie</p>
-                                        </div>
-                                    </div>
-                                    <button onClick={() => setShowSensModal(false)} className="p-2 hover:bg-white/5 rounded-none transition-colors">
-                                        <X className="w-7 h-7 text-txt-muted hover:text-white" />
-                                    </button>
-                                </div>
-                                <div className="p-10 flex flex-col gap-8">
-                                    <div className="grid grid-cols-1 gap-6">
-                                        <div className="flex flex-col gap-3">
-                                            <div className="flex justify-between items-center px-1">
-                                                <label className="text-[10px] font-black text-txt-muted uppercase tracking-widest">Nuevo IP (Yacimiento)</label>
-                                                <span className="text-[9px] font-black text-primary uppercase">Actual: {calculatedIP.toFixed(2)}</span>
-                                            </div>
-                                            <div className="relative group">
-                                                <div className="absolute inset-0 bg-primary/10 blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity"></div>
-                                                <input
-                                                    type="number"
-                                                    value={sensScenario.ip}
-                                                    onChange={(e) => setSensScenario({ ...sensScenario, ip: parseFloat(e.target.value) || 0 })}
-                                                    className="w-full bg-surface-light border border-white/10 p-6 rounded-none text-3xl font-black text-primary outline-none focus:border-primary/50 transition-all font-mono relative z-10"
-                                                    placeholder="0.0"
-                                                />
-                                                <span className="absolute right-6 top-1/2 -translate-y-1/2 text-xs font-black text-txt-muted opacity-30 z-10">BFPD/PSI</span>
-                                            </div>
-                                        </div>
-                                        <div className="flex flex-col gap-3">
-                                            <div className="flex justify-between items-center px-1">
-                                                <label className="text-[10px] font-black text-txt-muted uppercase tracking-widest">Nueva THP (Superficie)</label>
-                                                <span className="text-[9px] font-black text-secondary uppercase">Actual: {fieldData.thp} psi</span>
-                                            </div>
-                                            <div className="relative group">
-                                                <div className="absolute inset-0 bg-secondary/10 blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity"></div>
-                                                <input
-                                                    type="number"
-                                                    value={sensScenario.thp}
-                                                    onChange={(e) => setSensScenario({ ...sensScenario, thp: parseFloat(e.target.value) || 0 })}
-                                                    className="w-full bg-surface-light border border-white/10 p-6 rounded-none text-3xl font-black text-secondary outline-none focus:border-secondary/50 transition-all font-mono relative z-10"
-                                                    placeholder="0.0"
-                                                />
-                                                <span className="absolute right-6 top-1/2 -translate-y-1/2 text-xs font-black text-txt-muted opacity-30 z-10">PSI</span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex gap-4 mt-4">
-                                        <button
-                                            onClick={() => {
-                                                setSensScenario({ active: false, ip: 0, thp: 0 });
-                                                setShowSensModal(false);
-                                            }}
-                                            className="flex-1 bg-white/5 hover:bg-white/10 text-txt-muted text-[11px] font-black uppercase py-5 rounded-none border border-white/10 transition-all hover:text-white"
-                                        >
-                                            Reset / Limpiar
-                                        </button>
-                                        <button
-                                            onClick={() => {
-                                                setSensScenario({ ...sensScenario, active: true });
-                                                setShowSensModal(false);
-                                            }}
-                                            className="flex-1 bg-primary text-white text-[11px] font-black uppercase py-5 rounded-none shadow-glow-primary/30 hover:scale-[1.03] active:scale-[0.97] transition-all"
-                                        >
-                                            {language === 'es' ? 'Ejecutar Sensibilidad' : 'Run Sensitivity'}
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>,
-                        document.body
-                    )}
-
-                    {(!isMobileView || mobileSubTab === 'results') && (
-                    <>
-                    {/* CONSOLIDATED CENTRAL OPERATION BAR */}
-                    <div className="flex items-center justify-center w-full px-1 relative z-50 my-2">
-                        <div className="flex bg-surface/80 backdrop-blur-xl p-0.5 rounded-none border border-white/10 w-full pointer-events-auto items-stretch">
-                            <button
-                                onClick={() => setViewMode('telemetry')}
-                                className={`flex-1 flex items-center justify-center gap-1.5 md:gap-3 py-2 px-4 rounded-none text-[9px] md:text-[10px] font-black uppercase transition-all duration-500 ${viewMode === 'telemetry' ? 'bg-secondary text-black shadow-glow-secondary/20 scale-[1.01]' : 'text-txt-muted hover:text-white hover:bg-white/5'}`}
-                            >
-                                <Monitor className="w-3.5 h-3.5 shrink-0" />
-                                <span>{language === 'es' ? 'Telemetria' : 'Telemetry'}</span>
-                            </button>
-                            <button
-                                onClick={() => setViewMode('sensitivity')}
-                                className={`flex-1 flex items-center justify-center gap-1.5 md:gap-3 py-2 px-4 rounded-none text-[9px] md:text-[10px] font-black uppercase transition-all duration-500 ${viewMode === 'sensitivity' ? 'bg-primary text-white shadow-glow-primary/20 scale-[1.01]' : 'text-txt-muted hover:text-white hover:bg-white/5'}`}
-                            >
-                                <TrendingUp className="w-3.5 h-3.5 shrink-0" />
-                                <span className="hidden sm:inline">{language === 'es' ? 'Sensibilidad VSD' : 'VSD Sensitivity'}</span>
-                                <span className="sm:hidden">{language === 'es' ? 'Sensibilidad' : 'Sens.'}</span>
-                            </button>
-
-                            <div className="w-px bg-white/10 my-1 self-stretch"></div>
-
-                            <button
-                                onClick={() => setIsVsdTableExpanded(!isVsdTableExpanded)}
-                                className={`flex-1 flex items-center justify-center gap-1.5 md:gap-2 py-2 px-4 rounded-none text-[9px] md:text-[10px] font-black uppercase transition-all duration-500 ${isVsdTableExpanded ? 'bg-warning/20 text-warning border border-warning/30 shadow-glow-warning/10' : 'text-txt-muted hover:text-txt-main hover:bg-white/5'}`}
-                            >
-                                <Activity className="w-3.5 h-3.5 text-warning shrink-0" />
-                                <span className="hidden sm:inline">
-                                    {isVsdTableExpanded ? (language === 'es' ? 'Modo Simple' : 'Simple Mode') : (language === 'es' ? 'Modo Detallado (1Hz)' : 'Detailed Mode (1Hz)')}
-                                </span>
-                                <span className="sm:hidden">
-                                    {isVsdTableExpanded ? (language === 'es' ? 'Simple' : 'Simple') : (language === 'es' ? 'Detallado' : 'Detailed')}
-                                </span>
-                            </button>
-                        </div>
-                    </div>
-
-                    {viewMode === 'telemetry' ? (
-                        <>
-                            <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-2 shrink-0 pb-1">
-                                <PremiumMetricCard label={t('p6.degradation')} value={`${(degradationPct ?? 0).toFixed(1)}%`} subValue={t('p6.headLoss')} icon={TrendingDown} color="danger" alert={(degradationPct ?? 0) > 10} />
-                                <PremiumMetricCard
-                                    label={t('p6.vsdStatus')}
-                                    value={((params as any).selectedVSD && (displayRes?.electrical?.systemKva ?? 0) > (params as any).selectedVSD.kvaRating) ? t('p6.limited') : t('p6.normal')}
-                                    subValue={(params as any).selectedVSD ? `${(params as any).selectedVSD.kvaRating} kVA` : t('p6.noVsd')}
-                                    icon={Monitor}
-                                    color={((params as any).selectedVSD && (displayRes?.electrical?.systemKva ?? 0) > (params as any).selectedVSD.kvaRating) ? "danger" : "secondary"}
-                                    alert={(params as any).selectedVSD && (displayRes?.electrical?.systemKva ?? 0) > (params as any).selectedVSD.kvaRating}
-                                />
-                                <PremiumMetricCard
-                                    label={t('p6.actualDemand')}
-                                    value={`${displayRes?.electrical?.systemKva?.toFixed(1) ?? '0.0'}`}
-                                    subValue={t('p6.kvaSurface')}
-                                    icon={Zap}
-                                    color={isMaxCapActive ? "success" : "secondary"}
-                                />
-                                <PremiumMetricCard label={t('tele.systemPower')} value={`${displayRes?.electrical?.systemKw?.toFixed(1) ?? '0.0'} kW`} subValue={t('p6.totalInput')} icon={Zap} color={isMaxCapActive ? "success" : "secondary"} />
-                                <PremiumMetricCard label={t('tele.sub')} value={`${displayRes?.submergenceFt?.toFixed(0) ?? '0'} ft`} subValue={t('p6.abovePump')} icon={Droplets} color={isMaxCapActive ? "success" : "primary"} alert={(displayRes?.submergenceFt ?? 0) < 500} />
-                                <PremiumMetricCard label={t('tele.intakeTemp')} value={`${displayRes?.intakeTemp?.toFixed(1) ?? '0.0'} F`} subValue={t('p6.pumpIntake')} icon={Thermometer} color="secondary" />
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-2 shrink-0 pb-1">
-                                <CompPremium label={sensScenario.active ? "TDH Predicho" : t('tele.head')} design={designRes?.tdh ?? 0} actual={displayRes?.head ?? 0} unit="ft" color={isMaxCapActive ? "success" : "secondary"} />
-                                <CompPremium label={sensScenario.active ? "Pwf Predicha" : t('p3.pwf')} design={designRes?.pwf ?? 0} actual={displayRes?.pwf ?? 0} unit="psi" color={isMaxCapActive ? "success" : "primary"} />
-                                <PremiumMetricCard label={t('p5.motorLoad')} value={motorMissing ? '' : `${(displayRes?.motorLoad ?? 0).toFixed(0)}%`} subValue={motorMissing ? (language === 'es' ? 'MOTOR NO ENCONTRADO' : 'MOTOR NOT FOUND') : `${displayRes?.hpTotal?.toFixed(1) ?? '0.0'} HP`} icon={Zap} color={isMaxCapActive ? "success" : "primary"} alert={!motorMissing && (displayRes?.motorLoad ?? 0) > 105} />
-                                <CompPremium label={sensScenario.active ? "Caudal Predicho" : t('tele.flow')} design={designParams.pressures.totalRate} actual={displayRes.rate} unit="bpd" color={isMaxCapActive ? "success" : "secondary"} />
-                                <CompPremium label={sensScenario.active ? "PIP Predicha" : t('p3.pip')} design={designRes.pip} actual={displayRes.pip} unit="psi" color={isMaxCapActive ? "success" : "primary"} />
-                                <CompPremium label={sensScenario.active ? "Drawdown %" : "Drawdown %"} design={((designParams.inflow.pStatic - designRes.pwf) / (designParams.inflow.pStatic || 1) * 100)} actual={((effectiveParams.inflow.pStatic - displayRes.pwf) / (effectiveParams.inflow.pStatic || 1) * 100)} unit="%" color={sensScenario.active ? "primary" : "secondary"} />
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-7 gap-2 shrink-0 pb-1">
-                                <PremiumMetricCard label={t('sens.vel')} value={`${displayRes?.fluidVelocity?.toFixed(2) ?? '0.0'}`} subValue={t('p6.cooling')} icon={Droplets} color={isMaxCapActive ? "success" : "primary"} alert={(displayRes?.fluidVelocity ?? 0) < 0.5} />
-                                <PremiumMetricCard label={t('sens.volts')} value={motorMissing ? '' : `${displayRes?.electrical?.volts?.toFixed(0) ?? '0'}`} subValue={motorMissing ? (language === 'es' ? 'MOTOR NO ENCONTRADO' : 'MOTOR NOT FOUND') : t('p6.downhole')} icon={Zap} color="secondary" />
-                                <PremiumMetricCard label={t('sens.amps')} value={motorMissing ? '' : `${displayRes?.electrical?.amps?.toFixed(1) ?? '0.0'}`} subValue={motorMissing ? (language === 'es' ? 'MOTOR NO ENCONTRADO' : 'MOTOR NOT FOUND') : t('p6.matchCap')} icon={Activity} color="secondary" />
-                                <PremiumMetricCard label={t('tele.surfaceVolts')} value={motorMissing ? '' : `${displayRes?.electrical?.surfaceVolts?.toFixed(0) ?? '0'}`} subValue={motorMissing ? (language === 'es' ? 'MOTOR NO ENCONTRADO' : 'MOTOR NOT FOUND') : t('p6.vsdOut')} icon={Zap} color={isMaxCapActive ? "success" : "primary"} />
-                                <PremiumMetricCard label={t('p5.efficiency')} value={`${displayRes?.efficiency?.toFixed(1) ?? '0.0'}%`} subValue={t('p6.hydraulic')} icon={Activity} color="success" />
-                                <PremiumMetricCard label={t('tele.shaftTorque')} value={t('p6.normal')} subValue={t('p6.safetyMargin')} icon={ShieldCheck} color="success" />
-                                <PremiumMetricCard label={t('p6.matchSuccess')} value={isMaxCapActive ? "SIM" : "98.5%"} subValue={t('p6.modelConvergence')} icon={Target} color={isMaxCapActive ? "success" : "primary"} />
-                            </div>
-                        </>
-                    ) : (
-                        <div className="card-solid border border-white/10 rounded-none overflow-hidden flex flex-col min-h-[500px] shadow-2xl animate-fadeIn">
-                            <div className="px-5 py-3 border-b border-white/5 flex justify-between items-center bg-surface-raised/50">
-                                <div className="flex items-center gap-4">
-                                    <h3 className="text-xs font-black text-txt-main uppercase tracking-tight border-l-2 border-primary pl-3">{language === 'es' ? 'SIMULACION VSD (30-80 HZ)' : 'VSD SIMULATION (30-80 HZ)'}</h3>
-                                    <span className="text-[8px] text-txt-muted font-bold uppercase tracking-widest opacity-40 italic">Condiciones de campo actuales</span>
-                                </div>
-                                <div className="flex items-center gap-4">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-3 h-3 rounded-none bg-blue-500 shadow-glow-primary animate-pulse"></div>
-                                        <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Frecuencia Campo: {fieldData.frequency} Hz</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="flex-1 overflow-auto custom-scrollbar-h glass-table border-t border-white/5 max-h-[600px]">
-                                <table className="w-full text-left border-separate border-spacing-0 min-w-[1200px]">
-                                    <thead className="sticky top-0 z-20 table-header-fusion">
-                                        <tr>
-                                            <th className="px-5 py-4 text-[12px] font-black uppercase tracking-[0.2em] sticky left-0 top-0 z-50 frequency-cell-solid shadow-[4px_0_10px_rgba(0,0,0,0.3)]">{language === 'es' ? 'FRECUENCIA' : 'FREQUENCY'}</th>
-                                            {vsdCols.map(col => (
-                                                <th key={col.label} className="px-3 py-4 text-[11px] font-black uppercase tracking-[0.2em] text-center sticky top-0 z-20 table-header-fusion">
-                                                    {col.label}
-                                                    {col.unit && <span className="block text-[8px] opacity-40 lowercase mt-1 font-bold">{col.unit}</span>}
-                                                </th>
-                                            ))}
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-white/5">
-                                        {vsdRows.filter(row => isVsdTableExpanded || row.isActual || row.hz % 10 === 0).map((row) => {
-                                            const tdBaseClass = row.isActual
-                                                ? 'table-cell-actual'
-                                                : row.isDanger
-                                                    ? 'table-cell-danger'
-                                                    : row.isWarning
-                                                        ? 'table-cell-warning'
-                                                        : 'table-cell-success';
-
-                                            // Ensure sticky column is always solid
-                                            const stickyBgClass = row.isActual ? 'frequency-cell-actual-solid' : 'frequency-cell-solid';
-
-                                            return (
-                                                <tr
-                                                    key={row.hz}
-                                                    className="table-row-fusion group/row"
-                                                    title={row.limitReason || ''}
-                                                >
-                                                    <td className={`${tdBaseClass} ${stickyBgClass} px-5 py-4 whitespace-nowrap sticky left-0 z-30 shadow-[4px_0_10px_rgba(0,0,0,0.3)] text-white font-black border-r border-white/10`}>
-                                                        <div className="flex items-center gap-3">
-                                                            {row.isActual && <div className="w-2.5 h-2.5 rounded-none bg-blue-500 shadow-glow-primary animate-pulse"></div>}
-                                                            {row.isDanger && !row.isActual && <div className="w-2.5 h-2.5 rounded-none bg-danger shadow-glow-danger animate-pulse"></div>}
-                                                            {row.isWarning && !row.isActual && <div className="w-2.5 h-2.5 rounded-none bg-amber-500 shadow-glow-warning"></div>}
-                                                            {row.isSuccess && !row.isActual && <div className="w-2 h-2 rounded-none bg-success/40"></div>}
-
-                                                            <span className="text-sm font-black tracking-tight">
-                                                                {row.hz} <small className="opacity-40 text-[9px]">Hz</small>
-                                                            </span>
-                                                            {row.isActual && <span className="text-[9px] text-primary px-2 py-0.5 rounded-none border border-primary/30 font-black uppercase tracking-widest bg-primary/5">ACTUAL</span>}
-                                                            {row.violations.length > 0 && !row.isActual && !row.noIntersection && (
-                                                                <div className="flex gap-1.5">
-                                                                    {row.violations.map((v, idx) => (
-                                                                        <div key={idx} className={`w-2 h-2 rounded-none ${v.type === 'danger' ? 'bg-danger shadow-glow-danger' : 'bg-warning shadow-glow-warning'}`} title={v.reason}></div>
-                                                                    ))}
-                                                                </div>
-                                                            )}
-                                                            {row.noIntersection && (
-                                                                <span className="text-[9px] bg-white/10 text-txt-muted px-2 py-0.5 rounded-none font-black tracking-wide opacity-40">
-                                                                    Sin Convergencia
-                                                                </span>
-                                                            )}
+                                                <h3 className="text-2xl font-black text-warning uppercase tracking-tighter mb-4">{language === 'es' ? 'Telemetria Incompleta' : 'Incomplete Telemetry'}</h3>
+                                                <p className="text-txt-main/80 text-sm font-medium max-w-md mb-6 leading-relaxed">
+                                                    Faltan variables criticas para ejecutar el calculo de degradacion. Por favor, <strong>ingrese los valores manualmente</strong> en el panel izquierdo (Datos de Superficie/Fondo).
+                                                </p>
+                                                <div className="flex flex-wrap justify-center gap-3">
+                                                    {(!fieldData.pip || fieldData.pip <= 0) && (
+                                                        <div className="px-3 py-1.5 bg-danger/20 border border-danger/40 rounded-none text-danger font-black text-[10px] uppercase tracking-widest flex items-center gap-2 shadow-glow-danger/20">
+                                                            <div className="w-1.5 h-1.5 rounded-none bg-danger animate-ping"></div> FALTA PIP
                                                         </div>
-                                                    </td>
-                                                    {row.noIntersection ? (
-                                                        <td colSpan={vsdCols.length} className="px-3 py-4 text-center text-[11px] text-txt-muted opacity-40 italic font-medium uppercase tracking-widest">
-                                                            Conflicto de Sistema - No se encontro ajuste de fluido
-                                                        </td>
-                                                    ) : vsdCols.map(col => {
-                                                        const motorDependentCols = ['amps', 'volts', 'kva', 'kw', 'motorLoad', 'motorT'];
-                                                        if (motorMissing && motorDependentCols.includes(col.key)) {
-                                                            return (
-                                                                <td key={col.label} className={`${tdBaseClass} px-3 py-3 text-center transition-colors duration-500`}>
-                                                                    <div className="text-xs text-warning font-black"></div>
-                                                                    <div className="text-[9px] text-warning/80 font-black uppercase tracking-widest mt-0.5">
-                                                                        {language === 'es' ? 'MOTOR NO ENCONTRADO' : 'MOTOR NOT FOUND'}
-                                                                    </div>
-                                                                </td>
-                                                            );
-                                                        }
-                                                        const violation = row.violations?.find(v => v.field === col.key);
-                                                        const highlightClass = violation
-                                                            ? (violation.type === 'danger'
-                                                                ? 'text-danger font-black font-mono'
-                                                                : 'text-warning font-black font-mono')
-                                                            : 'text-txt-main/90';
+                                                    )}
+                                                    {(!fieldData.thp || fieldData.thp <= 0) && (
+                                                        <div className="px-3 py-1.5 bg-danger/20 border border-danger/40 rounded-none text-danger font-black text-[10px] uppercase tracking-widest flex items-center gap-2 shadow-glow-danger/20">
+                                                            <div className="w-1.5 h-1.5 rounded-none bg-danger animate-ping"></div> FALTA THP
+                                                        </div>
+                                                    )}
+                                                    {(!fieldData.frequency || fieldData.frequency <= 0) && (
+                                                        <div className="px-3 py-1.5 bg-danger/20 border border-danger/40 rounded-none text-danger font-black text-[10px] uppercase tracking-widest flex items-center gap-2 shadow-glow-danger/20">
+                                                            <div className="w-1.5 h-1.5 rounded-none bg-danger animate-ping"></div> FALTA FRECUENCIA
+                                                        </div>
+                                                    )}
+                                                    {(!fieldData.rate || fieldData.rate <= 5) && (
+                                                        <div className="px-3 py-1.5 bg-danger/20 border border-danger/40 rounded-none text-danger font-black text-[10px] uppercase tracking-widest flex items-center gap-2 shadow-glow-danger/20">
+                                                            <div className="w-1.5 h-1.5 rounded-none bg-danger animate-ping"></div> FALTA CAUDAL
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+                                        <PumpChart
+                                            data={chartData}
+                                            pump={pump}
+                                            currentFrequency={displayFreq}
+                                            isDiagnosticMode={chartMode === 'comparative'}
+                                            referencePoints={referencePoints}
+                                            targetFlow={displayRes.rate}
+                                            className="w-full h-full"
+                                        />
+
+                                    </div>
+                                ) : (
+                                    <div className="flex-1 flex flex-col items-center justify-center text-txt-muted opacity-30 uppercase font-black tracking-[0.4em] gap-8">
+                                        <div className="p-10 bg-surface rounded-none border border-white/10 animate-float">
+                                            <Activity className="w-20 h-20 text-secondary/40" />
+                                        </div>
+                                        <span className="text-sm">{pump ? "Syncing Field Telemetry..." : "Hardware Identification Required"}</span>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* MODAL / PANEL DE SENSIBILIDAD - Rendered via Portal to avoid clipping */}
+                        {showSensModal && createPortal(
+                            <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+                                <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => setShowSensModal(false)}></div>
+                                <div className="bg-canvas border border-white/10 rounded-none w-full max-w-lg shadow-[0_0_100px_rgba(0,0,0,0.5)] relative z-10 overflow-hidden animate-zoomIn border-t-2 border-t-primary/40">
+                                    <div className="p-8 border-b border-white/5 flex justify-between items-center bg-surface-raised">
+                                        <div className="flex items-center gap-4">
+                                            <div className="p-3 bg-primary/20 rounded-none text-primary border border-primary/30">
+                                                <TrendingUp className="w-6 h-6" />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-lg font-black text-white uppercase tracking-widest leading-none">{language === 'es' ? 'Analisis de Sensibilidad' : 'Sensitivity Analysis'}</h3>
+                                                <p className="text-[10px] text-txt-muted font-black uppercase mt-2 opacity-50 tracking-widest italic">Simulacion de Reservorio y Superficie</p>
+                                            </div>
+                                        </div>
+                                        <button onClick={() => setShowSensModal(false)} className="p-2 hover:bg-white/5 rounded-none transition-colors">
+                                            <X className="w-7 h-7 text-txt-muted hover:text-white" />
+                                        </button>
+                                    </div>
+                                    <div className="p-10 flex flex-col gap-8">
+                                        <div className="grid grid-cols-1 gap-6">
+                                            <div className="flex flex-col gap-3">
+                                                <div className="flex justify-between items-center px-1">
+                                                    <label className="text-[10px] font-black text-txt-muted uppercase tracking-widest">Nuevo IP (Yacimiento)</label>
+                                                    <span className="text-[9px] font-black text-primary uppercase">Actual: {calculatedIP.toFixed(2)}</span>
+                                                </div>
+                                                <div className="relative group">
+                                                    <div className="absolute inset-0 bg-primary/10 blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity"></div>
+                                                    <input
+                                                        type="number"
+                                                        value={sensScenario.ip}
+                                                        onChange={(e) => setSensScenario({ ...sensScenario, ip: parseFloat(parseFloat(e.target.value).toFixed(2)) || 0 })}
+                                                        className="w-full bg-surface-light border border-white/10 p-6 rounded-none text-3xl font-black text-primary outline-none focus:border-primary/50 transition-all font-mono relative z-10"
+                                                        placeholder="0.0"
+                                                    />
+                                                    <span className="absolute right-6 top-1/2 -translate-y-1/2 text-xs font-black text-txt-muted opacity-30 z-10">BFPD/PSI</span>
+                                                </div>
+                                            </div>
+                                            <div className="flex flex-col gap-3">
+                                                <div className="flex justify-between items-center px-1">
+                                                    <label className="text-[10px] font-black text-txt-muted uppercase tracking-widest">Nueva THP (Superficie)</label>
+                                                    <span className="text-[9px] font-black text-secondary uppercase">Actual: {fieldData.thp} psi</span>
+                                                </div>
+                                                <div className="relative group">
+                                                    <div className="absolute inset-0 bg-secondary/10 blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity"></div>
+                                                    <input
+                                                        type="number"
+                                                        value={sensScenario.thp}
+                                                        onChange={(e) => setSensScenario({ ...sensScenario, thp: parseFloat(parseFloat(e.target.value).toFixed(2)) || 0 })}
+                                                        className="w-full bg-surface-light border border-white/10 p-6 rounded-none text-3xl font-black text-secondary outline-none focus:border-secondary/50 transition-all font-mono relative z-10"
+                                                        placeholder="0.0"
+                                                    />
+                                                    <span className="absolute right-6 top-1/2 -translate-y-1/2 text-xs font-black text-txt-muted opacity-30 z-10">PSI</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex gap-4 mt-4">
+                                            <button
+                                                onClick={() => {
+                                                    setSensScenario({ active: false, ip: 0, thp: 0 });
+                                                    setShowSensModal(false);
+                                                }}
+                                                className="flex-1 bg-white/5 hover:bg-white/10 text-txt-muted text-[11px] font-black uppercase py-5 rounded-none border border-white/10 transition-all hover:text-white"
+                                            >
+                                                Reset / Limpiar
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    setSensScenario({
+                                                        ...sensScenario,
+                                                        active: true,
+                                                        ip: Number(sensScenario.ip.toFixed(2)),
+                                                        thp: Number(sensScenario.thp.toFixed(2))
+                                                    });
+                                                    setShowSensModal(false);
+                                                }}
+                                                className="flex-1 bg-primary text-white text-[11px] font-black uppercase py-5 rounded-none shadow-glow-primary/30 hover:scale-[1.03] active:scale-[0.97] transition-all"
+                                            >
+                                                {language === 'es' ? 'Ejecutar Sensibilidad' : 'Run Sensitivity'}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>,
+                            document.body
+                        )}
+
+                        {(!isMobileView || mobileSubTab === 'results') && (
+                            <>
+                                {/* CONSOLIDATED CENTRAL OPERATION BAR */}
+                                <div className="flex items-center justify-center w-full px-1 relative z-50 my-0.5">
+                                    <div className="flex bg-surface/80 backdrop-blur-xl p-0.5 rounded-none border border-white/10 w-full pointer-events-auto items-stretch">
+                                        <button
+                                            onClick={() => setViewMode('telemetry')}
+                                            className={`flex-1 flex items-center justify-center gap-1.5 md:gap-3 py-2 px-4 rounded-none text-[9px] md:text-[10px] font-black uppercase transition-all duration-500 ${viewMode === 'telemetry' ? 'bg-secondary text-black shadow-glow-secondary/20 scale-[1.01]' : 'text-txt-muted hover:text-white hover:bg-white/5'}`}
+                                        >
+                                            <Monitor className="w-3.5 h-3.5 shrink-0" />
+                                            <span>{language === 'es' ? 'Telemetria' : 'Telemetry'}</span>
+                                        </button>
+                                        <button
+                                            onClick={() => setViewMode('sensitivity')}
+                                            className={`flex-1 flex items-center justify-center gap-1.5 md:gap-3 py-2 px-4 rounded-none text-[9px] md:text-[10px] font-black uppercase transition-all duration-500 ${viewMode === 'sensitivity' ? 'bg-primary text-white shadow-glow-primary/20 scale-[1.01]' : 'text-txt-muted hover:text-white hover:bg-white/5'}`}
+                                        >
+                                            <TrendingUp className="w-3.5 h-3.5 shrink-0" />
+                                            <span className="hidden sm:inline">{language === 'es' ? 'Sensibilidad VSD' : 'VSD Sensitivity'}</span>
+                                            <span className="sm:hidden">{language === 'es' ? 'Sensibilidad' : 'Sens.'}</span>
+                                        </button>
+
+                                        <div className="w-px bg-white/10 my-1 self-stretch"></div>
+
+                                        <button
+                                            onClick={() => setIsVsdTableExpanded(!isVsdTableExpanded)}
+                                            className={`flex-1 flex items-center justify-center gap-1.5 md:gap-2 py-2 px-4 rounded-none text-[9px] md:text-[10px] font-black uppercase transition-all duration-500 ${isVsdTableExpanded ? 'bg-warning/20 text-warning border border-warning/30 shadow-glow-warning/10' : 'text-txt-muted hover:text-txt-main hover:bg-white/5'}`}
+                                        >
+                                            <Activity className="w-3.5 h-3.5 text-warning shrink-0" />
+                                            <span className="hidden sm:inline">
+                                                {isVsdTableExpanded ? (language === 'es' ? 'Modo Simple' : 'Simple Mode') : (language === 'es' ? 'Modo Detallado (1Hz)' : 'Detailed Mode (1Hz)')}
+                                            </span>
+                                            <span className="sm:hidden">
+                                                {isVsdTableExpanded ? (language === 'es' ? 'Simple' : 'Simple') : (language === 'es' ? 'Detallado' : 'Detailed')}
+                                            </span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {viewMode === 'telemetry' ? (
+                                    <>
+                                        <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-2 shrink-0 pb-1">
+                                            <PremiumMetricCard label={t('p6.degradation')} value={`${(degradationPct ?? 0).toFixed(1)}%`} subValue={t('p6.headLoss')} icon={TrendingDown} color="danger" alert={(degradationPct ?? 0) > 10} />
+                                            <PremiumMetricCard
+                                                label={t('p6.vsdStatus')}
+                                                value={((params as any).selectedVSD && (displayRes?.electrical?.systemKva ?? 0) > (params as any).selectedVSD.kvaRating) ? t('p6.limited') : t('p6.normal')}
+                                                subValue={(params as any).selectedVSD ? `${(params as any).selectedVSD.kvaRating} kVA` : t('p6.noVsd')}
+                                                icon={Monitor}
+                                                color={((params as any).selectedVSD && (displayRes?.electrical?.systemKva ?? 0) > (params as any).selectedVSD.kvaRating) ? "danger" : "secondary"}
+                                                alert={(params as any).selectedVSD && (displayRes?.electrical?.systemKva ?? 0) > (params as any).selectedVSD.kvaRating}
+                                            />
+                                            <PremiumMetricCard
+                                                label={t('p6.actualDemand')}
+                                                value={`${displayRes?.electrical?.systemKva?.toFixed(1) ?? '0.0'}`}
+                                                subValue={t('p6.kvaSurface')}
+                                                icon={Zap}
+                                                color="secondary"
+                                            />
+                                            <PremiumMetricCard label={t('tele.systemPower')} value={`${displayRes?.electrical?.systemKw?.toFixed(1) ?? '0.0'} kW`} subValue={t('p6.totalInput')} icon={Zap} color="secondary" />
+                                            <PremiumMetricCard label={t('tele.sub')} value={`${displayRes?.submergenceFt?.toFixed(0) ?? '0'} ft`} subValue={t('p6.abovePump')} icon={Droplets} color="primary" alert={(displayRes?.submergenceFt ?? 0) < 500} />
+                                            <PremiumMetricCard label={t('tele.intakeTemp')} value={`${displayRes?.intakeTemp?.toFixed(1) ?? '0.0'} F`} subValue={t('p6.pumpIntake')} icon={Thermometer} color="secondary" />
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-2 shrink-0 pb-1">
+                                            <CompPremium label={sensScenario.active ? "TDH Predicho" : t('tele.head')} design={designRes?.tdh ?? 0} actual={displayRes?.head ?? 0} unit="ft" color="secondary" />
+                                            <CompPremium label={sensScenario.active ? "Pwf Predicha" : t('p3.pwf')} design={designRes?.pwf ?? 0} actual={displayRes?.pwf ?? 0} unit="psi" color="primary" />
+                                            <PremiumMetricCard label={t('p5.motorLoad')} value={motorMissing ? '' : `${(displayRes?.motorLoad ?? 0).toFixed(0)}%`} subValue={motorMissing ? (language === 'es' ? 'MOTOR NO ENCONTRADO' : 'MOTOR NOT FOUND') : `${displayRes?.hpTotal?.toFixed(1) ?? '0.0'} HP`} icon={Zap} color="primary" alert={!motorMissing && (displayRes?.motorLoad ?? 0) > 105} />
+                                            <CompPremium label={sensScenario.active ? "Caudal Predicho" : t('tele.flow')} design={designParams.pressures.totalRate} actual={displayRes.rate} unit="bpd" color="secondary" />
+                                            <CompPremium label={sensScenario.active ? "PIP Predicha" : t('p3.pip')} design={designRes.pip} actual={displayRes.pip} unit="psi" color="primary" />
+                                            <CompPremium label={sensScenario.active ? "Drawdown %" : "Drawdown %"} design={((designParams.inflow.pStatic - designRes.pwf) / (designParams.inflow.pStatic || 1) * 100)} actual={((effectiveParams.inflow.pStatic - displayRes.pwf) / (effectiveParams.inflow.pStatic || 1) * 100)} unit="%" color={sensScenario.active ? "primary" : "secondary"} />
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-7 gap-2 shrink-0 pb-1">
+                                            <PremiumMetricCard label={t('sens.vel')} value={`${displayRes?.fluidVelocity?.toFixed(2) ?? '0.0'}`} subValue={t('p6.cooling')} icon={Droplets} color="primary" alert={(displayRes?.fluidVelocity ?? 0) < 0.5} />
+                                            <PremiumMetricCard label={t('sens.volts')} value={motorMissing ? '' : `${displayRes?.electrical?.volts?.toFixed(0) ?? '0'}`} subValue={motorMissing ? (language === 'es' ? 'MOTOR NO ENCONTRADO' : 'MOTOR NOT FOUND') : t('p6.downhole')} icon={Zap} color="secondary" />
+                                            <PremiumMetricCard label={t('sens.amps')} value={motorMissing ? '' : `${displayRes?.electrical?.amps?.toFixed(1) ?? '0.0'}`} subValue={motorMissing ? (language === 'es' ? 'MOTOR NO ENCONTRADO' : 'MOTOR NOT FOUND') : t('p6.matchCap')} icon={Activity} color="secondary" />
+                                            <PremiumMetricCard label={t('tele.surfaceVolts')} value={motorMissing ? '' : `${displayRes?.electrical?.surfaceVolts?.toFixed(0) ?? '0'}`} subValue={motorMissing ? (language === 'es' ? 'MOTOR NO ENCONTRADO' : 'MOTOR NOT FOUND') : t('p6.vsdOut')} icon={Zap} color="primary" />
+                                            <PremiumMetricCard label={t('p5.efficiency')} value={`${displayRes?.efficiency?.toFixed(1) ?? '0.0'}%`} subValue={t('p6.hydraulic')} icon={Activity} color="success" />
+                                            <PremiumMetricCard label={t('tele.shaftTorque')} value={t('p6.normal')} subValue={t('p6.safetyMargin')} icon={ShieldCheck} color="success" />
+                                            <PremiumMetricCard label={t('p6.matchSuccess')} value="98.5%" subValue={t('p6.modelConvergence')} icon={Target} color="primary" />
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div className="bg-surface/50 backdrop-blur-md border border-surface-light rounded-2xl overflow-hidden flex flex-col min-h-[500px] shadow-xl animate-fadeIn hover:border-primary/20 transition-all duration-300">
+                                        <div className="px-5 py-3.5 border-b border-surface-light flex justify-between items-center bg-gradient-to-r from-primary/35 via-primary/10 to-transparent">
+                                            <div className="flex items-center gap-4">
+                                                <h3 className="text-xs font-black text-txt-main uppercase tracking-tight border-l-2 border-primary pl-3">{language === 'es' ? 'SIMULACION VSD (30-80 HZ)' : 'VSD SIMULATION (30-80 HZ)'}</h3>
+                                                <span className="text-[8px] text-txt-muted font-bold uppercase tracking-widest opacity-50 italic">Condiciones de campo actuales</span>
+                                            </div>
+                                            <div className="flex items-center gap-4">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-2 h-2 rounded-full bg-blue-500 shadow-glow-primary animate-pulse"></div>
+                                                    <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Frecuencia Campo: {fieldData.frequency} Hz</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="flex-1 overflow-auto custom-scrollbar-h glass-table border-t border-surface-light max-h-[600px]">
+                                            <table className="w-full text-left border-separate border-spacing-0 min-w-[1200px]">
+                                                <thead className="sticky top-0 z-20 table-header-fusion">
+                                                    <tr>
+                                                        <th className="px-5 py-4 text-[12px] font-black uppercase tracking-[0.2em] sticky left-0 top-0 z-50 frequency-cell-solid shadow-[4px_0_10px_rgba(0,0,0,0.3)]">{language === 'es' ? 'FRECUENCIA' : 'FREQUENCY'}</th>
+                                                        {vsdCols.map(col => (
+                                                            <th key={col.label} className="px-3 py-4 text-[11px] font-black uppercase tracking-[0.2em] text-center sticky top-0 z-20 table-header-fusion">
+                                                                {col.label}
+                                                                {col.unit && <span className="block text-[8px] opacity-40 lowercase mt-1 font-bold">{col.unit}</span>}
+                                                            </th>
+                                                        ))}
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-surface-light">
+                                                    {vsdRows.filter(row => isVsdTableExpanded || row.isActual || row.hz % 10 === 0).map((row) => {
+                                                        const tdBaseClass = row.isActual
+                                                            ? 'table-cell-actual'
+                                                            : row.isDanger
+                                                                ? 'table-cell-danger'
+                                                                : row.isWarning
+                                                                    ? 'table-cell-warning'
+                                                                    : 'table-cell-success';
+
+                                                        // Ensure sticky column is always solid
+                                                        const stickyBgClass = row.isActual ? 'frequency-cell-actual-solid' : 'frequency-cell-solid';
 
                                                         return (
-                                                            <td key={col.label} className={`${tdBaseClass} px-3 py-3 text-center transition-colors duration-500`}>
-                                                                <div className={`text-xs ${highlightClass}`}>
-                                                                    {col.fmt((row as any)[col.key])}
-                                                                </div>
-                                                            </td>
+                                                            <tr
+                                                                key={row.hz}
+                                                                className="table-row-fusion group/row"
+                                                                title={row.limitReason || ''}
+                                                            >
+                                                                <td className={`${tdBaseClass} ${stickyBgClass} px-5 py-4 whitespace-nowrap sticky left-0 z-30 shadow-[4px_0_10px_rgba(0,0,0,0.3)] text-white font-black border-r border-surface-light`}>
+                                                                    <div className="flex items-center gap-3">
+                                                                        {row.isActual && <div className="w-2.5 h-2.5 rounded-none bg-blue-500 shadow-glow-primary animate-pulse"></div>}
+                                                                        {row.isDanger && !row.isActual && <div className="w-2.5 h-2.5 rounded-none bg-danger shadow-glow-danger animate-pulse"></div>}
+                                                                        {row.isWarning && !row.isActual && <div className="w-2.5 h-2.5 rounded-none bg-amber-500 shadow-glow-warning"></div>}
+                                                                        {row.isSuccess && !row.isActual && <div className="w-2 h-2 rounded-none bg-success/40"></div>}
+
+                                                                        <span className="text-sm font-black tracking-tight">
+                                                                            {row.hz} <small className="opacity-40 text-[9px]">Hz</small>
+                                                                        </span>
+                                                                        {row.isActual && <span className="text-[9px] text-primary px-2 py-0.5 rounded-none border border-primary/30 font-black uppercase tracking-widest bg-primary/5">ACTUAL</span>}
+                                                                        {row.violations.length > 0 && !row.isActual && !row.noIntersection && (
+                                                                            <div className="flex gap-1.5">
+                                                                                {row.violations.map((v, idx) => (
+                                                                                    <div key={idx} className={`w-2 h-2 rounded-none ${v.type === 'danger' ? 'bg-danger shadow-glow-danger' : 'bg-warning shadow-glow-warning'}`} title={v.reason}></div>
+                                                                                ))}
+                                                                            </div>
+                                                                        )}
+                                                                        {row.noIntersection && (
+                                                                            <span className="text-[9px] bg-white/10 text-txt-muted px-2 py-0.5 rounded-none font-black tracking-wide opacity-40">
+                                                                                Sin Convergencia
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                </td>
+                                                                {row.noIntersection ? (
+                                                                    <td colSpan={vsdCols.length} className="px-3 py-4 text-center text-[11px] text-txt-muted opacity-40 italic font-medium uppercase tracking-widest">
+                                                                        Conflicto de Sistema - No se encontro ajuste de fluido
+                                                                    </td>
+                                                                ) : vsdCols.map(col => {
+                                                                    const motorDependentCols = ['amps', 'volts', 'kva', 'kw', 'motorLoad', 'motorT'];
+                                                                    if (motorMissing && motorDependentCols.includes(col.key)) {
+                                                                        return (
+                                                                            <td key={col.label} className={`${tdBaseClass} px-3 py-3 text-center transition-colors duration-500`}>
+                                                                                <div className="text-xs text-warning font-black"></div>
+                                                                                <div className="text-[9px] text-warning/80 font-black uppercase tracking-widest mt-0.5">
+                                                                                    {language === 'es' ? 'MOTOR NO ENCONTRADO' : 'MOTOR NOT FOUND'}
+                                                                                </div>
+                                                                            </td>
+                                                                        );
+                                                                    }
+                                                                    const violation = row.violations?.find(v => v.field === col.key);
+                                                                    const highlightClass = violation
+                                                                        ? (violation.type === 'danger'
+                                                                            ? 'text-danger font-black font-mono'
+                                                                            : 'text-warning font-black font-mono')
+                                                                        : 'text-txt-main/90 font-mono font-medium';
+
+                                                                    return (
+                                                                        <td key={col.label} className={`${tdBaseClass} px-3 py-3 text-center transition-colors duration-500`}>
+                                                                            <div className={`text-xs ${highlightClass}`}>
+                                                                                {col.fmt((row as any)[col.key])}
+                                                                            </div>
+                                                                        </td>
+                                                                    );
+                                                                })}
+                                                            </tr>
                                                         );
                                                     })}
-                                                </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div className="p-4 bg-white/5 border-t border-white/5 text-right">
-                                <span className="text-[9px] font-black text-txt-muted uppercase tracking-[0.2em] opacity-40">
-                                    ~. Los valores mostrados son proyecciones del gemelo digital basadas en el IPR (IP: {(sensScenario.active && sensScenario.ip > 0 ? sensScenario.ip : calculatedIP).toFixed(2)}) {sensScenario.active ? 'Simulado' : 'Calibrado'}.
-                                </span>
-                            </div>
-                        </div>
-                    )}
-                    </>
-                    )}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <div className="p-4 bg-white/5 border-t border-white/5 text-right">
+                                            <span className="text-[9px] font-black text-txt-muted uppercase tracking-[0.2em] opacity-40">
+                                                ~. Los valores mostrados son proyecciones del gemelo digital basadas en el IPR (IP: {(sensScenario.active && sensScenario.ip > 0 ? sensScenario.ip : calculatedIP).toFixed(2)}) {sensScenario.active ? 'Simulado' : 'Calibrado'}.
+                                            </span>
+                                        </div>
+                                    </div>
+                                )}
+                            </>
+                        )}
 
-                    {showReport && (
-                        <HistoryMatchReport
-                            onClose={() => setShowReport(false)}
-                            designParams={designParams}
-                            actualParams={effectiveParams}
-                            pump={pump}
-                            designRes={designRes}
-                            actualRes={displayRes}
-                            designFreq={designFreq}
-                            actualFreq={displayFreq}
-                            chartData={chartData}
-                            mechanics={null}
-                            compareScenario={compareScenario}
-                            fieldData={fieldData}
-                            refPoints={referencePoints}
-                            calculatedIP={sensScenario.active ? sensScenario.ip : calculatedIP}
-                            aiAnalysis={aiAnalysisText}
-                            motor={(params as any).motor}
-                            degradationPct={degradationPct}
-                            vsdRows={vsdRows}
-                        />
-                    )}
-                </div>
+                        {showReport && (
+                            <HistoryMatchReport
+                                onClose={() => setShowReport(false)}
+                                designParams={designParams}
+                                actualParams={effectiveParams}
+                                pump={pump}
+                                designRes={designRes}
+                                actualRes={displayRes}
+                                designFreq={designFreq}
+                                actualFreq={displayFreq}
+                                chartData={chartData}
+                                mechanics={null}
+                                compareScenario={compareScenario}
+                                fieldData={fieldData}
+                                refPoints={referencePoints}
+                                calculatedIP={sensScenario.active ? sensScenario.ip : calculatedIP}
+                                aiAnalysis={aiAnalysisText}
+                                motor={(params as any).motor}
+                                degradationPct={degradationPct}
+                                vsdRows={vsdRows}
+                            />
+                        )}
+                    </div>
                 )}
             </div>
-        </>
+        </div>
     );
 };
 export const Phase6 = React.memo(Phase6Component);
