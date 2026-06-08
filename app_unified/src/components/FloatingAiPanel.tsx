@@ -1238,11 +1238,7 @@ RULE 11 — HISTORIAL DE PRUEBAS Y AJUSTE HISTÓRICO
 
                 {/* Notification Badge - outside the overflow-hidden container */}
                 {fleet.filter(w => w.status !== 'normal').length > 0 && !isOpen && (
-                    <div className="absolute -top-1 -right-1 min-w-[20px] h-[20px] px-1 bg-gradient-to-br from-rose-500 to-rose-600 rounded-full border border-white/25 shadow-[0_0_12px_rgba(244,63,94,0.65)] flex items-center justify-center animate-pulse z-20">
-                        <span className="text-[9.5px] font-black text-white font-mono leading-none">
-                            {fleet.filter(w => w.status !== 'normal').length}
-                        </span>
-                    </div>
+                    <div className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-gradient-to-br from-rose-500 to-rose-600 rounded-full border border-canvas shadow-[0_0_10px_rgba(244,63,94,0.8)] animate-pulse z-20" />
                 )}
             </button>
         </div>
