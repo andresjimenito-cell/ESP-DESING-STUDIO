@@ -3,7 +3,8 @@ import {
     Activity, ChevronLeft, RefreshCw, Download, Database, Trash2,
     Monitor, Shield, Zap, Droplets, Thermometer, ShieldCheck,
     TrendingUp, MessageSquare, Menu, X, Send, Sparkles, AlertTriangle,
-    Layers, Compass, Target, Globe, FileSpreadsheet, Settings, Palette
+    Layers, Compass, Target, Globe, FileSpreadsheet, Settings, Palette,
+    SlidersHorizontal
 } from 'lucide-react';
 import { WellFleetItem, EspPump, SystemParams, HistoryMatchData } from '@/types';
 import { getWellHealthScore, computeWellCapacity, getOptimizationPath } from '../PhaseMonitoreo.helpers';
@@ -93,6 +94,60 @@ export const MobileMonitoreo: React.FC<Props> = ({
     const [showKeyModal, setShowKeyModal] = useState(false);
     const [apiKeyInput, setApiKeyInput] = useState('');
     const [isMobileVideoLoaded, setIsMobileVideoLoaded] = useState(false);
+
+    // Zoom de app automático por celular
+    const getAppZoom = () => {
+        if (typeof window === 'undefined') return 1.0;
+        const w = window.innerWidth;
+        if (w < 360) return 0.78;
+        if (w < 400) return 0.82;
+        if (w < 480) return 0.88;
+        return 0.95;
+    };
+    const [appZoom, setAppZoom] = useState(getAppZoom());
+
+    // Filtros de flota colapsables
+    const [showFilters, setShowFilters] = useState(false);
+
+    // Sub-pestañas para BHA/3D
+    const [bhaMode, setBhaMode] = useState<'bha' | '3d'>('bha');
+
+    // Escalado automático de BHA exacto
+    const [bhaScale, setBhaScale] = useState(0.45);
+
+    const estimatedBhaHeight = useMemo(() => {
+        const vsdBoxH = wellMatchParams?.selectedVSD ? 160 : 0;
+        const treeHeight = 180;
+        const surfY = vsdBoxH + (wellMatchParams?.selectedVSD ? 5 : 0) + treeHeight;
+        const tubingLen = 250;
+        const startY = surfY + tubingLen;
+        const dischargeH = 55;
+        const pumpStages = pump?.stages || 100;
+        const totalPumpH = Math.min(350, Math.max(160, pumpStages * 2.2));
+        const intakeH = 70;
+        const sealH = 110;
+        const motorHp = wellMatchParams?.selectedMotor ? (wellMatchParams.selectedMotor.hp || 0) : 0;
+        const motorH = wellMatchParams?.selectedMotor ? Math.min(280, 130 + (motorHp * 0.4)) : 160;
+        const sensorH = 100;
+        const connH = 4;
+        const gapH = 12;
+        const housingCount = pump?.housingCount || 1;
+        const pumpSectionHeight = totalPumpH + (gapH * (housingCount - 1));
+        
+        const espBottomY = startY + dischargeH + pumpSectionHeight + connH + intakeH + connH + sealH + connH + motorH + connH + sensorH;
+        return espBottomY + 35 + 20; // casingBottomY + 20 margin
+    }, [pump, wellMatchParams]);
+
+    useEffect(() => {
+        const handleResize = () => {
+            setAppZoom(getAppZoom());
+            const cardWidth = Math.min(window.innerWidth - 32, 500); // 32px padding
+            setBhaScale(cardWidth / 800);
+        };
+        handleResize();
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, [wellMatchParams?.selectedVSD, pump]);
 
     useEffect(() => {
         if (!importProgress) {
@@ -415,7 +470,7 @@ ${historySummary}`;
             {/* ══════════════════════════════════════════════════════
                 MAIN CONTENT
             ══════════════════════════════════════════════════════ */}
-            <main className="flex-1 overflow-y-auto custom-scrollbar min-h-0">
+            <main className="flex-1 overflow-y-auto custom-scrollbar min-h-0" style={{ zoom: appZoom }}>
 
                 {/* ── FLOTA ───────────────────────────────────────── */}
                 {activeTab === 'fleet' && (
@@ -425,76 +480,90 @@ ${historySummary}`;
 
                         {/* Search + Filters */}
                         <div className="p-2 px-2.5 space-y-1.5 border-b border-white/5 bg-surface/40">
-                            <DebouncedSearchInput
-                                value={searchTerm}
-                                onChange={setSearchTerm}
-                                placeholder="Buscar pozo..."
-                            />
-
-                            {/* Data filter */}
-                            <div className="space-y-0.5">
-                                <span className="text-[7px] font-black uppercase tracking-[0.15em] text-txt-muted/60 px-0.5">Datos</span>
-                                <div className="flex gap-1">
-                                    {(['all', 'complete', 'missing'] as const).map(f => (
-                                        <button
-                                            key={f}
-                                            onClick={() => setDataFilter(f)}
-                                            className={`flex-1 py-1 rounded-md text-[7px] font-black uppercase tracking-wider transition-all ${dataFilter === f
-                                                    ? f === 'all' ? 'bg-primary text-white shadow-sm'
-                                                        : f === 'complete' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                                                            : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                                                    : 'bg-white/5 text-txt-muted hover:bg-white/10'
-                                                }`}
-                                        >
-                                            {f === 'all' ? 'Todos' : f === 'complete' ? 'Completos' : 'Faltan'}
-                                        </button>
-                                    ))}
+                            <div className="flex gap-2 items-center">
+                                <div className="flex-1">
+                                    <DebouncedSearchInput
+                                        value={searchTerm}
+                                        onChange={setSearchTerm}
+                                        placeholder="Buscar pozo..."
+                                    />
                                 </div>
+                                <button
+                                    onClick={() => setShowFilters(!showFilters)}
+                                    className={`w-9 h-9 flex items-center justify-center rounded-xl border transition-all active:scale-95 shrink-0 ${showFilters ? 'bg-primary/20 border-primary/40 text-primary' : 'bg-white/5 border-white/8 text-txt-muted'}`}
+                                >
+                                    <SlidersHorizontal className="w-4 h-4" />
+                                </button>
                             </div>
 
-                            {/* Health filter */}
-                            <div className="space-y-0.5">
-                                <span className="text-[7px] font-black uppercase tracking-[0.15em] text-txt-muted/60 px-0.5">Salud</span>
-                                <div className="flex gap-1">
-                                    {(['all', 'healthy', 'caution', 'critical'] as const).map(f => (
-                                        <button
-                                            key={f}
-                                            onClick={() => setHealthFilter(f)}
-                                            className={`flex-1 py-1 rounded-md text-[7px] font-black uppercase tracking-wider transition-all ${healthFilter === f
-                                                    ? f === 'all' ? 'bg-primary text-white'
-                                                        : f === 'healthy' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                                                            : f === 'caution' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                                                                : 'bg-red-500/20 text-red-400 border border-red-500/30'
-                                                    : 'bg-white/5 text-txt-muted hover:bg-white/10'
-                                                }`}
-                                        >
-                                            {f === 'all' ? 'Todos' : f}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
+                            {showFilters && (
+                                <div className="space-y-1.5 pt-1.5 border-t border-white/5 animate-fadeIn">
+                                    {/* Data filter */}
+                                    <div className="space-y-0.5">
+                                        <span className="text-[7px] font-black uppercase tracking-[0.15em] text-txt-muted/60 px-0.5">Datos</span>
+                                        <div className="flex gap-1">
+                                            {(['all', 'complete', 'missing'] as const).map(f => (
+                                                <button
+                                                    key={f}
+                                                    onClick={() => setDataFilter(f)}
+                                                    className={`flex-1 py-1 rounded-md text-[7px] font-black uppercase tracking-wider transition-all ${dataFilter === f
+                                                            ? f === 'all' ? 'bg-primary text-white shadow-sm'
+                                                                : f === 'complete' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                                                                    : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                                                            : 'bg-white/5 text-txt-muted hover:bg-white/10'
+                                                        }`}
+                                                >
+                                                    {f === 'all' ? 'Todos' : f === 'complete' ? 'Completos' : 'Faltan'}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
 
-                            {/* Status filter */}
-                            <div className="space-y-0.5">
-                                <span className="text-[7px] font-black uppercase tracking-[0.15em] text-txt-muted/60 px-0.5">Estado</span>
-                                <div className="flex gap-1">
-                                    {(['all', 'operativo', 'fallado', 'pendiente'] as const).map(f => (
-                                        <button
-                                            key={f}
-                                            onClick={() => setStatusFilter(f)}
-                                            className={`flex-1 py-1 rounded-md text-[7px] font-black uppercase tracking-wider transition-all ${statusFilter === f
-                                                    ? f === 'all' ? 'bg-primary text-white'
-                                                        : f === 'operativo' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                                                            : f === 'fallado' ? 'bg-red-500/20 text-red-400 border border-red-500/30'
-                                                                : 'bg-slate-500/20 text-slate-400 border border-slate-500/30'
-                                                    : 'bg-white/5 text-txt-muted hover:bg-white/10'
-                                                }`}
-                                        >
-                                            {f === 'all' ? 'Todos' : f}
-                                        </button>
-                                    ))}
+                                    {/* Health filter */}
+                                    <div className="space-y-0.5">
+                                        <span className="text-[7px] font-black uppercase tracking-[0.15em] text-txt-muted/60 px-0.5">Salud</span>
+                                        <div className="flex gap-1">
+                                            {(['all', 'healthy', 'caution', 'critical'] as const).map(f => (
+                                                <button
+                                                    key={f}
+                                                    onClick={() => setHealthFilter(f)}
+                                                    className={`flex-1 py-1 rounded-md text-[7px] font-black uppercase tracking-wider transition-all ${healthFilter === f
+                                                            ? f === 'all' ? 'bg-primary text-white'
+                                                                : f === 'healthy' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                                                                    : f === 'caution' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                                                                        : 'bg-red-500/20 text-red-400 border border-red-500/30'
+                                                            : 'bg-white/5 text-txt-muted hover:bg-white/10'
+                                                        }`}
+                                                >
+                                                    {f === 'all' ? 'Todos' : f}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Status filter */}
+                                    <div className="space-y-0.5">
+                                        <span className="text-[7px] font-black uppercase tracking-[0.15em] text-txt-muted/60 px-0.5">Estado</span>
+                                        <div className="flex gap-1">
+                                            {(['all', 'operativo', 'fallado', 'pendiente'] as const).map(f => (
+                                                <button
+                                                    key={f}
+                                                    onClick={() => setStatusFilter(f)}
+                                                    className={`flex-1 py-1 rounded-md text-[7px] font-black uppercase tracking-wider transition-all ${statusFilter === f
+                                                            ? f === 'all' ? 'bg-primary text-white'
+                                                                : f === 'operativo' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                                                                    : f === 'fallado' ? 'bg-red-500/20 text-red-400 border border-red-500/30'
+                                                                        : 'bg-slate-500/20 text-slate-400 border border-slate-500/30'
+                                                            : 'bg-white/5 text-txt-muted hover:bg-white/10'
+                                                        }`}
+                                                >
+                                                    {f === 'all' ? 'Todos' : f}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
+                            )}
                         </div>
 
                         {/* Well list */}
@@ -522,40 +591,48 @@ ${historySummary}`;
                                     const isSelected = selectedWell?.id === w.id;
                                     const freq = w.productionTest?.freq || 0;
                                     const rate = Math.round(w.currentRate || w.productionTest?.rate || 0);
+                                    const pip = Math.round(w.productionTest?.pip || 0);
 
                                     return (
                                         <div
                                             key={w.id}
                                             onClick={() => { setSelectedWell(w.id); setActiveTab('copilot'); }}
-                                            className={`relative flex items-center gap-2.5 p-2.5 rounded-xl border transition-all cursor-pointer active:scale-[0.98] overflow-hidden ${isSelected
-                                                    ? 'bg-primary/8 border-primary/30'
-                                                    : 'bg-surface/70 border-white/5 hover:border-white/10 hover:bg-surface'
+                                            className={`relative flex flex-col p-4 rounded-2xl border transition-all cursor-pointer active:scale-[0.98] overflow-hidden ${isSelected
+                                                    ? 'bg-primary/8 border-primary/30 shadow-lg shadow-primary/5'
+                                                    : 'bg-surface/60 border-white/5 hover:border-white/10 hover:bg-surface/80'
                                                 }`}
                                         >
                                             {/* Left accent bar */}
-                                            <div className={`absolute left-0 top-0 bottom-0 w-0.5 ${sc.bg.replace('/10', '')} rounded-l-xl`}
+                                            <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl"
                                                 style={{ background: sc.bar }} />
 
-                                            {/* Compact status indicator dot */}
-                                            <div className="shrink-0 flex items-center justify-center pl-1">
-                                                <span className="w-3.5 h-3.5 rounded-full border-2 border-canvas shadow-lg" style={{ backgroundColor: sc.bar }} />
-                                            </div>
-
-                                            {/* Well info */}
-                                            <div className="flex-1 min-w-0">
-                                                <div className="text-[13px] font-black text-txt-main tracking-tight uppercase truncate leading-tight">
-                                                    {w.name}
+                                            {/* Top Row: Name + Health Badge */}
+                                            <div className="flex items-center justify-between gap-2 pl-1.5">
+                                                <div className="flex items-center gap-2 min-w-0">
+                                                    <span className="w-2 h-2 rounded-full border border-canvas animate-pulse" style={{ backgroundColor: sc.bar }} />
+                                                    <span className="text-[12px] font-black text-txt-main tracking-tight uppercase truncate">
+                                                        {w.name}
+                                                    </span>
                                                 </div>
-                                                <div className="flex items-center gap-2 mt-0.5">
-                                                    <span className="text-[9px] text-txt-muted font-bold tabular-nums">{freq} Hz</span>
-                                                    <span className="text-white/10">·</span>
-                                                    <span className="text-[9px] text-txt-muted font-bold tabular-nums">{rate} BPD</span>
+                                                <div className={`px-2 py-0.5 rounded-full text-[7.5px] font-black uppercase tracking-wider ${sc.bg} ${sc.text} border ${sc.ring}`}>
+                                                    {sc.label} · {score.toFixed(0)}%
                                                 </div>
                                             </div>
 
-                                            {/* Status label */}
-                                            <div className={`shrink-0 px-2 py-0.5 rounded-full text-[7px] font-black uppercase tracking-wider ${sc.bg} ${sc.text} border ${sc.ring}`}>
-                                                {sc.label}
+                                            {/* Micro-grid stats */}
+                                            <div className="grid grid-cols-3 gap-2 mt-3 pt-2.5 border-t border-white/5 pl-1.5">
+                                                <div className="flex flex-col">
+                                                    <span className="text-[7.5px] font-black text-txt-muted uppercase tracking-wider">Frecuencia</span>
+                                                    <span className="text-[11px] font-mono font-bold text-txt-main mt-0.5">{freq} Hz</span>
+                                                </div>
+                                                <div className="flex flex-col">
+                                                    <span className="text-[7.5px] font-black text-txt-muted uppercase tracking-wider">Caudal</span>
+                                                    <span className="text-[11px] font-mono font-bold text-txt-main mt-0.5">{rate} BPD</span>
+                                                </div>
+                                                <div className="flex flex-col text-right">
+                                                    <span className="text-[7.5px] font-black text-txt-muted uppercase tracking-wider">Presión (PIP)</span>
+                                                    <span className="text-[11px] font-mono font-bold text-primary mt-0.5">{pip} psi</span>
+                                                </div>
                                             </div>
                                         </div>
                                     );
@@ -688,70 +765,96 @@ ${historySummary}`;
                             </div>
                         ) : (
                             <div className="space-y-2.5 p-2.5">
-                                {/* ESP BHA Stack */}
-                                <section className="bg-surface/50 border border-white/8 rounded-xl overflow-hidden shadow-md">
-                                    <div className="flex items-center gap-2 px-3.5 py-2.5 border-b border-white/5 bg-surface/60">
-                                        <div className="w-5.5 h-5.5 rounded-lg bg-primary/15 flex items-center justify-center border border-primary/20">
-                                            <Layers className="w-3 h-3 text-primary" />
-                                        </div>
-                                        <span className="text-[10px] font-black uppercase tracking-wider text-txt-main">Esquema BHA</span>
-                                    </div>
+                                {/* Sub-tab selector */}
+                                <div className="flex p-1 bg-surface/80 border border-white/8 rounded-xl mx-1 shadow-md">
+                                    <button
+                                        onClick={() => setBhaMode('bha')}
+                                        className={`flex-1 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all text-center ${bhaMode === 'bha' ? 'bg-primary text-white shadow-sm font-black' : 'text-txt-muted hover:bg-white/5'}`}
+                                    >
+                                        Esquema BHA
+                                    </button>
+                                    <button
+                                        onClick={() => setBhaMode('3d')}
+                                        className={`flex-1 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all text-center ${bhaMode === '3d' ? 'bg-primary text-white shadow-sm font-black' : 'text-txt-muted hover:bg-white/5'}`}
+                                    >
+                                        Trayectoria 3D
+                                    </button>
+                                </div>
 
-                                    <div className="flex justify-center items-start bg-canvas/30 py-3 min-h-[380px] overflow-x-auto">
-                                        {pump ? (
-                                            <div className="scale-[0.7] origin-top">
-                                                <VisualESPStack
-                                                    pump={pump}
-                                                    motor={wellMatchParams.selectedMotor || undefined}
+                                {bhaMode === 'bha' ? (
+                                    /* ESP BHA Stack */
+                                    <section className="bg-surface/50 border border-white/8 rounded-xl overflow-hidden shadow-md flex flex-col">
+                                        <div className="flex items-center gap-2 px-3.5 py-2.5 border-b border-white/5 bg-surface/60">
+                                            <div className="w-5.5 h-5.5 rounded-lg bg-primary/15 flex items-center justify-center border border-primary/20">
+                                                <Layers className="w-3 h-3 text-primary" />
+                                            </div>
+                                            <span className="text-[10px] font-black uppercase tracking-wider text-txt-main">Esquema BHA</span>
+                                        </div>
+
+                                        <div className="h-[520px] bg-canvas/30 overflow-auto custom-scrollbar flex justify-center items-start p-4">
+                                            {pump ? (
+                                                <div 
+                                                    className="transition-all duration-200 ease-out origin-top-left"
+                                                    style={{ 
+                                                        width: `${800 * bhaScale}px`,
+                                                        height: `${estimatedBhaHeight * bhaScale}px`
+                                                    }}
+                                                >
+                                                    <div style={{ transform: `scale(${bhaScale})`, transformOrigin: 'top left' }}>
+                                                        <VisualESPStack
+                                                            pump={pump}
+                                                            motor={wellMatchParams.selectedMotor || undefined}
+                                                            params={wellMatchParams}
+                                                            results={safeBhaResults}
+                                                            frequency={selectedWell.productionTest.freq || 60}
+                                                            health={physicalHealth as any}
+                                                            selectedVSD={wellMatchParams.selectedVSD}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="flex flex-col items-center justify-center p-6 opacity-50 gap-1.5 w-full h-full">
+                                                    <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+                                                        <AlertTriangle className="w-4 h-4 text-amber-400" />
+                                                    </div>
+                                                    <span className="text-[9px] font-black text-txt-muted uppercase tracking-wider">Bomba no encontrada</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </section>
+                                ) : (
+                                    /* 3D Trajectory */
+                                    <section className="bg-surface/50 border border-white/8 rounded-xl overflow-hidden shadow-md">
+                                        <div className="flex items-center gap-2 px-3.5 py-2.5 border-b border-white/5 bg-surface/60">
+                                            <div className="w-5.5 h-5.5 rounded-lg bg-secondary/15 flex items-center justify-center border border-secondary/20">
+                                                <Compass className="w-3 h-3 text-secondary animate-[spin_10s_linear_infinite]" />
+                                            </div>
+                                            <span className="text-[10px] font-black uppercase tracking-wider text-txt-main">Trayectoria y Desviación</span>
+                                        </div>
+
+                                        <div className="w-full h-[520px]">
+                                            {wellMatchParams.survey && wellMatchParams.survey.length > 0 ? (
+                                                <TrajectoryPlot
+                                                    survey={wellMatchParams.survey}
                                                     params={wellMatchParams}
-                                                    results={safeBhaResults}
-                                                    frequency={selectedWell.productionTest.freq || 60}
-                                                    health={physicalHealth as any}
-                                                    selectedVSD={wellMatchParams.selectedVSD}
+                                                    isSidebar={true}
                                                 />
-                                            </div>
-                                        ) : (
-                                            <div className="flex flex-col items-center justify-center p-6 opacity-50 gap-1.5">
-                                                <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
-                                                    <AlertTriangle className="w-4 h-4 text-amber-400" />
+                                            ) : (
+                                                <div className="h-full flex flex-col items-center justify-center text-center gap-3 opacity-40">
+                                                    <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+                                                        <AlertTriangle className="w-6 h-6 text-amber-400" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-[10px] font-black uppercase tracking-wider text-txt-main">Sin Datos de Trayectoria</p>
+                                                        <p className="text-[9px] text-txt-muted uppercase mt-1 px-6">
+                                                            Asumiendo pozo vertical para el cálculo.
+                                                        </p>
+                                                    </div>
                                                 </div>
-                                                <span className="text-[9px] font-black text-txt-muted uppercase tracking-wider">Bomba no encontrada</span>
-                                            </div>
-                                        )}
-                                    </div>
-                                </section>
-
-                                {/* 3D Trajectory */}
-                                <section className="bg-surface/50 border border-white/8 rounded-xl overflow-hidden shadow-md">
-                                    <div className="flex items-center gap-2 px-3.5 py-2.5 border-b border-white/5 bg-surface/60">
-                                        <div className="w-5.5 h-5.5 rounded-lg bg-secondary/15 flex items-center justify-center border border-secondary/20">
-                                            <Compass className="w-3 h-3 text-secondary animate-[spin_10s_linear_infinite]" />
+                                            )}
                                         </div>
-                                        <span className="text-[10px] font-black uppercase tracking-wider text-txt-main">Trayectoria y Desviación</span>
-                                    </div>
-
-                                    <div className="w-full h-[360px]">
-                                        {wellMatchParams.survey && wellMatchParams.survey.length > 0 ? (
-                                            <TrajectoryPlot
-                                                survey={wellMatchParams.survey}
-                                                params={wellMatchParams}
-                                                isSidebar={false}
-                                            />
-                                        ) : (
-                                            <div className="h-full flex flex-col items-center justify-center text-center gap-3 opacity-40">
-                                                <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
-                                                    <AlertTriangle className="w-6 h-6 text-amber-400" />
-                                                </div>
-                                                <div>
-                                                    <p className="text-[10px] font-black uppercase tracking-wider text-txt-main">Sin Datos de Trayectoria</p>
-                                                    <p className="text-[9px] text-txt-muted uppercase mt-1 px-6">
-                                                        Asumiendo pozo vertical para el cálculo.
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                </section>
+                                    </section>
+                                )}
 
                             </div>
                         )}

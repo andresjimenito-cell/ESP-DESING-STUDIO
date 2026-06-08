@@ -223,7 +223,16 @@ export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params, 
 
     const yawRef = useRef(Math.PI / 4.5);
     const pitchRef = useRef(-Math.PI / 7.0);
-    const zoomRef = useRef(1.0);
+    const getInitialZoom = () => {
+        if (typeof window === 'undefined') return 1.0;
+        const w = window.innerWidth;
+        if (w < 360) return 0.52;
+        if (w < 400) return 0.58;
+        if (w < 480) return 0.65;
+        if (w < 768) return 0.74;
+        return 1.0;
+    };
+    const zoomRef = useRef(getInitialZoom());
     const hovIdxRef = useRef<number | null>(null);
     const isAutoRotRef = useRef(true);
     const dragRef = useRef<{ x: number; y: number; yaw: number; pitch: number } | null>(null);
@@ -1109,7 +1118,9 @@ export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params, 
     }, []);
 
     const resetCamera = useCallback(() => {
-        yawRef.current = Math.PI / 4.5; pitchRef.current = -Math.PI / 7.0; zoomRef.current = 1.0;
+        yawRef.current = Math.PI / 4.5; 
+        pitchRef.current = -Math.PI / 7.0; 
+        zoomRef.current = getInitialZoom();
         needsRenderRef.current = true;
         requestRenderRef.current?.();
     }, []);
@@ -1120,12 +1131,39 @@ export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params, 
         requestRenderRef.current?.();
     }, []);
 
+    const [activeMobileView, setActiveMobileView] = useState<'canvas' | 'polar'>('canvas');
+    const isMobileLayout = typeof window !== 'undefined' && window.innerWidth < 1024;
+
     return (
         <div className="h-full flex flex-col glass-surface rounded-[1.5rem] border border-surface-light shadow-xl overflow-hidden relative select-none">
+            {isMobileLayout && (
+                <div className="flex p-1 bg-surface-light/25 border-b border-white/5 gap-1 z-20 shrink-0">
+                    <button
+                        onClick={() => {
+                            setActiveMobileView('canvas');
+                            needsRenderRef.current = true;
+                            requestRenderRef.current?.();
+                        }}
+                        className={`flex-1 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all text-center ${activeMobileView === 'canvas' ? 'bg-primary text-white shadow-md' : 'text-txt-muted hover:bg-white/5'}`}
+                    >
+                        Visualización 3D
+                    </button>
+                    <button
+                        onClick={() => {
+                            setActiveMobileView('polar');
+                            needsRenderRef.current = true;
+                            requestRenderRef.current?.();
+                        }}
+                        className={`flex-1 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all text-center ${activeMobileView === 'polar' ? 'bg-primary text-white shadow-md' : 'text-txt-muted hover:bg-white/5'}`}
+                    >
+                        Optimización Azimut
+                    </button>
+                </div>
+            )}
             <div className={`relative z-10 flex-1 min-h-0 grid grid-cols-1 ${isSidebar ? '' : 'lg:grid-cols-2'}`}>
 
                 {/* ── LEFT: 3D Canvas Estilizado ── */}
-                <div className={`relative flex flex-col min-w-0 bg-canvas/40 transition-all duration-300 ${expandedCanvas ? 'fixed inset-0 z-50 bg-surface' : (isSidebar ? 'h-[380px] border-b border-surface-light/30' : 'border-r border-surface-light/30')}`}>
+                <div className={`relative flex flex-col min-w-0 bg-canvas/40 transition-all duration-300 ${isMobileLayout && activeMobileView !== 'canvas' ? 'hidden' : 'flex'} ${expandedCanvas ? 'fixed inset-0 z-50 bg-surface' : (isSidebar ? 'h-[380px] border-b border-surface-light/30' : 'border-r border-surface-light/30')}`}>
 
                     {/* Botones de Control Flotantes Estilizados */}
                     <div className="absolute bottom-4 right-4 flex items-center gap-1.5 bg-surface/80 backdrop-blur-md p-1 rounded-xl border border-surface-light/30 z-20">
@@ -1202,7 +1240,7 @@ export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params, 
                 </div>
 
                 {/* ── RIGHT: Charts & Analytics ── */}
-                <div className={`flex flex-col bg-canvas/40 p-6 gap-6 justify-center items-center ${isSidebar ? 'border-t border-surface-light/30' : 'border-l border-surface-light/30'}`}>
+                <div className={`flex flex-col bg-canvas/40 p-6 gap-6 justify-center items-center ${isMobileLayout && activeMobileView !== 'polar' ? 'hidden' : 'flex'} ${isSidebar ? 'border-t border-surface-light/30' : 'border-l border-surface-light/30'} ${isMobileLayout ? 'overflow-y-auto' : ''}`}>
                     <div className="flex flex-col items-center justify-center border border-surface-light/30 rounded-[2rem] p-6 bg-surface/40 backdrop-blur-md w-full max-w-[420px] shadow-xl">
                         <h2 className="text-[12px] font-black text-primary tracking-[0.2em] text-center mb-4 uppercase">
                             Optimización de Azimut - Spooler ALS
