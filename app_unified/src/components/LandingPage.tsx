@@ -1043,11 +1043,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 {/* Logo + wordmark */}
                 <div className="flex items-center gap-3 group cursor-default">
                     <div
-                        className="w-12 h-12 rounded-2xl flex items-center justify-center relative overflow-hidden border transition-all duration-500"
-                        style={{
-                            background: 'rgba(var(--color-primary), 0.08)',
-                            borderColor: 'rgba(var(--color-primary), 0.15)',
-                        }}
+                        className="w-12 h-12 flex items-center justify-center relative overflow-hidden transition-all duration-500 group-hover:scale-105"
                     >
                         <img
                             src="/LOGO.png"
