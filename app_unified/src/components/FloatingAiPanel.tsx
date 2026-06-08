@@ -82,6 +82,7 @@ const MessageBubble = ({
     text: string;
     isLastModel: boolean;
     isLoading: boolean;
+    key?: any;
 }) => {
     const isUser = role === 'user';
 

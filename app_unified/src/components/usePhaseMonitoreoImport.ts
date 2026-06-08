@@ -552,7 +552,7 @@ export const usePhaseMonitoreoImport = (
         const files = e.target.files;
         if (!files) return;
 
-        const fileList = Array.from(files);
+        const fileList = Array.from(files) as any[];
         if (fileList.length === 1 && (fileList[0].name.endsWith('.xlsx') || fileList[0].name.endsWith('.xls'))) {
             handleImportExcelDesigns(e);
             return;

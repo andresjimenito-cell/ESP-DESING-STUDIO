@@ -200,8 +200,8 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
     // Pre-index designs for O(1) lookup in health calculations
     const indexedDesigns = useMemo(() => {
         const map: Record<string, SystemParams> = {};
-        Object.entries(customDesigns).forEach(([key, design]) => {
-            map[fuzzyWellName(key)] = design;
+        Object.keys(customDesigns).forEach((key) => {
+            map[fuzzyWellName(key)] = customDesigns[key];
         });
         return map;
     }, [customDesigns]);
@@ -733,7 +733,8 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
 
         // Derive physical health for BHA coloring
         const wellNorm = fuzzyWellName(selectedWell.name);
-        const customDesign = Object.entries(customDesigns).find(([k]) => fuzzyWellName(k) === wellNorm)?.[1];
+        const customDesignKey = Object.keys(customDesigns).find(k => fuzzyWellName(k) === wellNorm);
+        const customDesign = customDesignKey ? customDesigns[customDesignKey] : undefined;
 
         // Resolve pump
         const isPendiente = selectedWell.estadoActual === 'pendiente';

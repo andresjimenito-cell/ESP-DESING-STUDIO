@@ -568,9 +568,12 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                                 }}
                             >
-                                <img
-                                    src="/LOGO.png"
-                                    alt="ESP Design Studio Logo"
+                                <video
+                                    src="/logo%20animado.mp4"
+                                    autoPlay
+                                    loop
+                                    muted
+                                    playsInline
                                     style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                                 />
                             </div>
