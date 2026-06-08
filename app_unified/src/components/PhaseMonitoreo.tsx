@@ -1658,7 +1658,7 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
             {/* FULL-SCREEN IMPORT PROGRESS OVERLAY - Simplified & Minimal */}
             {importProgress && (
                 <div
-                    className="fixed inset-0 z-[9999] flex flex-col items-center justify-center overflow-hidden"
+                    className="fixed inset-0 z-[9999] flex flex-col items-center justify-center overflow-hidden animate-fadeIn"
                     style={{
                         backgroundColor: 'rgb(var(--color-canvas))',
                         backgroundImage: 'linear-gradient(rgb(var(--color-canvas) / 0.85), rgb(var(--color-canvas) / 0.85)), url(/main_bg.png)',
@@ -1669,9 +1669,15 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                     {/* Minimal Atmosphere */}
                     <div className="absolute inset-0 bg-radial-gradient from-primary/5 to-transparent pointer-events-none"></div>
 
-                    <div className="flex flex-col items-center gap-10 max-w-sm w-full relative z-10">
-                        {/* Logo - Simple & Free floating - Larger */}
-                        <div className="relative group animate-fadeIn flex items-center justify-center" style={{ width: '336px', height: '336px' }}>
+                    {/* Premium Card Container */}
+                    <div 
+                        className="bg-surface/85 backdrop-blur-2xl border border-surface-light/30 shadow-[0_24px_80px_rgba(0,0,0,0.5)] p-8 sm:p-10 rounded-[32px] w-[420px] max-w-[92vw] flex flex-col items-center gap-8 text-txt-main relative z-10 animate-scaleUp"
+                        style={{
+                            background: 'rgb(var(--color-surface-raised) / 85%)',
+                        }}
+                    >
+                        {/* Logo - Sized nicely to fit the card */}
+                        <div className="relative group flex items-center justify-center" style={{ width: '180px', height: '180px' }}>
                             <video
                                 src="/logo%20animado.mp4"
                                 autoPlay
@@ -1679,9 +1685,9 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                 muted
                                 playsInline
                                 onLoadedData={() => setIsOverlayVideoLoaded(true)}
-                                className="w-84 h-84 object-contain"
+                                className="w-40 h-40 object-contain"
                                 style={{
-                                    filter: 'drop-shadow(0 0 50px rgba(var(--color-primary), 0.4))',
+                                    filter: 'drop-shadow(0 0 30px rgba(var(--color-primary), 0.35))',
                                     opacity: isOverlayVideoLoaded ? 1 : 0,
                                     transition: 'opacity 0.6s ease-in-out'
                                 }}
@@ -1690,58 +1696,59 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                 <img
                                     src="/LOGO.png"
                                     alt="Cargando..."
-                                    className="absolute w-84 h-84 object-contain pointer-events-none"
+                                    className="absolute w-40 h-40 object-contain pointer-events-none"
                                     style={{
-                                        filter: 'blur(10px) drop-shadow(0 0 50px rgba(var(--color-primary), 0.4))',
+                                        filter: 'blur(10px) drop-shadow(0 0 30px rgba(var(--color-primary), 0.35))',
                                         opacity: 0.7
                                     }}
                                 />
                             )}
                         </div>
 
+                        {/* Progress Details */}
                         <div className="w-full flex flex-col items-center gap-6 animate-fadeInUp">
                             <div className="text-center space-y-1">
-                                <h3 className="text-xl font-bold text-primary uppercase tracking-[0.25em]">
+                                <h3 className="text-base font-black text-primary uppercase tracking-[0.25em] px-2 leading-snug">
                                     {importProgress.label.replace('...', '')}
                                 </h3>
                                 <div className="flex items-center justify-center gap-2 opacity-60">
                                     <span className="w-1 h-1 rounded-full bg-primary animate-pulse"></span>
-                                    <p className="text-[7px] font-bold text-primary uppercase tracking-[0.3em]">
+                                    <p className="text-[7.5px] font-black text-txt-muted uppercase tracking-[0.3em]">
                                         Sincronizando registros
                                     </p>
                                 </div>
                             </div>
 
-                            {/* Minimal Progress Bar */}
-                            <div className="w-full space-y-3 px-8">
-                                <div className="w-full h-[2px] bg-white/5 rounded-full overflow-hidden">
+                            {/* Progress Bar */}
+                            <div className="w-full space-y-3 px-2">
+                                <div className="w-full h-[3px] bg-white/5 rounded-full overflow-hidden">
                                     <div
                                         className="h-full bg-primary transition-all duration-700 ease-out shadow-[0_0_8px_rgba(var(--color-primary),0.4)]"
                                         style={{ width: `${(importProgress.current / Math.max(1, importProgress.total)) * 100}%` }}
                                     ></div>
                                 </div>
 
-                                <div className="flex justify-between items-end px-1">
+                                <div className="flex justify-between items-end px-0.5">
                                     <div className="flex flex-col gap-0.5">
-                                        <span className="text-[6px] font-bold text-txt-muted uppercase tracking-widest opacity-40">
+                                        <span className="text-[6.5px] font-black text-txt-muted uppercase tracking-widest opacity-40">
                                             Telemetry Stream
                                         </span>
-                                        <span className="text-[8px] font-bold text-txt-muted/70 uppercase tracking-widest">
+                                        <span className="text-[8.5px] font-black text-txt-muted/70 uppercase tracking-widest">
                                             ID: {importProgress.current} / {importProgress.total}
                                         </span>
                                     </div>
-                                    <span className="text-2xl font-light text-primary tracking-tighter">
+                                    <span className="text-2xl font-light text-primary tracking-tighter font-mono">
                                         {Math.round((importProgress.current / Math.max(1, importProgress.total)) * 100)}<span className="text-[8px] text-primary/60 ml-0.5">%</span>
                                     </span>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Minimal Status Footer */}
-                        <div className="flex items-center gap-6 text-[6px] font-bold uppercase tracking-[0.4em] text-primary/40 mt-4">
-                            <span className="flex items-center gap-1.5"><Cpu className="w-2 h-2" /> System Ready</span>
+                        {/* Status Footer */}
+                        <div className="flex items-center gap-6 text-[6px] font-bold uppercase tracking-[0.4em] text-primary/40 pt-2 border-t border-white/5 w-full justify-center">
+                            <span className="flex items-center gap-1.5"><Cpu className="w-2.5 h-2.5" /> System Ready</span>
                             <span className="w-[1px] h-2 bg-primary/10"></span>
-                            <span className="flex items-center gap-1.5"><Waves className="w-2 h-2" /> Fleet Sync</span>
+                            <span className="flex items-center gap-1.5"><Waves className="w-2.5 h-2.5" /> Fleet Sync</span>
                         </div>
                     </div>
                 </div>

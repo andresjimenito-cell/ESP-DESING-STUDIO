@@ -1010,7 +1010,7 @@ ${historySummary}`;
             ══════════════════════════════════════════════════════ */}
             {importProgress && (
                 <div
-                    className="fixed inset-0 z-[9999] flex flex-col items-center justify-center overflow-hidden"
+                    className="fixed inset-0 z-[9999] flex flex-col items-center justify-center overflow-hidden animate-fadeIn"
                     style={{
                         backgroundColor: 'rgb(var(--color-canvas))',
                         backgroundImage: 'linear-gradient(rgb(var(--color-canvas) / 0.85), rgb(var(--color-canvas) / 0.85)), url(/main_bg.png)',
@@ -1019,8 +1019,16 @@ ${historySummary}`;
                     }}
                 >
                     <div className="absolute inset-0 bg-radial-gradient from-primary/5 to-transparent pointer-events-none" />
-                    <div className="flex flex-col items-center gap-10 max-w-sm w-full relative z-10">
-                        <div className="relative animate-fadeIn flex items-center justify-center" style={{ width: '336px', height: '336px' }}>
+                    
+                    {/* Premium Mobile Card Container */}
+                    <div 
+                        className="bg-surface/85 backdrop-blur-2xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] p-6 sm:p-8 rounded-[28px] w-[320px] max-w-[90vw] flex flex-col items-center gap-6 text-txt-main relative z-10 animate-scaleUp"
+                        style={{
+                            background: 'rgb(var(--color-surface-raised) / 85%)',
+                        }}
+                    >
+                        {/* Logo - Sized nicely for mobile */}
+                        <div className="relative flex items-center justify-center animate-fadeIn" style={{ width: '130px', height: '130px' }}>
                             <video
                                 src="/logo%20animado.mp4"
                                 autoPlay
@@ -1028,9 +1036,9 @@ ${historySummary}`;
                                 muted
                                 playsInline
                                 onLoadedData={() => setIsMobileVideoLoaded(true)}
-                                className="w-84 h-84 object-contain"
+                                className="w-28 h-28 object-contain"
                                 style={{
-                                    filter: 'drop-shadow(0 0 50px rgba(var(--color-primary), 0.4))',
+                                    filter: 'drop-shadow(0 0 30px rgba(var(--color-primary), 0.35))',
                                     opacity: isMobileVideoLoaded ? 1 : 0,
                                     transition: 'opacity 0.6s ease-in-out'
                                 }}
@@ -1039,24 +1047,35 @@ ${historySummary}`;
                                 <img
                                     src="/LOGO.png"
                                     alt="Cargando..."
-                                    className="absolute w-84 h-84 object-contain pointer-events-none"
+                                    className="absolute w-28 h-28 object-contain pointer-events-none"
                                     style={{
-                                        filter: 'blur(10px) drop-shadow(0 0 50px rgba(var(--color-primary), 0.4))',
+                                        filter: 'blur(10px) drop-shadow(0 0 30px rgba(var(--color-primary), 0.35))',
                                         opacity: 0.7
                                     }}
                                 />
                             )}
                         </div>
-                        <div className="w-full flex flex-col items-center gap-6 animate-fadeInUp">
-                            <h3 className="text-xl font-bold text-primary uppercase tracking-[0.25em] text-center">
+
+                        {/* Progress Details */}
+                        <div className="w-full flex flex-col items-center gap-4 animate-fadeInUp">
+                            <h3 className="text-sm font-black text-primary uppercase tracking-[0.2em] text-center leading-snug px-1">
                                 {importProgress.label.replace('...', '')}
                             </h3>
-                            <div className="w-full px-8">
-                                <div className="w-full h-[2px] bg-white/5 rounded-full overflow-hidden">
+                            
+                            <div className="w-full px-2 space-y-2.5">
+                                <div className="w-full h-[3px] bg-white/5 rounded-full overflow-hidden">
                                     <div
                                         className="h-full bg-primary transition-all duration-700 ease-out shadow-[0_0_8px_rgba(var(--color-primary),0.4)]"
                                         style={{ width: `${(importProgress.current / Math.max(1, importProgress.total)) * 100}%` }}
                                     />
+                                </div>
+                                <div className="flex justify-between items-center px-0.5">
+                                    <span className="text-[8px] font-black text-txt-muted/70 uppercase tracking-widest">
+                                        ID: {importProgress.current} / {importProgress.total}
+                                    </span>
+                                    <span className="text-base font-light text-primary tracking-tighter font-mono">
+                                        {Math.round((importProgress.current / Math.max(1, importProgress.total)) * 100)}%
+                                    </span>
                                 </div>
                             </div>
                         </div>

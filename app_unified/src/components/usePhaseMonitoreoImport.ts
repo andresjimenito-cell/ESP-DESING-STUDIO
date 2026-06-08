@@ -271,17 +271,20 @@ export const usePhaseMonitoreoImport = (
 
             // Reducimos el chunkSize de 15 a 8 para maxima fluidez en la UI
             const chunkSize = 8;
+            let lastYieldTime = Date.now();
             for (let i = 0; i < json.length; i += chunkSize) {
                 const chunk = json.slice(i, i + chunkSize);
 
-                setImportProgress({
-                    current: i,
-                    total: json.length,
-                    label: `Analizando configuraciones: ${i} de ${json.length} pozos...`
-                });
-
-                // Aumentamos ligeramente el delay para asegurar repintado del navegador
-                await new Promise(resolve => setTimeout(resolve, 5));
+                const now = Date.now();
+                if (now - lastYieldTime > 50) {
+                    setImportProgress({
+                        current: i,
+                        total: json.length,
+                        label: `Analizando configuraciones: ${i} de ${json.length} pozos...`
+                    });
+                    await new Promise(resolve => setTimeout(resolve, 1));
+                    lastYieldTime = Date.now();
+                }
 
                 chunk.forEach((row, idx) => {
                     const wellName = String(get_ext(row, ['POZO', 'WELL']) || `WELL-${i + idx}`).toUpperCase().trim();
@@ -792,10 +795,16 @@ export const usePhaseMonitoreoImport = (
 
             // Bajamos chunkSize de 200 a 100 para evitar tirones
             const chunkSize = 100;
+            let lastYieldTime = Date.now();
             for (let i = 0; i < json.length; i += chunkSize) {
                 const chunk = json.slice(i, i + chunkSize);
-                setImportProgress({ current: i, total: json.length, label: `Vinculando registros historicos: ${i} / ${json.length}...` });
-                await new Promise(r => setTimeout(r, 5));
+                
+                const now = Date.now();
+                if (now - lastYieldTime > 50) {
+                    setImportProgress({ current: i, total: json.length, label: `Vinculando registros historicos: ${i} / ${json.length}...` });
+                    await new Promise(r => setTimeout(r, 1));
+                    lastYieldTime = Date.now();
+                }
 
                 chunk.forEach((row) => {
                     const name = String(get_ext(row, ['POZO', 'WELL', 'NAME', 'ID']) || '').trim();
