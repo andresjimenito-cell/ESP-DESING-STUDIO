@@ -1665,9 +1665,12 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                     <div className="flex flex-col items-center gap-10 max-w-sm w-full relative z-10">
                         {/* Logo - Simple & Free floating - Larger */}
                         <div className="relative group animate-fadeIn">
-                            <img
-                                src="/LOGO.png"
-                                alt="Loading..."
+                            <video
+                                src="/logo%20animado.mp4"
+                                autoPlay
+                                loop
+                                muted
+                                playsInline
                                 className="w-84 h-84 object-contain"
                                 style={{
                                     filter: 'drop-shadow(0 0 50px rgba(var(--color-primary), 0.4))',
