@@ -303,6 +303,13 @@ const ANIMATIONS = `
     font-weight: 500;
     font-family: 'Sora', sans-serif;
     color: rgb(var(--color-text-main));
+    transition: font-size 0.2s ease, padding 0.2s ease;
+  }
+  @media (max-width: 767px) {
+    .login-input-wrap input {
+      font-size: 16px; /* Prevents auto-zoom on iOS */
+      padding: 15px 16px 15px 44px; /* Larger touch target */
+    }
   }
   .login-input-wrap input::placeholder {
     color: rgba(var(--color-text-muted), 0.5);
@@ -353,7 +360,7 @@ const ANIMATIONS = `
       inset 0 1px 0 rgba(255,255,255,0.2);
   }
   .login-btn-submit:active:not(:disabled) {
-    transform: translateY(0);
+    transform: translateY(1px) scale(0.97);
   }
   .login-btn-submit:disabled {
     opacity: 0.38;
@@ -426,12 +433,23 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     const [loading, setLoading] = useState(false);
     const [mounted, setMounted] = useState(false);
     const [isVideoLoaded, setIsVideoLoaded] = useState(false);
-
-    const lastMouseTime = useRef(0);
+    const [isMobile, setIsMobile] = useState(() => {
+        if (typeof window !== 'undefined') {
+            return window.innerWidth < 768;
+        }
+        return false;
+    });
 
     useEffect(() => {
         const id = requestAnimationFrame(() => setMounted(true));
-        return () => cancelAnimationFrame(id);
+        const handleResize = () => {
+            setIsMobile(window.innerWidth < 768);
+        };
+        window.addEventListener('resize', handleResize);
+        return () => {
+            cancelAnimationFrame(id);
+            window.removeEventListener('resize', handleResize);
+        };
     }, []);
 
     const fieldParticles = useMemo<Particle[]>(() =>
@@ -536,40 +554,172 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                     transform: mounted ? 'translateY(0) scale(1)' : 'translateY(24px) scale(0.97)',
                     transition: 'opacity 0.7s cubic-bezier(0.16,1,0.3,1), transform 0.7s cubic-bezier(0.16,1,0.3,1)',
                     width: '100%',
-                    maxWidth: '900px',
-                    maxHeight: '94vh',
+                    maxWidth: isMobile ? '100%' : '900px',
+                    maxHeight: isMobile ? '100dvh' : '94vh',
+                    height: isMobile ? '100dvh' : 'auto',
                     display: 'flex',
-                    borderRadius: '20px',
+                    borderRadius: isMobile ? '0px' : '20px',
                     overflow: 'hidden',
-                    boxShadow: isDarkTheme
+                    boxShadow: isMobile ? 'none' : (isDarkTheme
                         ? '0 32px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(var(--color-primary),0.12)'
-                        : '0 20px 60px rgba(0,0,0,0.12), 0 0 0 1px rgba(var(--color-primary),0.1)',
+                        : '0 20px 60px rgba(0,0,0,0.12), 0 0 0 1px rgba(var(--color-primary),0.1)'),
                 }}
-                className="relative z-10 flex-col md:flex-row mx-4"
+                className={`relative z-10 mx-4 ${isMobile ? 'mx-0 w-full h-full flex flex-col' : 'flex-col md:flex-row'}`}
             >
                 {/* ══════════════════════════════════════
-                    LEFT PANEL — Brand & Credits
+                    LEFT PANEL — Brand & Credits (Desktop Only)
                 ══════════════════════════════════════ */}
-                <div
-                    className="login-left-panel flex-1 flex flex-col items-center justify-between text-center"
-                    style={{ padding: '60px 40px', minWidth: 0 }}
-                >
-                    {/* Spacer to balance vertical centering */}
-                    <div />
+                {!isMobile && (
+                    <div
+                        className="login-left-panel flex-1 flex flex-col items-center justify-between text-center"
+                        style={{ padding: '60px 40px', minWidth: 0 }}
+                    >
+                        {/* Spacer to balance vertical centering */}
+                        <div />
 
-                    {/* Centered Logo & App Name */}
-                    <div className="login-fade-up login-fade-up-1 flex flex-col items-center">
-                        {/* Logo wrapper */}
-                        <div style={{ position: 'relative', marginBottom: '24px' }}>
-                            {/* Logo */}
-                            <div
-                                className="login-logo-wrapper relative"
+                        {/* Centered Logo & App Name */}
+                        <div className="login-fade-up login-fade-up-1 flex flex-col items-center">
+                            {/* Logo wrapper */}
+                            <div style={{ position: 'relative', marginBottom: '24px' }}>
+                                {/* Logo */}
+                                <div
+                                    className="login-logo-wrapper relative"
+                                    style={{
+                                        width: '320px', height: '320px',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        position: 'relative'
+                                    }}
+                                >
+                                    <video
+                                        src="/logo%20animado.mp4"
+                                        autoPlay
+                                        loop
+                                        muted
+                                        playsInline
+                                        onLoadedData={() => setIsVideoLoaded(true)}
+                                        style={{
+                                            width: '100%',
+                                            height: '100%',
+                                            objectFit: 'contain',
+                                            opacity: isVideoLoaded ? 1 : 0,
+                                            transition: 'opacity 0.6s ease-in-out',
+                                        }}
+                                    />
+                                    {!isVideoLoaded && (
+                                        <img
+                                            src="/LOGO.png"
+                                            alt="Cargando..."
+                                            style={{
+                                                position: 'absolute',
+                                                width: '100%',
+                                                height: '100%',
+                                                objectFit: 'contain',
+                                                filter: 'blur(10px) drop-shadow(0 0 50px rgba(var(--color-primary), 0.4))',
+                                                opacity: 0.7,
+                                            }}
+                                        />
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* App Title */}
+                            <h1 style={{
+                                fontSize: '28px',
+                                fontWeight: 800,
+                                letterSpacing: '-0.02em',
+                                lineHeight: 1.1,
+                                color: textMain,
+                                margin: 0,
+                            }}>
+                                ESP Design{' '}
+                                <span style={{ color: 'rgb(var(--color-primary))' }}>Studio</span>
+                            </h1>
+                            <p
+                                className="login-mono"
                                 style={{
-                                    width: '320px', height: '320px',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    position: 'relative'
+                                    fontSize: '10px',
+                                    fontWeight: 500,
+                                    letterSpacing: '0.28em',
+                                    textTransform: 'uppercase',
+                                    color: 'rgba(var(--color-primary), 0.6)',
+                                    marginTop: '8px',
                                 }}
                             >
+                                Engineering Suite · v2026
+                            </p>
+                        </div>
+
+                        {/* Small Creators Footer */}
+                        <div className="login-fade-up login-fade-up-2" style={{ width: '100%', maxWidth: '380px' }}>
+                            <div style={{ height: '1px', background: dividerColor, marginBottom: '20px' }} />
+                            <div style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '4px',
+                                fontSize: '9px',
+                                color: textMuted,
+                                lineHeight: 1.6,
+                                fontWeight: 500,
+                            }}>
+                                <p style={{ margin: 0 }}>
+                                    <strong>Creador y Programador:</strong> Andrés Jiménez (Ing. Jr)
+                                </p>
+                                <p style={{ margin: 0 }}>
+                                    <strong>Mente Maestra:</strong> Lenin Peña (Especialista ALS)
+                                </p>
+                                <p style={{ margin: 0, opacity: 0.8, fontSize: '8.5px' }}>
+                                    <strong>Apoyo:</strong> Wirmer Arcos, Jaime Ochoa, Luna Muñoz, Paola Mejía (Frontera Energy)
+                                </p>
+                            </div>
+
+                            <div style={{
+                                marginTop: '16px',
+                                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                fontSize: '8px',
+                                color: textMuted,
+                                opacity: 0.8,
+                            }}>
+                                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    <Zap style={{ width: 10, height: 10, color: 'rgb(var(--color-primary))' }} />
+                                    AJM © 2026
+                                </span>
+                                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    <Heart style={{ width: 9, height: 9, color: '#f87171' }} />
+                                    Confeccionado con Pasión
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* ══════════════════════════════════════
+                    RIGHT PANEL — Login Form
+                ══════════════════════════════════════ */}
+                <div
+                    className="login-right-panel login-scroll"
+                    style={{
+                        width: '100%',
+                        maxWidth: isMobile ? '100%' : '420px',
+                        flexShrink: 0,
+                        backgroundColor: isMobile ? 'rgba(var(--color-surface), 0.55)' : 'rgb(var(--color-surface))',
+                        backdropFilter: isMobile ? 'blur(20px)' : 'none',
+                        WebkitBackdropFilter: isMobile ? 'blur(20px)' : 'none',
+                        borderLeft: (!isMobile && isDarkTheme)
+                            ? '1px solid rgba(255,255,255,0.05)'
+                            : (!isMobile ? '1px solid rgba(var(--color-primary),0.08)' : 'none'),
+                        padding: isMobile ? '24px 20px' : '48px 40px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center',
+                        overflowY: 'auto',
+                    }}
+                >
+                    {/* Brand header for mobile */}
+                    {isMobile && (
+                        <div className="flex flex-col items-center mb-6 animate-fadeIn text-center">
+                            <div className="relative w-28 h-28 mb-3 flex items-center justify-center">
+                                {/* Pulse glow background */}
+                                <div className="absolute inset-0 bg-[rgb(var(--color-primary))]/15 rounded-full blur-2xl animate-pulse" />
                                 <video
                                     src="/logo%20animado.mp4"
                                     autoPlay
@@ -583,6 +733,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                                         objectFit: 'contain',
                                         opacity: isVideoLoaded ? 1 : 0,
                                         transition: 'opacity 0.6s ease-in-out',
+                                        zIndex: 1,
                                     }}
                                 />
                                 {!isVideoLoaded && (
@@ -594,104 +745,40 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                                             width: '100%',
                                             height: '100%',
                                             objectFit: 'contain',
-                                            filter: 'blur(10px) drop-shadow(0 0 50px rgba(var(--color-primary), 0.4))',
+                                            filter: 'blur(10px)',
                                             opacity: 0.7,
+                                            zIndex: 1,
                                         }}
                                     />
                                 )}
                             </div>
-                        </div>
-
-                        {/* App Title */}
-                        <h1 style={{
-                            fontSize: '28px',
-                            fontWeight: 800,
-                            letterSpacing: '-0.02em',
-                            lineHeight: 1.1,
-                            color: textMain,
-                            margin: 0,
-                        }}>
-                            ESP Design{' '}
-                            <span style={{ color: 'rgb(var(--color-primary))' }}>Studio</span>
-                        </h1>
-                        <p
-                            className="login-mono"
-                            style={{
-                                fontSize: '10px',
-                                fontWeight: 500,
-                                letterSpacing: '0.28em',
-                                textTransform: 'uppercase',
-                                color: 'rgba(var(--color-primary), 0.6)',
-                                marginTop: '8px',
-                            }}
-                        >
-                            Engineering Suite · v2026
-                        </p>
-                    </div>
-
-                    {/* Small Creators Footer */}
-                    <div className="login-fade-up login-fade-up-2" style={{ width: '100%', maxWidth: '380px' }}>
-                        <div style={{ height: '1px', background: dividerColor, marginBottom: '20px' }} />
-                        <div style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '4px',
-                            fontSize: '9px',
-                            color: textMuted,
-                            lineHeight: 1.6,
-                            fontWeight: 500,
-                        }}>
-                            <p style={{ margin: 0 }}>
-                                <strong>Creador y Programador:</strong> Andrés Jiménez (Ing. Jr)
-                            </p>
-                            <p style={{ margin: 0 }}>
-                                <strong>Mente Maestra:</strong> Lenin Peña (Especialista ALS)
-                            </p>
-                            <p style={{ margin: 0, opacity: 0.8, fontSize: '8.5px' }}>
-                                <strong>Apoyo:</strong> Wirmer Arcos, Jaime Ochoa, Luna Muñoz, Paola Mejía (Frontera Energy)
+                            <h1 style={{
+                                fontSize: '24px',
+                                fontWeight: 800,
+                                letterSpacing: '-0.02em',
+                                lineHeight: 1.1,
+                                color: textMain,
+                                margin: 0,
+                            }}>
+                                ESP Design <span style={{ color: 'rgb(var(--color-primary))' }}>Studio</span>
+                            </h1>
+                            <p
+                                className="login-mono"
+                                style={{
+                                    fontSize: '8px',
+                                    fontWeight: 500,
+                                    letterSpacing: '0.24em',
+                                    textTransform: 'uppercase',
+                                    color: 'rgba(var(--color-primary), 0.6)',
+                                    marginTop: '6px',
+                                }}
+                            >
+                                Engineering Suite · v2026
                             </p>
                         </div>
-
-                        <div style={{
-                            marginTop: '16px',
-                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                            fontSize: '8px',
-                            color: textMuted,
-                            opacity: 0.8,
-                        }}>
-                            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                <Zap style={{ width: 10, height: 10, color: 'rgb(var(--color-primary))' }} />
-                                AJM © 2026
-                            </span>
-                            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                <Heart style={{ width: 9, height: 9, color: '#f87171' }} />
-                                Confeccionado con Pasión
-                            </span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* ══════════════════════════════════════
-                    RIGHT PANEL — Login Form
-                ══════════════════════════════════════ */}
-                <div
-                    className="login-right-panel login-scroll"
-                    style={{
-                        width: '100%',
-                        maxWidth: '420px',
-                        flexShrink: 0,
-                        borderLeft: isDarkTheme
-                            ? '1px solid rgba(255,255,255,0.05)'
-                            : '1px solid rgba(var(--color-primary),0.08)',
-                        padding: '48px 40px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'center',
-                        overflowY: 'auto',
-                    }}
-                >
+                    )}
                     {/* Secure gateway badge */}
-                    <div className="login-fade-up login-fade-up-1" style={{ marginBottom: '36px' }}>
+                    <div className={`login-fade-up login-fade-up-1 ${isMobile ? 'flex justify-center' : ''}`} style={{ marginBottom: isMobile ? '20px' : '36px' }}>
                         <div style={{
                             display: 'inline-flex', alignItems: 'center', gap: '7px',
                             padding: '6px 14px',
@@ -710,11 +797,11 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                     </div>
 
                     {/* Heading */}
-                    <div className="login-fade-up login-fade-up-2" style={{ marginBottom: '32px' }}>
-                        <h2 style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.02em', color: textMain, margin: '0 0 8px' }}>
+                    <div className={`login-fade-up login-fade-up-2 ${isMobile ? 'text-center' : ''}`} style={{ marginBottom: isMobile ? '24px' : '32px' }}>
+                        <h2 style={{ fontSize: isMobile ? '20px' : '22px', fontWeight: 800, letterSpacing: '-0.02em', color: textMain, margin: '0 0 8px' }}>
                             Bienvenido de vuelta
                         </h2>
-                        <p style={{ fontSize: '12px', color: textSub, margin: 0, lineHeight: 1.6 }}>
+                        <p style={{ fontSize: isMobile ? '11px' : '12px', color: textSub, margin: 0, lineHeight: 1.6 }}>
                             Ingresa tus credenciales corporativas para acceder.
                         </p>
                     </div>
@@ -838,8 +925,8 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
 
                     {/* Bottom note */}
                     <div style={{
-                        marginTop: '28px',
-                        padding: '14px',
+                        marginTop: '24px',
+                        padding: '12px',
                         borderRadius: '10px',
                         background: 'rgba(var(--color-primary),0.04)',
                         border: '1px solid rgba(var(--color-primary),0.08)',
@@ -850,6 +937,15 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                             Acceso restringido a usuarios autorizados. Todas las sesiones son auditadas y encriptadas.
                         </p>
                     </div>
+
+                    {isMobile && (
+                        <div className="mt-6 pt-4 border-t border-white/5 text-center text-[9px] text-txt-muted/60 space-y-1">
+                            <p style={{ margin: 0, fontWeight: 600 }}>AJM © 2026 · Confeccionado con Pasión</p>
+                            <p style={{ margin: 0, opacity: 0.8, fontSize: '8px' }}>
+                                Andrés Jiménez (Ing. Jr) & Lenin Peña (Especialista ALS)
+                            </p>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
