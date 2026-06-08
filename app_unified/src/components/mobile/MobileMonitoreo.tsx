@@ -1020,15 +1020,15 @@ ${historySummary}`;
                 >
                     <div className="absolute inset-0 bg-radial-gradient from-primary/5 to-transparent pointer-events-none" />
                     
-                    {/* Premium Mobile Card Container */}
+                    {/* Premium Mobile Card Container - Enlarged */}
                     <div 
-                        className="bg-surface/85 backdrop-blur-2xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] p-6 sm:p-8 rounded-[28px] w-[320px] max-w-[90vw] flex flex-col items-center gap-6 text-txt-main relative z-10 animate-scaleUp"
+                        className="bg-surface/85 backdrop-blur-2xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] p-10 sm:p-12 rounded-[40px] w-[420px] max-w-[92vw] flex flex-col items-center gap-10 text-txt-main relative z-10 animate-scaleUp"
                         style={{
                             background: 'rgb(var(--color-surface-raised) / 85%)',
                         }}
                     >
-                        {/* Logo - Sized nicely for mobile */}
-                        <div className="relative flex items-center justify-center animate-fadeIn" style={{ width: '130px', height: '130px' }}>
+                        {/* Logo - Sized nicely for mobile - Enlarged */}
+                        <div className="relative flex items-center justify-center animate-fadeIn" style={{ width: '280px', height: '280px' }}>
                             <video
                                 src="/logo%20animado.mp4"
                                 autoPlay
@@ -1036,9 +1036,9 @@ ${historySummary}`;
                                 muted
                                 playsInline
                                 onLoadedData={() => setIsMobileVideoLoaded(true)}
-                                className="w-28 h-28 object-contain"
+                                className="w-60 h-60 object-contain animate-[pulse_4s_ease-in-out_infinite]"
                                 style={{
-                                    filter: 'drop-shadow(0 0 30px rgba(var(--color-primary), 0.35))',
+                                    filter: 'drop-shadow(0 0 45px rgba(var(--color-primary), 0.45))',
                                     opacity: isMobileVideoLoaded ? 1 : 0,
                                     transition: 'opacity 0.6s ease-in-out'
                                 }}
@@ -1047,9 +1047,9 @@ ${historySummary}`;
                                 <img
                                     src="/LOGO.png"
                                     alt="Cargando..."
-                                    className="absolute w-28 h-28 object-contain pointer-events-none"
+                                    className="absolute w-60 h-60 object-contain pointer-events-none"
                                     style={{
-                                        filter: 'blur(10px) drop-shadow(0 0 30px rgba(var(--color-primary), 0.35))',
+                                        filter: 'blur(10px) drop-shadow(0 0 45px rgba(var(--color-primary), 0.45))',
                                         opacity: 0.7
                                     }}
                                 />
@@ -1057,27 +1057,34 @@ ${historySummary}`;
                         </div>
 
                         {/* Progress Details */}
-                        <div className="w-full flex flex-col items-center gap-4 animate-fadeInUp">
-                            <h3 className="text-sm font-black text-primary uppercase tracking-[0.2em] text-center leading-snug px-1">
+                        <div className="w-full flex flex-col items-center gap-8 animate-fadeInUp">
+                            <h3 className="text-lg font-black text-primary uppercase tracking-[0.2em] text-center leading-snug px-1">
                                 {importProgress.label.replace('...', '')}
                             </h3>
                             
-                            <div className="w-full px-2 space-y-2.5">
-                                <div className="w-full h-[3px] bg-white/5 rounded-full overflow-hidden">
+                            <div className="w-full px-2 space-y-4">
+                                <div className="w-full h-[5px] bg-white/5 rounded-full overflow-hidden">
                                     <div
-                                        className="h-full bg-primary transition-all duration-700 ease-out shadow-[0_0_8px_rgba(var(--color-primary),0.4)]"
+                                        className="h-full bg-primary transition-all duration-700 ease-out shadow-[0_0_12px_rgba(var(--color-primary),0.5)]"
                                         style={{ width: `${(importProgress.current / Math.max(1, importProgress.total)) * 100}%` }}
                                     />
                                 </div>
                                 <div className="flex justify-between items-center px-0.5">
-                                    <span className="text-[8px] font-black text-txt-muted/70 uppercase tracking-widest">
+                                    <span className="text-[10px] font-black text-txt-muted/70 uppercase tracking-widest">
                                         ID: {importProgress.current} / {importProgress.total}
                                     </span>
-                                    <span className="text-base font-light text-primary tracking-tighter font-mono">
+                                    <span className="text-3xl font-light text-primary tracking-tighter font-mono">
                                         {Math.round((importProgress.current / Math.max(1, importProgress.total)) * 100)}%
                                     </span>
                                 </div>
                             </div>
+                        </div>
+
+                        {/* Status Footer */}
+                        <div className="flex items-center gap-6 text-[8.5px] font-black uppercase tracking-[0.4em] text-primary/40 pt-4 border-t border-white/5 w-full justify-center">
+                            <span className="flex items-center gap-1.5"><Activity className="w-3.5 h-3.5" /> Ready</span>
+                            <span className="w-[1px] h-2.5 bg-primary/10"></span>
+                            <span className="flex items-center gap-1.5"><RefreshCw className="w-3 h-3 animate-spin" /> Syncing</span>
                         </div>
                     </div>
                 </div>
