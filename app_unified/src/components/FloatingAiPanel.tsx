@@ -1189,23 +1189,54 @@ RULE 11 — HISTORIAL DE PRUEBAS Y AJUSTE HISTÓRICO
                 </div>
             </div>
 
-            <button onClick={() => setIsOpen(!isOpen)} className={`pointer-events-auto relative flex items-center justify-center w-[72px] h-[72px] shadow-[0_15px_40px_rgba(0,0,0,0.6)] transition-all duration-500 group border-[1.5px] overflow-hidden ${isOpen ? 'bg-surface-raised text-primary rotate-90 scale-95 rounded-full border-surface-light/40' : 'rounded-[24px] border-white/20 hover:scale-110 hover:-translate-y-1'}`}
+            <button
+                onClick={() => setIsOpen(!isOpen)}
+                className={`pointer-events-auto relative flex items-center justify-center w-[72px] h-[72px] shadow-[0_20px_50px_rgba(0,0,0,0.55)] transition-all duration-500 group border overflow-hidden ${
+                    isOpen
+                        ? 'bg-surface-raised text-primary rotate-90 scale-95 rounded-full border-surface-light/45'
+                        : 'rounded-[26px] border-primary/20 hover:scale-110 hover:-translate-y-1 hover:border-primary/45'
+                }`}
                 style={!isOpen ? {
-                    background: 'linear-gradient(135deg, rgb(var(--color-primary)) 0%, rgb(var(--color-primary) / 0.8) 100%)',
-                    boxShadow: '0 15px 40px rgba(var(--color-primary) / 0.25), 0 0 20px rgb(var(--color-primary) / 0.4)',
-                } : undefined}
+                    background: 'rgb(var(--color-surface-raised) / 45%)',
+                    backdropFilter: 'blur(24px) saturate(160%)',
+                    boxShadow: '0 20px 48px rgba(0,0,0,0.5), 0 0 25px rgb(var(--color-primary) / 15%), inset 0 1px 1px rgb(255 255 255 / 15%)',
+                } : {
+                    backdropFilter: 'blur(24px)',
+                }}
             >
+                {/* Neon Portal Sweep Ring behind the icon when closed */}
+                {!isOpen && (
+                    <div 
+                        className="absolute inset-0 bg-[conic-gradient(from_0deg,transparent_40%,rgb(var(--color-primary))/20%)] group-hover:bg-[conic-gradient(from_0deg,transparent_30%,rgb(var(--color-primary))/35%)] rounded-[26px] animate-[ai-radar-sweep_4s_linear_infinite]"
+                    />
+                )}
+                
                 {isOpen ? <X className="w-7 h-7" /> : (
-                    <div className="relative flex items-center justify-center w-full h-full">
-                        <img src="/icono.png" alt="IA Monitoreo" className="w-8 h-8 absolute object-contain group-hover:scale-110 transition-transform duration-500 group-hover:rotate-[5deg]" />
-                        <Sparkles className="w-4 h-4 absolute top-3 right-3 text-white/70 animate-pulse drop-shadow-md" />
-                        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-white/30 via-transparent to-transparent opacity-60 pointer-events-none"></div>
+                    <div className="relative flex items-center justify-center w-full h-full z-10">
+                        {/* Soft background glow inside the button */}
+                        <div className="absolute w-10 h-10 rounded-full bg-primary/15 blur-md group-hover:bg-primary/25 transition-all duration-500" />
+                        
+                        <img 
+                            src="/icono.png" 
+                            alt="IA Monitoreo" 
+                            className="w-8.5 h-8.5 absolute object-contain transition-all duration-500 group-hover:scale-110 group-hover:rotate-[8deg]" 
+                        />
+                        <Sparkles className="w-3.5 h-3.5 absolute top-2 right-2 text-primary/80 animate-pulse drop-shadow-[0_0_4px_rgb(var(--color-primary))]" />
                     </div>
                 )}
-                <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity rounded-[24px]" />
+                
+                {/* Shiny overlay on hover */}
+                <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/10 to-white/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+
+                {/* Subtle outer border shine */}
+                <div className="absolute inset-[1px] rounded-[25px] border border-white/5 pointer-events-none" />
+
+                {/* Notification Badge */}
                 {fleet.filter(w => w.status !== 'normal').length > 0 && !isOpen && (
-                    <div className="absolute -top-1 -right-1 w-5 h-5 bg-danger rounded-full border-2 border-canvas shadow-glow-danger animate-pulse flex items-center justify-center">
-                        <span className="text-[9px] font-black text-white">{fleet.filter(w => w.status !== 'normal').length}</span>
+                    <div className="absolute -top-1 -right-1 min-w-[20px] h-[20px] px-1 bg-gradient-to-br from-rose-500 to-rose-600 rounded-full border border-white/25 shadow-[0_0_12px_rgba(244,63,94,0.65)] flex items-center justify-center animate-pulse z-20">
+                        <span className="text-[9.5px] font-black text-white font-mono leading-none">
+                            {fleet.filter(w => w.status !== 'normal').length}
+                        </span>
                     </div>
                 )}
             </button>
