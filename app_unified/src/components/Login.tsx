@@ -425,6 +425,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
     const [loading, setLoading] = useState(false);
     const [mounted, setMounted] = useState(false);
+    const [isVideoLoaded, setIsVideoLoaded] = useState(false);
 
     const lastMouseTime = useRef(0);
 
@@ -562,10 +563,11 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                         <div style={{ position: 'relative', marginBottom: '24px' }}>
                             {/* Logo */}
                             <div
-                                className="login-logo-wrapper"
+                                className="login-logo-wrapper relative"
                                 style={{
                                     width: '320px', height: '320px',
                                     display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    position: 'relative'
                                 }}
                             >
                                 <video
@@ -574,8 +576,29 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                                     loop
                                     muted
                                     playsInline
-                                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                                    onLoadedData={() => setIsVideoLoaded(true)}
+                                    style={{
+                                        width: '100%',
+                                        height: '100%',
+                                        objectFit: 'contain',
+                                        opacity: isVideoLoaded ? 1 : 0,
+                                        transition: 'opacity 0.6s ease-in-out',
+                                    }}
                                 />
+                                {!isVideoLoaded && (
+                                    <img
+                                        src="/LOGO.png"
+                                        alt="Cargando..."
+                                        style={{
+                                            position: 'absolute',
+                                            width: '100%',
+                                            height: '100%',
+                                            objectFit: 'contain',
+                                            filter: 'blur(10px) drop-shadow(0 0 50px rgba(var(--color-primary), 0.4))',
+                                            opacity: 0.7,
+                                        }}
+                                    />
+                                )}
                             </div>
                         </div>
 

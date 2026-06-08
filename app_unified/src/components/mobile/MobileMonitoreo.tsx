@@ -92,6 +92,13 @@ export const MobileMonitoreo: React.FC<Props> = ({
     const [showInstallPrompt, setShowInstallPrompt] = useState(false);
     const [showKeyModal, setShowKeyModal] = useState(false);
     const [apiKeyInput, setApiKeyInput] = useState('');
+    const [isMobileVideoLoaded, setIsMobileVideoLoaded] = useState(false);
+
+    useEffect(() => {
+        if (!importProgress) {
+            setIsMobileVideoLoaded(false);
+        }
+    }, [importProgress]);
 
     const handleProtectedLink = (e: React.MouseEvent<HTMLAnchorElement>, url: string) => {
         e.preventDefault();
@@ -910,16 +917,32 @@ ${historySummary}`;
                 >
                     <div className="absolute inset-0 bg-radial-gradient from-primary/5 to-transparent pointer-events-none" />
                     <div className="flex flex-col items-center gap-10 max-w-sm w-full relative z-10">
-                        <div className="relative animate-fadeIn">
+                        <div className="relative animate-fadeIn flex items-center justify-center" style={{ width: '336px', height: '336px' }}>
                             <video
                                 src="/logo%20animado.mp4"
                                 autoPlay
                                 loop
                                 muted
                                 playsInline
+                                onLoadedData={() => setIsMobileVideoLoaded(true)}
                                 className="w-84 h-84 object-contain"
-                                style={{ filter: 'drop-shadow(0 0 50px rgba(var(--color-primary), 0.4))' }}
+                                style={{
+                                    filter: 'drop-shadow(0 0 50px rgba(var(--color-primary), 0.4))',
+                                    opacity: isMobileVideoLoaded ? 1 : 0,
+                                    transition: 'opacity 0.6s ease-in-out'
+                                }}
                             />
+                            {!isMobileVideoLoaded && (
+                                <img
+                                    src="/LOGO.png"
+                                    alt="Cargando..."
+                                    className="absolute w-84 h-84 object-contain pointer-events-none"
+                                    style={{
+                                        filter: 'blur(10px) drop-shadow(0 0 50px rgba(var(--color-primary), 0.4))',
+                                        opacity: 0.7
+                                    }}
+                                />
+                            )}
                         </div>
                         <div className="w-full flex flex-col items-center gap-6 animate-fadeInUp">
                             <h3 className="text-xl font-bold text-primary uppercase tracking-[0.25em] text-center">

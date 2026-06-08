@@ -120,6 +120,13 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
     }, []);
     const [visibleCount, setVisibleCount] = useState<number>(50);
     const [isSyncingOneDrive, setIsSyncingOneDrive] = useState(false);
+    const [isOverlayVideoLoaded, setIsOverlayVideoLoaded] = useState(false);
+
+    useEffect(() => {
+        if (!importProgress) {
+            setIsOverlayVideoLoaded(false);
+        }
+    }, [importProgress]);
 
     // Carga directa desde OneDrive a través del proxy serverless (/api/onedrive-fetch)
     const loadFromOneDrive = useCallback(async (silent = false) => {
@@ -1664,18 +1671,32 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
 
                     <div className="flex flex-col items-center gap-10 max-w-sm w-full relative z-10">
                         {/* Logo - Simple & Free floating - Larger */}
-                        <div className="relative group animate-fadeIn">
+                        <div className="relative group animate-fadeIn flex items-center justify-center" style={{ width: '336px', height: '336px' }}>
                             <video
                                 src="/logo%20animado.mp4"
                                 autoPlay
                                 loop
                                 muted
                                 playsInline
+                                onLoadedData={() => setIsOverlayVideoLoaded(true)}
                                 className="w-84 h-84 object-contain"
                                 style={{
                                     filter: 'drop-shadow(0 0 50px rgba(var(--color-primary), 0.4))',
+                                    opacity: isOverlayVideoLoaded ? 1 : 0,
+                                    transition: 'opacity 0.6s ease-in-out'
                                 }}
                             />
+                            {!isOverlayVideoLoaded && (
+                                <img
+                                    src="/LOGO.png"
+                                    alt="Cargando..."
+                                    className="absolute w-84 h-84 object-contain pointer-events-none"
+                                    style={{
+                                        filter: 'blur(10px) drop-shadow(0 0 50px rgba(var(--color-primary), 0.4))',
+                                        opacity: 0.7
+                                    }}
+                                />
+                            )}
                         </div>
 
                         <div className="w-full flex flex-col items-center gap-6 animate-fadeInUp">
