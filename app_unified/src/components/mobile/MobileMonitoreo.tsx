@@ -1022,13 +1022,13 @@ ${historySummary}`;
                     
                     {/* Premium Mobile Card Container - Enlarged */}
                     <div 
-                        className="bg-surface/85 backdrop-blur-2xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] p-10 sm:p-12 rounded-[40px] w-[420px] max-w-[92vw] flex flex-col items-center gap-10 text-txt-main relative z-10 animate-scaleUp"
+                        className="bg-surface/85 backdrop-blur-2xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] p-10 sm:p-12 rounded-[44px] w-[460px] max-w-[94vw] flex flex-col items-center gap-10 text-txt-main relative z-10 animate-scaleUp"
                         style={{
                             background: 'rgb(var(--color-surface-raised) / 85%)',
                         }}
                     >
                         {/* Logo - Sized nicely for mobile - Enlarged */}
-                        <div className="relative flex items-center justify-center animate-fadeIn" style={{ width: '280px', height: '280px' }}>
+                        <div className="relative flex items-center justify-center animate-fadeIn" style={{ width: '320px', height: '320px' }}>
                             <video
                                 src="/logo%20animado.mp4"
                                 autoPlay
@@ -1036,9 +1036,9 @@ ${historySummary}`;
                                 muted
                                 playsInline
                                 onLoadedData={() => setIsMobileVideoLoaded(true)}
-                                className="w-60 h-60 object-contain animate-[pulse_4s_ease-in-out_infinite]"
+                                className="w-[300px] h-[300px] object-contain animate-[pulse_4s_ease-in-out_infinite]"
                                 style={{
-                                    filter: 'drop-shadow(0 0 45px rgba(var(--color-primary), 0.45))',
+                                    filter: 'drop-shadow(0 0 50px rgba(var(--color-primary), 0.45))',
                                     opacity: isMobileVideoLoaded ? 1 : 0,
                                     transition: 'opacity 0.6s ease-in-out'
                                 }}
@@ -1047,9 +1047,9 @@ ${historySummary}`;
                                 <img
                                     src="/LOGO.png"
                                     alt="Cargando..."
-                                    className="absolute w-60 h-60 object-contain pointer-events-none"
+                                    className="absolute w-[300px] h-[300px] object-contain pointer-events-none"
                                     style={{
-                                        filter: 'blur(10px) drop-shadow(0 0 45px rgba(var(--color-primary), 0.45))',
+                                        filter: 'blur(10px) drop-shadow(0 0 50px rgba(var(--color-primary), 0.45))',
                                         opacity: 0.7
                                     }}
                                 />

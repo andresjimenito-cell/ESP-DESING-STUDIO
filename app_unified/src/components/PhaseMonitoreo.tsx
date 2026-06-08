@@ -1671,13 +1671,13 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
 
                     {/* Premium Card Container - Enlarged */}
                     <div 
-                        className="bg-surface/85 backdrop-blur-2xl border border-surface-light/30 shadow-[0_24px_80px_rgba(0,0,0,0.5)] p-12 sm:p-16 rounded-[44px] w-[640px] max-w-[94vw] flex flex-col items-center gap-12 text-txt-main relative z-10 animate-scaleUp"
+                        className="bg-surface/85 backdrop-blur-2xl border border-surface-light/30 shadow-[0_24px_80px_rgba(0,0,0,0.5)] p-12 sm:p-16 rounded-[48px] w-[760px] max-w-[94vw] flex flex-col items-center gap-14 text-txt-main relative z-10 animate-scaleUp"
                         style={{
                             background: 'rgb(var(--color-surface-raised) / 85%)',
                         }}
                     >
                         {/* Logo - Sized nicely to fit the card - Enlarged */}
-                        <div className="relative group flex items-center justify-center animate-fadeIn" style={{ width: '340px', height: '340px' }}>
+                        <div className="relative group flex items-center justify-center animate-fadeIn" style={{ width: '460px', height: '460px' }}>
                             <video
                                 src="/logo%20animado.mp4"
                                 autoPlay
@@ -1685,9 +1685,9 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                 muted
                                 playsInline
                                 onLoadedData={() => setIsOverlayVideoLoaded(true)}
-                                className="w-80 h-80 object-contain animate-[pulse_4s_ease-in-out_infinite]"
+                                className="w-[440px] h-[440px] object-contain animate-[pulse_4s_ease-in-out_infinite]"
                                 style={{
-                                    filter: 'drop-shadow(0 0 50px rgba(var(--color-primary), 0.5))',
+                                    filter: 'drop-shadow(0 0 60px rgba(var(--color-primary), 0.55))',
                                     opacity: isOverlayVideoLoaded ? 1 : 0,
                                     transition: 'opacity 0.6s ease-in-out'
                                 }}
@@ -1696,9 +1696,9 @@ export const PhaseMonitoreo: React.FC<Props & { vsdCatalog?: EspVSD[] }> = ({ pa
                                 <img
                                     src="/LOGO.png"
                                     alt="Cargando..."
-                                    className="absolute w-80 h-80 object-contain pointer-events-none"
+                                    className="absolute w-[440px] h-[440px] object-contain pointer-events-none"
                                     style={{
-                                        filter: 'blur(10px) drop-shadow(0 0 50px rgba(var(--color-primary), 0.5))',
+                                        filter: 'blur(10px) drop-shadow(0 0 60px rgba(var(--color-primary), 0.55))',
                                         opacity: 0.7
                                     }}
                                 />
