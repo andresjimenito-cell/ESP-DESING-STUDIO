@@ -2,9 +2,6 @@
 title ESP Design Studio
 cd /d "%~dp0"
 
-REM Si es la llamada de segundo plano para abrir el navegador
-if "%1"=="--open-browser" goto :open_browser
-
 REM Asegurar que existan los accesos directos y carpeta FORMATOS en el directorio padre sin usar parentesis
 if exist "..\INICIAR_ESP_STUDIO.bat" goto :skip_init_shortcut
 echo @echo off > "..\INICIAR_ESP_STUDIO.bat"
@@ -42,27 +39,9 @@ echo [*] Liberando puertos 3000 y 4000 (limpieza preventiva)...
 for /f "tokens=5" %%a in ('netstat -aon ^| findstr :4000') do taskkill /F /PID %%a >nul 2>&1
 for /f "tokens=5" %%a in ('netstat -aon ^| findstr :3000') do taskkill /F /PID %%a >nul 2>&1
 
-echo [*] Iniciando detector de servidor en segundo plano...
-start /b cmd /c "%~f0" --open-browser
+echo [*] Preparando detector de servidor en segundo plano...
+start /b powershell -NoProfile -Command "$chrome = @( ${env:ProgramFiles}, ${env:ProgramFiles(x86)}, ${env:LocalAppData} ) | Where-Object { $_ } | ForEach-Object { Join-Path $_ 'Google\Chrome\Application\chrome.exe' } | Where-Object { Test-Path $_ } | Select-Object -First 1; while ($true) { try { $w = New-Object System.Net.Sockets.TcpClient('127.0.0.1', 3000); if ($w.Connected) { $w.Close(); break; } } catch {} Start-Sleep -Milliseconds 250 }; if ($chrome) { Start-Process $chrome -ArgumentList '--app=http://localhost:3000' } else { Start-Process msedge -ArgumentList '--app=http://localhost:3000' }"
 
 echo [*] Iniciando servidores locales (Vite + Express)...
 call npm run dev
-exit /b 0
-
-:open_browser
-REM Esperar a que el puerto 3000 responda antes de abrir el navegador (silencioso)
-powershell -Command "while ($true) { try { $w = New-Object System.Net.Sockets.TcpClient('127.0.0.1', 3000); if ($w.Connected) { $w.Close(); break; } } catch {} Start-Sleep -Milliseconds 250 }"
-
-set "CHROME_PATH="
-if exist "C:\Program Files\Google\Chrome\Application\chrome.exe" set "CHROME_PATH=C:\Program Files\Google\Chrome\Application\chrome.exe"
-if not defined CHROME_PATH if exist "C:\Program Files (x86)\Google\Chrome\Application\chrome.exe" set "CHROME_PATH=C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
-if not defined CHROME_PATH if exist "%LocalAppData%\Google\Chrome\Application\chrome.exe" set "CHROME_PATH=%LocalAppData%\Google\Chrome\Application\chrome.exe"
-
-if not defined CHROME_PATH goto :use_edge
-
-start "" "%CHROME_PATH%" --app=http://localhost:3000
-exit /b 0
-
-:use_edge
-start msedge --app=http://localhost:3000
 exit /b 0
