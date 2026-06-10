@@ -33,6 +33,45 @@ exit /b 1
 :found_dir
 echo [*] Directorio de trabajo establecido: %CD%
 
+REM Asegurar que existan los accesos directos y carpeta FORMATOS en el directorio padre
+if not exist "..\INICIAR_ESP_STUDIO.bat" (
+    (
+        echo @echo off
+        echo cd /d "%%~dp0"
+        echo if not exist "ESP DESING ESTUDIO\INICIAR_ESP_STUDIO.bat" goto :error
+        echo call "ESP DESING ESTUDIO\INICIAR_ESP_STUDIO.bat"
+        echo exit /b 0
+        echo :error
+        echo echo [X] ERROR: No se pudo encontrar el iniciador en "ESP DESING ESTUDIO\INICIAR_ESP_STUDIO.bat".
+        echo pause
+        echo exit /b 1
+    ) > "..\INICIAR_ESP_STUDIO.bat"
+)
+
+if not exist "..\ACTUALIZAR_ESP_STUDIO.bat" (
+    (
+        echo @echo off
+        echo set "CURRENT_DIR=%%~dp0"
+        echo cd /d "%%CURRENT_DIR%%"
+        echo if not exist "ESP DESING ESTUDIO\ACTUALIZAR_ESP_STUDIO.bat" goto :error_missing
+        echo call "ESP DESING ESTUDIO\ACTUALIZAR_ESP_STUDIO.bat"
+        echo exit /b 0
+        echo :error_missing
+        echo echo [X] ERROR: No se pudo encontrar el actualizador en "ESP DESING ESTUDIO\ACTUALIZAR_ESP_STUDIO.bat".
+        echo echo [!] Asegurese de que las carpetas no hayan sido renombradas.
+        echo pause
+        echo exit /b 1
+    ) > "..\ACTUALIZAR_ESP_STUDIO.bat"
+)
+
+if not exist "..\FORMATOS" (
+    if exist "FORMATOS" (
+        echo [*] Copiando carpeta FORMATOS al directorio principal...
+        xcopy /E /I /Y "FORMATOS" "..\FORMATOS" >nul 2>&1
+    )
+)
+
+
 REM 2. Verificar si Git esta instalado
 echo [*] Verificando si Git esta instalado en el sistema...
 git --version >nul 2>&1
