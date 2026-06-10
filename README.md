@@ -158,7 +158,7 @@ $$ \frac{1}{\sqrt{f}} = -1.8 \log_{10} \left[ \left( \frac{\epsilon / D}{3.7} \r
 
 ## 🛠️ 6. Guía de Uso Paso a Paso
 
-1.  **🚀 Inicio:** Ejecuta `🛢️_INICIAR_ESP_STUDIO.bat`.
+1.  **🚀 Inicio:** Ejecuta `INICIAR_ESP_STUDIO.bat`.
 2.  **📝 Datos:** Completa las fases secuencialmente (1 → 6).
 3.  **⚖️ Optimización:** Ajusta la frecuencia (Hz) en la Fase 5 para encontrar el punto de operación ideal.
 4.  **📂 Reporte:** Genera y exporta el diseño final en formato Excel/PDF.
