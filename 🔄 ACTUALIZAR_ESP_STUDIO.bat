@@ -118,13 +118,31 @@ echo [OK] Node.js disponible: %NODE_VERSION%
 
 REM 3. Obtener actualizaciones desde GitHub
 echo.
+echo [*] Verificando repositorio local de Git...
+
+REM Si no existe la carpeta .git en el directorio actual (la raiz)
+if not exist ".git" (
+    echo [!] Repositorio Git no inicializado en la carpeta principal.
+    echo [*] Inicializando repositorio Git de forma automatica...
+    git init
+    git remote add origin https://github.com/andresjimenito-cell/ESP-DESING-STUDIO.git
+)
+
+:git_repo_ok
 echo [*] Conectando con el repositorio en GitHub...
+REM Asegurar que la URL del remoto origin sea la correcta
+git remote set-url origin https://github.com/andresjimenito-cell/ESP-DESING-STUDIO.git >nul 2>&1
+
 git fetch origin main
 if %errorlevel% neq 0 goto :error_fetch
 
 echo [*] Limpiando archivos locales y sincronizando con la ultima version...
 git reset --hard origin/main
 if %errorlevel% neq 0 goto :error_reset
+
+REM Configurar rama local principal
+git branch -M main >nul 2>&1
+git branch --set-upstream-to=origin/main main >nul 2>&1
 
 REM 4. Actualizar dependencias de Node.js por si acaso
 echo [*] Actualizando dependencias del proyecto (npm install)...
