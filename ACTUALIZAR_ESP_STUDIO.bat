@@ -135,7 +135,7 @@ if %errorlevel% neq 0 goto :error_npm
 
 echo.
 echo ========================================================================
-echo   [OK] Â¡APLICACION ACTUALIZADA EXITOSAMENTE A LA ULTIMA VERSION!
+echo   [OK] ¡APLICACION ACTUALIZADA EXITOSAMENTE A LA ULTIMA VERSION!
 echo ========================================================================
 echo   [*] Ya puedes iniciar el programa con INICIAR_ESP_STUDIO.bat
 echo ========================================================================
