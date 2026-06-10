@@ -1,32 +1,28 @@
-# Logs
-logs
-*.log
+# Recursive exclusions for parent git root
+**/node_modules
+**/*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# Dependencies
-node_modules
-app_unified/node_modules
-backend/node_modules
+# Launcher sentinel flag
+**/.deps_ok
 
-# Launcher sentinel flag (generado automáticamente)
-.deps_ok
+# Build directories
+**/dist
+**/dist-ssr
 
-# Build
-dist-ssr
+# Local environment configuration files
+**/.env
+**/.env.local
+**/.env.development
+**/.env.production
+**/.env.staging
 
-# Environment
-.env
-.env.local
-app_unified/.env
-app_unified/.env.local
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
+# Editor configurations and OS files
+.vscode
 .idea
 .DS_Store
 *.suo
