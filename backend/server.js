@@ -383,21 +383,58 @@ app.get('/api/onedrive-fetch', authMiddleware, async (req, res) => {
         return res.status(400).json({ error: 'Parámetro "file" o "url" requerido.' });
     }
 
+    let localFileName = '';
+    if (file === 'designs') {
+        localFileName = 'DATAS DE DISEÑO ALS.xlsx';
+    } else if (file === 'scada') {
+        localFileName = 'PRUEBAS DE PRODUCCION.xlsx';
+    }
+
+    const getLocalBuffer = () => {
+        if (!localFileName) return null;
+        const pathsToTry = [
+            path.join(__dirname, '..', '..', 'FORMATOS', localFileName),
+            path.join(__dirname, '..', 'FORMATOS', localFileName),
+            path.join(__dirname, 'FORMATOS', localFileName)
+        ];
+        for (const p of pathsToTry) {
+            if (fs.existsSync(p)) {
+                console.log(`[OneDrive Proxy] Usando archivo local de respaldo: ${p}`);
+                try {
+                    return fs.readFileSync(p);
+                } catch (readErr) {
+                    console.error(`Error al leer archivo local en ${p}:`, readErr.message);
+                }
+            }
+        }
+        return null;
+    };
+
     try {
         let buffer;
         if (url) {
-            const base64Url = Buffer.from(url).toString('base64')
-                .replace(/=/g, '')
-                .replace(/\//g, '_')
-                .replace(/\+/g, '-');
-            
-            const directUrl = `https://api.onedrive.com/v1.0/shares/u!${base64Url}/root/content`;
-            console.log(`[OneDrive Proxy] Descargando desde URL compartida: ${directUrl}`);
-            const fileRes = await fetch(directUrl, {
-                headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
-            });
-            if (!fileRes.ok) throw new Error(`Descarga fallida: HTTP ${fileRes.status}`);
-            buffer = await fileRes.arrayBuffer();
+            try {
+                const base64Url = Buffer.from(url).toString('base64')
+                    .replace(/=/g, '')
+                    .replace(/\//g, '_')
+                    .replace(/\+/g, '-');
+                
+                const directUrl = `https://api.onedrive.com/v1.0/shares/u!${base64Url}/root/content`;
+                console.log(`[OneDrive Proxy] Descargando desde URL compartida: ${directUrl}`);
+                const fileRes = await fetch(directUrl, {
+                    headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
+                });
+                if (!fileRes.ok) throw new Error(`Descarga fallida: HTTP ${fileRes.status}`);
+                buffer = await fileRes.arrayBuffer();
+            } catch (e) {
+                console.warn(`[OneDrive Proxy] Falló descarga de URL compartida (${e.message}). Intentando local...`);
+                const localBuf = getLocalBuffer();
+                if (localBuf) {
+                    buffer = localBuf;
+                } else {
+                    throw e;
+                }
+            }
         } else {
             let fileId;
             if (file === 'designs') {
@@ -406,15 +443,29 @@ app.get('/api/onedrive-fetch', authMiddleware, async (req, res) => {
                 fileId = process.env.ONEDRIVE_FILE_ID_SCADA;
             }
 
-            if (!fileId) {
-                return res.status(500).json({
-                    error: `Variable de entorno no configurada: ${file === 'designs' ? 'ONEDRIVE_FILE_ID_DESIGNS' : 'ONEDRIVE_FILE_ID_SCADA'}`
-                });
+            let fetchedFromOneDrive = false;
+            if (fileId && process.env.ONEDRIVE_CLIENT_ID && process.env.ONEDRIVE_CLIENT_SECRET && process.env.ONEDRIVE_REFRESH_TOKEN) {
+                try {
+                    console.log(`[OneDrive Proxy] Descargando por ID: ${file} (ID: ${fileId})`);
+                    const { accessToken } = await getAccessToken();
+                    buffer = await downloadOneDriveFile(fileId, accessToken);
+                    fetchedFromOneDrive = true;
+                } catch (error) {
+                    console.warn(`[OneDrive Proxy] Falló descarga desde OneDrive por ID (${error.message}). Intentando local...`);
+                }
             }
 
-            console.log(`[OneDrive Proxy] Descargando por ID: ${file} (ID: ${fileId})`);
-            const { accessToken } = await getAccessToken();
-            buffer = await downloadOneDriveFile(fileId, accessToken);
+            if (!fetchedFromOneDrive) {
+                const localBuf = getLocalBuffer();
+                if (localBuf) {
+                    buffer = localBuf;
+                } else {
+                    const envVarMsg = fileId ? 'Error al conectar con OneDrive' : 'Variables de entorno no configuradas';
+                    return res.status(500).json({
+                        error: `${envVarMsg} y no se encontró el archivo local en FORMATOS/${localFileName}`
+                    });
+                }
+            }
         }
 
         if (format === 'json') {
