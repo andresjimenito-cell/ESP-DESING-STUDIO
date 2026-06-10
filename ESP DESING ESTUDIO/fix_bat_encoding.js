@@ -2,8 +2,8 @@ const fs = require('fs');
 const path = require('path');
 
 const filesToFix = [
-    path.join(__dirname, 'INICIAR_ESP_STUDIO.bat'),
-    path.join(__dirname, 'ACTUALIZAR_ESP_STUDIO.bat')
+    path.join(__dirname, '..', 'INICIAR_ESP_STUDIO.bat'),
+    path.join(__dirname, '..', 'ACTUALIZAR_ESP_STUDIO.bat')
 ];
 
 filesToFix.forEach(filePath => {

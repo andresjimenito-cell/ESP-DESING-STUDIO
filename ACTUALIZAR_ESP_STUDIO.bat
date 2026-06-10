@@ -17,6 +17,15 @@ cd /d "%ROOT_DIR%"
 
 echo [*] Directorio de trabajo establecido: %CD%
 
+REM Generar accesos directos con iconos si no existen
+if exist "Iniciar ESP Studio.lnk" goto :skip_init_lnk
+powershell -NoProfile -Command "$dir = (Get-Item .).FullName; $ws = New-Object -ComObject WScript.Shell; $s = $ws.CreateShortcut($dir + '/Iniciar ESP Studio.lnk'); $s.TargetPath = $dir + '/INICIAR_ESP_STUDIO.bat'; $s.WorkingDirectory = $dir; $s.IconLocation = 'imageres.dll,26'; $s.Save()"
+:skip_init_lnk
+
+if exist "Actualizar ESP Studio.lnk" goto :skip_update_lnk
+powershell -NoProfile -Command "$dir = (Get-Item .).FullName; $ws = New-Object -ComObject WScript.Shell; $s = $ws.CreateShortcut($dir + '/Actualizar ESP Studio.lnk'); $s.TargetPath = $dir + '/ACTUALIZAR_ESP_STUDIO.bat'; $s.WorkingDirectory = $dir; $s.IconLocation = 'imageres.dll,229'; $s.Save()"
+:skip_update_lnk
+
 REM 2. Verificar si Git esta instalado
 echo [*] Verificando si Git esta instalado en el sistema...
 git --version >nul 2>&1
