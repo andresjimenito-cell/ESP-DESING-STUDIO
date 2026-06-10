@@ -108,6 +108,69 @@ echo [OK] Git se ha instalado exitosamente.
 for /f "tokens=*" %%i in ('git --version') do set GIT_VERSION=%%i
 echo [OK] Git disponible: %GIT_VERSION%
 
+REM 2.5 Verificar si Node.js esta instalado
+echo [*] Verificando si Node.js esta instalado en el sistema...
+node --version >nul 2>&1
+if %errorlevel% equ 0 goto :node_ready
+
+REM Comprobar ruta comun de 64 bits
+if not exist "C:\Program Files\nodejs\node.exe" goto :skip_node64
+set "PATH=%PATH%;C:\Program Files\nodejs"
+goto :node_ready_check
+:skip_node64
+
+REM Comprobar ruta comun de 32 bits
+if not exist "C:\Program Files (x86)\nodejs\node.exe" goto :skip_node32
+set "PATH=%PATH%;C:\Program Files (x86)\nodejs"
+goto :node_ready_check
+:skip_node32
+
+goto :install_node
+
+:node_ready_check
+node --version >nul 2>&1
+if %errorlevel% equ 0 goto :node_ready
+
+:install_node
+echo.
+echo [!] ADVERTENCIA: Node.js no esta instalado en este sistema.
+echo [*] Iniciando instalacion automatica de Node.js...
+
+REM Intentar primero con winget
+winget --version >nul 2>&1
+if %errorlevel% neq 0 goto :install_node_powershell
+
+echo [*] Instalandose Node.js mediante Windows Package Manager (winget)...
+winget install --id OpenJS.NodeJS.LTS -e --silent --accept-source-agreements --accept-package-agreements
+if %errorlevel% equ 0 goto :node_installed_ok
+echo [!] La instalacion con winget no tuvo exito. Probando metodo alternativo...
+
+:install_node_powershell
+echo [*] Descargando instalador oficial de Node.js (LTS)...
+set "NODE_URL=https://nodejs.org/dist/v20.11.1/node-v20.11.1-x64.msi"
+powershell -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; $out = '$env:TEMP\node_installer.msi'; Write-Host 'Descargando...'; Invoke-WebRequest -Uri '%NODE_URL%' -OutFile $out; Write-Host 'Instalando silenciosamente...'; Start-Process msiexec.exe -ArgumentList '/i', $out, '/quiet', '/norestart' -Wait; Remove-Item $out"
+
+:node_installed_ok
+REM Agregar la ruta tipica al PATH de esta sesion
+set "PATH=%PATH%;C:\Program Files\nodejs;C:\Program Files (x86)\nodejs"
+
+REM Re-verificar instalacion
+node --version >nul 2>&1
+if %errorlevel% neq 0 goto :error_node_install
+echo [OK] Node.js se ha instalado exitosamente.
+goto :node_ready
+
+:error_node_install
+echo.
+echo [X] ERROR: No se pudo completar la instalacion automatica de Node.js.
+echo [!] Instale Node.js manualmente desde: https://nodejs.org/
+pause
+exit /b 1
+
+:node_ready
+for /f "tokens=*" %%i in ('node --version') do set NODE_VERSION=%%i
+echo [OK] Node.js disponible: %NODE_VERSION%
+
 REM 3. Obtener actualizaciones desde GitHub
 echo.
 echo [*] Conectando con el repositorio en GitHub...
