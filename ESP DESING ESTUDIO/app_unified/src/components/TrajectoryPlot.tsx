@@ -259,7 +259,14 @@ export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params, 
     const processedData = useMemo<ProcessedPoint[]>(() => {
         if (!survey || !Array.isArray(survey)) return [];
 
-        let rawSurvey = [...survey];
+        // Filtramos puntos inválidos para evitar la propagación de NaN
+        let rawSurvey = survey.filter(pt => 
+            pt && 
+            typeof pt.md === 'number' && Number.isFinite(pt.md) &&
+            typeof pt.tvd === 'number' && Number.isFinite(pt.tvd) &&
+            typeof pt.inc === 'number' && Number.isFinite(pt.inc) &&
+            typeof pt.azim === 'number' && Number.isFinite(pt.azim)
+        );
         if (rawSurvey.length > 0 && rawSurvey[0].md > 0) {
             rawSurvey.unshift({ md: 0, tvd: 0, inc: 0, azim: rawSurvey[0].azim, dogleg: 0 });
         }
@@ -926,17 +933,7 @@ export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params, 
                 ctx.moveTo(pAxleL.x, pAxleL.y); ctx.lineTo(pAxleR.x, pAxleR.y);
                 ctx.stroke();
 
-                // Panel flotante
-                const labelY = pSpBase.y + 4 * zoom;
-                const panelW = Math.max(30, 48 * zoom), panelH = Math.max(10, 14 * zoom);
-                ctx.fillStyle = isDark ? 'rgba(15,23,42,0.85)' : 'rgba(255,255,255,0.90)';
-                ctx.strokeStyle = isDark ? 'rgba(245,158,11,0.30)' : 'rgba(146,64,14,0.25)'; ctx.lineWidth = 0.6;
-                ctx.beginPath(); ctx.roundRect(pSpBase.x - panelW / 2, labelY, panelW, panelH, 3); ctx.fill(); ctx.stroke();
-                ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-                const fs1 = Math.max(5, 5.5 * zoom);
-                ctx.font = `bold ${fs1}px monospace`;
-                ctx.strokeStyle = isDark ? 'rgba(2,6,23,0.9)' : 'rgba(255,255,255,0.9)'; ctx.lineWidth = 2.0;
-                ctx.strokeText('SPOOLER', pSpBase.x, labelY + 2.5); ctx.fillStyle = isDark ? '#fbbf24' : '#92400e'; ctx.fillText('SPOOLER', pSpBase.x, labelY + 2.5);
+
                 ctx.restore();
             }
 
