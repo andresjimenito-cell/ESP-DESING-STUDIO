@@ -766,7 +766,7 @@ export const ComparatorDashboard = ({ designs }: { designs: DesignSnapshot[] }) 
                 SCENARIOS.forEach(sk => {
                     const currentFreq = d.params.targets?.[sk]?.frequency ?? d.frequency ?? 60;
                     const hNow = calculateAffinityHead(f, currentFreq, bf, p);
-                    
+
                     row[`Pump Head (ft) _${di}_${sk}`] = (hNow !== null && hNow > 0) ? hNow : null;
 
                     const res = designTargets[di][sk];
@@ -785,7 +785,7 @@ export const ComparatorDashboard = ({ designs }: { designs: DesignSnapshot[] }) 
                     const hMaxBase = calculateBaseHead(p.maxRate || 0, p) || 0;
                     const kMin = p.minRate > 0 ? hMinBase / (p.minRate * p.minRate) : 0;
                     const kMax = p.maxRate > 0 ? hMaxBase / (p.maxRate * p.maxRate) : 0;
-                    
+
                     row[`Min Range Limit (ft) _${di}_${sk}`] = (kMin * f * f) <= 50000 ? (kMin * f * f) : null;
                     row[`Max Range Limit (ft) _${di}_${sk}`] = (kMax * f * f) <= 50000 ? (kMax * f * f) : null;
                 });

@@ -8,6 +8,44 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap');
 
 @import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
+
+/* Leaflet Dark Premium Style Overrides */
+.leaflet-container {
+    background: #0f172a !important;
+}
+.leaflet-bar {
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 12px !important;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
+}
+.leaflet-bar a {
+    background: rgba(15, 23, 42, 0.9) !important;
+    color: #cbd5e1 !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+    transition: all 0.2s;
+}
+.leaflet-bar a:hover {
+    background: rgba(30, 41, 59, 0.9) !important;
+    color: #ffffff !important;
+}
+.leaflet-popup-content-wrapper {
+    background: rgba(15, 23, 42, 0.95) !important;
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 16px !important;
+    color: #e2e8f0 !important;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.6) !important;
+}
+.leaflet-popup-tip {
+    background: rgba(15, 23, 42, 0.95) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+.leaflet-popup-content {
+    margin: 8px 12px !important;
+}
+
 
 /* ============================================================
    GLOBAL TOKENS
@@ -70,15 +108,22 @@
    CYBER — Arctic Blue + Bright Celeste (Lighter Canvas)
    ============================================================ */
 [data-theme='cyber'] {
-  --color-primary: 212 175 55; /* Metallic Gold (#D4AF37) */
-  --color-secondary: 197 160 89; /* Matte Gold (#C5A059) */
-  --color-accent: 245 245 220; /* Cream Accent (#F5F5DC) */
-  --color-canvas: 0 0 0; /* Pure Black */
-  --color-surface: 12 12 12; /* Deep Obsidian Surface */
+  --color-primary: 212 175 55;
+  /* Metallic Gold (#D4AF37) */
+  --color-secondary: 197 160 89;
+  /* Matte Gold (#C5A059) */
+  --color-accent: 245 245 220;
+  /* Cream Accent (#F5F5DC) */
+  --color-canvas: 0 0 0;
+  /* Pure Black */
+  --color-surface: 12 12 12;
+  /* Deep Obsidian Surface */
   --color-surface-light: 22 22 22;
   --color-surface-raised: 32 32 32;
-  --color-text-main: 245 245 220; /* Cream Text */
-  --color-text-muted: 180 160 120; /* Goldish Muted Text */
+  --color-text-main: 245 245 220;
+  /* Cream Text */
+  --color-text-muted: 180 160 120;
+  /* Goldish Muted Text */
   --color-text-faint: 60 55 45;
   --color-success: 160 220 100;
   --color-warning: 255 180 0;
@@ -111,10 +156,13 @@
    HERITAGE (Obsidian) — Industrial Light: Orange + Charcoal [LIGHT]
    ============================================================ */
 [data-theme='heritage'] {
-  --color-primary: 255 85 0; /* Industrial Orange */
-  --color-secondary: 100 100 100; /* Medium Charcoal (Lighter for visibility) */
+  --color-primary: 255 85 0;
+  /* Industrial Orange */
+  --color-secondary: 100 100 100;
+  /* Medium Charcoal (Lighter for visibility) */
   --color-accent: 255 60 0;
-  --color-canvas: 245 245 245; /* Light Gray Canvas */
+  --color-canvas: 245 245 245;
+  /* Light Gray Canvas */
   --color-surface: 255 255 255;
   --color-surface-light: 235 235 235;
   --color-surface-raised: 220 220 220;
@@ -410,18 +458,47 @@
    GLOBAL ANIMATIONS (Used in loading screens)
    ============================================================ */
 @keyframes eks-pulse-glow {
-  0% { filter: blur(20px); transform: scale(1); opacity: 0.4; }
-  100% { filter: blur(10px); transform: scale(1.05); opacity: 0.6; }
+  0% {
+    filter: blur(20px);
+    transform: scale(1);
+    opacity: 0.4;
+  }
+
+  100% {
+    filter: blur(10px);
+    transform: scale(1.05);
+    opacity: 0.6;
+  }
 }
+
 @keyframes eks-sweep {
-  0%   { top: -4px; opacity: 0; }
-  5%   { opacity: 1; }
-  92%  { opacity: 0.6; }
-  100% { top: 100%;  opacity: 0; }
+  0% {
+    top: -4px;
+    opacity: 0;
+  }
+
+  5% {
+    opacity: 1;
+  }
+
+  92% {
+    opacity: 0.6;
+  }
+
+  100% {
+    top: 100%;
+    opacity: 0;
+  }
 }
+
 @keyframes eks-scanline {
-  0% { transform: translateY(-100%); }
-  100% { transform: translateY(100%); }
+  0% {
+    transform: translateY(-100%);
+  }
+
+  100% {
+    transform: translateY(100%);
+  }
 }
 
 /* ============================================================

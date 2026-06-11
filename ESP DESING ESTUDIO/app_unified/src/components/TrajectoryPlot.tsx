@@ -11,6 +11,7 @@ import {
 import { SystemParams, SurveyPoint } from '../types';
 import { interpolateTVD } from '../utils';
 import { useTheme } from '../theme';
+import { TrajectoryMap } from './TrajectoryMap';
 
 const DEG2RAD = Math.PI / 180;
 const RAD2DEG = 180 / Math.PI;
@@ -220,6 +221,7 @@ export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params, 
     const [expandedCanvas, setExpandedCanvas] = useState(false);
     const [colorOverlay3D, setColorOverlay3D] = useState<'depth' | 'inc' | 'dogleg'>('dogleg');
     const [isAutoRotating, setIsAutoRotating] = useState(true);
+    const [viewMode, setViewMode] = useState<'3d' | 'map'>('3d');
 
     const yawRef = useRef(Math.PI / 4.5);
     const pitchRef = useRef(-Math.PI / 7.0);
@@ -256,12 +258,12 @@ export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params, 
 
     const processedData = useMemo<ProcessedPoint[]>(() => {
         if (!survey || !Array.isArray(survey)) return [];
-        
+
         let rawSurvey = [...survey];
         if (rawSurvey.length > 0 && rawSurvey[0].md > 0) {
             rawSurvey.unshift({ md: 0, tvd: 0, inc: 0, azim: rawSurvey[0].azim, dogleg: 0 });
         }
-        
+
         // Use raw survey points directly without visual interpolation (fictitious data generation)
 
         let departure = 0; let curX = 0; let curY = 0;
@@ -1055,7 +1057,7 @@ export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params, 
             resizeObserver.disconnect();
             requestRenderRef.current = null;
         };
-    }, [processedData, colorOverlay3D, params, spoolerAzimuth, isDark, maxMD, colorPrimary]);
+    }, [processedData, colorOverlay3D, params, spoolerAzimuth, isDark, maxMD, colorPrimary, viewMode]);
 
     // ── Event Handlers ────────────────────────────────────────────────────────
 
@@ -1118,8 +1120,8 @@ export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params, 
     }, []);
 
     const resetCamera = useCallback(() => {
-        yawRef.current = Math.PI / 4.5; 
-        pitchRef.current = -Math.PI / 7.0; 
+        yawRef.current = Math.PI / 4.5;
+        pitchRef.current = -Math.PI / 7.0;
         zoomRef.current = getInitialZoom();
         needsRenderRef.current = true;
         requestRenderRef.current?.();
@@ -1162,81 +1164,111 @@ export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params, 
             )}
             <div className={`relative z-10 flex-1 min-h-0 grid grid-cols-1 ${isSidebar ? '' : 'lg:grid-cols-2'}`}>
 
-                {/* ── LEFT: 3D Canvas Estilizado ── */}
+                {/* ── LEFT: 3D Canvas Estilizado o Mapa ── */}
                 <div className={`relative flex flex-col min-w-0 bg-canvas/40 transition-all duration-300 ${isMobileLayout && activeMobileView !== 'canvas' ? 'hidden' : 'flex'} ${expandedCanvas ? 'fixed inset-0 z-50 bg-surface' : (isSidebar ? 'h-[380px] border-b border-surface-light/30' : 'border-r border-surface-light/30')}`}>
 
-                    {/* Botones de Control Flotantes Estilizados */}
-                    <div className="absolute bottom-4 right-4 flex items-center gap-1.5 bg-surface/80 backdrop-blur-md p-1 rounded-xl border border-surface-light/30 z-20">
-                        <button onClick={toggleAutoRotate} className="text-[8px] font-bold uppercase tracking-wider px-2 py-1 rounded-lg text-slate-400 hover:text-white transition-all flex items-center gap-1 bg-white/5">
-                            {isAutoRotating ? <Pause className="w-2.5 h-2.5" /> : <Play className="w-2.5 h-2.5" />}
+                    {/* Selector de Modo de Visualización Principal: 3D vs Mapa */}
+                    <div className="absolute top-4 left-4 flex items-center gap-1 bg-surface/80 backdrop-blur-md p-1 rounded-xl border border-surface-light/30 z-[1001]">
+                        <button
+                            onClick={() => {
+                                setViewMode('3d');
+                                needsRenderRef.current = true;
+                                requestRenderRef.current?.();
+                            }}
+                            className={`text-[8px] font-black uppercase tracking-wider px-2.5 py-1.5 rounded-lg transition-all border ${viewMode === '3d' ? 'bg-primary/20 border-primary/40 text-primary' : 'border-transparent text-txt-muted hover:text-txt-main'}`}
+                        >
+                            Visualización 3D
                         </button>
-                        <button onClick={resetCamera} className="text-[8px] font-bold uppercase tracking-wider px-2 py-1 rounded-lg text-slate-400 hover:text-white transition-all flex items-center gap-1 bg-white/5">
-                            <RotateCw className="w-2.5 h-2.5" />
+                        <button
+                            onClick={() => {
+                                setViewMode('map');
+                            }}
+                            className={`text-[8px] font-black uppercase tracking-wider px-2.5 py-1.5 rounded-lg transition-all border ${viewMode === 'map' ? 'bg-primary/20 border-primary/40 text-primary' : 'border-transparent text-txt-muted hover:text-txt-main'}`}
+                        >
+                            Ubicación en Mapa
                         </button>
-                        <div className="h-3 w-px bg-white/10 mx-0.5" />
-                        <button onClick={() => setView('top')} className="text-[8px] font-bold uppercase tracking-wider px-2 py-1 rounded-lg text-slate-400 hover:text-white transition-all bg-white/5">Planta</button>
-                        <button onClick={() => setView('lateral')} className="text-[8px] font-bold uppercase tracking-wider px-2 py-1 rounded-lg text-slate-400 hover:text-white transition-all bg-white/5">Perfil</button>
                     </div>
 
-                    {/* Selector de Modo de Visualización */}
-                    <div className="absolute top-4 right-4 flex items-center gap-1 bg-surface/80 backdrop-blur-md p-1 rounded-xl border border-surface-light/30 z-20">
-                        {[
-                            { mode: 'depth' as const, label: 'Estructura' },
-                            { mode: 'inc' as const, label: 'Inc (°)' },
-                            { mode: 'dogleg' as const, label: 'DLS (Severidad)' }
-                        ].map(({ mode, label }) => (
-                            <button
-                                key={mode}
-                                onClick={() => {
-                                    setColorOverlay3D(mode);
-                                    needsRenderRef.current = true;
-                                    requestRenderRef.current?.();
-                                }}
-                                className={`text-[8px] font-bold uppercase tracking-wider px-2 py-1 rounded-lg transition-all ${colorOverlay3D === mode ? 'bg-primary/20 border border-primary/40 text-primary' : 'border border-transparent text-txt-muted hover:text-txt-main'}`}
-                            >
-                                {label}
-                            </button>
-                        ))}
-                    </div>
+                    {viewMode === '3d' ? (
+                        <>
+                            {/* Botones de Control Flotantes Estilizados */}
+                            <div className="absolute bottom-4 right-4 flex items-center gap-1.5 bg-surface/80 backdrop-blur-md p-1 rounded-xl border border-surface-light/30 z-20">
+                                <button onClick={toggleAutoRotate} className="text-[8px] font-bold uppercase tracking-wider px-2 py-1 rounded-lg text-slate-400 hover:text-white transition-all flex items-center gap-1 bg-white/5">
+                                    {isAutoRotating ? <Pause className="w-2.5 h-2.5" /> : <Play className="w-2.5 h-2.5" />}
+                                </button>
+                                <button onClick={resetCamera} className="text-[8px] font-bold uppercase tracking-wider px-2 py-1 rounded-lg text-slate-400 hover:text-white transition-all flex items-center gap-1 bg-white/5">
+                                    <RotateCw className="w-2.5 h-2.5" />
+                                </button>
+                                <div className="h-3 w-px bg-white/10 mx-0.5" />
+                                <button onClick={() => setView('top')} className="text-[8px] font-bold uppercase tracking-wider px-2 py-1 rounded-lg text-slate-400 hover:text-white transition-all bg-white/5">Planta</button>
+                                <button onClick={() => setView('lateral')} className="text-[8px] font-bold uppercase tracking-wider px-2 py-1 rounded-lg text-slate-400 hover:text-white transition-all bg-white/5">Perfil</button>
+                            </div>
 
-                    {/* Overlay del Gráfico de Perfil Hidráulico de Trayectoria vs TVD */}
-                    <div className="absolute left-2 top-12 bottom-12 w-[130px] bg-surface/15 backdrop-blur-sm border border-surface-light/10 rounded-[1.5rem] p-2.5 z-20 flex flex-col pointer-events-auto shadow-none">
-                        <h2 className="text-[8px] font-bold text-txt-muted uppercase tracking-widest mb-2 text-center">
-                            Perfil Hidráulico
-                        </h2>
-                        <div className="flex-1 min-h-0 flex items-center justify-center">
-                            {chartData.length > 0 ? (
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <ComposedChart layout="vertical" data={chartData} margin={{ top: 10, right: 2, left: -32, bottom: 10 }}>
-                                        <CartesianGrid stroke={colorSurfaceLight} strokeDasharray="3 3" opacity={0.06} horizontal={false} />
-                                        <XAxis type="number" domain={[0, 90]} orientation="top" tick={{ fill: 'rgb(var(--color-primary))', fontSize: 7 }} tickLine={false} />
-                                        <XAxis xAxisId="dls" type="number" domain={[0, maxDLS]} orientation="bottom" tick={{ fill: 'rgb(var(--color-warning))', fontSize: 7 }} tickLine={false} />
-                                        <YAxis dataKey="tvd" type="number" domain={[safeMaxTVD, 0]} tick={{ fill: 'rgb(var(--color-text-muted))', fontSize: 7 }} tickLine={false} />
-                                        <Line type="monotone" dataKey="inc" stroke="rgb(var(--color-primary))" strokeWidth={2.0} dot={false} />
-                                        <Line xAxisId="dls" type="stepAfter" dataKey="dogleg" stroke="rgb(var(--color-warning))" strokeWidth={1.5} dot={false} strokeOpacity={0.8} />
-                                        {Number.isFinite(pumpDepthTVD) && (
-                                            <ReferenceLine y={pumpDepthTVD} stroke="rgb(var(--color-primary))" strokeWidth={1.2} strokeDasharray="3 3" />
-                                        )}
-                                        {Number.isFinite(casingBottomTVD) && (
-                                            <ReferenceLine y={casingBottomTVD} stroke="rgb(var(--color-danger))" strokeWidth={1.2} strokeDasharray="3 3" />
-                                        )}
-                                    </ComposedChart>
-                                </ResponsiveContainer>
-                            ) : (
-                                <div className="text-[10px] font-bold text-txt-muted uppercase">No hay datos de trayectoria válidos</div>
-                            )}
+                            {/* Selector de Modo de Visualización */}
+                            <div className="absolute top-4 right-4 flex items-center gap-1 bg-surface/80 backdrop-blur-md p-1 rounded-xl border border-surface-light/30 z-20">
+                                {[
+                                    { mode: 'depth' as const, label: 'Estructura' },
+                                    { mode: 'inc' as const, label: 'Inc (°)' },
+                                    { mode: 'dogleg' as const, label: 'DLS (Severidad)' }
+                                ].map(({ mode, label }) => (
+                                    <button
+                                        key={mode}
+                                        onClick={() => {
+                                            setColorOverlay3D(mode);
+                                            needsRenderRef.current = true;
+                                            requestRenderRef.current?.();
+                                        }}
+                                        className={`text-[8px] font-bold uppercase tracking-wider px-2 py-1 rounded-lg transition-all ${colorOverlay3D === mode ? 'bg-primary/20 border border-primary/40 text-primary' : 'border border-transparent text-txt-muted hover:text-txt-main'}`}
+                                    >
+                                        {label}
+                                    </button>
+                                ))}
+                            </div>
+
+                            {/* Overlay del Gráfico de Perfil Hidráulico de Trayectoria vs TVD */}
+                            <div className="absolute left-2 top-12 bottom-12 w-[130px] bg-surface/15 backdrop-blur-sm border border-surface-light/10 rounded-[1.5rem] p-2.5 z-20 flex flex-col pointer-events-auto shadow-none">
+                                <h2 className="text-[8px] font-bold text-txt-muted uppercase tracking-widest mb-2 text-center">
+                                    Perfil Hidráulico
+                                </h2>
+                                <div className="flex-1 min-h-0 flex items-center justify-center">
+                                    {chartData.length > 0 ? (
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <ComposedChart layout="vertical" data={chartData} margin={{ top: 10, right: 2, left: -32, bottom: 10 }}>
+                                                <CartesianGrid stroke={colorSurfaceLight} strokeDasharray="3 3" opacity={0.06} horizontal={false} />
+                                                <XAxis type="number" domain={[0, 90]} orientation="top" tick={{ fill: 'rgb(var(--color-primary))', fontSize: 7 }} tickLine={false} />
+                                                <XAxis xAxisId="dls" type="number" domain={[0, maxDLS]} orientation="bottom" tick={{ fill: 'rgb(var(--color-warning))', fontSize: 7 }} tickLine={false} />
+                                                <YAxis dataKey="tvd" type="number" domain={[safeMaxTVD, 0]} tick={{ fill: 'rgb(var(--color-text-muted))', fontSize: 7 }} tickLine={false} />
+                                                <Line type="monotone" dataKey="inc" stroke="rgb(var(--color-primary))" strokeWidth={2.0} dot={false} />
+                                                <Line xAxisId="dls" type="stepAfter" dataKey="dogleg" stroke="rgb(var(--color-warning))" strokeWidth={1.5} dot={false} strokeOpacity={0.8} />
+                                                {Number.isFinite(pumpDepthTVD) && (
+                                                    <ReferenceLine y={pumpDepthTVD} stroke="rgb(var(--color-primary))" strokeWidth={1.2} strokeDasharray="3 3" />
+                                                )}
+                                                {Number.isFinite(casingBottomTVD) && (
+                                                    <ReferenceLine y={casingBottomTVD} stroke="rgb(var(--color-danger))" strokeWidth={1.2} strokeDasharray="3 3" />
+                                                )}
+                                            </ComposedChart>
+                                        </ResponsiveContainer>
+                                    ) : (
+                                        <div className="text-[10px] font-bold text-txt-muted uppercase">No hay datos de trayectoria válidos</div>
+                                    )}
+                                </div>
+                            </div>
+
+                            <canvas
+                                ref={canvasRef}
+                                onMouseDown={handleMouseDown}
+                                onMouseMove={handleMouseMove}
+                                onMouseUp={handleMouseUp}
+                                onMouseLeave={handleMouseUp}
+                                onWheel={handleWheel}
+                                className="w-full h-full cursor-grab active:cursor-grabbing block relative z-10"
+                            />
+                        </>
+                    ) : (
+                        <div className="flex-1 w-full h-full min-h-[380px] p-2 relative z-10 bg-canvas/30">
+                            <TrajectoryMap survey={survey} params={params} spoolerAzimuth={spoolerAzimuth} />
                         </div>
-                    </div>
-
-                    <canvas
-                        ref={canvasRef}
-                        onMouseDown={handleMouseDown}
-                        onMouseMove={handleMouseMove}
-                        onMouseUp={handleMouseUp}
-                        onMouseLeave={handleMouseUp}
-                        onWheel={handleWheel}
-                        className="w-full h-full cursor-grab active:cursor-grabbing block relative z-10"
-                    />
+                    )}
                 </div>
 
                 {/* ── RIGHT: Charts & Analytics ── */}
@@ -1246,7 +1278,7 @@ export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params, 
                             Optimización de Azimut - Spooler ALS
                         </h2>
                         <SpoolerPolarChart processedData={processedData} limitMD={limitMD} isDark={isDark} />
-                        
+
                         <div className="mt-6 w-full border-t border-white/5 pt-4 space-y-3">
                             <div className="flex justify-between items-center text-xs">
                                 <span className="font-bold text-txt-muted uppercase">Dirección Promedio:</span>
