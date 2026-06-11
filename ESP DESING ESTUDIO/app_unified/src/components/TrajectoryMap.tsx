@@ -48,6 +48,10 @@ export const TrajectoryMap: React.FC<TrajectoryMapProps> = ({ survey, params, sp
     const [detectedProj, setDetectedProj] = useState<string>('EPSG:4326');
     const [isSimulated, setIsSimulated] = useState<boolean>(false);
 
+    // Controles para capas WMS de la ANH
+    const [showAnhTierras, setShowAnhTierras] = useState<boolean>(false);
+    const [showAnhPozos, setShowAnhPozos] = useState<boolean>(false);
+
     // Ajustes del Spooler y el Cono de Rango fijos
     const spoolerDist = 30;
     const coneAngle = 30;
@@ -519,6 +523,39 @@ export const TrajectoryMap: React.FC<TrajectoryMapProps> = ({ survey, params, sp
             }
         }
 
+        // H. Limpiar y Cargar Capas WMS de la ANH
+        map.eachLayer((layer) => {
+            if (layer instanceof L.TileLayer.WMS) {
+                try {
+                    map.removeLayer(layer);
+                } catch (e) {
+                    console.error("Error removing WMS layer:", e);
+                }
+            }
+        });
+
+        if (showAnhTierras) {
+            L.tileLayer.wms('https://geovisor.anh.gov.co/server/services/GEOVISOR_v32/ANH_TIERRAS_EGDB_ATTACH/MapServer/WMSServer', {
+                layers: '0,1,2,3,4,5,6,7,8,9,10',
+                format: 'image/png',
+                transparent: true,
+                version: '1.1.1',
+                opacity: 0.55,
+                attribution: '&copy; ANH Colombia - Tierras'
+            }).addTo(map);
+        }
+
+        if (showAnhPozos) {
+            L.tileLayer.wms('https://geovisor.anh.gov.co/server/services/GEOVISOR_v32/ANH_InsGDB/MapServer/WMSServer', {
+                layers: '0,1,2,3,4',
+                format: 'image/png',
+                transparent: true,
+                version: '1.1.1',
+                opacity: 0.8,
+                attribution: '&copy; ANH Colombia - Infraestructura'
+            }).addTo(map);
+        }
+
         // Ajustar bounds del mapa de forma segura para incluir todos los elementos
         const bounds = L.latLngBounds([wellhead, spoolerCoords]);
         if (sectorCoords.length > 0) {
@@ -527,11 +564,11 @@ export const TrajectoryMap: React.FC<TrajectoryMapProps> = ({ survey, params, sp
         if (bounds.isValid()) {
             map.fitBounds(bounds, { padding: [60, 60], animate: false, maxZoom: 19 });
         }
-    }, [coordinatesData, params, spoolerAzimuth, spoolerDist, coneAngle]);
+    }, [coordinatesData, params, spoolerAzimuth, spoolerDist, coneAngle, showAnhTierras, showAnhPozos]);
 
     return (
         <div className="relative w-full h-full flex flex-col min-h-[480px]">
-            {/* Header del Control del Mapa - Minimalista, sin panel de configuración */}
+            {/* Header del Control del Mapa - Minimalista con Capas ANH */}
             <div className="absolute top-4 left-4 z-[1000] flex flex-wrap gap-2 items-center bg-slate-900/90 backdrop-blur-md px-3 py-2 rounded-xl border border-white/10 shadow-2xl max-w-[calc(100%-20px)] text-white">
                 <div className="flex items-center gap-1.5 pr-2">
                     <MapPin className="w-3.5 h-3.5 text-cyan-400" />
@@ -560,6 +597,28 @@ export const TrajectoryMap: React.FC<TrajectoryMapProps> = ({ survey, params, sp
                         Detec: {detectedProj === 'EPSG:4326' ? 'WGS84' : detectedProj === 'EPSG:9377' ? 'Origen Único' : detectedProj === 'EPSG:3116' ? 'Origen Bogotá' : 'UTM 18N'}
                     </div>
                 )}
+
+                {/* Capas ANH */}
+                <div className="flex items-center gap-3 pl-2 border-l border-white/10 text-[8px] font-bold">
+                    <label className="flex items-center gap-1 cursor-pointer select-none text-slate-300 hover:text-white transition-all uppercase tracking-wider">
+                        <input
+                            type="checkbox"
+                            checked={showAnhTierras}
+                            onChange={(e) => setShowAnhTierras(e.target.checked)}
+                            className="w-2.5 h-2.5 rounded bg-slate-800 border-white/10 cursor-pointer accent-cyan-500"
+                        />
+                        <span>Tierras ANH</span>
+                    </label>
+                    <label className="flex items-center gap-1 cursor-pointer select-none text-slate-300 hover:text-white transition-all uppercase tracking-wider">
+                        <input
+                            type="checkbox"
+                            checked={showAnhPozos}
+                            onChange={(e) => setShowAnhPozos(e.target.checked)}
+                            className="w-2.5 h-2.5 rounded bg-slate-800 border-white/10 cursor-pointer accent-cyan-500"
+                        />
+                        <span>Pozos ANH</span>
+                    </label>
+                </div>
             </div>
 
             {/* Aviso de Simulación si no hay coordenadas absolutas */}
