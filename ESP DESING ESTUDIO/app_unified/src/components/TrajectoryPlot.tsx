@@ -627,187 +627,316 @@ export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params, 
                 ctx.lineWidth = 3.0; ctx.strokeStyle = `rgba(${sr},${sg},${sb},0.08)`; ctx.stroke();
             }
 
-            // ── Torre de Perforación Estructurada Detallada ────────────────────
-            const rigS = Math.max(14, 18 * zoom); // ancho de la base
-            const rigH = Math.max(65, 85 * zoom); // más alta y esbelta
-            const rigTopW = rigS * 0.35; // ancho de la corona
-            const rigCX = pWell.x, rigCY = pWell.y;
-            const rigTopY = rigCY - rigH;
+            // ── Torre de Perforación Estructurada en 3D Real ────────────────────
+            const rigH_3d = Math.max(120, maxRange * 0.08);
+            const rigS_3d = rigH_3d * 0.12;
+            const rigTopW_3d = rigS_3d * 0.35;
+
+            const pBase = [
+                project(-rigS_3d, -rigS_3d, 0),
+                project(rigS_3d, -rigS_3d, 0),
+                project(rigS_3d, rigS_3d, 0),
+                project(-rigS_3d, rigS_3d, 0)
+            ];
+
+            const pTop = [
+                project(-rigTopW_3d, -rigTopW_3d, -rigH_3d),
+                project(rigTopW_3d, -rigTopW_3d, -rigH_3d),
+                project(rigTopW_3d, rigTopW_3d, -rigH_3d),
+                project(-rigTopW_3d, rigTopW_3d, -rigH_3d)
+            ];
+
+            const pCrown = project(0, 0, -rigH_3d);
 
             ctx.save();
             if (isLookingFromBelow) { ctx.globalAlpha = 0.05; ctx.filter = 'blur(3px)'; }
 
-            // Relleno principal de la torre
-            const rigFill = ctx.createLinearGradient(rigCX - rigS, rigCY, rigCX + rigS, rigCY);
-            rigFill.addColorStop(0, isDark ? 'rgba(71,85,105,0.65)' : 'rgba(148,163,184,0.55)');
-            rigFill.addColorStop(0.5, isDark ? 'rgba(100,116,139,0.40)' : 'rgba(203,213,225,0.40)');
-            rigFill.addColorStop(1, isDark ? 'rgba(71,85,105,0.65)' : 'rgba(148,163,184,0.55)');
-            ctx.fillStyle = rigFill;
+            // Subestructura (Plataforma Base) en 3D
+            const pPlat = [
+                project(-rigS_3d * 1.3, -rigS_3d * 1.3, 0),
+                project(rigS_3d * 1.3, -rigS_3d * 1.3, 0),
+                project(rigS_3d * 1.3, rigS_3d * 1.3, 0),
+                project(-rigS_3d * 1.3, rigS_3d * 1.3, 0)
+            ];
+            ctx.fillStyle = isDark ? 'rgba(51,65,85,0.75)' : 'rgba(203,213,225,0.75)';
+            ctx.strokeStyle = isDark ? 'rgba(148,163,184,0.85)' : 'rgba(51,65,85,0.85)';
+            ctx.lineWidth = 1.0;
             ctx.beginPath();
-            ctx.moveTo(rigCX - rigTopW, rigTopY);
-            ctx.lineTo(rigCX - rigS, rigCY);
-            ctx.lineTo(rigCX + rigS, rigCY);
-            ctx.lineTo(rigCX + rigTopW, rigTopY);
+            ctx.moveTo(pPlat[0].x, pPlat[0].y);
+            for (let i = 1; i < 4; i++) ctx.lineTo(pPlat[i].x, pPlat[i].y);
             ctx.closePath();
             ctx.fill();
-
-            // Bordes principales (piernas)
-            ctx.strokeStyle = isDark ? 'rgba(148,163,184,0.85)' : 'rgba(51,65,85,0.85)';
-            ctx.lineWidth = 1.2 * zoom;
-            ctx.beginPath();
-            ctx.moveTo(rigCX - rigTopW, rigTopY); ctx.lineTo(rigCX - rigS, rigCY);
-            ctx.moveTo(rigCX + rigTopW, rigTopY); ctx.lineTo(rigCX + rigS, rigCY);
             ctx.stroke();
 
-            // Subestructura (Base)
-            ctx.fillStyle = isDark ? '#334155' : '#cbd5e1';
-            ctx.fillRect(rigCX - rigS * 1.3, rigCY - 2, rigS * 2.6, 6 * zoom);
-            ctx.strokeStyle = isDark ? '#1e293b' : '#94a3b8';
-            ctx.strokeRect(rigCX - rigS * 1.3, rigCY - 2, rigS * 2.6, 6 * zoom);
-
-            // Bloque corona (Arriba)
-            ctx.fillStyle = isDark ? '#475569' : '#94a3b8';
-            ctx.fillRect(rigCX - rigTopW * 1.5, rigTopY - 4 * zoom, rigTopW * 3.0, 4 * zoom);
-
-            // Vigas transversales (Cruces)
-            for (let lv = 1; lv <= 4; lv++) {
-                const t1 = (lv - 1) / 4;
-                const t2 = lv / 4;
-                const ly1 = rigTopY + (rigCY - rigTopY) * t1;
-                const ly2 = rigTopY + (rigCY - rigTopY) * t2;
-                const hw1 = rigTopW + (rigS - rigTopW) * t1;
-                const hw2 = rigTopW + (rigS - rigTopW) * t2;
-
-                if (lv < 4) {
-                    ctx.lineWidth = 0.8 * zoom;
-                    ctx.beginPath(); ctx.moveTo(rigCX - hw2, ly2); ctx.lineTo(rigCX + hw2, ly2); ctx.stroke();
-                }
-
-                ctx.lineWidth = 0.5 * zoom;
+            // Relleno translúcido para las caras laterales de la torre
+            ctx.fillStyle = isDark ? 'rgba(100,116,139,0.18)' : 'rgba(148,163,184,0.15)';
+            for (let i = 0; i < 4; i++) {
+                const nextI = (i + 1) % 4;
                 ctx.beginPath();
-                ctx.moveTo(rigCX - hw1, ly1); ctx.lineTo(rigCX + hw2, ly2);
-                ctx.moveTo(rigCX + hw1, ly1); ctx.lineTo(rigCX - hw2, ly2);
+                ctx.moveTo(pBase[i].x, pBase[i].y);
+                ctx.lineTo(pBase[nextI].x, pBase[nextI].y);
+                ctx.lineTo(pTop[nextI].x, pTop[nextI].y);
+                ctx.lineTo(pTop[i].x, pTop[i].y);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            // Bordes principales de la torre (Piernas)
+            ctx.strokeStyle = isDark ? 'rgba(148,163,184,0.9)' : 'rgba(51,65,85,0.9)';
+            ctx.lineWidth = 1.5 * zoom;
+            for (let i = 0; i < 4; i++) {
+                ctx.beginPath();
+                ctx.moveTo(pBase[i].x, pBase[i].y);
+                ctx.lineTo(pTop[i].x, pTop[i].y);
                 ctx.stroke();
             }
 
+            // Corona/Techo de la torre
+            ctx.fillStyle = isDark ? 'rgba(71,85,105,0.85)' : 'rgba(148,163,184,0.85)';
+            ctx.beginPath();
+            ctx.moveTo(pTop[0].x, pTop[0].y);
+            for (let i = 1; i < 4; i++) ctx.lineTo(pTop[i].x, pTop[i].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // Vigas transversales (Cruces) y anillos horizontales de la celosía en 3D
+            const numSections = 4;
+            ctx.strokeStyle = isDark ? 'rgba(148,163,184,0.55)' : 'rgba(51,65,85,0.55)';
+            ctx.lineWidth = 0.7 * zoom;
+
+            for (let s = 1; s <= numSections; s++) {
+                const zVal = -rigH_3d * (s / numSections);
+                const prevZVal = -rigH_3d * ((s - 1) / numSections);
+
+                const rW = rigS_3d + (rigTopW_3d - rigS_3d) * (s / numSections);
+                const prevRW = rigS_3d + (rigTopW_3d - rigS_3d) * ((s - 1) / numSections);
+
+                const corners = [
+                    project(-rW, -rW, zVal),
+                    project(rW, -rW, zVal),
+                    project(rW, rW, zVal),
+                    project(-rW, rW, zVal)
+                ];
+
+                const prevCorners = [
+                    project(-prevRW, -prevRW, prevZVal),
+                    project(prevRW, -prevRW, prevZVal),
+                    project(prevRW, prevRW, prevZVal),
+                    project(-prevRW, prevRW, prevZVal)
+                ];
+
+                // Anillo horizontal
+                if (s < numSections) {
+                    ctx.beginPath();
+                    ctx.moveTo(corners[0].x, corners[0].y);
+                    for (let i = 1; i < 4; i++) ctx.lineTo(corners[i].x, corners[i].y);
+                    ctx.closePath();
+                    ctx.stroke();
+                }
+
+                // Cruces en cada cara
+                for (let i = 0; i < 4; i++) {
+                    const nextI = (i + 1) % 4;
+                    ctx.beginPath();
+                    ctx.moveTo(prevCorners[i].x, prevCorners[i].y);
+                    ctx.lineTo(corners[nextI].x, corners[nextI].y);
+                    ctx.moveTo(prevCorners[nextI].x, prevCorners[nextI].y);
+                    ctx.lineTo(corners[i].x, corners[i].y);
+                    ctx.stroke();
+                }
+            }
+
             // Bloque viajero y línea de perforación
+            const pBlock = project(0, 0, -rigH_3d * 0.55);
             ctx.fillStyle = '#ef4444';
-            ctx.fillRect(rigCX - 2.5 * zoom, rigTopY + 8 * zoom, 5 * zoom, 8 * zoom);
-            ctx.strokeStyle = isDark ? '#94a3b8' : '#64748b'; ctx.lineWidth = 0.5 * zoom;
-            ctx.beginPath(); ctx.moveTo(rigCX, rigTopY); ctx.lineTo(rigCX, rigTopY + 8 * zoom); ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(pBlock.x, pBlock.y, 2.5 * zoom, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.35)' : 'rgba(15,23,42,0.35)';
+            ctx.lineWidth = 0.5 * zoom;
+            ctx.beginPath();
+            ctx.moveTo(pCrown.x, pCrown.y);
+            ctx.lineTo(pBlock.x, pBlock.y);
+            ctx.stroke();
 
             // Luces de advertencia (balizas)
-            ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(rigCX, rigTopY - 5 * zoom, 2 * zoom, 0, Math.PI * 2); ctx.fill();
-            ctx.fillStyle = '#f97316'; ctx.beginPath(); ctx.arc(rigCX - rigTopW * 1.2, rigTopY - 2 * zoom, 1.5 * zoom, 0, Math.PI * 2); ctx.fill();
-            ctx.fillStyle = '#f97316'; ctx.beginPath(); ctx.arc(rigCX + rigTopW * 1.2, rigTopY - 2 * zoom, 1.5 * zoom, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#ef4444';
+            ctx.beginPath();
+            ctx.arc(pCrown.x, pCrown.y - 3 * zoom, 2 * zoom, 0, Math.PI * 2);
+            ctx.fill();
 
-            // BOP / Wellhead simplificado
-            ctx.fillStyle = isDark ? '#1e293b' : '#94a3b8';
-            ctx.fillRect(rigCX - 4 * zoom, rigCY - 10 * zoom, 8 * zoom, 8 * zoom);
-            ctx.fillRect(rigCX - 6 * zoom, rigCY - 6 * zoom, 12 * zoom, 3 * zoom);
+            // BOP / Wellhead simplificado en base
+            ctx.fillStyle = isDark ? '#1e293b' : '#64748b';
+            ctx.fillRect(pWell.x - 3.5 * zoom, pWell.y - 7 * zoom, 7 * zoom, 7 * zoom);
+            ctx.fillStyle = isDark ? '#334155' : '#475569';
+            ctx.fillRect(pWell.x - 5.5 * zoom, pWell.y - 4 * zoom, 11 * zoom, 2 * zoom);
 
             ctx.restore();
 
-            // ── SPOOLER Detallado con Cable Aéreo ──
+            // ── SPOOLER Detallado con Cable Aéreo en 3D ──
             {
                 const spAngle = spoolerAzimuth * DEG2RAD;
                 const sp3dX = spRadius3D * Math.sin(spAngle);
                 const sp3dY = spRadius3D * Math.cos(spAngle);
-                const spProj = project(sp3dX, sp3dY, 0);
 
-                // Tamaño reducido del Spooler
-                const spDrumW = Math.max(9, 12 * zoom);
-                const spDrumH = Math.max(4, 5 * zoom);
-                const spIconX = spProj.x;
-                const spBase = spProj.y;
-                const spIconY = spBase - (spDrumH + 9 * zoom);
+                // Dimensiones 3D del Spooler en pies (escala realista)
+                const spW_3d = Math.max(8, maxRange * 0.005);
+                const spH_3d = spW_3d * 0.9;
+                const spD_3d = spW_3d * 0.7;
+
+                const drumRadius = spH_3d * 0.35;
+                const flangeRadius = spH_3d * 0.55;
+
+                const projectSp = (lx: number, ly: number, lz: number) => {
+                    const cosA = Math.cos(spAngle);
+                    const sinA = Math.sin(spAngle);
+                    const rx = sp3dX + lx * cosA - ly * sinA;
+                    const ry = sp3dY + lx * sinA + ly * cosA;
+                    return project(rx, ry, lz);
+                };
+
+                const pSpBase = projectSp(0, 0, 0);
+                const pSpoolerCableAnchor = projectSp(0, 0, -spH_3d * 0.9);
+
+                const pPlatSp = [
+                    projectSp(-spW_3d * 1.2, -spD_3d * 1.2, 0),
+                    projectSp(spW_3d * 1.2, -spD_3d * 1.2, 0),
+                    projectSp(spW_3d * 1.2, spD_3d * 1.2, 0),
+                    projectSp(-spW_3d * 1.2, spD_3d * 1.2, 0)
+                ];
+
+                const pFrameL = [
+                    projectSp(-spW_3d * 0.9, -spD_3d * 0.8, 0),
+                    projectSp(-spW_3d * 0.9, spD_3d * 0.8, 0),
+                    projectSp(-spW_3d * 0.9, 0, -spH_3d * 0.9)
+                ];
+
+                const pFrameR = [
+                    projectSp(spW_3d * 0.9, -spD_3d * 0.8, 0),
+                    projectSp(spW_3d * 0.9, spD_3d * 0.8, 0),
+                    projectSp(spW_3d * 0.9, 0, -spH_3d * 0.9)
+                ];
+
+                const pAxleL = projectSp(-spW_3d * 0.9, 0, -spH_3d * 0.9);
+                const pAxleR = projectSp(spW_3d * 0.9, 0, -spH_3d * 0.9);
 
                 ctx.save();
                 if (isLookingFromBelow) { ctx.globalAlpha = 0.05; ctx.filter = 'blur(3px)'; }
 
                 // Huella de anclaje
                 ctx.save();
-                const footW = Math.max(16, spDrumW * 2.6);
-                const footGrad = ctx.createRadialGradient(spIconX, spBase, 0, spIconX, spBase, footW);
+                const footW = (pAxleR.x - pAxleL.x) * 1.3;
+                const footGrad = ctx.createRadialGradient(pSpBase.x, pSpBase.y, 0, pSpBase.x, pSpBase.y, footW);
                 footGrad.addColorStop(0, isDark ? 'rgba(148,163,184,0.25)' : 'rgba(71,85,105,0.18)');
                 footGrad.addColorStop(0.6, isDark ? 'rgba(148,163,184,0.08)' : 'rgba(71,85,105,0.06)');
                 footGrad.addColorStop(1, 'rgba(0,0,0,0)');
-                ctx.fillStyle = footGrad; ctx.beginPath(); ctx.ellipse(spIconX, spBase, footW, Math.max(3, 4 * zoom), 0, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = footGrad; ctx.beginPath(); ctx.ellipse(pSpBase.x, pSpBase.y, footW, Math.max(3, 4 * zoom), 0, 0, Math.PI * 2); ctx.fill();
                 ctx.restore();
 
-                // Sombra del drum
-                const shadowRad = 12 * zoom;
-                const shadowGrad = ctx.createRadialGradient(spIconX, spBase - 1, 0, spIconX, spBase - 1, shadowRad);
-                shadowGrad.addColorStop(0, isDark ? 'rgba(0,0,0,0.45)' : 'rgba(0,0,0,0.18)'); shadowGrad.addColorStop(1, 'rgba(0,0,0,0)');
-                ctx.fillStyle = shadowGrad; ctx.beginPath(); ctx.ellipse(spIconX, spBase + 1, shadowRad, shadowRad * 0.35, 0, 0, Math.PI * 2); ctx.fill();
-
-                // Cable Aéreo suspendido
+                // Cable Aéreo suspendido en 3D
                 ctx.save();
-                const cableGrad = ctx.createLinearGradient(rigCX, rigTopY + 8 * zoom, spIconX, spIconY);
+                const cableGrad = ctx.createLinearGradient(pCrown.x, pCrown.y, pSpoolerCableAnchor.x, pSpoolerCableAnchor.y);
                 cableGrad.addColorStop(0.0, 'rgba(244,63,94,0.90)'); cableGrad.addColorStop(0.5, 'rgba(251,113,133,0.70)'); cableGrad.addColorStop(1.0, 'rgba(244,63,94,0.55)');
                 ctx.strokeStyle = cableGrad; ctx.lineWidth = 1.2 * zoom; ctx.setLineDash([4, 2]);
-                const cpX = (rigCX + spIconX) / 2, cpY = Math.min(rigTopY + 8 * zoom, spIconY) - 15 * zoom;
-                ctx.beginPath(); ctx.moveTo(rigCX, rigTopY + 8 * zoom); ctx.quadraticCurveTo(cpX, cpY, spIconX, spIconY); ctx.stroke();
+                const cpX = (pCrown.x + pSpoolerCableAnchor.x) / 2, cpY = Math.min(pCrown.y, pSpoolerCableAnchor.y) - 15 * zoom;
+                ctx.beginPath(); ctx.moveTo(pCrown.x, pCrown.y); ctx.quadraticCurveTo(cpX, cpY, pSpoolerCableAnchor.x, pSpoolerCableAnchor.y); ctx.stroke();
                 ctx.setLineDash([]); ctx.restore();
 
                 // Guía del pozo al spooler en superficie
                 ctx.save();
                 ctx.strokeStyle = isDark ? 'rgba(245,158,11,0.22)' : 'rgba(120,53,15,0.18)'; ctx.lineWidth = 0.6; ctx.setLineDash([2, 4]);
-                ctx.beginPath(); ctx.moveTo(rigCX, rigCY); ctx.lineTo(spIconX, spBase); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(pWell.x, pWell.y); ctx.lineTo(pSpBase.x, pSpBase.y); ctx.stroke();
                 ctx.setLineDash([]); ctx.restore();
 
-                // Placa Base
-                const plateW = spDrumW * 2.6, plateH = 2.5 * zoom;
+                // Placa Base en 3D
                 ctx.fillStyle = isDark ? 'rgba(51,65,85,0.85)' : 'rgba(203,213,225,0.90)';
                 ctx.strokeStyle = isDark ? '#475569' : '#94a3b8'; ctx.lineWidth = 0.6;
-                ctx.beginPath(); ctx.roundRect(spIconX - plateW / 2, spIconY + spDrumH + 6 * zoom, plateW, plateH, 1.5); ctx.fill(); ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(pPlatSp[0].x, pPlatSp[0].y);
+                for (let i = 1; i < 4; i++) ctx.lineTo(pPlatSp[i].x, pPlatSp[i].y);
+                ctx.closePath();
+                ctx.fill(); ctx.stroke();
 
-                // Patas estructurales del marco
+                // Patas estructurales del marco (A-Frames)
                 ctx.strokeStyle = isDark ? 'rgba(148,163,184,0.90)' : 'rgba(51,65,85,0.85)'; ctx.lineWidth = 1.1 * zoom;
                 ctx.beginPath();
-                ctx.moveTo(spIconX - spDrumW - 2 * zoom, spIconY + spDrumH + 6 * zoom);
-                ctx.lineTo(spIconX - spDrumW * 0.3, spIconY - spDrumH);
-                ctx.lineTo(spIconX + spDrumW * 0.3, spIconY - spDrumH);
-                ctx.lineTo(spIconX + spDrumW + 2 * zoom, spIconY + spDrumH + 6 * zoom);
+                ctx.moveTo(pFrameL[0].x, pFrameL[0].y); ctx.lineTo(pFrameL[2].x, pFrameL[2].y); ctx.lineTo(pFrameL[1].x, pFrameL[1].y);
+                ctx.moveTo(pFrameR[0].x, pFrameR[0].y); ctx.lineTo(pFrameR[2].x, pFrameR[2].y); ctx.lineTo(pFrameR[1].x, pFrameR[1].y);
                 ctx.stroke();
 
-                // Tambor
-                const drumGrad = ctx.createLinearGradient(spIconX, spIconY - spDrumH, spIconX, spIconY + spDrumH);
-                drumGrad.addColorStop(0.00, isDark ? '#1c1917' : '#78350f'); drumGrad.addColorStop(0.20, isDark ? '#92400e' : '#b45309');
-                drumGrad.addColorStop(0.45, isDark ? '#f59e0b' : '#fbbf24'); drumGrad.addColorStop(0.55, isDark ? '#fbbf24' : '#fde68a');
-                drumGrad.addColorStop(0.75, isDark ? '#d97706' : '#f59e0b'); drumGrad.addColorStop(1.00, isDark ? '#78350f' : '#92400e');
-                ctx.fillStyle = drumGrad; ctx.strokeStyle = isDark ? '#f59e0b' : '#92400e'; ctx.lineWidth = 0.8 * zoom;
-                ctx.beginPath(); ctx.roundRect(spIconX - spDrumW, spIconY - spDrumH, spDrumW * 2, spDrumH * 2, 2 * zoom); ctx.fill(); ctx.stroke();
+                // Helpers para dibujar tambor en 3D
+                const drawSpoolerCircle = (lx: number, radius: number) => {
+                    ctx.beginPath();
+                    for (let theta = 0; theta <= 2 * Math.PI + 0.1; theta += Math.PI / 12) {
+                        const ly = radius * Math.cos(theta);
+                        const lz = -spH_3d * 0.9 + radius * Math.sin(theta);
+                        const p = projectSp(lx, ly, lz);
+                        if (theta === 0) ctx.moveTo(p.x, p.y);
+                        else ctx.lineTo(p.x, p.y);
+                    }
+                    ctx.stroke();
+                };
 
-                // Vueltas del cable enrolladas
-                ctx.strokeStyle = isDark ? 'rgba(120,53,15,0.55)' : 'rgba(30,27,21,0.35)'; ctx.lineWidth = 0.4 * zoom;
-                for (let wi = 1; wi < 5; wi++) {
-                    const wx = spIconX - spDrumW + (spDrumW * 2 / 5) * wi;
-                    ctx.beginPath(); ctx.moveTo(wx, spIconY - spDrumH + 1); ctx.lineTo(wx, spIconY + spDrumH - 1); ctx.stroke();
+                const fillSpoolerCylinder = (lxStart: number, lxEnd: number, radius: number, fillColor: string) => {
+                    ctx.fillStyle = fillColor;
+                    ctx.beginPath();
+                    for (let theta = 0; theta <= 2 * Math.PI + 0.1; theta += Math.PI / 12) {
+                        const ly = radius * Math.cos(theta);
+                        const lz = -spH_3d * 0.9 + radius * Math.sin(theta);
+                        const p = projectSp(lxStart, ly, lz);
+                        if (theta === 0) ctx.moveTo(p.x, p.y);
+                        else ctx.lineTo(p.x, p.y);
+                    }
+                    for (let theta = 2 * Math.PI; theta >= 0; theta -= Math.PI / 12) {
+                        const ly = radius * Math.cos(theta);
+                        const lz = -spH_3d * 0.9 + radius * Math.sin(theta);
+                        const p = projectSp(lxEnd, ly, lz);
+                        ctx.lineTo(p.x, p.y);
+                    }
+                    ctx.closePath();
+                    ctx.fill();
+                };
+
+                // Cilindro del Tambor (Cable enrollado)
+                fillSpoolerCylinder(-spW_3d * 0.65, spW_3d * 0.65, drumRadius, isDark ? '#92400e' : '#b45309');
+
+                // Vueltas del cable enrolladas (Detalle visual 3D)
+                ctx.strokeStyle = isDark ? '#fbbf24' : '#d97706'; ctx.lineWidth = 0.5 * zoom;
+                for (let lx = -spW_3d * 0.55; lx <= spW_3d * 0.55; lx += spW_3d * 0.15) {
+                    drawSpoolerCircle(lx, drumRadius);
                 }
 
-                // Bridas laterales
-                const flangeFill = isDark ? 'rgba(51,65,85,0.92)' : 'rgba(148,163,184,0.95)';
+                // Bridas laterales del tambor
+                ctx.strokeStyle = isDark ? '#94a3b8' : '#475569';
+                ctx.fillStyle = isDark ? 'rgba(71,85,105,0.92)' : 'rgba(148,163,184,0.95)';
                 ctx.lineWidth = 0.7 * zoom;
-                for (const fx of [spIconX - spDrumW, spIconX + spDrumW]) {
-                    ctx.fillStyle = flangeFill; ctx.strokeStyle = isDark ? '#94a3b8' : '#475569';
-                    ctx.beginPath(); ctx.roundRect(fx - 1.5 * zoom, spIconY - spDrumH - 2 * zoom, 3 * zoom, spDrumH * 2 + 4 * zoom, 1); ctx.fill(); ctx.stroke();
-                }
+
+                // Brida Izquierda
+                drawSpoolerCircle(-spW_3d * 0.7, flangeRadius);
+                ctx.fill();
+                // Brida Derecha
+                drawSpoolerCircle(spW_3d * 0.7, flangeRadius);
+                ctx.fill();
 
                 // Eje central
-                ctx.fillStyle = isDark ? '#475569' : '#94a3b8'; ctx.beginPath(); ctx.arc(spIconX, spIconY, 1.5 * zoom, 0, Math.PI * 2); ctx.fill();
+                ctx.strokeStyle = isDark ? '#e2e8f0' : '#0f172a'; ctx.lineWidth = 1.3 * zoom;
+                ctx.beginPath();
+                ctx.moveTo(pAxleL.x, pAxleL.y); ctx.lineTo(pAxleR.x, pAxleR.y);
+                ctx.stroke();
 
                 // Panel flotante
-                const labelY = spBase + 4 * zoom;
-                const panelW = 48 * zoom, panelH = 14 * zoom;
+                const labelY = pSpBase.y + 4 * zoom;
+                const panelW = Math.max(30, 48 * zoom), panelH = Math.max(10, 14 * zoom);
                 ctx.fillStyle = isDark ? 'rgba(15,23,42,0.85)' : 'rgba(255,255,255,0.90)';
                 ctx.strokeStyle = isDark ? 'rgba(245,158,11,0.30)' : 'rgba(146,64,14,0.25)'; ctx.lineWidth = 0.6;
-                ctx.beginPath(); ctx.roundRect(spIconX - panelW / 2, labelY, panelW, panelH, 3); ctx.fill(); ctx.stroke();
+                ctx.beginPath(); ctx.roundRect(pSpBase.x - panelW / 2, labelY, panelW, panelH, 3); ctx.fill(); ctx.stroke();
                 ctx.textAlign = 'center'; ctx.textBaseline = 'top';
                 const fs1 = Math.max(5, 5.5 * zoom);
                 ctx.font = `bold ${fs1}px monospace`;
                 ctx.strokeStyle = isDark ? 'rgba(2,6,23,0.9)' : 'rgba(255,255,255,0.9)'; ctx.lineWidth = 2.0;
-                ctx.strokeText('SPOOLER', spIconX, labelY + 2.5); ctx.fillStyle = isDark ? '#fbbf24' : '#92400e'; ctx.fillText('SPOOLER', spIconX, labelY + 2.5);
+                ctx.strokeText('SPOOLER', pSpBase.x, labelY + 2.5); ctx.fillStyle = isDark ? '#fbbf24' : '#92400e'; ctx.fillText('SPOOLER', pSpBase.x, labelY + 2.5);
                 ctx.restore();
             }
 
