@@ -48,9 +48,12 @@ export const TrajectoryMap: React.FC<TrajectoryMapProps> = ({ survey, params, sp
     const [detectedProj, setDetectedProj] = useState<string>('EPSG:4326');
     const [isSimulated, setIsSimulated] = useState<boolean>(false);
 
-    // Controles para capas WMS de la ANH
-    const [showAnhTierras, setShowAnhTierras] = useState<boolean>(false);
-    const [showAnhPozos, setShowAnhPozos] = useState<boolean>(false);
+    // Controles para capas WMS de la ANH (activados por defecto)
+    const [showAnhTierras, setShowAnhTierras] = useState<boolean>(true);
+    const [showAnhPozos, setShowAnhPozos] = useState<boolean>(true);
+
+    // Pozos ANH cercanos consultados por API REST
+    const [nearbyWells, setNearbyWells] = useState<any[]>([]);
 
     // Ajustes del Spooler y el Cono de Rango fijos
     const spoolerDist = 30;
@@ -158,6 +161,51 @@ export const TrajectoryMap: React.FC<TrajectoryMapProps> = ({ survey, params, sp
         setDetectedProj(coordinatesData.activeProj);
         setIsSimulated(coordinatesData.simulated);
     }, [coordinatesData.activeProj, coordinatesData.simulated]);
+
+    // 2.5 Consultar pozos cercanos en la base de datos de la ANH
+    useEffect(() => {
+        const wellhead = coordinatesData.wellhead;
+        if (!wellhead || coordinatesData.simulated || !showAnhPozos) {
+            setNearbyWells([]);
+            return;
+        }
+
+        const fetchNearbyWells = async () => {
+            const [lat, lon] = wellhead;
+            // Consultar a la ANH pozos en un radio de 20 km (20000 metros)
+            const url = `https://geovisor.anh.gov.co/server/rest/services/GEOVISOR_v32/ANH_InsGDB/MapServer/1/query?geometry=${lon},${lat}&geometryType=esriGeometryPoint&inSR=4326&spatialRel=esriSpatialRelIntersects&distance=20000&units=esriSRUnit_Meter&outFields=WELL_NAME,GEOLOGIC_P,WELL_LATIT,WELL_LONGI&outSR=4326&returnGeometry=true&f=json`;
+
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error("HTTP error " + response.status);
+                const data = await response.json();
+                if (data && data.features) {
+                    console.log("Pozos ANH recuperados:", data.features.length);
+                    const formatted = data.features.map((f: any) => {
+                        const attrs = f.attributes || {};
+                        const geom = f.geometry || {};
+                        const wLat = attrs.WELL_LATIT || geom.y;
+                        const wLon = attrs.WELL_LONGI || geom.x;
+                        return {
+                            name: attrs.WELL_NAME || "Pozo ANH",
+                            province: attrs.GEOLOGIC_P || "N/A",
+                            lat: wLat,
+                            lon: wLon
+                        };
+                    }).filter((w: any) => typeof w.lat === 'number' && typeof w.lon === 'number');
+                    setNearbyWells(formatted);
+                }
+            } catch (err) {
+                console.error("Error al consultar pozos cercanos en ANH:", err);
+            }
+        };
+
+        const timer = setTimeout(() => {
+            fetchNearbyWells();
+        }, 600);
+
+        return () => clearTimeout(timer);
+    }, [coordinatesData.wellhead, coordinatesData.simulated, showAnhPozos]);
 
     // 3. Inicializar Mapa (Leaflet puro en useEffect)
     useEffect(() => {
@@ -556,6 +604,32 @@ export const TrajectoryMap: React.FC<TrajectoryMapProps> = ({ survey, params, sp
             }).addTo(map);
         }
 
+        // I. Dibujar pozos cercanos recuperados de la consulta REST de la ANH
+        if (showAnhPozos && nearbyWells.length > 0) {
+            nearbyWells.forEach((w) => {
+                const coords: [number, number] = [w.lat, w.lon];
+                if (isValidLatLng(coords)) {
+                    L.circleMarker(coords, {
+                        radius: 4,
+                        fillColor: '#ea580c', // Naranja
+                        color: '#ffffff',
+                        weight: 1,
+                        fillOpacity: 0.85
+                    }).addTo(markersGroupRef.current!)
+                    .bindTooltip(`
+                        <div style="font-family: monospace; font-size: 8px; line-height: 1.2;">
+                            <b style="color: #ea580c; font-size: 9px;">${w.name}</b>
+                            ${w.province !== 'N/A' ? `<br/><span style="color: #94a3b8;">Prov: ${w.province}</span>` : ''}
+                        </div>
+                    `, {
+                        permanent: true,
+                        direction: 'top',
+                        className: 'bg-slate-950/95 border border-orange-500/20 px-1.5 py-1 rounded shadow-2xl text-white font-mono'
+                    });
+                }
+            });
+        }
+
         // Ajustar bounds del mapa de forma segura para incluir todos los elementos
         const bounds = L.latLngBounds([wellhead, spoolerCoords]);
         if (sectorCoords.length > 0) {
@@ -564,7 +638,7 @@ export const TrajectoryMap: React.FC<TrajectoryMapProps> = ({ survey, params, sp
         if (bounds.isValid()) {
             map.fitBounds(bounds, { padding: [60, 60], animate: false, maxZoom: 19 });
         }
-    }, [coordinatesData, params, spoolerAzimuth, spoolerDist, coneAngle, showAnhTierras, showAnhPozos]);
+    }, [coordinatesData, params, spoolerAzimuth, spoolerDist, coneAngle, showAnhTierras, showAnhPozos, nearbyWells]);
 
     return (
         <div className="relative w-full h-full flex flex-col min-h-[480px]">
