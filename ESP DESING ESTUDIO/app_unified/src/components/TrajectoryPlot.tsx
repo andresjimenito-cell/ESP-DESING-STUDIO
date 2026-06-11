@@ -11,7 +11,9 @@ import {
 import { SystemParams, SurveyPoint } from '../types';
 import { interpolateTVD } from '../utils';
 import { useTheme } from '../theme';
-import { TrajectoryMap } from './TrajectoryMap';
+const TrajectoryMap = React.lazy(() =>
+    import('./TrajectoryMap').then((module) => ({ default: module.TrajectoryMap }))
+);
 
 const DEG2RAD = Math.PI / 180;
 const RAD2DEG = 180 / Math.PI;
@@ -105,7 +107,16 @@ function drawTubeSegment(
 ) {
     const dx = p1.x - p0.x, dy = p1.y - p0.y;
     const len = Math.sqrt(dx * dx + dy * dy);
-    if (len < 0.1) return;
+    if (len < 0.5) {
+        ctx.save();
+        ctx.globalAlpha = opacity;
+        ctx.fillStyle = colorGradientMid;
+        ctx.beginPath();
+        ctx.arc(p0.x, p0.y, Math.max(0.001, radiusPixels), 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+        return;
+    }
     const nx = -dy / len, ny = dx / len;
     const r = radiusPixels;
     const x0L = p0.x + nx * r, y0L = p0.y + ny * r;
@@ -260,8 +271,8 @@ export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params, 
         if (!survey || !Array.isArray(survey)) return [];
 
         // Filtramos puntos inválidos para evitar la propagación de NaN
-        let rawSurvey = survey.filter(pt => 
-            pt && 
+        let rawSurvey = survey.filter(pt =>
+            pt &&
             typeof pt.md === 'number' && Number.isFinite(pt.md) &&
             typeof pt.tvd === 'number' && Number.isFinite(pt.tvd) &&
             typeof pt.inc === 'number' && Number.isFinite(pt.inc) &&
@@ -834,7 +845,7 @@ export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params, 
 
                 // Huella de anclaje
                 ctx.save();
-                const footW = (pAxleR.x - pAxleL.x) * 1.3;
+                const footW = Math.max(1, Math.abs(pAxleR.x - pAxleL.x) * 1.3);
                 const footGrad = ctx.createRadialGradient(pSpBase.x, pSpBase.y, 0, pSpBase.x, pSpBase.y, footW);
                 footGrad.addColorStop(0, isDark ? 'rgba(148,163,184,0.25)' : 'rgba(71,85,105,0.18)');
                 footGrad.addColorStop(0.6, isDark ? 'rgba(148,163,184,0.08)' : 'rgba(71,85,105,0.06)');
@@ -980,18 +991,28 @@ export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params, 
 
                 const [cr, cg, cb] = getEstheticColorRgb(colorT, colorOverlay3D);
                 const dx = p1.x - p0.x, dy = p1.y - p0.y, len = Math.sqrt(dx * dx + dy * dy);
-                if (len < 0.2) continue;
 
                 const df = (p1.depth + maxRange) / (maxRange * 2);
                 const tubeR = 2.5 * zoom * df + 0.8;
+                const depthRatio = (p1.depth + maxRange) / (maxRange * 2);
+                const visualOpacity = Math.max(0.25, Math.min(1.0, 0.3 + depthRatio * 0.7));
+
+                if (len < 0.5) {
+                    ctx.save();
+                    ctx.globalAlpha = visualOpacity;
+                    ctx.fillStyle = `rgb(${cr},${cg},${cb})`;
+                    ctx.beginPath();
+                    ctx.arc(p0.x, p0.y, Math.max(0.001, tubeR), 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+                    continue;
+                }
+
                 const nx = -dy / len, ny = dx / len;
                 const hl = Math.max(0.12, Math.min(0.88, 0.30 + 0.20 * Math.sin(yaw + Math.atan2(dy, dx))));
 
                 const dr = Math.round(cr * 0.22), dg = Math.round(cg * 0.22), db = Math.round(cb * 0.22);
                 const sR = Math.min(255, Math.round(cr + (255 - cr) * 0.55)), sG = Math.min(255, Math.round(cg + (255 - cg) * 0.55)), sB = Math.min(255, Math.round(cb + (255 - cb) * 0.55));
-
-                const depthRatio = (p1.depth + maxRange) / (maxRange * 2);
-                const visualOpacity = Math.max(0.25, Math.min(1.0, 0.3 + depthRatio * 0.7));
 
                 const tGrad = ctx.createLinearGradient(p0.x + nx * tubeR, p0.y + ny * tubeR, p0.x - nx * tubeR, p0.y - ny * tubeR);
                 tGrad.addColorStop(0.00, `rgba(${dr},${dg},${db},${0.92 * visualOpacity})`);
@@ -1058,9 +1079,18 @@ export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params, 
                     const df = (p1.depth + maxRange) / (maxRange * 2);
                     const rad = (baseTubingRadius * zoom * df + 0.8) + 1.2;
                     const dx = p1.x - p0.x, dy = p1.y - p0.y, len = Math.sqrt(dx * dx + dy * dy);
-                    if (len > 0.1) {
+                    const depthRatio = (p1.depth + maxRange) / (maxRange * 2);
+                    const visualOpacity = Math.max(0.25, Math.min(1.0, 0.3 + depthRatio * 0.7));
+                    if (len < 0.5) {
+                        ctx.save();
+                        ctx.globalAlpha = visualOpacity;
+                        ctx.fillStyle = `rgba(248,113,113,${visualOpacity})`;
+                        ctx.beginPath();
+                        ctx.arc(p0.x + rad, p0.y, 1.35, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.restore();
+                    } else {
                         const nx = -dy / len, ny = dx / len;
-                        const depthRatio = (p1.depth + maxRange) / (maxRange * 2);
                         const visualOpacity = Math.max(0.25, Math.min(1.0, 0.3 + depthRatio * 0.7));
                         ctx.beginPath(); ctx.moveTo(p0.x + nx * rad, p0.y + ny * rad); ctx.lineTo(p1.x + nx * rad, p1.y + ny * rad);
                         ctx.strokeStyle = `rgba(248,113,113,${visualOpacity})`; ctx.lineWidth = 1.35; ctx.stroke();
@@ -1393,7 +1423,14 @@ export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params, 
                         </>
                     ) : (
                         <div className="flex-1 w-full h-full min-h-[380px] p-2 relative z-10 bg-canvas/30">
-                            <TrajectoryMap survey={survey} params={params} spoolerAzimuth={spoolerAzimuth} />
+                            <React.Suspense fallback={
+                                <div className="w-full h-full flex flex-col items-center justify-center text-txt-muted gap-3 font-mono text-[9px]">
+                                    <div className="w-6 h-6 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+                                    <span className="tracking-widest">CARGANDO VISUALIZADOR DE MAPAS ANH...</span>
+                                </div>
+                            }>
+                                <TrajectoryMap survey={survey} params={params} spoolerAzimuth={spoolerAzimuth} />
+                            </React.Suspense>
                         </div>
                     )}
                 </div>
