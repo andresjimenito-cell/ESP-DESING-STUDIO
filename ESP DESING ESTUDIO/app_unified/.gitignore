@@ -27,5 +27,7 @@ dist-ssr
 # No incluir en el repo — son demasiado grandes y se actualizan frecuentemente
 public/*.xlsx
 public/*.json
+!public/COEF.xlsx
+!public/manifest.json
 public/.sync_metadata.json
 ai_memory.json
