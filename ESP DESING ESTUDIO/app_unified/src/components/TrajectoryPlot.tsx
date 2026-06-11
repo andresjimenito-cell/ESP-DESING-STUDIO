@@ -405,7 +405,7 @@ export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params, 
             const parent = canvas.parentElement; if (!parent) return;
             const dpr = window.devicePixelRatio || 1;
             const w = parent.clientWidth; const h = Math.max(380, parent.clientHeight);
-            if (w !== canvasSizeRef.current.w || h !== canvasSizeRef.current.h || dpr !== canvasSizeRef.current.dpr) {
+            if (canvas.width !== w * dpr || canvas.height !== h * dpr || dpr !== canvasSizeRef.current.dpr) {
                 canvas.width = w * dpr; canvas.height = h * dpr;
                 canvas.style.width = `${w}px`; canvas.style.height = `${h}px`;
                 ctx.scale(dpr, dpr); canvasSizeRef.current = { w, h, dpr };
@@ -1056,6 +1056,7 @@ export const TrajectoryPlot: React.FC<TrajectoryPlotProps> = ({ survey, params, 
             if (rafId !== null) cancelAnimationFrame(rafId);
             resizeObserver.disconnect();
             requestRenderRef.current = null;
+            canvasSizeRef.current = { w: 0, h: 0, dpr: 1 };
         };
     }, [processedData, colorOverlay3D, params, spoolerAzimuth, isDark, maxMD, colorPrimary, viewMode]);
 
