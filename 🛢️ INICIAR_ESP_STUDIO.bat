@@ -25,7 +25,7 @@ set "NODE_PORTABLE_DIR=%~dp0node-portable"
 
 if not exist "%NODE_PORTABLE_DIR%" mkdir "%NODE_PORTABLE_DIR%"
 
-powershell -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Write-Host 'Descargando Node.js portatil...'; Invoke-WebRequest -Uri '%NODE_ZIP_URL%' -OutFile '%NODE_ZIP_FILE%'"
+powershell -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; $wc = New-Object System.Net.WebClient; $wc.Proxy = [System.Net.WebRequest]::DefaultWebProxy; $wc.Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials; $wc.Headers.Add('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'); Write-Host 'Descargando Node.js portatil...'; $wc.DownloadFile('%NODE_ZIP_URL%', '%NODE_ZIP_FILE%')"
 if %errorlevel% neq 0 goto :error_download_node
 
 echo [*] Extrayendo archivos...
