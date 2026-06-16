@@ -22,32 +22,70 @@ echo [*] Verificando si Git esta instalado en el sistema...
 git --version >nul 2>&1
 if %errorlevel% equ 0 goto :git_ready
 
+REM 2.1 Verificar si ya existe una version portatil local de Git
+echo [*] Buscando version portatil local de Git...
+if not exist "%~dp0git-portable\cmd\git.exe" goto :download_portable_git
+set "PATH=%~dp0git-portable\cmd;%PATH%"
+goto :git_ready_check
+
+:download_portable_git
 echo.
 echo [!] ADVERTENCIA: Git no esta instalado en este sistema.
-echo [*] Iniciando preparacion para la instalacion automatica de Git...
+echo [*] Intentando descargar e instalar la version PORTATIL de Git (no requiere privilegios de administrador)...
+echo [*] Descargando MinGit desde GitHub...
 
-REM Intentar primero con winget (Windows Package Manager)
-winget --version >nul 2>&1
-if %errorlevel% neq 0 goto :install_powershell
+set "GIT_ZIP_URL=https://github.com/git-for-windows/git/releases/download/v2.43.0.windows.1/MinGit-2.43.0-64-bit.zip"
+set "GIT_ZIP_FILE=%temp%\git-portable.zip"
+set "GIT_PORTABLE_DIR=%~dp0git-portable"
 
-echo [*] Instalandose Git mediante Windows Package Manager (winget)...
-winget install --id Git.Git -e --silent --accept-source-agreements --accept-package-agreements
-if %errorlevel% equ 0 goto :git_installed_ok
-echo [!] La instalacion con winget no tuvo exito. Probando metodo alternativo...
+if not exist "%GIT_PORTABLE_DIR%" mkdir "%GIT_PORTABLE_DIR%"
 
-:install_powershell
-echo [*] Descargando el instalador oficial de Git en segundo plano...
-set "GIT_URL=https://github.com/git-for-windows/git/releases/download/v2.43.0.windows.1/Git-2.43.0-64-bit.exe"
-powershell -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; $out = '$env:TEMP\git_installer.exe'; Write-Host 'Descargando...'; Invoke-WebRequest -Uri '%GIT_URL%' -OutFile $out; Write-Host 'Instalando silenciosamente...'; Start-Process $out -ArgumentList '/SILENT /NORESTART /CLOSEAPPLICATIONS /RESTARTAPPLICATIONS /SP-' -Wait; Remove-Item $out"
+powershell -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Write-Host 'Descargando Git portatil...'; Invoke-WebRequest -Uri '%GIT_ZIP_URL%' -OutFile '%GIT_ZIP_FILE%'"
+if %errorlevel% neq 0 goto :error_download_git
 
-:git_installed_ok
-REM Agregar la ruta tipica de instalacion de Git al PATH de esta sesion
-set "PATH=%PATH%;C:\Program Files\Git\cmd;C:\Program Files (x86)\Git\cmd"
+echo [*] Extrayendo archivos...
+powershell -Command "Write-Host 'Extrayendo...'; Expand-Archive -Path '%GIT_ZIP_FILE%' -DestinationPath '%GIT_PORTABLE_DIR%' -Force"
+if %errorlevel% neq 0 goto :error_extract_git
 
-REM Re-verificar instalacion
+del "%GIT_ZIP_FILE%" >nul 2>&1
+set "PATH=%~dp0git-portable\cmd;%PATH%"
+echo [OK] Git portatil configurado correctamente.
+goto :git_ready_check
+
+:git_ready_check
 git --version >nul 2>&1
-if %errorlevel% neq 0 goto :error_git_install
-echo [OK] Git se ha instalado exitosamente.
+if %errorlevel% equ 0 goto :git_ready
+
+:error_download_git
+echo.
+echo [X] ERROR: No se pudo descargar Git automaticamente (posible bloqueo de red o falta de internet).
+goto :manual_git_instructions
+
+:error_extract_git
+echo.
+echo [X] ERROR: Fallo al extraer el archivo zip de Git portatil.
+goto :manual_git_instructions
+
+:manual_git_instructions
+echo.
+echo =======================================================================
+echo   INSTRUCCIONES PARA INSTALACION MANUAL SIN PERMISOS DE ADMINISTRADOR:
+echo =======================================================================
+echo   1. Descargue el archivo ZIP de MinGit desde este enlace:
+echo      https://github.com/git-for-windows/git/releases/download/v2.43.0.windows.1/MinGit-2.43.0-64-bit.zip
+echo.
+echo   2. Cree una carpeta llamada "git-portable" en este mismo directorio:
+echo      %~dp0git-portable
+echo.
+echo   3. Extraiga el contenido del ZIP dentro de la carpeta "git-portable".
+echo      Debe quedar la estructura:
+echo      %~dp0git-portable\cmd\git.exe
+echo.
+echo   4. Vuelva a iniciar este archivo BAT.
+echo =======================================================================
+echo.
+pause
+exit /b 1
 
 :git_ready
 for /f "tokens=*" %%i in ('git --version') do set GIT_VERSION=%%i
@@ -58,57 +96,68 @@ echo [*] Verificando si Node.js esta instalado en el sistema...
 node --version >nul 2>&1
 if %errorlevel% equ 0 goto :node_ready
 
-REM Comprobar ruta comun de 64 bits
-if not exist "C:\Program Files\nodejs\node.exe" goto :skip_node64
-set "PATH=%PATH%;C:\Program Files\nodejs"
+REM 2.6 Verificar si ya existe una version portatil local de Node
+echo [*] Buscando version portatil local de Node.js...
+if not exist "%~dp0node-portable\node-v20.11.1-win-x64\node.exe" goto :download_portable_node
+set "PATH=%~dp0node-portable\node-v20.11.1-win-x64;%PATH%"
 goto :node_ready_check
-:skip_node64
 
-REM Comprobar ruta comun de 32 bits
-if not exist "C:\Program Files (x86)\nodejs\node.exe" goto :skip_node32
-set "PATH=%PATH%;C:\Program Files (x86)\nodejs"
+:download_portable_node
+echo.
+echo [!] ADVERTENCIA: Node.js no esta instalado en este sistema.
+echo [*] Intentando descargar e instalar la version PORTATIL de Node.js (no requiere privilegios de administrador)...
+echo [*] Descargando desde nodejs.org (LTS)...
+
+set "NODE_ZIP_URL=https://nodejs.org/dist/v20.11.1/node-v20.11.1-win-x64.zip"
+set "NODE_ZIP_FILE=%temp%\node-portable.zip"
+set "NODE_PORTABLE_DIR=%~dp0node-portable"
+
+if not exist "%NODE_PORTABLE_DIR%" mkdir "%NODE_PORTABLE_DIR%"
+
+powershell -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Write-Host 'Descargando Node.js portatil...'; Invoke-WebRequest -Uri '%NODE_ZIP_URL%' -OutFile '%NODE_ZIP_FILE%'"
+if %errorlevel% neq 0 goto :error_download_node
+
+echo [*] Extrayendo archivos...
+powershell -Command "Write-Host 'Extrayendo...'; Expand-Archive -Path '%NODE_ZIP_FILE%' -DestinationPath '%NODE_PORTABLE_DIR%' -Force"
+if %errorlevel% neq 0 goto :error_extract_node
+
+del "%NODE_ZIP_FILE%" >nul 2>&1
+set "PATH=%~dp0node-portable\node-v20.11.1-win-x64;%PATH%"
+echo [OK] Node.js portatil configurado correctamente.
 goto :node_ready_check
-:skip_node32
-
-goto :install_node
 
 :node_ready_check
 node --version >nul 2>&1
 if %errorlevel% equ 0 goto :node_ready
 
-:install_node
+:error_download_node
 echo.
-echo [!] ADVERTENCIA: Node.js no esta instalado en este sistema.
-echo [*] Iniciando instalacion automatica de Node.js...
+echo [X] ERROR: No se pudo descargar Node.js automaticamente (posible bloqueo de red o falta de internet).
+goto :manual_node_instructions
 
-REM Intentar primero con winget
-winget --version >nul 2>&1
-if %errorlevel% neq 0 goto :install_node_powershell
-
-echo [*] Instalandose Node.js mediante Windows Package Manager (winget)...
-winget install --id OpenJS.NodeJS.LTS -e --silent --accept-source-agreements --accept-package-agreements
-if %errorlevel% equ 0 goto :node_installed_ok
-echo [!] La instalacion con winget no tuvo exito. Probando metodo alternativo...
-
-:install_node_powershell
-echo [*] Descargando instalador oficial de Node.js (LTS)...
-set "NODE_URL=https://nodejs.org/dist/v20.11.1/node-v20.11.1-x64.msi"
-powershell -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; $out = '$env:TEMP\node_installer.msi'; Write-Host 'Descargando...'; Invoke-WebRequest -Uri '%NODE_URL%' -OutFile $out; Write-Host 'Instalando silenciosamente...'; Start-Process msiexec.exe -ArgumentList '/i', $out, '/quiet', '/norestart' -Wait; Remove-Item $out"
-
-:node_installed_ok
-REM Agregar la ruta tipica al PATH de esta sesion
-set "PATH=%PATH%;C:\Program Files\nodejs;C:\Program Files (x86)\nodejs"
-
-REM Re-verificar instalacion
-node --version >nul 2>&1
-if %errorlevel% neq 0 goto :error_node_install
-echo [OK] Node.js se ha instalado exitosamente.
-goto :node_ready
-
-:error_node_install
+:error_extract_node
 echo.
-echo [X] ERROR: No se pudo completar la instalacion automatica de Node.js.
-echo [!] Instale Node.js manualmente desde: https://nodejs.org/
+echo [X] ERROR: Fallo al extraer el archivo zip de Node.js portatil.
+goto :manual_node_instructions
+
+:manual_node_instructions
+echo.
+echo =======================================================================
+echo   INSTRUCCIONES PARA INSTALACION MANUAL SIN PERMISOS DE ADMINISTRADOR:
+echo =======================================================================
+echo   1. Descargue el archivo ZIP oficial de Node.js desde este enlace:
+echo      https://nodejs.org/dist/v20.11.1/node-v20.11.1-win-x64.zip
+echo.
+echo   2. Cree una carpeta llamada "node-portable" en este mismo directorio:
+echo      %~dp0node-portable
+echo.
+echo   3. Extraiga el contenido del ZIP dentro de la carpeta "node-portable".
+echo      Debe quedar la estructura:
+echo      %~dp0node-portable\node-v20.11.1-win-x64\node.exe
+echo.
+echo   4. Vuelva a iniciar este archivo BAT.
+echo =======================================================================
+echo.
 pause
 exit /b 1
 
