@@ -1091,7 +1091,10 @@ ${historySummary}`;
             )}
 
             {/* PWA Install Shortcut Banner */}
-            {showInstallPrompt && !(typeof window !== 'undefined' && (window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone)) && (
+            {showInstallPrompt && (
+                (new URLSearchParams(window.location.search).get('install') === 'true') ||
+                !(typeof window !== 'undefined' && (window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone))
+            ) && (
                 <div className="fixed bottom-[80px] left-3 right-3 z-[9999] bg-surface/95 border border-primary/30 rounded-2xl p-4 shadow-[0_20px_50px_rgba(0,0,0,0.5)] backdrop-blur-xl animate-slideUp flex flex-col gap-3">
                     <div className="flex items-start gap-3">
                         <div className="p-2.5 bg-primary/20 rounded-xl text-primary border border-primary/30 shrink-0">
