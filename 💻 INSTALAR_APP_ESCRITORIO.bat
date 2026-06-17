@@ -31,18 +31,30 @@ if "%BROWSER_PATH%"=="" (
 )
 
 echo [*] Navegador detectado en: %BROWSER_PATH%
-echo [*] Creando acceso directo en el Escritorio...
 
-set "TARGET_URL=https://espdesing.vercel.app/"
+set "ICON_DIR=%LocalAppData%\ESPDesignStudio"
+set "ICON_PATH=%ICON_DIR%\app-icon.ico"
+set "TARGET_URL=https://espdesing.vercel.app"
 
-powershell -NoProfile -Command "$desktop = [Environment]::GetFolderPath('Desktop'); $ws = New-Object -ComObject WScript.Shell; $s = $ws.CreateShortcut(\"$desktop\ESP Design Studio.lnk\"); $s.TargetPath = '%BROWSER_PATH%'; $s.Arguments = '--app=%TARGET_URL%'; $s.Description = 'ESP Design Studio'; $s.Save()"
+if not exist "%ICON_DIR%" mkdir "%ICON_DIR%"
+
+echo [*] Descargando logotipo de la aplicacion...
+where curl.exe >nul 2>&1
+if %errorlevel% equ 0 (
+    curl.exe -s -L -o "%ICON_PATH%" "%TARGET_URL%/favicon.ico"
+) else (
+    powershell -NoProfile -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; (New-Object System.Net.WebClient).DownloadFile('%TARGET_URL%/favicon.ico', '%ICON_PATH%')"
+)
+
+echo [*] Creando acceso directo en el Escritorio con icono personalizado...
+powershell -NoProfile -Command "$desktop = [Environment]::GetFolderPath('Desktop'); $ws = New-Object -ComObject WScript.Shell; $s = $ws.CreateShortcut(\"$desktop\ESP Design Studio.lnk\"); $s.TargetPath = '%BROWSER_PATH%'; $s.Arguments = '--app=%TARGET_URL%/'; $s.Description = 'ESP Design Studio'; if (Test-Path '%ICON_PATH%') { $s.IconLocation = '%ICON_PATH%' }; $s.Save()"
 
 echo.
 echo ========================================================================
 echo   [OK] !APLICACION DE ESCRITORIO INSTALADA CON EXITO!
 echo ========================================================================
 echo   [*] Se ha creado un acceso directo llamado "ESP Design Studio" en tu
-echo       Escritorio. Al abrirlo, se iniciara como aplicacion de escritorio.
+echo       Escritorio con su logo personalizado.
 echo ========================================================================
 echo.
 pause
