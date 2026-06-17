@@ -40,11 +40,29 @@ set "GIT_PORTABLE_DIR=%~dp0git-portable"
 
 if not exist "%GIT_PORTABLE_DIR%" mkdir "%GIT_PORTABLE_DIR%"
 
-powershell -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; $wc = New-Object System.Net.WebClient; $wc.Proxy = [System.Net.WebRequest]::DefaultWebProxy; $wc.Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials; $wc.Headers.Add('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'); Write-Host 'Descargando Git portatil...'; $wc.DownloadFile('%GIT_ZIP_URL%', '%GIT_ZIP_FILE%')"
-if %errorlevel% neq 0 goto :error_download_git
+REM Intentar descargar usando curl.exe
+where curl.exe >nul 2>&1
+if %errorlevel% equ 0 (
+    echo [*] Usando curl para descargar Git...
+    curl.exe -L -o "%GIT_ZIP_FILE%" "%GIT_ZIP_URL%"
+) else (
+    echo [*] Usando PowerShell para descargar Git...
+    powershell -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; $wc = New-Object System.Net.WebClient; $wc.Proxy = [System.Net.WebRequest]::DefaultWebProxy; $wc.Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials; $wc.Headers.Add('User-Agent', 'Mozilla/5.0'); $wc.DownloadFile('%GIT_ZIP_URL%', '%GIT_ZIP_FILE%')"
+)
+
+if not exist "%GIT_ZIP_FILE%" goto :error_download_git
 
 echo [*] Extrayendo archivos...
-powershell -Command "Write-Host 'Extrayendo...'; Expand-Archive -Path '%GIT_ZIP_FILE%' -DestinationPath '%GIT_PORTABLE_DIR%' -Force"
+REM Intentar extraer usando tar.exe
+where tar.exe >nul 2>&1
+if %errorlevel% equ 0 (
+    echo [*] Usando tar para extraer Git...
+    tar.exe -xf "%GIT_ZIP_FILE%" -C "%GIT_PORTABLE_DIR%"
+) else (
+    echo [*] Usando PowerShell para extraer Git...
+    powershell -Command "Expand-Archive -Path '%GIT_ZIP_FILE%' -DestinationPath '%GIT_PORTABLE_DIR%' -Force"
+)
+
 if %errorlevel% neq 0 goto :error_extract_git
 
 del "%GIT_ZIP_FILE%" >nul 2>&1
@@ -55,6 +73,7 @@ goto :git_ready_check
 :git_ready_check
 git --version >nul 2>&1
 if %errorlevel% equ 0 goto :git_ready
+goto :error_download_git
 
 :error_download_git
 echo.
@@ -114,11 +133,29 @@ set "NODE_PORTABLE_DIR=%~dp0node-portable"
 
 if not exist "%NODE_PORTABLE_DIR%" mkdir "%NODE_PORTABLE_DIR%"
 
-powershell -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; $wc = New-Object System.Net.WebClient; $wc.Proxy = [System.Net.WebRequest]::DefaultWebProxy; $wc.Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials; $wc.Headers.Add('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'); Write-Host 'Descargando Node.js portatil...'; $wc.DownloadFile('%NODE_ZIP_URL%', '%NODE_ZIP_FILE%')"
-if %errorlevel% neq 0 goto :error_download_node
+REM Intentar descargar usando curl.exe
+where curl.exe >nul 2>&1
+if %errorlevel% equ 0 (
+    echo [*] Usando curl para descargar Node...
+    curl.exe -L -o "%NODE_ZIP_FILE%" "%NODE_ZIP_URL%"
+) else (
+    echo [*] Usando PowerShell para descargar Node...
+    powershell -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; $wc = New-Object System.Net.WebClient; $wc.Proxy = [System.Net.WebRequest]::DefaultWebProxy; $wc.Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials; $wc.Headers.Add('User-Agent', 'Mozilla/5.0'); $wc.DownloadFile('%NODE_ZIP_URL%', '%NODE_ZIP_FILE%')"
+)
+
+if not exist "%NODE_ZIP_FILE%" goto :error_download_node
 
 echo [*] Extrayendo archivos...
-powershell -Command "Write-Host 'Extrayendo...'; Expand-Archive -Path '%NODE_ZIP_FILE%' -DestinationPath '%NODE_PORTABLE_DIR%' -Force"
+REM Intentar extraer usando tar.exe
+where tar.exe >nul 2>&1
+if %errorlevel% equ 0 (
+    echo [*] Usando tar para extraer Node...
+    tar.exe -xf "%NODE_ZIP_FILE%" -C "%NODE_PORTABLE_DIR%"
+) else (
+    echo [*] Usando PowerShell para extraer Node...
+    powershell -Command "Expand-Archive -Path '%NODE_ZIP_FILE%' -DestinationPath '%NODE_PORTABLE_DIR%' -Force"
+)
+
 if %errorlevel% neq 0 goto :error_extract_node
 
 del "%NODE_ZIP_FILE%" >nul 2>&1
@@ -129,6 +166,7 @@ goto :node_ready_check
 :node_ready_check
 node --version >nul 2>&1
 if %errorlevel% equ 0 goto :node_ready
+goto :error_download_node
 
 :error_download_node
 echo.

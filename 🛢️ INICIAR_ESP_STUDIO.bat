@@ -25,11 +25,29 @@ set "NODE_PORTABLE_DIR=%~dp0node-portable"
 
 if not exist "%NODE_PORTABLE_DIR%" mkdir "%NODE_PORTABLE_DIR%"
 
-powershell -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; $wc = New-Object System.Net.WebClient; $wc.Proxy = [System.Net.WebRequest]::DefaultWebProxy; $wc.Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials; $wc.Headers.Add('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'); Write-Host 'Descargando Node.js portatil...'; $wc.DownloadFile('%NODE_ZIP_URL%', '%NODE_ZIP_FILE%')"
-if %errorlevel% neq 0 goto :error_download_node
+REM Intentar descargar usando curl.exe (más rápido y confiable)
+where curl.exe >nul 2>&1
+if %errorlevel% equ 0 (
+    echo [*] Usando curl para descargar...
+    curl.exe -L -o "%NODE_ZIP_FILE%" "%NODE_ZIP_URL%"
+) else (
+    echo [*] Usando PowerShell para descargar...
+    powershell -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; $wc = New-Object System.Net.WebClient; $wc.Proxy = [System.Net.WebRequest]::DefaultWebProxy; $wc.Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials; $wc.Headers.Add('User-Agent', 'Mozilla/5.0'); $wc.DownloadFile('%NODE_ZIP_URL%', '%NODE_ZIP_FILE%')"
+)
+
+if not exist "%NODE_ZIP_FILE%" goto :error_download_node
 
 echo [*] Extrayendo archivos...
-powershell -Command "Write-Host 'Extrayendo...'; Expand-Archive -Path '%NODE_ZIP_FILE%' -DestinationPath '%NODE_PORTABLE_DIR%' -Force"
+REM Intentar extraer usando tar.exe (mucho más rápido y nativo)
+where tar.exe >nul 2>&1
+if %errorlevel% equ 0 (
+    echo [*] Usando tar para extraer...
+    tar.exe -xf "%NODE_ZIP_FILE%" -C "%NODE_PORTABLE_DIR%"
+) else (
+    echo [*] Usando PowerShell para extraer...
+    powershell -Command "Expand-Archive -Path '%NODE_ZIP_FILE%' -DestinationPath '%NODE_PORTABLE_DIR%' -Force"
+)
+
 if %errorlevel% neq 0 goto :error_extract_node
 
 del "%NODE_ZIP_FILE%" >nul 2>&1
@@ -40,6 +58,7 @@ goto :node_ready_check
 :node_ready_check
 node --version >nul 2>&1
 if %errorlevel% equ 0 goto :node_ready
+goto :error_download_node
 
 :error_download_node
 echo.
