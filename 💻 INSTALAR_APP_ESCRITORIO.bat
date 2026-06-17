@@ -35,15 +35,21 @@ echo [*] Navegador detectado en: %BROWSER_PATH%
 set "ICON_DIR=%LocalAppData%\ESPDesignStudio"
 set "ICON_PATH=%ICON_DIR%\app-icon.ico"
 set "TARGET_URL=https://espdesing.vercel.app"
+set "SOURCE_PNG=%~dp0ESP DESING ESTUDIO\app_unified\public\icono192.png"
 
 if not exist "%ICON_DIR%" mkdir "%ICON_DIR%"
 
-echo [*] Descargando logotipo de la aplicacion...
-where curl.exe >nul 2>&1
-if %errorlevel% equ 0 (
-    curl.exe -s -L -o "%ICON_PATH%" "%TARGET_URL%/favicon.ico"
+echo [*] Generando logotipo de la aplicacion...
+if exist "%SOURCE_PNG%" (
+    powershell -NoProfile -Command "$pngBytes = [System.IO.File]::ReadAllBytes('%SOURCE_PNG%'); $pngSize = $pngBytes.Length; $header = [byte[]]@(0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0xC0, 0xC0, 0x00, 0x00, 0x01, 0x00, 0x20, 0x00, ($pngSize -band 0xFF), (($pngSize -shr 8) -band 0xFF), (($pngSize -shr 16) -band 0xFF), (($pngSize -shr 24) -band 0xFF), 0x16, 0x00, 0x00, 0x00); $icoBytes = New-Object byte[] ($header.Length + $pngBytes.Length); [Array]::Copy($header, 0, $icoBytes, 0, $header.Length); [Array]::Copy($pngBytes, 0, $icoBytes, $header.Length, $pngBytes.Length); [System.IO.File]::WriteAllBytes('%ICON_PATH%', $icoBytes);"
 ) else (
-    powershell -NoProfile -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; (New-Object System.Net.WebClient).DownloadFile('%TARGET_URL%/favicon.ico', '%ICON_PATH%')"
+    echo [!] ADVERTENCIA: No se encontro el archivo de origen icono192.png. Intentando descargar favicon...
+    where curl.exe >nul 2>&1
+    if %errorlevel% equ 0 (
+        curl.exe -s -L -o "%ICON_PATH%" "%TARGET_URL%/favicon.ico"
+    ) else (
+        powershell -NoProfile -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; (New-Object System.Net.WebClient).DownloadFile('%TARGET_URL%/favicon.ico', '%ICON_PATH%')"
+    )
 )
 
 echo [*] Creando acceso directo en el Escritorio con icono personalizado...
