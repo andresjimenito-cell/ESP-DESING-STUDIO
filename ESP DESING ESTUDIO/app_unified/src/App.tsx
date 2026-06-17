@@ -565,7 +565,11 @@ const App: React.FC = () => {
     }), [batchView, batchDesigns, batchSurveys, batchFile]);
 
     const renderInstallBanner = () => {
-        if (!showInstallBanner || !deferredPrompt) return null;
+        const isStandalone = typeof window !== 'undefined' && (
+            window.matchMedia('(display-mode: standalone)').matches || 
+            (window.navigator as any).standalone
+        );
+        if (isStandalone || !showInstallBanner || !deferredPrompt) return null;
         return (
             <div className="fixed bottom-6 left-6 z-[9999] max-w-sm w-full bg-surface-raised/95 backdrop-blur-xl border border-primary/20 p-5 shadow-2xl flex flex-col gap-3 animate-fadeIn text-txt-main">
                 <div className="flex items-start gap-3">
