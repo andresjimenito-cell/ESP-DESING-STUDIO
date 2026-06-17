@@ -127,10 +127,20 @@ const App: React.FC = () => {
     const [isMobileChatOpen, setIsMobileChatOpen] = useState(false);
 
     useEffect(() => {
-        const handleBeforeInstallPrompt = (e: Event) => {
+        const handleBeforeInstallPrompt = (e: any) => {
             e.preventDefault();
             setDeferredPrompt(e);
-            setShowInstallBanner(true);
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('install') === 'true') {
+                e.prompt();
+                e.userChoice.then(() => {
+                    const newUrl = window.location.pathname;
+                    window.history.replaceState({}, document.title, newUrl);
+                });
+            } else {
+                setShowInstallBanner(true);
+            }
         };
         window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt as any);
         return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt as any);
