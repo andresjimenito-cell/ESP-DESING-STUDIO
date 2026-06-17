@@ -608,6 +608,57 @@ const App: React.FC = () => {
         );
     };
 
+    // —— GLOBAL BACKGROUND (shared across ALL modes) ——
+    const globalBackground = (
+        <div className="aurora-bg">
+            {/* Background Image Layer */}
+            <div
+                className="absolute inset-0 bg-center no-repeat opacity-25 filter blur-sm brightness-110 pointer-events-none"
+                style={{
+                    backgroundImage: "url('/main_bg.png')",
+                    backgroundSize: "100% 100%"
+                }}
+            ></div>
+            <div className="aurora-1 opacity-60"></div>
+            <div className="aurora-2 opacity-40"></div>
+            <div className="blueprint-grid absolute inset-0 opacity-10"></div>
+            <div className="absolute top-[-10%] left-[20%] w-[30vw] h-[30vw] bg-primary/10 rounded-full blur-[120px]"></div>
+            <div className="absolute bottom-[-10%] right-[20%] w-[30vw] h-[30vw] bg-secondary/10 rounded-full blur-[120px]"></div>
+        </div>
+    );
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const isInstalling = urlParams.get('install') === 'true';
+
+    if (isInstalling) {
+        return (
+            <div className="relative min-h-screen flex items-center justify-center bg-canvas">
+                {globalBackground}
+                <div className="z-[9999] max-w-sm w-full bg-surface-raised/95 backdrop-blur-xl border border-primary/20 p-8 shadow-2xl flex flex-col gap-5 text-txt-main rounded-2xl animate-scaleUp">
+                    <div className="flex items-start gap-4">
+                        <div className="p-3 bg-primary/20 rounded-xl text-primary border border-primary/30 shrink-0">
+                            <Sparkles className="w-6 h-6 animate-pulse" />
+                        </div>
+                        <div className="flex-1">
+                            <h4 className="text-xs font-black uppercase tracking-wider text-txt-main">Instalar ESP Design Studio</h4>
+                            <p className="text-[10px] font-bold text-txt-muted leading-relaxed uppercase mt-1 opacity-70">
+                                Acceso rápido y rendimiento óptimo desde tu pantalla de inicio o escritorio.
+                            </p>
+                        </div>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                        <button
+                            onClick={handleInstallClick}
+                            className="w-full bg-primary hover:bg-primary/80 text-white text-[10px] font-black uppercase py-3.5 rounded-none tracking-widest text-center shadow-lg transition-all"
+                        >
+                            Instalar App
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     if (!isLoggedIn) {
         return (
             <div className="relative min-h-screen">
@@ -667,57 +718,6 @@ const App: React.FC = () => {
                     setAppState({ appMode: 'main' });
                 }}
             />
-        );
-    }
-
-    // â”€â”€ GLOBAL BACKGROUND (shared across ALL modes) â”€â”€
-    const globalBackground = (
-        <div className="aurora-bg">
-            {/* Background Image Layer */}
-            <div
-                className="absolute inset-0 bg-center no-repeat opacity-25 filter blur-sm brightness-110 pointer-events-none"
-                style={{
-                    backgroundImage: "url('/main_bg.png')",
-                    backgroundSize: "100% 100%"
-                }}
-            ></div>
-            <div className="aurora-1 opacity-60"></div>
-            <div className="aurora-2 opacity-40"></div>
-            <div className="blueprint-grid absolute inset-0 opacity-10"></div>
-            <div className="absolute top-[-10%] left-[20%] w-[30vw] h-[30vw] bg-primary/10 rounded-full blur-[120px]"></div>
-            <div className="absolute bottom-[-10%] right-[20%] w-[30vw] h-[30vw] bg-secondary/10 rounded-full blur-[120px]"></div>
-        </div>
-    );
-
-    const urlParams = new URLSearchParams(window.location.search);
-    const isInstalling = urlParams.get('install') === 'true';
-
-    if (isInstalling) {
-        return (
-            <div className="relative min-h-screen flex items-center justify-center bg-canvas">
-                {globalBackground}
-                <div className="z-[9999] max-w-sm w-full bg-surface-raised/95 backdrop-blur-xl border border-primary/20 p-8 shadow-2xl flex flex-col gap-5 text-txt-main rounded-2xl animate-scaleUp">
-                    <div className="flex items-start gap-4">
-                        <div className="p-3 bg-primary/20 rounded-xl text-primary border border-primary/30 shrink-0">
-                            <Sparkles className="w-6 h-6 animate-pulse" />
-                        </div>
-                        <div className="flex-1">
-                            <h4 className="text-xs font-black uppercase tracking-wider text-txt-main">Instalar ESP Design Studio</h4>
-                            <p className="text-[10px] font-bold text-txt-muted leading-relaxed uppercase mt-1 opacity-70">
-                                Acceso rápido y rendimiento óptimo desde tu pantalla de inicio o escritorio.
-                            </p>
-                        </div>
-                    </div>
-                    <div className="flex flex-col gap-2">
-                        <button
-                            onClick={handleInstallClick}
-                            className="w-full bg-primary hover:bg-primary/80 text-white text-[10px] font-black uppercase py-3 rounded-none tracking-widest text-center shadow-lg transition-all"
-                        >
-                            Instalar App
-                        </button>
-                    </div>
-                </div>
-            </div>
         );
     }
 
