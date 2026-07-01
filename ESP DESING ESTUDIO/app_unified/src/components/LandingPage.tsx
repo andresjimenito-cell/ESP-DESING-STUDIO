@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useState, useMemo, useCallback } from 'react'
 import {
     Globe, Command, FileText, User, Briefcase, ChevronRight,
     Activity, Zap, Power, Palette, Sun, Moon, Database, Sparkles, Cpu, GitCompareArrows, ArrowUpRight,
-    FileSpreadsheet, UploadCloud as UploadIcon, Terminal, ShieldCheck, Radio, Search, X, RefreshCw, CheckCircle2, Settings, Cog, Lock
+    FileSpreadsheet, UploadCloud as UploadIcon, Terminal, ShieldCheck, Radio, Search, X, RefreshCw, CheckCircle2, Settings, Cog, Lock, Compass
 } from 'lucide-react';
 import { SystemParams, SurveyPoint, PipeData } from '../types';
 import { useTheme } from '../theme';
@@ -93,6 +93,7 @@ interface LandingPageProps {
     onStart: () => void;
     onCompare: () => void;
     onMonitoring: () => void;
+    onSurveys: () => void;
     params: SystemParams;
     setParams: React.Dispatch<React.SetStateAction<SystemParams>>;
     language: string;
@@ -116,6 +117,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     onStart,
     onCompare,
     onMonitoring,
+    onSurveys,
     params,
     setParams,
     language,
@@ -881,6 +883,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                                         Iniciar Nuevo Proyecto
                                     </button>
 
+                                    <button
+                                        onClick={onSurveys}
+                                        className="w-full py-3 bg-gradient-to-r from-primary to-secondary text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-md active:scale-95 transition-all flex items-center justify-center gap-2"
+                                    >
+                                        <Compass className="w-4 h-4 text-white" /> Surveys y Trayectorias
+                                    </button>
+
                                     <div className="grid grid-cols-2 gap-2">
                                         <button
                                             onClick={() => fileInputRef.current?.click()}
@@ -1467,6 +1476,42 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                                                             <ChevronRight className="w-5 h-5 text-white group-hover:translate-x-1 transition-transform" />
                                                         </div>
                                                     </button>
+
+                                                    <button
+                                                         onClick={onSurveys}
+                                                         className="group relative w-full h-[60px] rounded-2xl overflow-hidden active:scale-[0.98] transition-all"
+                                                         style={{
+                                                             background: 'linear-gradient(135deg, rgba(var(--color-primary), 0.15), rgba(var(--color-secondary), 0.15))',
+                                                             border: '1px solid rgba(var(--color-primary), 0.3)',
+                                                             boxShadow: '0 4px 15px rgba(var(--color-primary), 0.15)',
+                                                             transition: 'all 0.3s ease',
+                                                         }}
+                                                         onMouseEnter={e => {
+                                                             e.currentTarget.style.background = 'linear-gradient(135deg, rgba(var(--color-primary), 0.22), rgba(var(--color-secondary), 0.22))';
+                                                             e.currentTarget.style.borderColor = 'rgba(var(--color-primary), 0.5)';
+                                                             e.currentTarget.style.boxShadow = '0 8px 24px rgba(var(--color-primary), 0.3)';
+                                                             e.currentTarget.style.transform = 'translateY(-2px)';
+                                                         }}
+                                                         onMouseLeave={e => {
+                                                             e.currentTarget.style.background = 'linear-gradient(135deg, rgba(var(--color-primary), 0.15), rgba(var(--color-secondary), 0.15))';
+                                                             e.currentTarget.style.borderColor = 'rgba(var(--color-primary), 0.3)';
+                                                             e.currentTarget.style.boxShadow = '0 4px 15px rgba(var(--color-primary), 0.15)';
+                                                             e.currentTarget.style.transform = 'translateY(0)';
+                                                         }}
+                                                     >
+                                                         <div className="relative z-10 flex items-center justify-between px-6 h-full">
+                                                             <div className="flex items-center gap-4">
+                                                                 <div className="w-10 h-10 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                                                     <Compass className="w-5 h-5 text-primary" />
+                                                                 </div>
+                                                                 <div className="text-left">
+                                                                     <span className="block text-[13px] font-black text-txt-main uppercase tracking-wider">Surveys y Trayectorias</span>
+                                                                     <span className="block text-[7px] text-txt-muted uppercase tracking-[0.3em] mt-0.5 font-bold">Surveys & 3D Plot</span>
+                                                                 </div>
+                                                             </div>
+                                                             <ChevronRight className="w-5 h-5 text-txt-muted group-hover:translate-x-1 transition-transform" />
+                                                         </div>
+                                                     </button>
 
                                                     {/* Import grid */}
                                                     <div className="grid grid-cols-3 gap-2">

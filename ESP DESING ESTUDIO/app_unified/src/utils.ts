@@ -1179,3 +1179,27 @@ export const calculateScenarioResults = (design: any, sk: 'min' | 'target' | 'ma
         return null;
     }
 };
+
+export const calculateCriticalConingRate = (sys: SystemParams): number => {
+    const inflow = sys.inflow;
+    if (!inflow.enableConingCheck || !inflow.oilThickness || !inflow.horizontalPerm) return Infinity;
+    
+    const kh = inflow.horizontalPerm; // mD
+    const h = inflow.oilThickness; // ft
+    const api = sys.fluids.apiOil || 35;
+    const oilSg = 141.5 / (131.5 + api);
+    const waterSg = sys.fluids.geWater || 1.0;
+    const deltaSg = Math.max(0.01, waterSg - oilSg);
+    
+    // Viscosity at reservoir conditions (static pressure and bottomhole temperature)
+    const mu_oil = PVT.calcOilViscosity(inflow.pStatic, sys.bottomholeTemp, sys.fluids.gor, sys.fluids);
+    const Bo = PVT.calcBo(inflow.pStatic, sys.bottomholeTemp, sys.fluids.gor, sys.fluids);
+    
+    // Standard Meyer-Garder simplified for water coning:
+    // q_c = 0.001535 * kh * h^2 * deltaSg / (mu_o * Bo * ln(re/rw))
+    // We assume ln(re/rw) is approximately 7.5 (draining radius ratio)
+    const ln_re_rw = 7.5;
+    const qc = (0.001535 * kh * (h * h) * deltaSg) / ((mu_oil || 1.0) * (Bo || 1.0) * ln_re_rw);
+    return isNaN(qc) ? Infinity : qc;
+};
+

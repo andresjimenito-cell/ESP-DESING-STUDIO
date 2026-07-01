@@ -71,6 +71,9 @@ export interface InflowParams {
   pStatic: number;
   staticLevel: number;
   ip: number;
+  enableConingCheck?: boolean;
+  oilThickness?: number;
+  horizontalPerm?: number;
 }
 
 export interface PressureParams {

@@ -17,6 +17,7 @@ import { PhaseMonitoreo } from './components/PhaseMonitoreo';
 import { DesignComparator } from './components/DesignComparator';
 import { DesignDataImport } from './components/DesignDataImport';
 import { BatchDesignProcessor } from './components/BatchDesignProcessor';
+import { SurveysModule } from './components/SurveysModule';
 import { TUBING_CATALOG, CASING_CATALOG, STANDARD_PUMPS, STANDARD_MOTORS, CABLE_CATALOG, VSD_CATALOG } from '@/data';
 import {
     Activity, RotateCcw, Ruler, Droplets, Target, Hexagon, CheckCircle2, Clock, ClipboardCheck, Maximize, Minimize, Globe, AlertCircle, Sparkles, RefreshCw, Send, ChevronDown, ChevronRight, AlertTriangle, Layers, Palette, FileSpreadsheet, Maximize2, Minimize2, Printer, GitCompareArrows, Zap, Settings, ArrowLeft, Brain, X, Menu
@@ -107,7 +108,7 @@ const App: React.FC = () => {
     const { t, language, setLanguage } = useLanguage();
     const { theme, cycleTheme } = useTheme();
     const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => isSessionValid());
-    const [appState, setAppState] = useState<{ appMode: 'landing' | 'main' | 'comparator' | 'monitoring' }>({ appMode: 'landing' });
+    const [appState, setAppState] = useState<{ appMode: 'landing' | 'main' | 'comparator' | 'monitoring' | 'surveys' }>({ appMode: 'landing' });
     const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
     const [showInstallBanner, setShowInstallBanner] = useState(false);
     const [isMobile, setIsMobile] = useState(() => {
@@ -160,7 +161,35 @@ const App: React.FC = () => {
     const [cameFromMonitoring, setCameFromMonitoring] = useState(false);
 
     const [landingMenuLevel, setLandingMenuLevel] = useState<'main' | 'design'>('main');
-    const [globalZoom, setGlobalZoom] = useState<number>(0.8);
+    const [globalZoom, setGlobalZoom] = useState<number>(1.0);
+    const [autoScale, setAutoScale] = useState<boolean>(true);
+
+    useEffect(() => {
+        if (!autoScale) {
+            setGlobalZoom(1.0);
+            return;
+        }
+        const handleResize = () => {
+            const sidebarW = 260;
+            const chatW = isChatMinimized ? 64 : 400;
+            const availW = window.innerWidth - sidebarW - chatW;
+            const availH = window.innerHeight - 104 - 32; // menos header, footer y main padding
+            
+            const baselineW = 1260;
+            const baselineH = 820;
+            
+            const scaleX = availW / baselineW;
+            const scaleY = availH / baselineH;
+            
+            let scale = Math.min(scaleX, scaleY);
+            scale = Math.max(0.55, Math.min(1.0, scale));
+            setGlobalZoom(scale);
+        };
+        
+        handleResize();
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, [autoScale, isChatMinimized]);
 
 
 
@@ -677,6 +706,7 @@ const App: React.FC = () => {
                 onStart={() => setAppState({ appMode: 'main' })}
                 onCompare={() => setAppState({ appMode: 'comparator' })}
                 onMonitoring={() => setAppState({ appMode: 'monitoring' })}
+                onSurveys={() => setAppState({ appMode: 'surveys' })}
 
 
                 menuLevel={landingMenuLevel}
@@ -689,6 +719,14 @@ const App: React.FC = () => {
                 onQuickImport={handleQuickDesignImport}
                 // Persistent state
                 batchState={persistentBatch}
+            />
+        );
+    } else if (appState.appMode === 'surveys') {
+        mainContent = (
+            <SurveysModule
+                params={params}
+                setParams={setParams}
+                onBack={() => setAppState({ appMode: 'landing' })}
             />
         );
     } else if (appState.appMode === 'monitoring') {
@@ -852,7 +890,7 @@ const App: React.FC = () => {
                     <div className="flex items-center gap-2">
                         <button onClick={toggleLanguage} className="bg-surface/50 hover:bg-surface-light rounded-none w-10 h-10 flex items-center justify-center transition-all group relative cursor-pointer"><Globe className="w-4 h-4 text-txt-muted group-hover:text-primary" /></button>
                         <button onClick={cycleTheme} className="bg-surface/50 hover:bg-surface-light rounded-none w-10 h-10 flex items-center justify-center transition-all group relative cursor-pointer"><Palette className="w-4 h-4 text-txt-muted group-hover:text-primary" /></button>
-                        <button onClick={() => setGlobalZoom(globalZoom === 1 ? 0.8 : 1)} className="bg-surface/50 hover:bg-surface-light rounded-none w-10 h-10 flex items-center justify-center transition-all group relative cursor-pointer" title={globalZoom === 1 ? "Reducir Escala (80%)" : "Aumentar Escala (100%)"}>{globalZoom === 1 ? <Minimize2 className="w-4 h-4 text-txt-muted group-hover:text-primary" /> : <Maximize2 className="w-4 h-4 text-txt-muted group-hover:text-primary" />}</button>
+                        <button onClick={() => setAutoScale(!autoScale)} className={`bg-surface/50 hover:bg-surface-light rounded-none w-10 h-10 flex items-center justify-center transition-all group relative cursor-pointer ${autoScale ? 'text-primary' : 'text-txt-muted'}`} title={autoScale ? `Auto-Escala: Activa (${Math.round(globalZoom * 100)}%)` : "Auto-Escala: Desactivada"}>{autoScale ? <Maximize2 className="w-4 h-4 text-primary animate-pulse" /> : <Minimize2 className="w-4 h-4 text-txt-muted" />}</button>
                         <button onClick={toggleFullScreen} className="bg-surface/50 hover:bg-surface-light rounded-none w-10 h-10 flex items-center justify-center transition-all group relative cursor-pointer">{isFullscreen ? <Minimize className="w-4 h-4 text-txt-muted group-hover:text-primary" /> : <Maximize className="w-4 h-4 text-txt-muted group-hover:text-primary" />}</button>
                         <div className="w-px h-6 bg-surface-light mx-1"></div>
 
@@ -1072,31 +1110,33 @@ const App: React.FC = () => {
                         )}
                     </div>
 
-                    {aiViewMode === 'memory' ? (
-                        <div className="flex-1 overflow-hidden p-4 bg-canvas/30">
-                            <AiMemoryManager language={language} onClose={() => setAiViewMode('chat')} />
-                        </div>
-                    ) : (
-                        <>
-                            <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar bg-canvas scroll-smooth text-sm">
-                                {messages.length === 0 && <div className="h-full flex flex-col items-center justify-center opacity-40 space-y-2 py-8"><div className="w-12 h-12 bg-surface rounded-xl flex items-center justify-center border border-surface-light animate-pulse"><Sparkles className="w-6 h-6 text-primary/50" /></div><p className="text-[10px] font-black uppercase text-txt-muted tracking-widest">{t('ai.ready')}</p></div>}
-                                {messages.map((msg) => (
-                                    <div key={msg.id} className={`flex flex-col gap-1.5 animate-fadeIn ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-                                        <div className={`max-w-[95%] p-4 rounded-2xl text-sm font-medium leading-relaxed shadow-sm border ${msg.role === 'user' ? 'bg-primary text-white border-primary/20 rounded-br-none' : 'bg-surface text-txt-main border-surface-light rounded-bl-none'}`}>
-                                            <div className="markdown-content"><MarkdownRenderer content={msg.text} isStreaming={aiLoading && msg.id === messages[messages.length - 1]?.id} /></div>
+                    {!isChatMinimized && (
+                        aiViewMode === 'memory' ? (
+                            <div className="flex-1 overflow-hidden p-4 bg-canvas/30">
+                                <AiMemoryManager language={language} onClose={() => setAiViewMode('chat')} />
+                            </div>
+                        ) : (
+                            <>
+                                <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar bg-canvas scroll-smooth text-sm">
+                                    {messages.length === 0 && <div className="h-full flex flex-col items-center justify-center opacity-40 space-y-2 py-8"><div className="w-12 h-12 bg-surface rounded-xl flex items-center justify-center border border-surface-light animate-pulse"><Sparkles className="w-6 h-6 text-primary/50" /></div><p className="text-[10px] font-black uppercase text-txt-muted tracking-widest">{t('ai.ready')}</p></div>}
+                                    {messages.map((msg) => (
+                                        <div key={msg.id} className={`flex flex-col gap-1.5 animate-fadeIn ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+                                            <div className={`max-w-[95%] p-4 rounded-2xl text-sm font-medium leading-relaxed shadow-sm border ${msg.role === 'user' ? 'bg-primary text-white border-primary/20 rounded-br-none' : 'bg-surface text-txt-main border-surface-light rounded-bl-none'}`}>
+                                                <div className="markdown-content"><MarkdownRenderer content={msg.text} isStreaming={aiLoading && msg.id === messages[messages.length - 1]?.id} /></div>
+                                            </div>
+                                            <span className="text-[10px] font-black text-txt-muted px-3 uppercase opacity-60 tracking-widest">{msg.role === 'user' ? t('ai.user') : t('ai.ai')} • {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                         </div>
-                                        <span className="text-[10px] font-black text-txt-muted px-3 uppercase opacity-60 tracking-widest">{msg.role === 'user' ? t('ai.user') : t('ai.ai')} • {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                    </div>
-                                ))}
-                                <div ref={chatEndRef}></div>
-                            </div>
-                            <div className="p-3 bg-surface border-t border-surface-light mt-auto">
-                                <div className="flex items-center gap-2 bg-canvas border border-surface-light rounded-xl px-3 py-1.5 focus-within:border-primary/50 transition-all shadow-inner">
-                                    <input type="text" value={userInput} onChange={(e) => setUserInput(e.target.value)} onKeyDown={handleKeyPress} placeholder={language === 'es' ? "Pregunte..." : "Ask..."} className="bg-transparent w-full text-xs font-bold text-txt-main outline-none placeholder:text-txt-muted/50" disabled={aiLoading} />
-                                    <button onClick={handleSendMessage} disabled={!userInput.trim() || aiLoading} className="p-2 bg-primary hover:bg-primary/90 text-white rounded-lg disabled:opacity-50 transition-all active:scale-95"><Send className="w-3.5 h-3.5" /></button>
+                                    ))}
+                                    <div ref={chatEndRef}></div>
                                 </div>
-                            </div>
-                        </>
+                                <div className="p-3 bg-surface border-t border-surface-light mt-auto">
+                                    <div className="flex items-center gap-2 bg-canvas border border-surface-light rounded-xl px-3 py-1.5 focus-within:border-primary/50 transition-all shadow-inner">
+                                        <input type="text" value={userInput} onChange={(e) => setUserInput(e.target.value)} onKeyDown={handleKeyPress} placeholder={language === 'es' ? "Pregunte..." : "Ask..."} className="bg-transparent w-full text-xs font-bold text-txt-main outline-none placeholder:text-txt-muted/50" disabled={aiLoading} />
+                                        <button onClick={handleSendMessage} disabled={!userInput.trim() || aiLoading} className="p-2 bg-primary hover:bg-primary/90 text-white rounded-lg disabled:opacity-50 transition-all active:scale-95"><Send className="w-3.5 h-3.5" /></button>
+                                    </div>
+                                </div>
+                            </>
+                        )
                     )}
                 </aside>
             )}

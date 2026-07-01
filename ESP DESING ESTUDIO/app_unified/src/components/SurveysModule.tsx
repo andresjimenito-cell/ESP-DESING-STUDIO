@@ -1,17 +1,18 @@
-
-import React, { useState, useEffect } from 'react';
-import { Cylinder, ArrowDown, Thermometer, FileCode, Trash2, Check, Activity, Map, Compass, Table, AlertTriangle, HelpCircle, Sliders, Database, Eye } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { 
+    Cylinder, ArrowDown, Thermometer, FileCode, Trash2, Check, Activity, Map, Compass, Table, 
+    AlertTriangle, HelpCircle, Sliders, Database, Eye, ArrowLeft, Download, UploadCloud, Play, Settings, Minus
+} from 'lucide-react';
 import { SystemParams, PipeData, SurveyPoint } from '../types';
 import { CASING_CATALOG, TUBING_CATALOG } from '../data';
 import { useLanguage } from '../i18n';
 import { TrajectoryPlot } from './TrajectoryPlot';
-import { read, utils as xlsxUtils } from 'xlsx';
+import { read, utils as xlsxUtils, write } from 'xlsx';
 
 interface Props {
     params: SystemParams;
     setParams: React.Dispatch<React.SetStateAction<SystemParams>>;
-    rawSurvey: string;
-    setRawSurvey: React.Dispatch<React.SetStateAction<string>>;
+    onBack: () => void;
 }
 
 const TechnicalInput = ({ label, value, unit, onChange, className = "" }: any) => (
@@ -36,7 +37,7 @@ const PipeConfigCard = ({ title, pipe, catalog, onSelect, bottomMD, onDepthChang
     const { t } = useLanguage();
 
     return (
-        <div className="glass-surface rounded-none border border-white/5 shadow-xl p-3 relative overflow-hidden group hover:border-primary/30 hover:shadow-glow-primary transition-all h-full flex flex-col justify-between light-sweep">
+        <div className="glass-surface rounded-none border border-white/5 shadow-xl p-4 relative overflow-hidden group hover:border-primary/30 hover:shadow-glow-primary transition-all flex flex-col justify-between light-sweep">
             <div className={`absolute top-0 left-0 w-1 h-full ${colorClass} opacity-40 group-hover:opacity-100 transition-all duration-700 shadow-glow-primary`}></div>
             <div className="flex justify-between items-center mb-2 pl-1 relative z-10">
                 <div className="flex items-center gap-2">
@@ -73,11 +74,147 @@ const PipeConfigCard = ({ title, pipe, catalog, onSelect, bottomMD, onDepthChang
     )
 };
 
-export const Phase1: React.FC<Props> = ({ params, setParams, rawSurvey, setRawSurvey }) => {
-    const { t } = useLanguage();
-    const [isAdvanced, setIsAdvanced] = useState(false);
+const DEG2RAD = Math.PI / 180;
+const RAD2DEG = 180 / Math.PI;
+
+interface ProcessedPoint {
+    md: number;
+    tvd: number;
+    inc: number;
+    azim: number;
+}
+
+const SpoolerPolarChart: React.FC<{ processedData: ProcessedPoint[]; limitMD: number; isDark: boolean; }> = ({ processedData, limitMD, isDark }) => {
+    const size = 360, cx = size / 2, cy = size / 2, R = 135;
+    const toRad = (deg: number) => (deg - 90) * DEG2RAD;
+    const getPt = (deg: number, radiusVal: number) => {
+        const rad = toRad(deg);
+        const rPix = (radiusVal / 100) * R;
+        return { x: cx + Math.cos(rad) * rPix, y: cy + Math.sin(rad) * rPix };
+    };
+
+    const sector = useMemo(() => {
+        const validPoints = processedData.filter(pt => pt.md > 0 && pt.md <= limitMD && pt.azim !== undefined);
+        if (validPoints.length === 0) return { start: 0, end: 0, draw: false };
+        let sumSin = 0, sumCos = 0, sumW = 0;
+        validPoints.forEach(pt => {
+            const w = Math.sin((pt.inc ?? 0) * DEG2RAD);
+            sumSin += Math.sin((pt.azim ?? 0) * DEG2RAD) * w;
+            sumCos += Math.cos((pt.azim ?? 0) * DEG2RAD) * w;
+            sumW += w;
+        });
+        let avgAz = 0;
+        if (sumW < 0.0001) {
+            let simpleSin = 0, simpleCos = 0;
+            validPoints.forEach(pt => {
+                simpleSin += Math.sin((pt.azim ?? 0) * DEG2RAD);
+                simpleCos += Math.cos((pt.azim ?? 0) * DEG2RAD);
+            });
+            avgAz = (Math.atan2(simpleSin, simpleCos) * RAD2DEG + 360) % 360;
+        } else {
+            avgAz = (Math.atan2(sumSin, sumCos) * RAD2DEG + 360) % 360;
+        }
+        let minDiff = 0, maxDiff = 0;
+        validPoints.forEach(pt => {
+            const w = Math.sin((pt.inc ?? 0) * DEG2RAD);
+            if (sumW >= 0.0001 && w < 0.043) return;
+            let diff = pt.azim - avgAz;
+            while (diff < -180) diff += 360; while (diff > 180) diff -= 360;
+            if (diff < minDiff) minDiff = diff; if (diff > maxDiff) maxDiff = diff;
+        });
+        return { start: (avgAz + minDiff - 2 + 360) % 360, end: (avgAz + maxDiff + 2 + 360) % 360, draw: true };
+    }, [processedData, limitMD]);
+
+    const concentricValues = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
+    const degreeLabels = useMemo(() => { const l: number[] = []; for (let d = 0; d < 360; d += 4) if (d !== 0 && d !== 90 && d !== 180 && d !== 270) l.push(d); return l; }, []);
+
+    return (
+        <svg viewBox={`0 0 ${size} ${size}`} className="w-full max-w-[280px] h-[280px] select-none overflow-visible">
+            {sector.draw && (
+                <path
+                    d={`M ${cx} ${cy} L ${cx + Math.cos(toRad(sector.start)) * R} ${cy + Math.sin(toRad(sector.start)) * R} A ${R} ${R} 0 ${(sector.end - sector.start + 360) % 360 > 180 ? 1 : 0} 1 ${cx + Math.cos(toRad(sector.end)) * R} ${cy + Math.sin(toRad(sector.end)) * R} Z`}
+                    fill="rgb(var(--color-primary) / 0.08)"
+                    stroke="rgb(var(--color-primary))"
+                    strokeWidth="1.5"
+                    strokeDasharray="3 3"
+                />
+            )}
+            {concentricValues.map(val => <circle key={val} cx={cx} cy={cy} r={(val / 100) * R} fill="none" stroke="rgb(var(--color-text-main) / 0.05)" strokeWidth={val === 100 ? 1.0 : 0.5} />)}
+            {degreeLabels.map(deg => { const p = getPt(deg, 105); return <text key={`l${deg}`} x={p.x} y={p.y} textAnchor="middle" dominantBaseline="middle" fontSize="6.5" fontWeight="600" fill="rgb(var(--color-text-muted))">{deg}°</text>; })}
+            <line x1={cx - R} y1={cy} x2={cx + R} y2={cy} stroke="rgb(var(--color-text-main) / 0.15)" strokeWidth="1.0" />
+            <line x1={cx} y1={cy - R} x2={cx} y2={cy + R} stroke="rgb(var(--color-text-main) / 0.15)" strokeWidth="1.0" />
+            <text x={cx} y={cy - R - 10} textAnchor="middle" fill="rgb(var(--color-danger))" fontSize="12" fontWeight="900">N</text>
+            <text x={cx + R + 10} y={cy} textAnchor="start" dominantBaseline="middle" fill="rgb(var(--color-text-main))" fontSize="11" fontWeight="800">E</text>
+            <text x={cx} y={cy + R + 18} textAnchor="middle" fill="rgb(var(--color-text-main))" fontSize="11" fontWeight="800">S</text>
+            <text x={cx - R - 10} y={cy} textAnchor="end" dominantBaseline="middle" fill="rgb(var(--color-text-main))" fontSize="11" fontWeight="800">W</text>
+            {processedData.map((pt, idx) => {
+                if (pt.md === 0 || pt.md > limitMD || pt.azim === undefined) return null;
+                const pT = getPt(pt.azim, (pt.md / limitMD) * 98);
+                return <line key={`r${idx}`} x1={cx} y1={cy} x2={pT.x} y2={pT.y} stroke="rgb(var(--color-primary))" strokeWidth="2.0" strokeLinecap="round" opacity="0.8" />;
+            })}
+            <circle cx={cx} cy={cy} r={3} fill="rgb(var(--color-danger))" />
+        </svg>
+    );
+};
+
+export const SurveysModule: React.FC<Props> = ({ params, setParams, onBack }) => {
+    const { t, language } = useLanguage();
     
-    // 13 Column Inputs for Advanced / Basic
+    // Sync initially with params survey
+    const initialRaw = useMemo(() => {
+        if (!params.survey || params.survey.length === 0) return '';
+        const hasAdv = params.survey.some(s => s.inc !== undefined || s.dogleg !== undefined || s.azim !== undefined);
+        if (hasAdv) {
+            return params.survey.map(s => [
+                s.md, s.inc ?? '', s.azim ?? '', s.tvd ?? '', s.subSea ?? '', s.northing ?? '', s.ns ?? '', s.easting ?? '', s.ew ?? '', s.northingM ?? '', s.eastingM ?? '', s.verticalSection ?? '', s.dogleg ?? ''
+            ].join('\t')).join('\n');
+        }
+        return params.survey.map(s => `${s.md}\t${s.tvd}`).join('\n');
+    }, [params.survey]);
+
+    const [rawSurvey, setRawSurvey] = useState(initialRaw);
+    const [isAdvanced, setIsAdvanced] = useState(false);
+    const [isSpoolerMinimized, setIsSpoolerMinimized] = useState(false);
+    
+    // Config values for Spooler polar calculations
+    const limitMD = params.wellbore.tubingBottom;
+    const processedData = useMemo<ProcessedPoint[]>(() => {
+        return params.survey.map(pt => ({
+            md: pt.md,
+            tvd: pt.tvd,
+            inc: pt.inc ?? 0,
+            azim: pt.azim ?? 0
+        }));
+    }, [params.survey]);
+
+    const averageAzimuth = useMemo(() => {
+        const validPoints = processedData.filter(pt => pt.md > 0 && pt.md <= limitMD && pt.azim !== undefined);
+        if (validPoints.length === 0) return 0;
+        let sumSin = 0, sumCos = 0, sumW = 0;
+        validPoints.forEach(pt => {
+            const w = Math.sin((pt.inc ?? 0) * DEG2RAD);
+            sumSin += Math.sin((pt.azim ?? 0) * DEG2RAD) * w;
+            sumCos += Math.cos((pt.azim ?? 0) * DEG2RAD) * w;
+            sumW += w;
+        });
+        if (sumW < 0.0001) {
+            let simpleSin = 0, simpleCos = 0;
+            validPoints.forEach(pt => {
+                simpleSin += Math.sin((pt.azim ?? 0) * DEG2RAD);
+                simpleCos += Math.cos((pt.azim ?? 0) * DEG2RAD);
+            });
+            return (Math.atan2(simpleSin, simpleCos) * RAD2DEG + 360) % 360;
+        }
+        return (Math.atan2(sumSin, sumCos) * RAD2DEG + 360) % 360;
+    }, [processedData, limitMD]);
+
+    const maxCurveDLS = useMemo(() => {
+        if (params.survey.length === 0) return 0;
+        return Math.max(...params.survey.map(s => s.dogleg || 0));
+    }, [params.survey]);
+
+    const isDark = true;
+    
     const [mdInput, setMdInput] = useState('');
     const [incInput, setIncInput] = useState('');
     const [azimInput, setAzimInput] = useState('');
@@ -250,6 +387,58 @@ export const Phase1: React.FC<Props> = ({ params, setParams, rawSurvey, setRawSu
                 }
             };
             reader.readAsArrayBuffer(file);
+        }
+    };
+
+    const handleExportExcel = () => {
+        if (params.survey.length === 0) {
+            alert("No hay datos de trayectoria cargados para exportar.");
+            return;
+        }
+        try {
+            const cleanData = params.survey.map((s, idx) => ({
+                "Fila": idx + 1,
+                "MD (ft)": s.md,
+                "TVD (ft)": s.tvd,
+                "Inc (deg)": s.inc ?? '',
+                "Azim (deg)": s.azim ?? '',
+                "SubSea (ft)": s.subSea ?? '',
+                "Northing (ft)": s.northing ?? '',
+                "Easting (ft)": s.easting ?? '',
+                "VS (ft)": s.verticalSection ?? '',
+                "DLS (deg/100ft)": s.dogleg ?? ''
+            }));
+            const ws = xlsxUtils.json_to_sheet(cleanData);
+            const wb = xlsxUtils.book_new();
+            xlsxUtils.book_append_sheet(wb, ws, "SURVEY");
+            const wbout = write(wb, { bookType: 'xlsx', type: 'array' });
+            const blob = new Blob([wbout], { type: 'application/octet-stream' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Surveys_Export_${params.metadata?.wellName || 'Pozo'}_${new Date().toISOString().split('T')[0]}.xlsx`;
+            a.click();
+            URL.revokeObjectURL(url);
+        } catch (err) {
+            alert("Error al exportar archivo Excel.");
+        }
+    };
+
+    const handleExportJson = () => {
+        if (params.survey.length === 0) {
+            alert("No hay datos de trayectoria cargados para exportar.");
+            return;
+        }
+        try {
+            const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(params.survey, null, 2))}`;
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", jsonString);
+            downloadAnchor.setAttribute("download", `Survey_${params.metadata?.wellName || 'Pozo'}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        } catch (err) {
+            alert("Error al exportar archivo JSON.");
         }
     };
 
@@ -446,102 +635,113 @@ export const Phase1: React.FC<Props> = ({ params, setParams, rawSurvey, setRawSu
                 });
                 
                 rawLines.push([
-                    mds[i] || '',
-                    incs[i] || '',
-                    azims[i] || '',
-                    tvds[i] || '',
-                    subSeas[i] || '',
-                    northings[i] || '',
-                    nss[i] || '',
-                    eastings[i] || '',
-                    ews[i] || '',
-                    northingMs[i] || '',
-                    eastingMs[i] || '',
-                    vss[i] || '',
-                    dlss[i] || ''
+                    mdVal, isNaN(incVal) ? '' : incVal, isNaN(azimVal) ? '' : azimVal, isNaN(tvdVal) ? '' : tvdVal,
+                    isNaN(subSeaVal) ? '' : subSeaVal, isNaN(northingVal) ? '' : northingVal, nsVal || '',
+                    isNaN(eastingVal) ? '' : eastingVal, ewVal || '', isNaN(northingMVal) ? '' : northingMVal,
+                    isNaN(eastingMVal) ? '' : eastingMVal, isNaN(vsVal) ? '' : vsVal, isNaN(dlsVal) ? '' : dlsVal
                 ].join('\t'));
             }
             
+            pts.sort((a, b) => a.md - b.md);
             setRawSurvey(rawLines.join('\n'));
         } else {
-            const mds = mdInput.trim().split('\n').map(v => v.trim());
-            const tvds = tvdInput.trim().split('\n').map(v => v.trim());
-            const len = Math.max(mds.length, tvds.length);
-            const combinedLines: string[] = [];
-            for (let i = 0; i < len; i++) {
-                const mdVal = mds[i] || '';
-                const tvdVal = tvds[i] || '';
-                if (mdVal || tvdVal) {
-                    combinedLines.push(`${mdVal}\t${tvdVal}`);
-                }
-            }
-            pts = parseLines(combinedLines.join('\n'), false);
+            pts = parseLines(mdInput + '\n' + tvdInput, false);
             setRawSurvey(pts.map(p => `${p.md}\t${p.tvd}`).join('\n'));
         }
 
-        const td = pts.length > 0 ? pts[pts.length - 1].md : 0;
-        setParams((prev: SystemParams) => ({ ...prev, survey: pts, totalDepthMD: td }));
-        if (pts.length > 0 && isAdvanced) {
-            setActiveMainTab('table');
-        }
+        const maxMD = pts.length > 0 ? pts[pts.length - 1].md : 0;
+        setParams(prev => {
+            const autoTubingMD = Math.max((prev.wellbore && prev.wellbore.tubingBottom) || 0, Math.round(maxMD * 0.85));
+            return {
+                ...prev,
+                survey: pts,
+                totalDepthMD: maxMD,
+                pressures: {
+                    ...(prev.pressures || {}),
+                    pumpDepthMD: (prev.pressures && prev.pressures.pumpDepthMD) || autoTubingMD
+                },
+                wellbore: {
+                    ...(prev.wellbore || {}),
+                    casingBottom: Math.max((prev.wellbore && prev.wellbore.casingBottom) || 0, maxMD),
+                    tubingBottom: autoTubingMD,
+                    midPerfsMD: (prev.wellbore && prev.wellbore.midPerfsMD) || Math.round(maxMD * 0.90)
+                }
+            } as any;
+        });
     };
 
-    // Advanced Summary metrics
-    const hasAdvancedData = params.survey.some(p => p.inc !== undefined || p.dogleg !== undefined);
-    const maxDogleg = hasAdvancedData ? Math.max(...params.survey.map(p => p.dogleg || 0)) : 0;
-    const maxInclination = hasAdvancedData ? Math.max(...params.survey.map(p => p.inc || 0)) : 0;
-    const avgInclination = hasAdvancedData ? (params.survey.reduce((acc, p) => acc + (p.inc || 0), 0) / params.survey.length) : 0;
+    const hasAdvancedData = params.survey.length > 0 && params.survey.some(s => s.inc !== undefined || s.dogleg !== undefined || s.azim !== undefined);
+    
+    const maxInclination = useMemo(() => {
+        if (params.survey.length === 0) return 0;
+        return Math.max(...params.survey.map(s => s.inc || 0));
+    }, [params.survey]);
+
+    const maxDogleg = useMemo(() => {
+        if (params.survey.length === 0) return 0;
+        return Math.max(...params.survey.map(s => s.dogleg || 0));
+    }, [params.survey]);
+
+    const avgInclination = useMemo(() => {
+        if (params.survey.length === 0) return 0;
+        const valid = params.survey.filter(s => s.inc !== undefined);
+        if (valid.length === 0) return 0;
+        return valid.reduce((acc, curr) => acc + (curr.inc || 0), 0) / valid.length;
+    }, [params.survey]);
 
     return (
-        <div className="flex flex-col gap-4 pb-8 animate-fadeIn">
-            <div className="grid grid-cols-12 gap-4 shrink-0 transition-all duration-500">
-                <div className="col-span-12 md:col-span-6 lg:col-span-4 transition-all hover:scale-[1.01]">
-                    <PipeConfigCard title={t('p1.casing')} icon={Cylinder} colorClass="bg-slate-500" pipe={params.wellbore.casing} catalog={CASING_CATALOG} onSelect={(e) => { const c = CASING_CATALOG.find(x => x.description === e.target.value); if (c) setParams({ ...params, wellbore: { ...params.wellbore, casing: c } }); }} bottomMD={params.wellbore.casingBottom} onDepthChange={(e) => setParams({ ...params, wellbore: { ...params.wellbore, casingBottom: parseFloat(e.target.value) } })} />
+        <div className="flex flex-col h-screen w-full bg-canvas/30 text-txt-main overflow-hidden">
+            {/* Header Standalone */}
+            <header className="relative h-16 bg-canvas/60 backdrop-blur-md border-b border-surface-light/35 px-6 flex items-center justify-between z-20 shrink-0">
+                <div className="flex items-center gap-3">
+                    <button 
+                        onClick={onBack} 
+                        className="p-2 bg-white/5 hover:bg-white/10 text-primary border border-white/5 hover:border-primary/20 rounded-xl transition-all flex items-center justify-center cursor-pointer"
+                        title="Volver al Menú"
+                    >
+                        <ArrowLeft className="w-5 h-5" />
+                    </button>
+                    <span className="text-txt-muted font-mono text-xs font-black tracking-widest opacity-60">UTILIDAD</span>
+                    <div className="h-4 w-px bg-surface-light/50"></div>
+                    <h2 className="text-xs font-black text-txt-main uppercase tracking-[0.25em] flex items-center gap-2">
+                        <Compass className="w-4 h-4 text-primary animate-pulse" /> SURVEYS Y TRAYECTORIAS 3D
+                    </h2>
                 </div>
-                <div className="col-span-12 md:col-span-6 lg:col-span-4 transition-all hover:scale-[1.01]" style={{ animationDelay: '0.2s' }}>
-                    <PipeConfigCard title={t('p1.tubing')} icon={ArrowDown} colorClass="bg-secondary" pipe={params.wellbore.tubing} catalog={TUBING_CATALOG} onSelect={(e) => { const t = TUBING_CATALOG.find(x => x.description === e.target.value); if (t) setParams({ ...params, wellbore: { ...params.wellbore, tubing: t } }); }} bottomMD={params.pressures.pumpDepthMD} onDepthChange={(e) => setParams({ ...params, pressures: { ...params.pressures, pumpDepthMD: parseFloat(e.target.value) } })} onRoughnessChange={(e) => setParams({ ...params, wellbore: { ...params.wellbore, tubing: { ...params.wellbore.tubing, roughness: parseFloat(e.target.value) } } })} />
-                </div>
-                <div className="col-span-12 md:col-span-12 lg:col-span-4 transition-all hover:scale-[1.01]" style={{ animationDelay: '0.3s' }}>
-                    <div className="glass-surface rounded-none border border-white/5 shadow-2xl p-3 flex flex-col justify-between relative overflow-hidden group hover:border-primary/40 transition-all duration-700 light-sweep h-full min-h-[200px]">
-                        <div className="absolute inset-0 bg-gradient-to-t from-orange-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                        <div className="flex justify-between items-center mb-2 pl-1 relative z-10">
-                            <div className="flex items-center gap-2">
-                                <div className="p-1.5 rounded-none bg-canvas border border-white/5 text-primary shadow-inner group-hover:shadow-[0_0_15px_rgb(var(--color-primary)/0.3)] transition-shadow"><Thermometer className="w-4 h-4" /></div>
-                                <h3 className="text-xs font-black text-txt-main uppercase tracking-widest leading-none shadow-sm">{t('p1.env')}</h3>
-                            </div>
-                        </div>
-                        <div className="space-y-2 relative z-10 flex-1 flex flex-col justify-center">
-                            <div className="flex items-center gap-3 bg-canvas/60 p-2.5 rounded-none border border-white/5 backdrop-blur-sm shadow-inner group/temp">
-                                <span className="text-[10px] font-black text-secondary w-8">{t('p1.wh')}</span>
-                                <input type="number" value={params.surfaceTemp} onChange={e => setParams({ ...params, surfaceTemp: parseFloat(e.target.value) })} className="w-16 bg-transparent text-center text-sm font-black text-txt-main border-b-2 border-white/5 outline-none focus:border-secondary transition-all" />
-                                <span className="flex-1 h-0.5 bg-gradient-to-r from-secondary to-primary opacity-30 rounded-none"></span>
-                                <input type="number" value={params.bottomholeTemp} onChange={e => setParams({ ...params, bottomholeTemp: parseFloat(e.target.value) })} className="w-16 bg-transparent text-center text-sm font-black text-txt-main border-b-2 border-white/5 outline-none focus:border-primary transition-all" />
-                                <span className="text-[10px] font-black text-primary w-8 text-right">{t('p1.bh')}</span>
-                            </div>
-                            <TechnicalInput label={t('p1.midperfs')} value={params.wellbore.midPerfsMD} unit="ft" onChange={(e: any) => setParams({ ...params, wellbore: { ...params.wellbore, midPerfsMD: parseFloat(e.target.value) } })} className="pt-0.5" />
-                        </div>
-                    </div>
-                </div>
-            </div>
 
-            <div className="grid grid-cols-12 gap-4 min-h-[520px]">
-                <div className="col-span-12 lg:col-span-9 flex flex-col min-h-[520px] animate-fadeIn" style={{ animationDelay: '0.4s' }}>
-                    <div className="glass-surface border border-white/5 rounded-none flex-1 flex flex-col overflow-hidden relative shadow-2xl">
+                <div className="flex items-center gap-2">
+                    <button 
+                        onClick={handleExportExcel} 
+                        disabled={params.survey.length === 0}
+                        className="flex items-center gap-2 text-[10px] font-black text-primary hover:text-white bg-primary/10 hover:bg-primary px-4 py-2 rounded-xl transition-all border border-primary/20 disabled:opacity-50 cursor-pointer"
+                    >
+                        <Download className="w-3.5 h-3.5" /> Exportar Excel
+                    </button>
+                    <button 
+                        onClick={handleExportJson} 
+                        disabled={params.survey.length === 0}
+                        className="flex items-center gap-2 text-[10px] font-black text-secondary hover:text-white bg-secondary/10 hover:bg-secondary px-4 py-2 rounded-xl transition-all border border-secondary/20 disabled:opacity-50 cursor-pointer"
+                    >
+                        <FileCode className="w-3.5 h-3.5" /> Exportar JSON
+                    </button>
+                </div>
+            </header>
+
+            <div className="flex-1 grid grid-cols-12 gap-6 p-6 min-h-0 overflow-y-auto lg:overflow-hidden relative">
+                {/* LEFT/MAIN CONTAINER: 3D Plot & Data Table (Visualizador de Trayectoria) */}
+                <div className="col-span-12 lg:col-span-8 flex flex-col min-h-0 animate-fadeIn h-full" style={{ animationDelay: '0.1s' }}>
+                    <div className="glass-surface border border-white/5 shadow-2xl flex-1 flex flex-col overflow-hidden relative">
                         <div className="px-6 py-4 glass-surface border-b border-white/5 flex justify-between items-center relative z-20 shrink-0">
-                            <div className="flex items-center gap-4">
-                                <Compass className="w-6 h-6 text-primary shadow-glow-primary" />
-                                <h3 className="text-sm font-black text-txt-main uppercase tracking-[0.25em]">{t('p1.trajectory')}</h3>
-                            </div>
+                            <h3 className="text-xs font-black text-txt-main uppercase tracking-widest">Visualizador de Trayectoria</h3>
                             <div className="flex gap-2">
                                 <button 
                                     onClick={() => setActiveMainTab('plot')} 
-                                    className={`text-[10px] font-black uppercase transition-all px-4 py-2 flex items-center gap-2 ${activeMainTab === 'plot' ? 'bg-primary/20 border-primary border text-primary shadow-glow-primary' : 'glass-surface-light border border-white/5 text-txt-muted hover:text-txt-main'}`}
+                                    className={`text-[10px] font-black uppercase transition-all px-4 py-2 flex items-center gap-2 cursor-pointer ${activeMainTab === 'plot' ? 'bg-primary/20 border-primary border text-primary shadow-glow-primary' : 'glass-surface-light border border-white/5 text-txt-muted hover:text-txt-main'}`}
                                 >
-                                    <Map className="w-3.5 h-3.5" /> Plot
+                                    <Map className="w-3.5 h-3.5" /> 3D Trajectory
                                 </button>
                                 <button 
                                     onClick={() => setActiveMainTab('table')} 
-                                    className={`text-[10px] font-black uppercase transition-all px-4 py-2 flex items-center gap-2 ${activeMainTab === 'table' ? 'bg-primary/20 border-primary border text-primary shadow-glow-primary' : 'glass-surface-light border border-white/5 text-txt-muted hover:text-txt-main'}`}
+                                    className={`text-[10px] font-black uppercase transition-all px-4 py-2 flex items-center gap-2 cursor-pointer ${activeMainTab === 'table' ? 'bg-primary/20 border-primary border text-primary shadow-glow-primary' : 'glass-surface-light border border-white/5 text-txt-muted hover:text-txt-main'}`}
                                 >
                                     <Table className="w-3.5 h-3.5" /> Data Table {hasAdvancedData && <span className="w-2 h-2 rounded-full bg-secondary animate-ping"></span>}
                                 </button>
@@ -550,8 +750,77 @@ export const Phase1: React.FC<Props> = ({ params, setParams, rawSurvey, setRawSu
 
                         <div className="flex-1 min-h-0 relative z-10 flex flex-col">
                             {activeMainTab === 'plot' ? (
-                                <div className="w-full h-full flex-1 min-h-[420px]">
+                                <div className="w-full h-full flex-1 min-h-0 hide-right-column-survey relative">
                                     <TrajectoryPlot survey={params.survey} params={params} />
+                                    
+                                    {/* CSS Inject to hide the split right column and expand 3D visualizer to full width */}
+                                    <style>{`
+                                        .hide-right-column-survey [class*="grid-cols"] {
+                                            grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+                                        }
+                                        .hide-right-column-survey [class*="grid-cols"] > div:nth-child(2) {
+                                            display: none !important;
+                                        }
+                                        .hide-right-column-survey [class*="grid-cols"] > div:first-child {
+                                            border-right: none !important;
+                                            width: 100% !important;
+                                            height: 100% !important;
+                                        }
+                                        /* Center mode buttons (Estructura, Inc, Dogleg) to avoid overlap */
+                                        .hide-right-column-survey .relative.flex-col > div:nth-child(3) {
+                                            right: auto !important;
+                                            left: 50% !important;
+                                            transform: translateX(-50%) !important;
+                                        }
+                                    `}</style>
+
+                                    {/* Absolute Floating Spooler ALS Card */}
+                                    {params.survey.length > 0 && (
+                                        isSpoolerMinimized ? (
+                                            <button 
+                                                onClick={() => setIsSpoolerMinimized(false)}
+                                                className="absolute top-4 right-4 z-30 p-2.5 bg-surface/85 backdrop-blur-md border border-white/10 hover:border-primary/50 rounded-xl hover:text-primary transition-all flex items-center gap-2 cursor-pointer shadow-lg hover:scale-105"
+                                                title="Mostrar Optimización de Azimut"
+                                            >
+                                                <Compass className="w-3.5 h-3.5 text-primary animate-pulse" />
+                                                <span className="text-[9px] font-black uppercase tracking-wider">Spooler ALS ({Math.round(averageAzimuth)}°)</span>
+                                            </button>
+                                        ) : (
+                                            <div className="absolute top-4 right-4 z-30 w-72 bg-surface/90 backdrop-blur-md border border-white/10 p-4 rounded-2xl shadow-2xl flex flex-col items-center animate-fadeIn">
+                                                <div className="flex w-full justify-between items-center mb-2 pb-1.5 border-b border-white/5">
+                                                    <span className="text-[8px] font-black text-primary uppercase tracking-[0.2em] flex items-center gap-1.5 font-sans">
+                                                        <Compass className="w-3.5 h-3.5 text-primary" /> Spooler ALS
+                                                    </span>
+                                                    <button 
+                                                        onClick={() => setIsSpoolerMinimized(true)}
+                                                        className="p-1 hover:bg-white/15 rounded text-txt-muted hover:text-white transition-colors cursor-pointer"
+                                                        title="Minimizar"
+                                                    >
+                                                        <Minus className="w-3 h-3" />
+                                                    </button>
+                                                </div>
+                                                
+                                                <div className="scale-75 origin-center my-[-25px]">
+                                                    <SpoolerPolarChart processedData={processedData} limitMD={limitMD} isDark={isDark} />
+                                                </div>
+
+                                                <div className="w-full space-y-1.5 border-t border-white/5 pt-2 text-[10px] mt-1 font-sans">
+                                                    <div className="flex justify-between items-center">
+                                                        <span className="font-bold text-txt-muted uppercase">Dirección:</span>
+                                                        <span className="font-mono font-black text-txt-main">{Math.round(averageAzimuth)}°</span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center">
+                                                        <span className="font-bold text-txt-muted uppercase">Límite MD:</span>
+                                                        <span className="font-mono font-black text-txt-main">{Math.round(limitMD)} ft</span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center">
+                                                        <span className="font-bold text-txt-muted uppercase">Máx DLS:</span>
+                                                        <span className="font-mono font-black text-warning">{maxCurveDLS.toFixed(2)} °/100ft</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )
+                                    )}
                                 </div>
                             ) : (
                                 <div className="flex-1 flex flex-col p-6 min-h-0 overflow-y-auto custom-scrollbar">
@@ -592,7 +861,7 @@ export const Phase1: React.FC<Props> = ({ params, setParams, rawSurvey, setRawSu
                                                     <div>
                                                         <h4 className="text-xs font-black text-danger uppercase tracking-wider">High Dogleg Severity Warning</h4>
                                                         <p className="text-[11px] text-txt-muted mt-1">
-                                                            Dogleg rate exceeds 3.0°/100ft. There is an increased risk of the ESP equipment laying flat or resting against the casing ("equipo recostado"), which can cause severe mechanical strain, protector damage, or premature motor failure. Consider optimizing pump placement at a lower DLS zone.
+                                                            Dogleg rate exceeds 3.0°/100ft. Increased mechanical friction/strain for artificial lift installations. Pump should ideally be set in low dogleg zones.
                                                         </p>
                                                     </div>
                                                 </div>
@@ -653,8 +922,69 @@ export const Phase1: React.FC<Props> = ({ params, setParams, rawSurvey, setRawSu
                     </div>
                 </div>
 
-                <div className="col-span-12 lg:col-span-3 flex flex-col min-h-[520px] animate-fadeIn" style={{ animationDelay: '0.5s' }}>
-                    <div className="glass-surface border border-white/5 shadow-2xl flex-1 flex flex-col overflow-hidden relative">
+                {/* RIGHT COLUMN: Stacked controls (Configuración del Pozo + Terminal de Datos Survey) */}
+                <div className="col-span-12 lg:col-span-4 flex flex-col gap-6 animate-fadeIn h-full overflow-y-auto custom-scrollbar pr-1" style={{ animationDelay: '0.3s' }}>
+                    {/* Casing & Tubing Configuration */}
+                    <div className="glass-surface border border-white/5 shadow-2xl p-5 flex flex-col gap-4 shrink-0">
+                        <div className="flex items-center gap-2.5 pb-3 border-b border-white/5 shrink-0">
+                            <Sliders className="w-5 h-5 text-primary" />
+                            <h3 className="text-xs font-black text-txt-main uppercase tracking-widest">Configuración del Pozo</h3>
+                        </div>
+                        <div className="flex flex-col gap-4">
+                            <PipeConfigCard 
+                                title={t('p1.casing')} 
+                                pipe={params.wellbore.casing} 
+                                catalog={CASING_CATALOG} 
+                                onSelect={(e) => {
+                                    const c = CASING_CATALOG.find(x => x.description === e.target.value);
+                                    if (c) setParams(p => ({ ...p, wellbore: { ...p.wellbore, casing: c } }));
+                                }} 
+                                bottomMD={params.wellbore.casingBottom} 
+                                onDepthChange={(e) => setParams(p => ({ ...p, wellbore: { ...p.wellbore, casingBottom: parseFloat(e.target.value) } }))} 
+                                colorClass="bg-primary" 
+                                icon={Cylinder} 
+                            />
+                            <PipeConfigCard 
+                                title={t('p1.tubing')} 
+                                pipe={params.wellbore.tubing} 
+                                catalog={TUBING_CATALOG} 
+                                onSelect={(e) => {
+                                    const c = TUBING_CATALOG.find(x => x.description === e.target.value);
+                                    if (c) setParams(p => ({ ...p, wellbore: { ...p.wellbore, tubing: c } }));
+                                }} 
+                                bottomMD={(params.pressures && params.pressures.pumpDepthMD) || (params.wellbore && params.wellbore.tubingBottom) || 0} 
+                                onDepthChange={(e) => {
+                                    const val = parseFloat(e.target.value) || 0;
+                                    setParams(p => ({ 
+                                        ...p, 
+                                        wellbore: { ...(p.wellbore || {}), tubingBottom: val }, 
+                                        pressures: { ...(p.pressures || {}), pumpDepthMD: val } 
+                                    } as any));
+                                }} 
+                                onRoughnessChange={(e) => setParams(p => ({ ...p, wellbore: { ...(p.wellbore || {}), tubing: { ...((p.wellbore && p.wellbore.tubing) || {}), roughness: parseFloat(e.target.value) } } } as any))} 
+                                colorClass="bg-secondary" 
+                                icon={ArrowDown} 
+                            />
+                            
+                            <div className="border-t border-white/5 pt-4 mt-2">
+                                <TechnicalInput 
+                                    label="Profundidad de Perforaciones (MD)" 
+                                    value={params.wellbore.midPerfsMD || 0} 
+                                    unit="ft" 
+                                    onChange={(e: any) => {
+                                        const val = parseFloat(e.target.value) || 0;
+                                        setParams(p => ({ 
+                                            ...p, 
+                                            wellbore: { ...p.wellbore, midPerfsMD: val } 
+                                        }));
+                                    }} 
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Survey Data Terminal */}
+                    <div className="glass-surface border border-white/5 shadow-2xl flex-1 flex flex-col overflow-hidden relative min-h-0">
                         <div className="px-6 py-5 glass-surface border-b border-white/5 flex flex-col gap-4 relative z-20 shrink-0">
                             <div className="flex justify-between items-center">
                                 <div className="flex items-center gap-4">
@@ -667,7 +997,7 @@ export const Phase1: React.FC<Props> = ({ params, setParams, rawSurvey, setRawSu
                                         Subir Archivo
                                         <input type="file" accept=".xlsx, .xls, .json" onChange={handleFileUpload} className="hidden" />
                                     </label>
-                                    <button onClick={handleClear} className="text-[10px] font-black text-txt-muted hover:text-danger flex items-center gap-2.5 uppercase transition-all px-4 py-2 rounded-none glass-surface-light border border-white/5">
+                                    <button onClick={handleClear} className="text-[10px] font-black text-txt-muted hover:text-danger flex items-center gap-2.5 uppercase transition-all px-4 py-2 rounded-none glass-surface-light border border-white/5 cursor-pointer">
                                         <Trash2 className="w-4 h-4" /> {t('p1.clear')}
                                     </button>
                                 </div>
@@ -677,13 +1007,13 @@ export const Phase1: React.FC<Props> = ({ params, setParams, rawSurvey, setRawSu
                             <div className="grid grid-cols-2 p-0.5 bg-canvas border border-white/5 rounded-none shrink-0 relative">
                                 <button
                                     onClick={() => setIsAdvanced(false)}
-                                    className={`py-2 text-[10px] font-black uppercase tracking-wider transition-all rounded-none flex items-center justify-center gap-2 ${!isAdvanced ? 'bg-primary/20 text-primary border border-primary/20 shadow-glow-primary font-black z-10' : 'text-txt-muted hover:text-txt-main z-10'}`}
+                                    className={`py-2 text-[10px] font-black uppercase tracking-wider transition-all rounded-none flex items-center justify-center gap-2 cursor-pointer ${!isAdvanced ? 'bg-primary/20 text-primary border border-primary/20 shadow-glow-primary font-black z-10' : 'text-txt-muted hover:text-txt-main z-10'}`}
                                 >
                                     <Sliders className="w-3.5 h-3.5" /> {t('p1.basic')}
                                 </button>
                                 <button
                                     onClick={() => setIsAdvanced(true)}
-                                    className={`py-2 text-[10px] font-black uppercase tracking-wider transition-all rounded-none flex items-center justify-center gap-2 ${isAdvanced ? 'bg-primary/20 text-primary border border-primary/20 shadow-glow-primary font-black z-10' : 'text-txt-muted hover:text-txt-main z-10'}`}
+                                    className={`py-2 text-[10px] font-black uppercase tracking-wider transition-all rounded-none flex items-center justify-center gap-2 cursor-pointer ${isAdvanced ? 'bg-primary/20 text-primary border border-primary/20 shadow-glow-primary font-black z-10' : 'text-txt-muted hover:text-txt-main z-10'}`}
                                 >
                                     <Compass className="w-3.5 h-3.5" /> {t('p1.advanced')}
                                 </button>
@@ -713,7 +1043,6 @@ export const Phase1: React.FC<Props> = ({ params, setParams, rawSurvey, setRawSu
                                         </div>
                                     </div>
                                     
-                                    {/* Contenedor de 13 Columnas en Paralelo */}
                                     <div className="flex-grow overflow-x-auto border border-white/5 bg-canvas/30 custom-scrollbar p-2 min-h-0 relative">
                                         <div className="flex gap-1.5 h-full divide-x divide-white/5 min-w-[1540px]">
                                             <div className="flex flex-col w-[110px] shrink-0 h-full relative">
@@ -771,7 +1100,6 @@ export const Phase1: React.FC<Props> = ({ params, setParams, rawSurvey, setRawSu
                                         </div>
                                     </div>
                                     
-                                    {/* Preview of rows detected */}
                                     {mdInput.trim() && (
                                         <div className="mt-2 shrink-0 px-3 py-1.5 bg-primary/10 border border-primary/20 text-[10px] font-black uppercase text-primary flex items-center justify-between">
                                             <span>{t('p1.adv_detected')}:</span>
@@ -783,8 +1111,8 @@ export const Phase1: React.FC<Props> = ({ params, setParams, rawSurvey, setRawSu
                         </div>
 
                         <div className="p-6 glass-surface border-t border-white/5 relative z-20 shrink-0">
-                            <button onClick={handleProcess} className="w-full btn-premium-primary animate-pulse-glow hover:to-orange-500 text-white py-5 rounded-none text-[11px] font-black uppercase tracking-[0.4em] transition-all border border-white/10 light-sweep flex items-center justify-center gap-3">
-                                <Check className="w-6 h-6" /> {isAdvanced ? t('p1.adv_process') : t('p1.process')}
+                            <button onClick={handleProcess} className="w-full btn-premium-primary animate-pulse-glow hover:to-orange-500 text-white py-5 rounded-none text-[11px] font-black uppercase tracking-[0.4em] transition-all border border-white/10 light-sweep flex items-center justify-center gap-3 cursor-pointer">
+                                <Check className="w-6 h-6" /> Procesar y Compilar Trayectoria
                             </button>
                         </div>
                     </div>
@@ -793,5 +1121,3 @@ export const Phase1: React.FC<Props> = ({ params, setParams, rawSurvey, setRawSu
         </div>
     );
 };
-
-

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { SystemParams } from '../types';
-import { calculateSystemResults } from '../utils';
+import { calculateSystemResults, calculateCriticalConingRate } from '../utils';
 import { Gauge, ArrowDown, Activity, Droplets, Layers, ChevronRight, Thermometer, AlertCircle } from 'lucide-react';
 import { useLanguage } from '../i18n';
 
@@ -77,8 +77,12 @@ export const Phase4: React.FC<Props> = ({ params, setParams, results }) => {
     const motorTemp = intakeTemp + motorRise;
     const isMotorHot = motorTemp > 300; // Smart Alert Threshold
 
+    const qc = calculateCriticalConingRate(params);
+    const isConingRisk = params.inflow.enableConingCheck && params.pressures.totalRate > qc;
+
+
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-160px)] animate-fadeIn pb-2">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full animate-fadeIn pb-2">
 
             {/* LEFT COLUMN: CONTROL DECK */}
             <div className="lg:col-span-4 flex flex-col gap-4 h-full overflow-y-auto pr-2 custom-scrollbar">
@@ -151,6 +155,16 @@ export const Phase4: React.FC<Props> = ({ params, setParams, results }) => {
                         onChange={(e: any) => setParams({ ...params, pressures: { ...params.pressures, phc: parseFloat(e.target.value) } })}
                     />
                 </div>
+
+                {isConingRisk && (
+                    <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-none flex items-center gap-4 animate-pulse">
+                        <AlertCircle className="w-6 h-6 text-red-500" />
+                        <div>
+                            <h4 className="text-xs font-black text-red-500 uppercase tracking-widest mb-0.5">RIESGO CRÍTICO: CONIFICACIÓN</h4>
+                            <p className="text-[11px] font-bold text-txt-muted">Caudal solicitado ({params.pressures.totalRate} BPD) excede el caudal de conificación seguro ({qc.toFixed(0)} BPD). Peligro de irrupción de agua (alto BSW).</p>
+                        </div>
+                    </div>
+                )}
 
                 {/* 3. KEY METRICS SUMMARY */}
                 <div className="bg-canvas rounded-none p-5 text-white flex-1 flex flex-col justify-start relative overflow-hidden shadow-xl border border-white/5 min-h-[300px]">

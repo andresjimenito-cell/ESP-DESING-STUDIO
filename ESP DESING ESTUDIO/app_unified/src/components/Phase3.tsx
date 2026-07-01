@@ -2,7 +2,7 @@
 import React, { useMemo } from 'react';
 import { TrendingUp, Activity, Gauge, Zap, ArrowDownToLine, MousePointerClick, Layers, Droplets, ArrowDown, Settings2, Target, AlertTriangle } from 'lucide-react';
 import { SystemParams } from '../types';
-import { generateIPRData, calculateAOF } from '../utils';
+import { generateIPRData, calculateAOF, calculateCriticalConingRate } from '../utils';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Label, Tooltip, ReferenceLine, ReferenceDot } from 'recharts';
 import { useLanguage } from '../i18n';
 
@@ -72,6 +72,8 @@ export const Phase3: React.FC<Props> = ({ params, setParams, results }) => {
     const opPoint = { flow: params.pressures.totalRate, pwf: results.pwf || 0 };
 
     const showPumpOffWarning = params.pressures.totalRate > aof;
+    const qc = useMemo(() => calculateCriticalConingRate(params), [params]);
+    const isConingRisk = params.inflow.enableConingCheck && params.pressures.totalRate > qc;
 
     const colorPrimary = 'rgb(var(--color-primary))';
     const colorSecondary = 'rgb(var(--color-secondary))';
@@ -79,11 +81,11 @@ export const Phase3: React.FC<Props> = ({ params, setParams, results }) => {
     const colorGrid = 'rgb(var(--color-surface-light))';
 
     return (
-        <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-120px)] pb-4 overflow-hidden relative">
+        <div className="flex flex-col lg:flex-row gap-6 h-full lg:overflow-hidden relative">
 
             {/* LEFT COLUMN */}
-            <div className="flex-1 flex flex-col gap-6 min-w-0 glass-surface rounded-none-[2.5rem] border border-white/5 p-8 overflow-y-auto custom-scrollbar shadow-2xl animate-fadeIn relative overflow-hidden" style={{ animationDelay: '0.1s' }}>
-                <div className="absolute inset-0 bg-[linear-gradient(rgb(var(--color-primary)/0.02)_1px,transparent_1px)] bg-[size:100%_40px] pointer-events-none"></div>
+            <div className="flex-1 flex flex-col gap-6 min-w-0 glass-surface rounded-none-[2.5rem] border border-white/5 p-8 overflow-y-auto custom-scrollbar shadow-2xl animate-fadeIn relative" style={{ animationDelay: '0.1s' }}>
+                <div className="absolute inset-0 bg-[linear-gradient(rgb(var(--color-primary)/0.02)_1px,transparent_1px)] bg-[size:100%_4px] pointer-events-none"></div>
                 <div className="flex items-center justify-between px-1">
                     <div className="flex items-center gap-3">
                         <div className="p-2.5 bg-primary/20 rounded-none text-primary border border-primary/30 shadow-sm"><Activity className="w-6 h-6" /></div>
@@ -97,13 +99,80 @@ export const Phase3: React.FC<Props> = ({ params, setParams, results }) => {
                 <div className="grid grid-cols-2 gap-4">
                     <div className="col-span-2 bg-surface border border-white/10 rounded-none p-2 flex shadow-inner">
                         {['Productivity Index', 'Vogel'].map((m) => (
-                            <button key={m} onClick={() => setParams({ ...params, inflow: { ...params.inflow, model: m as any } })} className={`flex-1 py-2 text-xs font-black uppercase rounded-none transition-all flex items-center justify-center gap-2 ${params.inflow.model === m ? 'bg-primary text-white shadow-md' : 'text-txt-muted hover:text-txt-main hover:bg-surface-light/50'}`}>
+                            <button key={m} onClick={() => setParams(prev => ({ ...prev, inflow: { ...prev.inflow, model: m as any } }))} className={`flex-1 py-2 text-xs font-black uppercase rounded-none transition-all flex items-center justify-center gap-2 ${params.inflow.model === m ? 'bg-primary text-white shadow-md' : 'text-txt-muted hover:text-txt-main hover:bg-surface-light/50'}`}>
                                 {m === 'Productivity Index' ? t('p3.piModel') : t('p3.vogel')}
                             </button>
                         ))}
                     </div>
-                    <CompactInput label={t('p3.resPres')} value={params.inflow.pStatic} unit="psi" step="10" icon={Gauge} colorClass="primary" onChange={(e: any) => setParams({ ...params, inflow: { ...params.inflow, pStatic: parseFloat(e.target.value) } })} />
-                    <CompactInput label={t('p3.pi')} value={params.inflow.ip} unit="bpd/psi" step="0.1" icon={TrendingUp} colorClass="secondary" onChange={(e: any) => setParams({ ...params, inflow: { ...params.inflow, ip: parseFloat(e.target.value) } })} />
+                    <CompactInput label={t('p3.resPres')} value={params.inflow.pStatic} unit="psi" step="10" icon={Gauge} colorClass="primary" onChange={(e: any) => setParams(prev => ({ ...prev, inflow: { ...prev.inflow, pStatic: parseFloat(e.target.value) } }))} />
+                    <CompactInput label={t('p3.pi')} value={params.inflow.ip} unit="bpd/psi" step="0.1" icon={TrendingUp} colorClass="secondary" onChange={(e: any) => setParams(prev => ({ ...prev, inflow: { ...prev.inflow, ip: parseFloat(e.target.value) } }))} />
+                </div>
+
+                {/* Advanced Coning Settings */}
+                <div className="glass-surface border border-white/5 rounded-none p-5 flex flex-col gap-4 relative overflow-hidden shadow-xl">
+                    <button 
+                        onClick={() => setParams(prev => ({
+                            ...prev,
+                            inflow: {
+                                ...prev.inflow,
+                                enableConingCheck: !prev.inflow.enableConingCheck
+                            }
+                        }))}
+                        className="w-full flex items-center justify-between text-[10px] font-black text-txt-main uppercase tracking-[0.2em] hover:text-primary transition-colors outline-none"
+                    >
+                        <span className="flex items-center gap-2">
+                            <Settings2 className="w-4 h-4 text-primary" />
+                            Análisis de Conificación (Avanzado)
+                        </span>
+                        <span className={`px-2 py-0.5 text-[8px] font-black rounded-none border ${params.inflow.enableConingCheck ? 'bg-primary/20 border-primary text-primary' : 'bg-white/5 border-white/10 text-txt-muted'}`}>
+                            {params.inflow.enableConingCheck ? 'ACTIVO' : 'DESACTIVO'}
+                        </span>
+                    </button>
+
+                    {params.inflow.enableConingCheck && (
+                        <div className="grid grid-cols-2 gap-4 pt-3 border-t border-white/5 animate-fadeIn">
+                            <CompactInput 
+                                label="Espesor Aceite (h)" 
+                                value={params.inflow.oilThickness || ''} 
+                                unit="ft" 
+                                step="1" 
+                                colorClass="primary" 
+                                onChange={(e: any) => {
+                                    const val = e.target.value;
+                                    setParams(prev => ({ 
+                                        ...prev, 
+                                        inflow: { 
+                                            ...prev.inflow, 
+                                            oilThickness: val === '' ? 0 : parseFloat(val) 
+                                        } 
+                                    }));
+                                }} 
+                            />
+                            <CompactInput 
+                                label="Perm. Horiz. (Kh)" 
+                                value={params.inflow.horizontalPerm || ''} 
+                                unit="mD" 
+                                step="1" 
+                                colorClass="secondary" 
+                                onChange={(e: any) => {
+                                    const val = e.target.value;
+                                    setParams(prev => ({ 
+                                        ...prev, 
+                                        inflow: { 
+                                            ...prev.inflow, 
+                                            horizontalPerm: val === '' ? 0 : parseFloat(val) 
+                                        } 
+                                    }));
+                                }} 
+                            />
+                            {isFinite(qc) && (
+                                <div className="col-span-2 bg-canvas p-3 rounded-none border border-white/5 flex justify-between items-center">
+                                    <span className="text-[9px] font-black text-txt-muted uppercase tracking-wider">Caudal Crítico (Qc)</span>
+                                    <span className="text-sm font-mono font-black text-primary">{qc.toFixed(0)} BPD</span>
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
 
                 <div className="flex-1 min-h-[350px] glass-surface-light rounded-none-[2rem] border border-white/5 shadow-2xl relative overflow-hidden flex flex-col p-6 group">
@@ -142,6 +211,16 @@ export const Phase3: React.FC<Props> = ({ params, setParams, results }) => {
                         <div>
                             <h4 className="text-xs font-black text-danger uppercase tracking-widest mb-0.5">{t('ai.critical')}</h4>
                             <p className="text-[11px] font-bold text-txt-muted">{t('ai.pumpOff')}</p>
+                        </div>
+                    </div>
+                )}
+
+                {isConingRisk && (
+                    <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-none flex items-center gap-4 animate-pulse">
+                        <AlertTriangle className="w-6 h-6 text-red-500" />
+                        <div>
+                            <h4 className="text-xs font-black text-red-500 uppercase tracking-widest mb-0.5">RIESGO CRÍTICO: CONIFICACIÓN</h4>
+                            <p className="text-[11px] font-bold text-txt-muted">El caudal objetivo ({params.pressures.totalRate} BPD) supera el caudal crítico de conificación ({qc.toFixed(0)} BPD). Riesgo inminente de conificación acelerada e irrupción de BSW.</p>
                         </div>
                     </div>
                 )}
